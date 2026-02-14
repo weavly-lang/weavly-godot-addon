@@ -26,7 +26,7 @@ const KEY_RIGHT = "right"
 
 # Block keys
 const KEY_CASES = "cases"
-const KEY_OPTIONS = "options"
+const KEY_OPTIONS = "items"
 const KEY_HINT = "hint"
 
 # Variable keys
