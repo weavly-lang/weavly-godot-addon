@@ -130,6 +130,33 @@ class Option extends RefCounted:
 
 
 # =====================
+# Random Block
+# =====================
+
+
+class RandomBlock extends Statement:
+	var cases: Array[RandomCase]
+
+	func _init(cases: Array[RandomCase]):
+		self.cases = cases
+
+
+class RandomCase extends RefCounted:
+	var condition: WeavlyExpression
+	var weight: WeavlyExpression
+	var body: Array[Statement]
+
+	func _init(
+		condition: WeavlyExpression, 
+		weight: WeavlyExpression, 
+		body: Array[Statement],
+	):
+		self.condition = condition
+		self.weight = weight
+		self.body = body
+
+
+# =====================
 # Expressions
 # =====================
 

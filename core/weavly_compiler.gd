@@ -15,6 +15,7 @@ const KEY_ID = "id"
 const KEY_BODY = "body"
 const KEY_TYPE = "type"
 const KEY_TEXT = "text"
+const KEY_WEIGHT = "weight"
 
 # Expression keys
 const KEY_EXPRESSION = "expression"
@@ -47,6 +48,7 @@ const TYPE_COMMAND = "command"
 const TYPE_NUMBER = "number"
 const TYPE_STRING = "string"
 const TYPE_FLAG = "flag"
+const TYPE_RANDOM = "random"
 
 
 # =====================
@@ -145,6 +147,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 			return compile_finish_statement(data, path)
 		TYPE_COMMAND:
 			return compile_command_statement(data, path)
+		TYPE_RANDOM:
+			return compile_random_block(data, path)
 		_:
 			push_error("Unknown statement type '%s' at %s" % [type, path])
 			return null
@@ -236,6 +240,34 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	var hint = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
 	return WeavlyModel.Option.new(condition, text, body, hint)
+
+
+# =====================
+# Option Block
+# =====================
+
+static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.RandomBlock:
+	print("called")
+	var case_data_list = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
+	var cases: Array[WeavlyModel.RandomCase] = []
+	for i in range(case_data_list.size()):
+		var case_data = case_data_list[i]
+		var case_path = _path_index(_path_join(path, KEY_CASES), i)
+		if not (case_data is Dictionary):
+			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
+			continue
+		cases.append(compile_random_case(case_data, case_path))
+	return WeavlyModel.RandomBlock.new(cases)
+
+
+static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.RandomCase:
+	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
+	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
+	var weight_data = get_required(data, KEY_WEIGHT, Variant.Type.TYPE_NIL, path)
+	var weight = compile_expression(weight_data, _path_join(path, KEY_WEIGHT))
+	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
+	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
+	return WeavlyModel.RandomCase.new(condition, weight, body)
 
 
 # =====================
