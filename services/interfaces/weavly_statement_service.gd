@@ -25,6 +25,10 @@ func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 	pass
 
 
+func add_statement_groups(groups: Array[Array]) -> void:
+	pass
+
+
 func advance_statements() -> void:
 	pass
 

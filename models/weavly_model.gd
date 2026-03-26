@@ -82,15 +82,18 @@ class CommandStatement extends Statement:
 # If Block
 # =====================
 
+enum MatchModifier {FIRST, LAST, ALL}
 
-class IfBlock extends Statement:
-	var cases: Array[IfCase]
+class MatchBlock extends Statement:
+	var modifier: MatchModifier
+	var cases: Array[WhenCase]
 
-	func _init(cases: Array[IfCase]):
+	func _init(modifier: MatchModifier, cases: Array[WhenCase]):
+		self.modifier = modifier
 		self.cases = cases
 
 
-class IfCase extends RefCounted:
+class WhenCase extends RefCounted:
 	var condition: WeavlyExpression
 	var body: Array[Statement]
 

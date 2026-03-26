@@ -14,8 +14,8 @@ static func execute_statment(statement: WeavlyModel.Statement, engine: WeavlyEng
 		execute_finish_statement(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.CommandStatement):
 		execute_command_statement(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.IfBlock):
-		execute_if_block(statement, engine)
+	elif is_instance_of(statement, WeavlyModel.MatchBlock):
+		execute_match_block(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.OptionBlock):
 		execute_option_block(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.RandomBlock):
@@ -49,12 +49,38 @@ static func execute_command_statement(command_statement: WeavlyModel.CommandStat
 	engine.command_service.execute_command(command_statement)
 
 
-static func execute_if_block(if_block: WeavlyModel.IfBlock, engine: WeavlyEngine) -> void:
-	for case: WeavlyModel.IfCase in if_block.cases:
+static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:
+	var cases = match_block.cases.duplicate(true)
+	match match_block.modifier:
+		WeavlyModel.MatchModifier.FIRST: _execute_first_case(cases, engine)
+		WeavlyModel.MatchModifier.LAST: _execute_last_case(cases, engine)
+		WeavlyModel.MatchModifier.ALL: _execute_all_cases(cases, engine)
+
+
+static func _execute_first_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
+	for case: WeavlyModel.WhenCase in cases:
 		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
 		if condition:
 			engine.statement_service.add_statements(case.body)
 			return
+
+
+static func _execute_last_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
+	cases.reverse()
+	for case: WeavlyModel.WhenCase in cases:
+		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
+		if condition:
+			engine.statement_service.add_statements(case.body)
+			return
+
+
+static func _execute_all_cases(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
+	var valid_case_bodies: Array[Array] = []
+	for case: WeavlyModel.WhenCase in cases:
+		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
+		if condition:
+			valid_case_bodies.append(case.body)
+	engine.statement_service.add_statement_groups(valid_case_bodies)
 
 
 static func execute_option_block(option_block: WeavlyModel.OptionBlock, engine: WeavlyEngine) -> void:

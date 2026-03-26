@@ -25,6 +25,12 @@ func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 	_stack.push_back(frame)
 
 
+func add_statement_groups(groups: Array[Array]) -> void:
+	groups.reverse()
+	for statements: Array[WeavlyModel.Statement] in groups:
+		add_statements(statements)
+
+
 func advance_statements() -> void:
 	if _stack.is_empty():
 		engine.finish()

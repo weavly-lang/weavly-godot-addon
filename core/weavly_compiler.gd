@@ -16,6 +16,7 @@ const KEY_BODY = "body"
 const KEY_TYPE = "type"
 const KEY_TEXT = "text"
 const KEY_WEIGHT = "weight"
+const KEY_MODIFIER = "modifier"
 
 # Expression keys
 const KEY_EXPRESSION = "expression"
@@ -39,7 +40,7 @@ const KEY_MAX = "max"
 # Type values
 const TYPE_NARRATION = "narration"
 const TYPE_CHARACTER = "character"
-const TYPE_IF = "if"
+const TYPE_MATCH = "match"
 const TYPE_OPTION = "option"
 const TYPE_SET = "set"
 const TYPE_GOTO = "goto"
@@ -135,8 +136,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 			return compile_narration_line(data, path)
 		TYPE_CHARACTER:
 			return compile_character_line(data, path)
-		TYPE_IF:
-			return compile_if_block(data, path)
+		TYPE_MATCH:
+			return compile_match_block(data, path)
 		TYPE_OPTION:
 			return compile_option_block(data, path)
 		TYPE_SET:
@@ -189,29 +190,38 @@ static func compile_command_statement(data: Dictionary, path: String) -> WeavlyM
 
 
 # =====================
-# If Block
+# Match Block
 # =====================
 
 
-static func compile_if_block(data: Dictionary, path: String) -> WeavlyModel.IfBlock:
-	var case_data_list = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
-	var cases: Array[WeavlyModel.IfCase] = []
+static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.MatchBlock:
+	var modifier_string = get_required(data, KEY_MODIFIER, Variant.Type.TYPE_STRING, path)
+	var case_data_list = get_required(data, KEY_CASES, TYPE_ARRAY, path)
+	
+	var modifier: WeavlyModel.MatchModifier
+	match modifier_string:
+		"first": modifier = WeavlyModel.MatchModifier.FIRST
+		"last": modifier = WeavlyModel.MatchModifier.LAST
+		"all": modifier = WeavlyModel.MatchModifier.ALL
+	
+	var cases: Array[WeavlyModel.WhenCase] = []
 	for i in range(case_data_list.size()):
 		var case_data = case_data_list[i]
 		var case_path = _path_index(_path_join(path, KEY_CASES), i)
 		if not (case_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
 			continue
-		cases.append(compile_if_case(case_data, case_path))
-	return WeavlyModel.IfBlock.new(cases)
+		cases.append(compile_when_case(case_data, case_path))
+	
+	return WeavlyModel.MatchBlock.new(modifier, cases)
 
 
-static func compile_if_case(data: Dictionary, path: String) -> WeavlyModel.IfCase:
+static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.WhenCase:
 	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
 	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
-	return WeavlyModel.IfCase.new(condition, body)
+	return WeavlyModel.WhenCase.new(condition, body)
 
 
 # =====================
