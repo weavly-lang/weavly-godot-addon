@@ -3,3 +3,4 @@
 *.uid
 *.tmp
 *.import
+.claude/settings.local.json
