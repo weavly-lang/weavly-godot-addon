@@ -45,6 +45,20 @@ Add runtime control flow (#12)
 
 The `(#12)` is added automatically by GitHub.
 
+## Local checks
+
+### Running tests
+
+Tests use [GUT](https://github.com/bitwes/Gut) (v9.5.0). GUT is not committed to the repo — install it once via the Godot Asset Library (search "GUT") or download the release directly and unzip it into `addons/gut/`.
+
+Once installed, run the full test suite headlessly from the repo root:
+
+```bash
+godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test -ginclude_subdirs -gexit
+```
+
+`godot` must be on your PATH. On Windows the executable is named something like `Godot_v4.5.1-stable_win64_console.exe` — create a `godot.bat` shim pointing at it.
+
 ## Repo settings (one-time)
 
 Under Settings → General → Pull Requests:
