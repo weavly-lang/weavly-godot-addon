@@ -1,6 +1,6 @@
 extends GutTest
 
-const _Service = preload(
+const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_command_service.gd"
 )
 
@@ -8,7 +8,7 @@ var _service
 
 
 func before_each() -> void:
-	_service = _Service.new()
+	_service = Service.new()
 	_service.initialize(null)
 
 

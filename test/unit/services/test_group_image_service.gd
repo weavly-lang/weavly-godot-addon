@@ -1,6 +1,6 @@
 extends GutTest
 
-const _Service = preload("res://addons/weavly/src/services/implementations/group_image_service.gd")
+const Service = preload("res://addons/weavly/src/services/implementations/group_image_service.gd")
 
 const _FIXTURE_PATH = "res://test/fixtures/test_image.tres"
 
@@ -8,7 +8,7 @@ var _service
 
 
 func before_each() -> void:
-	_service = _Service.new()
+	_service = Service.new()
 	_service.initialize(null)
 
 
