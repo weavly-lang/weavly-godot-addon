@@ -35,12 +35,12 @@ func advance_statements() -> void:
 	if _stack.is_empty():
 		pause()
 		return
-	
+
 	var frame: Frame = _stack[-1]
 	if not frame.has_next():
 		_stack.pop_back()
 		return
-	
+
 	var statement: WeavlyModel.Statement = frame.get_current_statement()
 	WeavlyStatementExecutor.execute_statment(statement, engine)
 	frame.increase_counter()

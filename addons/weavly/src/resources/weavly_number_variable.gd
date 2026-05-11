@@ -8,6 +8,7 @@ class_name WeavlyNumberVariable
 @export var has_max: bool = false
 @export var max: float = 0.0
 
+
 func instantiate() -> WeavlyModel.NumberVariable:
 	var p_min = null
 	var p_max = null

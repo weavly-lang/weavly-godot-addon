@@ -24,37 +24,52 @@ static func execute_statment(statement: WeavlyModel.Statement, engine: WeavlyEng
 		push_error("Cant execute statement, got unknown type '%s'" % [str(typeof(statement))])
 
 
-static func execute_narration_line(narration_line: WeavlyModel.NarrationLine, engine: WeavlyEngine) -> void:
+static func execute_narration_line(
+	narration_line: WeavlyModel.NarrationLine, engine: WeavlyEngine
+) -> void:
 	engine.line_service.execute_narration_line(narration_line)
 
 
-static func execute_character_line(character_line: WeavlyModel.CharacterLine, engine: WeavlyEngine) -> void:
+static func execute_character_line(
+	character_line: WeavlyModel.CharacterLine, engine: WeavlyEngine
+) -> void:
 	engine.line_service.execute_character_line(character_line)
 
 
-static func execute_set_statement(set_statement: WeavlyModel.SetStatement, engine: WeavlyEngine) -> void:
+static func execute_set_statement(
+	set_statement: WeavlyModel.SetStatement, engine: WeavlyEngine
+) -> void:
 	var value = WeavlyExpressionEvaluator.evaluate_expression(set_statement.expression, engine)
 	engine.variable_service.set_variable(set_statement.id, value)
 
 
-static func execute_goto_statement(goto_statement: WeavlyModel.GotoStatement, engine: WeavlyEngine) -> void:
+static func execute_goto_statement(
+	goto_statement: WeavlyModel.GotoStatement, engine: WeavlyEngine
+) -> void:
 	engine.enter_node(goto_statement.id)
 
 
-static func execute_finish_statement(_finish_statement: WeavlyModel.FinishStatement, engine: WeavlyEngine) -> void:
+static func execute_finish_statement(
+	_finish_statement: WeavlyModel.FinishStatement, engine: WeavlyEngine
+) -> void:
 	engine.finish()
 
 
-static func execute_command_statement(command_statement: WeavlyModel.CommandStatement, engine: WeavlyEngine) -> void:
+static func execute_command_statement(
+	command_statement: WeavlyModel.CommandStatement, engine: WeavlyEngine
+) -> void:
 	engine.command_service.execute_command(command_statement)
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:
 	var cases = match_block.cases.duplicate(true)
 	match match_block.modifier:
-		WeavlyModel.MatchModifier.FIRST: _execute_first_case(cases, engine)
-		WeavlyModel.MatchModifier.LAST: _execute_last_case(cases, engine)
-		WeavlyModel.MatchModifier.ALL: _execute_all_cases(cases, engine)
+		WeavlyModel.MatchModifier.FIRST:
+			_execute_first_case(cases, engine)
+		WeavlyModel.MatchModifier.LAST:
+			_execute_last_case(cases, engine)
+		WeavlyModel.MatchModifier.ALL:
+			_execute_all_cases(cases, engine)
 
 
 static func _execute_first_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
@@ -83,7 +98,9 @@ static func _execute_all_cases(cases: Array[WeavlyModel.WhenCase], engine: Weavl
 	engine.statement_service.add_statement_groups(valid_case_bodies)
 
 
-static func execute_option_block(option_block: WeavlyModel.OptionBlock, engine: WeavlyEngine) -> void:
+static func execute_option_block(
+	option_block: WeavlyModel.OptionBlock, engine: WeavlyEngine
+) -> void:
 	var possible_options: Array[WeavlyModel.Option] = []
 	for option: WeavlyModel.Option in option_block.options:
 		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(option.condition, engine)

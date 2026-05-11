@@ -17,13 +17,13 @@ func get_video(id_group: String, default: VideoStream = null) -> VideoStream:
 	if not video_index.has(id_group):
 		push_error(MISSING_ID % [TYPE, id_group, default])
 		return default
-	
+
 	var video_paths: Array = video_index.get(id_group)
 	var video_path: String = video_paths.pick_random()
 	var video_stream: VideoStream = load(video_path) as VideoStream
-	
+
 	if video_stream == null:
 		push_error(FAILED_LOADING % [TYPE, video_path, id_group, default])
 		return default
-		
+
 	return video_stream

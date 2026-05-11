@@ -16,12 +16,12 @@ func get_image(id: String, default: Texture2D = null) -> Texture2D:
 	if not image_index.has(id):
 		push_error(MISSING_ID % [TYPE, id, default])
 		return default
-	
+
 	var image_path: String = image_index.get(id)
 	var texture: Texture2D = load(image_path) as Texture2D
-	
+
 	if texture == null:
 		push_error(FAILED_LOADING % [TYPE, image_path, id, default])
 		return default
-	
+
 	return texture

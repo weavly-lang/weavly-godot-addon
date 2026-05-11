@@ -35,60 +35,33 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 
 func _ready() -> void:
 	character_service = WeavlyFileUtils.create_service(
-		self, 
-		character_service_script, 
-		DEFAULT_CHARACTER_SERVICE, 
-		WeavlyCharacterService
+		self, character_service_script, DEFAULT_CHARACTER_SERVICE, WeavlyCharacterService
 	)
 	command_service = WeavlyFileUtils.create_service(
-		self, 
-		command_service_script, 
-		DEFAULT_COMMAND_SERVICE, 
-		WeavlyCommandService
+		self, command_service_script, DEFAULT_COMMAND_SERVICE, WeavlyCommandService
 	)
 	image_service = WeavlyFileUtils.create_service(
-		self, 
-		image_service_script, 
-		DEFAULT_IMAGE_SERVICE, 
-		WeavlyImageService
+		self, image_service_script, DEFAULT_IMAGE_SERVICE, WeavlyImageService
 	)
 	line_service = WeavlyFileUtils.create_service(
-		self, 
-		line_service_script, 
-		DEFAULT_LINE_SERVICE, 
-		WeavlyLineService
+		self, line_service_script, DEFAULT_LINE_SERVICE, WeavlyLineService
 	)
 	node_service = WeavlyFileUtils.create_service(
-		self, 
-		node_service_script, 
-		DEFAULT_NODE_SERVICE, 
-		WeavlyNodeService
+		self, node_service_script, DEFAULT_NODE_SERVICE, WeavlyNodeService
 	)
 	option_service = WeavlyFileUtils.create_service(
-		self, 
-		option_service_script, 
-		DEFAULT_OPTION_SERVICE, 
-		WeavlyOptionService
+		self, option_service_script, DEFAULT_OPTION_SERVICE, WeavlyOptionService
 	)
 	statement_service = WeavlyFileUtils.create_service(
-		self, 
-		statement_service_script, 
-		DEFAULT_STATEMENT_SERVICE, 
-		WeavlyStatementService
+		self, statement_service_script, DEFAULT_STATEMENT_SERVICE, WeavlyStatementService
 	)
 	variable_service = WeavlyFileUtils.create_service(
-		self, 
-		variable_service_script,
-		DEFAULT_VARIABLE_SERVICE,
-		WeavlyVariableService
+		self, variable_service_script, DEFAULT_VARIABLE_SERVICE, WeavlyVariableService
 	)
 	video_service = WeavlyFileUtils.create_service(
-		self, 
-		video_service_script, 
-		DEFAULT_VIDEO_SERVICE, 
-		WeavlyVideoService
+		self, video_service_script, DEFAULT_VIDEO_SERVICE, WeavlyVideoService
 	)
-	
+
 	WeavlyFileUtils.load_nodes_from_files(self, dialog_path)
 	WeavlyFileUtils.load_variables_from_resources(self, variable_path)
 	WeavlyFileUtils.load_variables_from_env_files(self, dialog_path)
@@ -100,7 +73,7 @@ func _ready() -> void:
 
 func start(node_id: String) -> void:
 	if not _finished:
-		push_warning(DIALOG_IN_PROGRESS % node_id) 
+		push_warning(DIALOG_IN_PROGRESS % node_id)
 	else:
 		_finished = false
 		started_dialog.emit()
@@ -122,11 +95,7 @@ func enter_node(node_id: String) -> void:
 
 func next() -> void:
 	statement_service.resume()
-	while (
-		not statement_service.is_paused()
-		and not option_service.has_options() 
-		and not _finished
-	):
+	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
 		statement_service.advance_statements()
 
 
@@ -134,4 +103,3 @@ func finish() -> void:
 	finished_dialog.emit()
 	_finished = true
 	statement_service.clear_statements()
-	

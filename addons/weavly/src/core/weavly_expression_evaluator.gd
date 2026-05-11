@@ -27,16 +27,21 @@ const GREATER_EQ = ">="
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
 
-static func evaluate_condition(expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine) -> bool:
+
+static func evaluate_condition(
+	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
+) -> bool:
 	var value = evaluate_expression(expression, engine)
 	if value is not bool:
 		push_error(WRONG_CONDITION_TYPE % [_get_type(value), DEFAULT_CONDITION_RETURN])
 		return DEFAULT_CONDITION_RETURN
-	
+
 	return value
 
 
-static func evaluate_expression(expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine) -> Variant:
+static func evaluate_expression(
+	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
+) -> Variant:
 	if is_instance_of(expression, WeavlyModel.TrueExpression):
 		return true
 	elif is_instance_of(expression, WeavlyModel.FalseExpression):
@@ -55,15 +60,22 @@ static func evaluate_expression(expression: WeavlyModel.WeavlyExpression, engine
 		push_error(UNKNOWN_EXPRESSION_TYPE % expression.get_class())
 		return null
 
-static func evaluate_identifier(identifier: WeavlyModel.Identifier, engine: WeavlyEngine) -> Variant:
+
+static func evaluate_identifier(
+	identifier: WeavlyModel.Identifier, engine: WeavlyEngine
+) -> Variant:
 	var value: Variant = engine.variable_service.get_variable(identifier.value)
 	if value == null:
 		push_error(NULL_VARIABLE % identifier.value)
 	return value
 
 
-static func evaluate_unary_expression(unary_expression: WeavlyModel.UnaryExpression, engine: WeavlyEngine) -> Variant:
-	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(unary_expression.expression, engine)
+static func evaluate_unary_expression(
+	unary_expression: WeavlyModel.UnaryExpression, engine: WeavlyEngine
+) -> Variant:
+	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		unary_expression.expression, engine
+	)
 	if unary_expression.op == NOT:
 		if value is bool:
 			return not value
@@ -75,11 +87,17 @@ static func evaluate_unary_expression(unary_expression: WeavlyModel.UnaryExpress
 		return null
 
 
-static func evaluate_binary_expression(binary_expression: WeavlyModel.BinaryExpression, engine: WeavlyEngine) -> Variant:
+static func evaluate_binary_expression(
+	binary_expression: WeavlyModel.BinaryExpression, engine: WeavlyEngine
+) -> Variant:
 	var op = binary_expression.op
-	var left: Variant = WeavlyExpressionEvaluator.evaluate_expression(binary_expression.left, engine)
-	var right: Variant = WeavlyExpressionEvaluator.evaluate_expression(binary_expression.right, engine)
-	
+	var left: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		binary_expression.left, engine
+	)
+	var right: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		binary_expression.right, engine
+	)
+
 	if op in [AND, OR]:
 		return evaluate_logic_expression(op, left, right)
 	elif op in [ADD, SUB, MUL, DIV]:
@@ -95,7 +113,7 @@ static func evaluate_logic_expression(op: String, left: Variant, right: Variant)
 	if left is not bool or right is not bool:
 		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return null
-	
+
 	if op == AND:
 		return left and right
 	elif op == OR:
@@ -109,7 +127,7 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 	if left is not float or right is not float:
 		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return null
-	
+
 	if op == ADD:
 		return left + right
 	elif op == SUB:
@@ -129,9 +147,9 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 
 static func evaluate_compare_expression(op: String, left: Variant, right: Variant) -> Variant:
 	if typeof(left) != typeof(right):
-		push_error(WRONG_VALUE_TYPES % [op, _get_type(left),  _get_type(right)])
+		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return null
-	
+
 	if op == EQ:
 		return left == right
 	elif op == NEQ:

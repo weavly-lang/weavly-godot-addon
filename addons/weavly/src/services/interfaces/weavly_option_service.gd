@@ -4,6 +4,7 @@ class_name WeavlyOptionService
 signal options_added(options: Array[WeavlyModel.Option])
 signal option_chosen(option: WeavlyModel.Option)
 
+
 func has_options() -> bool:
 	return false
 

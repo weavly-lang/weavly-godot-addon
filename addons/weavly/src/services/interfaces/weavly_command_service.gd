@@ -1,7 +1,6 @@
 extends WeavlyService
 class_name WeavlyCommandService
 
-
 signal executed_command(command: WeavlyModel.CommandStatement)
 
 
