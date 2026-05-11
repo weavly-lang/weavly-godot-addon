@@ -88,6 +88,8 @@ func test_identifier_flag_variable() -> void:
 
 func test_identifier_missing_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_id(&"missing"), _make_engine()))
+	assert_engine_error(1)
+	assert_push_error(1)
 
 
 # =====================
@@ -105,10 +107,12 @@ func test_not_false() -> void:
 
 func test_not_type_mismatch_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_unary("not", _num(1.0)), _make_engine()))
+	assert_push_error(1)
 
 
 func test_unknown_unary_op_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_unary("~", _bool(true)), _make_engine()))
+	assert_push_error(1)
 
 
 # =====================
@@ -134,6 +138,7 @@ func test_div() -> void:
 
 func test_math_type_mismatch_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("+", _num(1.0), _slit("x")), _make_engine()))
+	assert_push_error(1)
 
 
 func test_division_by_zero_returns_default() -> void:
@@ -141,6 +146,7 @@ func test_division_by_zero_returns_default() -> void:
 		WeavlyExpressionEvaluator.evaluate_expression(_bin("/", _num(5.0), _num(0.0)), _make_engine()),
 		WeavlyExpressionEvaluator.DEFAULT_DIVISION_BY_ZERO_RETURN
 	)
+	assert_push_error(1)
 
 
 # =====================
@@ -182,6 +188,7 @@ func test_eq_strings() -> void:
 
 func test_compare_type_mismatch_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("==", _num(1.0), _slit("1")), _make_engine()))
+	assert_push_error(1)
 
 
 # =====================
@@ -207,6 +214,7 @@ func test_or_false_false() -> void:
 
 func test_logic_type_mismatch_returns_null() -> void:
 	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("and", _bool(true), _num(1.0)), _make_engine()))
+	assert_push_error(1)
 
 
 # =====================
@@ -223,6 +231,7 @@ func test_condition_non_bool_returns_default() -> void:
 		WeavlyExpressionEvaluator.evaluate_condition(_num(1.0), _make_engine()),
 		WeavlyExpressionEvaluator.DEFAULT_CONDITION_RETURN
 	)
+	assert_push_error(1)
 
 
 # =====================
