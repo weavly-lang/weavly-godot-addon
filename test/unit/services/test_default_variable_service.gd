@@ -1,6 +1,8 @@
 extends GutTest
 
-const _Service = preload("res://addons/weavly/src/services/implementations/default_variable_service.gd")
+const _Service = preload(
+	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
+)
 
 var _service
 

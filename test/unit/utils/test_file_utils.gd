@@ -49,10 +49,7 @@ func test_find_recurses_into_subdirectories() -> void:
 func test_find_skips_dot_files() -> void:
 	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".json")
 	for path in results:
-		assert_false(
-			path.get_file().begins_with("."),
-			"unexpected dot-file in results: " + path
-		)
+		assert_false(path.get_file().begins_with("."), "unexpected dot-file in results: " + path)
 
 
 func test_find_returns_empty_for_missing_directory() -> void:

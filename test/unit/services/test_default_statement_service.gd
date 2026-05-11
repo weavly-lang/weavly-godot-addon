@@ -1,6 +1,8 @@
 extends GutTest
 
-const _Service = preload("res://addons/weavly/src/services/implementations/default_statement_service.gd")
+const _Service = preload(
+	"res://addons/weavly/src/services/implementations/default_statement_service.gd"
+)
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _engine: WeavlyEngine

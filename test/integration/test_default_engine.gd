@@ -4,18 +4,14 @@ extends GutTest
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
-const DefaultEngine = preload(
-	"res://addons/weavly/src/services/implementations/default_engine.gd"
-)
+const DefaultEngine = preload("res://addons/weavly/src/services/implementations/default_engine.gd")
 
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke"
 
-
 # =====================
 # Setup helpers
 # =====================
-
 
 var _signal_log: Array[String]
 
@@ -41,15 +37,11 @@ func _make_engine(fixture_dir: String) -> Node:
 
 
 func _connect_signal_log(engine: WeavlyEngine) -> void:
-	engine.started_dialog.connect(func() -> void:
-		_signal_log.append("started_dialog")
+	engine.started_dialog.connect(func() -> void: _signal_log.append("started_dialog"))
+	engine.entered_node.connect(
+		func(node_id: StringName) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
-	engine.entered_node.connect(func(node_id: StringName) -> void:
-		_signal_log.append("entered_node:%s" % node_id)
-	)
-	engine.finished_dialog.connect(func() -> void:
-		_signal_log.append("finished_dialog")
-	)
+	engine.finished_dialog.connect(func() -> void: _signal_log.append("finished_dialog"))
 
 
 # =====================

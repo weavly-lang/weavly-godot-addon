@@ -13,7 +13,7 @@ func _make_engine() -> WeavlyEngine:
 
 
 func test_strip_quotes_removes_surrounding_quotes() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes("\"hi\""), "hi")
+	assert_eq(WeavlyTextUtils.format_string_strip_quotes('"hi"'), "hi")
 
 
 func test_strip_quotes_leaves_unquoted_string() -> void:
@@ -21,7 +21,7 @@ func test_strip_quotes_leaves_unquoted_string() -> void:
 
 
 func test_strip_quotes_single_char_unchanged() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes("\""), "\"")
+	assert_eq(WeavlyTextUtils.format_string_strip_quotes('"'), '"')
 
 
 func test_strip_quotes_non_string_unchanged() -> void:
@@ -58,7 +58,7 @@ func test_inject_single_variable() -> void:
 
 func test_inject_strips_string_quotes() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("greeting", "\"hello\"")
+	engine.variable_service.set_variable("greeting", '"hello"')
 	assert_eq(WeavlyTextUtils.inject_variables("{$greeting}", engine), "hello")
 
 
