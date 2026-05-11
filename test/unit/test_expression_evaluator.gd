@@ -16,7 +16,7 @@ func _num(v: float) -> WeavlyModel.Number:
 	return WeavlyModel.Number.new(v)
 
 
-func _str(v: String) -> WeavlyModel.StringLiteral:
+func _slit(v: String) -> WeavlyModel.StringLiteral:
 	return WeavlyModel.StringLiteral.new(v)
 
 
@@ -60,7 +60,7 @@ func test_number() -> void:
 
 
 func test_string_literal() -> void:
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_str("hello"), _make_engine()), "hello")
+	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_slit("hello"), _make_engine()), "hello")
 
 
 # =====================
@@ -133,7 +133,7 @@ func test_div() -> void:
 
 
 func test_math_type_mismatch_returns_null() -> void:
-	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("+", _num(1.0), _str("x")), _make_engine()))
+	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("+", _num(1.0), _slit("x")), _make_engine()))
 
 
 func test_division_by_zero_returns_default() -> void:
@@ -177,11 +177,11 @@ func test_greater_eq() -> void:
 
 
 func test_eq_strings() -> void:
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_bin("==", _str("hi"), _str("hi")), _make_engine()), true)
+	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_bin("==", _slit("hi"), _slit("hi")), _make_engine()), true)
 
 
 func test_compare_type_mismatch_returns_null() -> void:
-	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("==", _num(1.0), _str("1")), _make_engine()))
+	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_bin("==", _num(1.0), _slit("1")), _make_engine()))
 
 
 # =====================
