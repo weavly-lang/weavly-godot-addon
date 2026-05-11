@@ -42,6 +42,7 @@ func test_add_duplicate_is_ignored() -> void:
 	var second := WeavlyModel.WeavlyNode.new("start", [])
 	_service.add_node(first)
 	_service.add_node(second)
+	assert_engine_error(1)
 	assert_eq(_service.get_node("start"), first)
 
 

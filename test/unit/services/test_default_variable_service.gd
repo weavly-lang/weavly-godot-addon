@@ -35,6 +35,7 @@ func test_add_and_get_flag_variable() -> void:
 
 func test_get_missing_returns_default() -> void:
 	assert_null(_service.get_variable("missing"))
+	assert_engine_error(1)
 
 
 # =====================
@@ -101,4 +102,5 @@ func test_add_duplicate_is_ignored() -> void:
 	var second := WeavlyModel.NumberVariable.new(&"score", 2.0, null, null)
 	_service.add_variable(first)
 	_service.add_variable(second)
+	assert_engine_error(1)
 	assert_eq(_service.get_variable("score"), 1.0)

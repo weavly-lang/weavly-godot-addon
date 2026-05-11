@@ -45,4 +45,5 @@ func test_add_duplicate_is_ignored() -> void:
 	second.id = &"hero"
 	_service.add_character(first)
 	_service.add_character(second)
+	assert_engine_error(1)
 	assert_eq(_service.get_character(&"hero"), first)

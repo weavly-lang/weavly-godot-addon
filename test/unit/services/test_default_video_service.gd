@@ -42,6 +42,7 @@ func test_get_missing_id_returns_provided_default() -> void:
 func test_add_duplicate_is_ignored() -> void:
 	_service.add_video("intro", _FIXTURE_PATH)
 	_service.add_video("intro", "res://test/fixtures/other.tres")
+	assert_engine_error(1)
 	assert_not_null(_service.get_video("intro"))
 
 
@@ -53,4 +54,5 @@ func test_add_duplicate_is_ignored() -> void:
 func test_failed_load_returns_default() -> void:
 	_service.add_video("broken", "res://test/fixtures/nonexistent.ogv")
 	assert_null(_service.get_video("broken"))
+	assert_engine_error(1)
 	assert_push_error(1)
