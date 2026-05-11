@@ -257,7 +257,6 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 # =====================
 
 static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.RandomBlock:
-	print("called")
 	var case_data_list = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
 	var cases: Array[WeavlyModel.RandomCase] = []
 	for i in range(case_data_list.size()):
