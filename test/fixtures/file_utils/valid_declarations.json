@@ -1,0 +1,5 @@
+{
+  "declarations": [
+    {"type": "number", "name": "score", "value": 0}
+  ]
+}
