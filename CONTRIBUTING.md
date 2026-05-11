@@ -53,6 +53,8 @@ Tests use [GUT](https://github.com/bitwes/Gut) (v9.5.0). GUT is not committed to
 
 Once installed, run the full test suite headlessly from the repo root:
 
+> **Note:** Some tests intentionally exercise error paths (type mismatches, missing variables, division by zero). These trigger `push_error` calls that always appear in the Godot debugger panel, even when the test passes. Tests that expect this behaviour call `assert_push_error` / `assert_engine_error` to mark the errors as handled — if you see debugger errors while running the suite, check whether the test passes before investigating further.
+
 ```bash
 godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test -ginclude_subdirs -gexit
 ```
