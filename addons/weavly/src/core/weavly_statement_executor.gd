@@ -19,7 +19,7 @@ static func execute_statment(statement: WeavlyModel.Statement, engine: WeavlyEng
 	elif is_instance_of(statement, WeavlyModel.OptionBlock):
 		execute_option_block(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.RandomBlock):
-		execute_random_block(statement, engine)
+		execute_random_block(statement, engine, randf)
 	else:
 		push_error("Cant execute statement, got unknown type '%s'" % [str(typeof(statement))])
 
@@ -92,7 +92,11 @@ static func execute_option_block(option_block: WeavlyModel.OptionBlock, engine: 
 	engine.option_service.add_options(possible_options)
 
 
-static func execute_random_block(random_block: WeavlyModel.RandomBlock, engine: WeavlyEngine) -> void:
+static func execute_random_block(
+	random_block: WeavlyModel.RandomBlock,
+	engine: WeavlyEngine,
+	rng: Callable = randf,
+) -> void:
 	var possible_cases: Array[WeavlyModel.RandomCase] = []
 	var evaluated_weights: Array[float] = []
 	var total_weight: float = 0
@@ -103,11 +107,11 @@ static func execute_random_block(random_block: WeavlyModel.RandomBlock, engine: 
 			possible_cases.append(case)
 			evaluated_weights.append(weight)
 			total_weight += weight
-	
+
 	if possible_cases.is_empty() or total_weight <= 0:
 		return
-	
-	var random: float = randf() * total_weight
+
+	var random: float = rng.call() * total_weight
 	var current: float = 0.0
 	for i in possible_cases.size():
 		current += evaluated_weights[i]
