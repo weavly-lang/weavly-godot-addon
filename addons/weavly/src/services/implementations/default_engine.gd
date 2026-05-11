@@ -3,7 +3,7 @@ extends WeavlyEngine
 const DIALOG_IN_PROGRESS = "Dialog is already in progress, cant start for node with ID '%s."
 const NULL_NODE = "Can't enter node with ID '%s' because it's null, finsishing the dialog."
 
-const DEFAULTS_PATH = "res://addons/weavly/services/implementations/"
+const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
 const DEFAULT_COMMAND_SERVICE = preload(DEFAULTS_PATH + "default_command_service.gd")
 const DEFAULT_IMAGE_SERVICE = preload(DEFAULTS_PATH + "default_image_service.gd")
