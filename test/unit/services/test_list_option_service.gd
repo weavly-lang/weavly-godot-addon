@@ -28,7 +28,8 @@ func test_has_options_false_initially() -> void:
 
 
 func test_has_options_always_false_after_add_options() -> void:
-	_service.add_options([_make_option()])
+	var opts: Array[WeavlyModel.Option] = [_make_option()]
+	_service.add_options(opts)
 	assert_false(_service.has_options())
 
 
