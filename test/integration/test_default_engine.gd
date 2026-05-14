@@ -1,6 +1,6 @@
 extends GutTest
 
-# End-to-end tests for DefaultEngine. Loads fixture JSON dialogs, drives the
+# End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogs, drives the
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
@@ -19,12 +19,12 @@ func before_each() -> void:
 	_signal_log = []
 
 
-# Build a DefaultEngine pointed at a fixture dir. All asset paths point at the
+# Build a WeavlyDefaultEngine pointed at a fixture dir. All asset paths point at the
 # same dir; non-dialog asset lookups simply find no matching extensions, which
 # avoids needing an extra empty fixture dir on disk. The @export paths are set
 # before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> Node:
-	var engine = DefaultWeavlyEngine.new()
+	var engine = WeavlyDefaultEngine.new()
 	engine.dialog_path = fixture_dir
 	engine.video_path = fixture_dir
 	engine.image_path = fixture_dir
