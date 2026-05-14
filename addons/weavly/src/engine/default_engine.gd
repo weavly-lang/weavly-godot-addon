@@ -20,6 +20,8 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var image_path: String = "media/images"
 @export var character_path: String = "characters"
 @export var variable_path: String = "variables"
+@export var image_group_pattern: String = ""
+@export var video_group_pattern: String = ""
 
 @export var character_service_script: Script
 @export var command_service_script: Script
@@ -44,6 +46,7 @@ func _ready() -> void:
 	image_service = WeavlyFileUtils.create_service(
 		self, image_service_script, DEFAULT_IMAGE_SERVICE, WeavlyImageService
 	)
+	image_service.set_group_pattern(image_group_pattern)
 	line_service = WeavlyFileUtils.create_service(
 		self, line_service_script, DEFAULT_LINE_SERVICE, WeavlyLineService
 	)
@@ -62,6 +65,7 @@ func _ready() -> void:
 	video_service = WeavlyFileUtils.create_service(
 		self, video_service_script, DEFAULT_VIDEO_SERVICE, WeavlyVideoService
 	)
+	video_service.set_group_pattern(video_group_pattern)
 
 	WeavlyFileUtils.load_nodes_from_files(self, dialog_path)
 	WeavlyFileUtils.load_variables_from_resources(self, variable_path)

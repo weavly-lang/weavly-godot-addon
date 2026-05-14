@@ -29,7 +29,7 @@ addons/weavly/src/
     weavly_model.gd                 # all model types as inner classes (WeavlyModel.NarrationLine, .MatchBlock, ...)
   services/
     interfaces/                     # abstract contracts, one per service
-    implementations/                # default_*, list_*, group_* variants (incl. default_engine.gd)
+    implementations/                # default_*, list_* variants (incl. default_engine.gd)
   resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable
   utils/                            # weavly_file_utils, weavly_text_utils
 ```

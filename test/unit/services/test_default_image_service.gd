@@ -16,7 +16,7 @@ func before_each() -> void:
 
 
 # =====================
-# add / get
+# add / get (no pattern)
 # =====================
 
 
@@ -31,13 +31,13 @@ func test_get_missing_id_returns_default() -> void:
 
 
 func test_get_missing_id_returns_provided_default() -> void:
-	var fallback := ImageTexture.new()
+	var fallback: ImageTexture = ImageTexture.new()
 	assert_eq(_service.get_image("missing", fallback), fallback)
 	assert_push_error(1)
 
 
 # =====================
-# duplicate id
+# duplicate id (no pattern)
 # =====================
 
 
@@ -58,3 +58,57 @@ func test_failed_load_returns_default() -> void:
 	assert_null(_service.get_image("broken"))
 	assert_engine_error(1)
 	assert_push_error(1)
+
+
+# =====================
+# grouping (pattern set)
+# =====================
+
+
+func test_grouping_strips_suffix() -> void:
+	_service.set_group_pattern("_\\d+$")
+	_service.add_image("cat_1", _FIXTURE_PATH)
+	_service.add_image("cat_2", _FIXTURE_PATH)
+	assert_is(_service.get_image("cat"), Texture2D)
+
+
+func test_unmatched_id_is_singleton_with_pattern_set() -> void:
+	_service.set_group_pattern("_\\d+$")
+	_service.add_image("logo", _FIXTURE_PATH)
+	assert_is(_service.get_image("logo"), Texture2D)
+
+
+func test_grouped_and_ungrouped_coexist() -> void:
+	_service.set_group_pattern("_\\d+$")
+	_service.add_image("cat_1", _FIXTURE_PATH)
+	_service.add_image("logo", _FIXTURE_PATH)
+	assert_is(_service.get_image("cat"), Texture2D)
+	assert_is(_service.get_image("logo"), Texture2D)
+
+
+func test_duplicates_allowed_when_pattern_set() -> void:
+	_service.set_group_pattern("_\\d+$")
+	_service.add_image("cat_1", _FIXTURE_PATH)
+	_service.add_image("cat_1", _FIXTURE_PATH)
+	assert_is(_service.get_image("cat"), Texture2D)
+
+
+# =====================
+# invalid pattern
+# =====================
+
+
+func test_invalid_pattern_falls_back_to_no_grouping() -> void:
+	_service.set_group_pattern("[")
+	assert_push_error(1)
+	assert_engine_error(1)
+	_service.add_image("splash", _FIXTURE_PATH)
+	assert_is(_service.get_image("splash"), Texture2D)
+
+
+func test_invalid_pattern_duplicate_still_warns() -> void:
+	_service.set_group_pattern("[")
+	assert_push_error(1)
+	_service.add_image("splash", _FIXTURE_PATH)
+	_service.add_image("splash", "res://test/fixtures/other.tres")
+	assert_engine_error(2)
