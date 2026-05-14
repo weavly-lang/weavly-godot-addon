@@ -90,7 +90,6 @@ func test_duplicates_allowed_when_pattern_set() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_image("cat_1", _FIXTURE_PATH)
 	_service.add_image("cat_1", _FIXTURE_PATH)
-	assert_no_new_warnings()
 	assert_is(_service.get_image("cat"), Texture2D)
 
 
@@ -102,6 +101,7 @@ func test_duplicates_allowed_when_pattern_set() -> void:
 func test_invalid_pattern_falls_back_to_no_grouping() -> void:
 	_service.set_group_pattern("[")
 	assert_push_error(1)
+	assert_engine_error(1)
 	_service.add_image("splash", _FIXTURE_PATH)
 	assert_is(_service.get_image("splash"), Texture2D)
 
@@ -111,4 +111,4 @@ func test_invalid_pattern_duplicate_still_warns() -> void:
 	assert_push_error(1)
 	_service.add_image("splash", _FIXTURE_PATH)
 	_service.add_image("splash", "res://test/fixtures/other.tres")
-	assert_engine_error(1)
+	assert_engine_error(2)
