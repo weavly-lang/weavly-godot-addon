@@ -4,4 +4,3 @@
 *.tmp
 *.import
 .claude/settings.local.json
-addons/gut
