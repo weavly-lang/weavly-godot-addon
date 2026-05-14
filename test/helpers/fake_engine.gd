@@ -19,6 +19,10 @@ func _init() -> void:
 	statement_service.initialize(self)
 
 
+func start(_node_id: String) -> void:
+	pass
+
+
 func enter_node(node_id: String) -> void:
 	last_entered_node = node_id
 

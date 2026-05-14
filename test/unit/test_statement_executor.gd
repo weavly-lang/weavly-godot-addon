@@ -30,9 +30,15 @@ class _SpyCommandService:
 class _SpyOptionService:
 	extends WeavlyOptionService
 	var add_options_calls: Array[Array] = []
+	
+	func has_options() -> bool:
+		return false
 
 	func add_options(options: Array[WeavlyModel.Option]) -> void:
 		add_options_calls.append(options)
+	
+	func choose_option(_option: WeavlyModel.Option) -> void:
+		pass
 
 
 class _SpyStatementService:
@@ -45,6 +51,21 @@ class _SpyStatementService:
 
 	func add_statement_groups(groups: Array[Array]) -> void:
 		add_statement_groups_calls.append(groups)
+	
+	func pause() -> void:
+		pass
+	
+	func resume() -> void:
+		pass
+	
+	func is_paused() -> bool:
+		return false
+	
+	func clear_statements() -> void:
+		pass
+	
+	func advance_statements() -> void:
+		pass
 
 
 # =====================
