@@ -4,7 +4,6 @@ extends GutTest
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
-
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke"
 
