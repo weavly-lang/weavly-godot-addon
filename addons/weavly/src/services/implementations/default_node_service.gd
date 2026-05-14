@@ -5,6 +5,10 @@ const TYPE = "Node"
 var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 
 
+func has(id: String) -> bool:
+	return _nodes.has(id)
+
+
 func add_node(node: WeavlyModel.WeavlyNode) -> void:
 	if _nodes.has(node.id):
 		push_warning(EXISTING_ID % [TYPE, node.id])
