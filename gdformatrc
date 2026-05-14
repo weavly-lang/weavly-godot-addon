@@ -1,6 +1,6 @@
 excluded_directories: !!set
   .git: null
   gut: null
-line_length: 100
+line_length: 99
 safety_checks: null
 use_spaces: null

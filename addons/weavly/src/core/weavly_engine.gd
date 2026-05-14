@@ -15,14 +15,10 @@ var statement_service: WeavlyStatementService
 var variable_service: WeavlyVariableService
 var video_service: WeavlyVideoService
 
-
 @abstract func start(node_id: String) -> void
-
 
 @abstract func enter_node(node_id: String) -> void
 
-
 @abstract func next() -> void
-
 
 @abstract func finish() -> void

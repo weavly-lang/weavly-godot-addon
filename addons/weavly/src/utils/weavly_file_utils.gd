@@ -1,7 +1,9 @@
 class_name WeavlyFileUtils
 
 
-static func find_all_files_with_extension(dir_path: String, extension: String) -> PackedStringArray:
+static func find_all_files_with_extension(
+	dir_path: String, extension: String
+) -> PackedStringArray:
 	var results: PackedStringArray = []
 	var dir = DirAccess.open(dir_path)
 

@@ -103,7 +103,9 @@ static func execute_option_block(
 ) -> void:
 	var possible_options: Array[WeavlyModel.Option] = []
 	for option: WeavlyModel.Option in option_block.options:
-		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(option.condition, engine)
+		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(
+			option.condition, engine
+		)
 		if condition:
 			possible_options.append(option)
 	engine.option_service.add_options(possible_options)
