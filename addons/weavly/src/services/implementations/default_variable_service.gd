@@ -27,14 +27,14 @@ func get_variable(id: String, default: Variant = null) -> Variant:
 func set_variable(id: String, value: Variant) -> void:
 	if not _variables.has(id):
 		_variables[id] = WeavlyCompiler.compile_variable_from_value(id, value)
-	
+
 	if is_instance_of(_variables.get(id), WeavlyModel.NumberVariable):
 		var number_variable: WeavlyModel.NumberVariable = _variables.get(id)
 		if number_variable.min != null:
 			value = max(number_variable.min, value)
 		if number_variable.max != null:
 			value = min(number_variable.max, value)
-		
+
 	_variable_states[id] = value
 	variable_changed.emit(id, value)
 

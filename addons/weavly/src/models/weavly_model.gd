@@ -1,13 +1,13 @@
-extends RefCounted
 class_name WeavlyModel
-
+extends RefCounted
 
 # =====================
 # Nodes
 # =====================
 
 
-class WeavlyNode extends RefCounted:
+class WeavlyNode:
+	extends RefCounted
 	var id: String
 	var body: Array[Statement]
 
@@ -21,24 +21,30 @@ class WeavlyNode extends RefCounted:
 # =====================
 
 
-class Statement extends RefCounted:
+class Statement:
+	extends RefCounted
+
 	func _init():
 		pass
 
 
-class LineStatement extends Statement:
+class LineStatement:
+	extends Statement
 	var text: String
 
 	func _init(text: String):
 		self.text = text
 
 
-class NarrationLine extends LineStatement:
+class NarrationLine:
+	extends LineStatement
+
 	func _init(text: String):
 		super(text)
 
 
-class CharacterLine extends LineStatement:
+class CharacterLine:
+	extends LineStatement
 	var name: String
 	var id: bool
 
@@ -48,7 +54,8 @@ class CharacterLine extends LineStatement:
 		super(text)
 
 
-class SetStatement extends Statement:
+class SetStatement:
+	extends Statement
 	var id: String
 	var expression: WeavlyExpression
 
@@ -57,19 +64,23 @@ class SetStatement extends Statement:
 		self.expression = expression
 
 
-class GotoStatement extends Statement:
+class GotoStatement:
+	extends Statement
 	var id: String
 
 	func _init(id: String):
 		self.id = id
 
 
-class FinishStatement extends Statement:
+class FinishStatement:
+	extends Statement
+
 	func _init():
 		pass
 
 
-class CommandStatement extends Statement:
+class CommandStatement:
+	extends Statement
 	var id: String
 	var text: String
 
@@ -82,9 +93,11 @@ class CommandStatement extends Statement:
 # If Block
 # =====================
 
-enum MatchModifier {FIRST, LAST, ALL}
+enum MatchModifier { FIRST, LAST, ALL }
 
-class MatchBlock extends Statement:
+
+class MatchBlock:
+	extends Statement
 	var modifier: MatchModifier
 	var cases: Array[WhenCase]
 
@@ -93,7 +106,8 @@ class MatchBlock extends Statement:
 		self.cases = cases
 
 
-class WhenCase extends RefCounted:
+class WhenCase:
+	extends RefCounted
 	var condition: WeavlyExpression
 	var body: Array[Statement]
 
@@ -107,25 +121,22 @@ class WhenCase extends RefCounted:
 # =====================
 
 
-class OptionBlock extends Statement:
+class OptionBlock:
+	extends Statement
 	var options: Array[Option]
 
 	func _init(options: Array[Option]):
 		self.options = options
 
 
-class Option extends RefCounted:
+class Option:
+	extends RefCounted
 	var condition: WeavlyExpression
 	var text: String
 	var body: Array[Statement]
 	var hint: bool
 
-	func _init(
-		condition: WeavlyExpression, 
-		text: String, 
-		body: Array[Statement],
-		hint: bool
-	):
+	func _init(condition: WeavlyExpression, text: String, body: Array[Statement], hint: bool):
 		self.condition = condition
 		self.text = text
 		self.body = body
@@ -137,21 +148,23 @@ class Option extends RefCounted:
 # =====================
 
 
-class RandomBlock extends Statement:
+class RandomBlock:
+	extends Statement
 	var cases: Array[RandomCase]
 
 	func _init(cases: Array[RandomCase]):
 		self.cases = cases
 
 
-class RandomCase extends RefCounted:
+class RandomCase:
+	extends RefCounted
 	var condition: WeavlyExpression
 	var weight: WeavlyExpression
 	var body: Array[Statement]
 
 	func _init(
-		condition: WeavlyExpression, 
-		weight: WeavlyExpression, 
+		condition: WeavlyExpression,
+		weight: WeavlyExpression,
 		body: Array[Statement],
 	):
 		self.condition = condition
@@ -164,12 +177,15 @@ class RandomCase extends RefCounted:
 # =====================
 
 
-class WeavlyExpression extends RefCounted:
+class WeavlyExpression:
+	extends RefCounted
+
 	func _init():
 		pass
 
 
-class UnaryExpression extends WeavlyExpression:
+class UnaryExpression:
+	extends WeavlyExpression
 	var op: String
 	var expression: WeavlyExpression
 
@@ -178,7 +194,8 @@ class UnaryExpression extends WeavlyExpression:
 		self.expression = expression
 
 
-class BinaryExpression extends WeavlyExpression:
+class BinaryExpression:
+	extends WeavlyExpression
 	var op: String
 	var left: WeavlyExpression
 	var right: WeavlyExpression
@@ -189,31 +206,38 @@ class BinaryExpression extends WeavlyExpression:
 		self.right = right
 
 
-class TrueExpression extends WeavlyExpression:
+class TrueExpression:
+	extends WeavlyExpression
+
 	func _init():
 		pass
 
 
-class FalseExpression extends WeavlyExpression:
+class FalseExpression:
+	extends WeavlyExpression
+
 	func _init():
 		pass
 
 
-class Number extends WeavlyExpression:
+class Number:
+	extends WeavlyExpression
 	var value: float
 
 	func _init(value: float):
 		self.value = value
 
 
-class StringLiteral extends WeavlyExpression:
+class StringLiteral:
+	extends WeavlyExpression
 	var value: String
 
 	func _init(value: String):
 		self.value = value
 
 
-class Identifier extends WeavlyExpression:
+class Identifier:
+	extends WeavlyExpression
 	var value: StringName
 
 	func _init(value: StringName):
@@ -225,18 +249,20 @@ class Identifier extends WeavlyExpression:
 # =====================
 
 
-class Variable extends RefCounted:
+class Variable:
+	extends RefCounted
 	var id: StringName
-	
+
 	func _init(id: StringName):
 		self.id = id
 
 
-class NumberVariable extends Variable:
+class NumberVariable:
+	extends Variable
 	var value: float
 	var min: Variant
 	var max: Variant
-	
+
 	func _init(id: StringName, value: float, min: Variant, max: Variant):
 		super._init(id)
 		self.value = value
@@ -244,17 +270,19 @@ class NumberVariable extends Variable:
 		self.max = max
 
 
-class StringVariable extends Variable:
+class StringVariable:
+	extends Variable
 	var value: String
-	
+
 	func _init(id: StringName, value: String):
 		super._init(id)
 		self.value = value
 
 
-class FlagVariable extends Variable:
+class FlagVariable:
+	extends Variable
 	var value: bool
-	
+
 	func _init(id: StringName, value: bool):
 		super._init(id)
 		self.value = value

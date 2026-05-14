@@ -1,6 +1,8 @@
 extends GutTest
 
-const _Service = preload("res://addons/weavly/src/services/implementations/list_statement_service.gd")
+const Service = preload(
+	"res://addons/weavly/src/services/implementations/list_statement_service.gd"
+)
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _engine: WeavlyEngine
@@ -9,7 +11,7 @@ var _service
 
 func before_each() -> void:
 	_engine = add_child_autofree(FakeEngine.new())
-	_service = _Service.new()
+	_service = Service.new()
 	_service.initialize(_engine)
 	_engine.statement_service = _service
 

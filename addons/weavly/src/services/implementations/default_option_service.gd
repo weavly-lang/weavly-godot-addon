@@ -1,6 +1,5 @@
 extends WeavlyOptionService
 
-
 var pending_options: Array[WeavlyModel.Option]
 
 

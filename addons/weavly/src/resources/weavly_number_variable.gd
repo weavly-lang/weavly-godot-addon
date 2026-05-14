@@ -1,5 +1,5 @@
-extends Resource
 class_name WeavlyNumberVariable
+extends Resource
 
 @export var id: StringName
 @export var value: float = 0.0
@@ -7,6 +7,7 @@ class_name WeavlyNumberVariable
 @export var min: float = 0.0
 @export var has_max: bool = false
 @export var max: float = 0.0
+
 
 func instantiate() -> WeavlyModel.NumberVariable:
 	var p_min = null

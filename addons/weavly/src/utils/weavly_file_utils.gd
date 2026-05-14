@@ -4,34 +4,34 @@ class_name WeavlyFileUtils
 static func find_all_files_with_extension(dir_path: String, extension: String) -> PackedStringArray:
 	var results: PackedStringArray = []
 	var dir = DirAccess.open(dir_path)
-	
+
 	if dir == null:
 		push_error("Failed to open directory: " + dir_path)
 		return results
-	
+
 	dir.list_dir_begin()
-	
+
 	var file_name = dir.get_next()
-	
+
 	while file_name != "":
 		if file_name.begins_with("."):
 			file_name = dir.get_next()
 			continue
-		
+
 		var full_path = dir_path.path_join(file_name)
-		
+
 		if dir.current_is_dir():
 			results.append_array(find_all_files_with_extension(full_path, extension))
 			file_name = dir.get_next()
 			continue
-			
+
 		if file_name.to_lower().ends_with(extension):
 			results.append(full_path)
-			
+
 		file_name = dir.get_next()
-	
+
 	dir.list_dir_end()
-	
+
 	return results
 
 
@@ -51,31 +51,31 @@ static func load_json_file(path: String) -> Variant:
 		push_error("JSON parse error in %s at line %d" % [path, json.get_error_line()])
 		return null
 
-	return json.data 
+	return json.data
 
 
 static func load_nodes_from_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = find_all_files_with_extension(dir, ".json")
-	
+
 	var nodes: Array[WeavlyModel.WeavlyNode]
 	for file_path in file_paths:
 		var data: Dictionary = WeavlyFileUtils.load_json_file(file_path)
 		if data.has(WeavlyCompiler.KEY_NODES):
 			nodes.append_array(WeavlyCompiler.compile_nodes(data))
-	
+
 	for node in nodes:
 		engine.node_service.add_node(node)
 
 
 static func load_variables_from_env_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = find_all_files_with_extension(dir, ".json")
-	
+
 	var variables: Array[WeavlyModel.Variable]
 	for file_path in file_paths:
 		var data: Dictionary = WeavlyFileUtils.load_json_file(file_path)
 		if data.has(WeavlyCompiler.KEY_DECLARATIONS):
 			variables.append_array(WeavlyCompiler.compile_variable_declarations(data))
-	
+
 	for variable: WeavlyModel.Variable in variables:
 		engine.variable_service.add_variable(variable)
 
@@ -84,16 +84,14 @@ static func load_variables_from_resources(engine: WeavlyEngine, dir: String) -> 
 	var file_paths = find_all_files_with_extension(dir, ".tres")
 	for file_path in file_paths:
 		var res = load(file_path)
-		if (
-			res is WeavlyNumberVariable
-		):
+		if res is WeavlyNumberVariable:
 			var variable: WeavlyModel.Variable = res.instantiate()
 			engine.variable_service.add_variable(variable)
 
 
 static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = find_all_files_with_extension(dir, ".ogv")
-	
+
 	for file_path in file_paths:
 		var id: String = file_path.get_file().get_basename()
 		engine.video_service.add_video(id, file_path)
@@ -105,7 +103,7 @@ static func index_images_from_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = []
 	file_paths.append_array(png_paths)
 	file_paths.append_array(jpg_paths)
-	
+
 	for file_path in file_paths:
 		var id: String = file_path.get_file().get_basename()
 		engine.image_service.add_image(id, file_path)
@@ -120,26 +118,22 @@ static func index_characters_from_resources(engine: WeavlyEngine, dir: String) -
 
 
 static func create_service(
-	engine: WeavlyEngine, 
-	user_script: Script, 
-	default_script: Script, 
-	base_type: Variant
+	engine: WeavlyEngine, user_script: Script, default_script: Script, base_type: Variant
 ) -> Variant:
 	var script_to_use = user_script if user_script != null else default_script
 	var instance: WeavlyService = script_to_use.new()
 	if is_instance_of(instance, base_type):
 		instance.initialize(engine)
 		return instance
-	
+
 	push_warning("%s must extend %s. Falling back to default." % [script_to_use, base_type])
 	var default_instance: WeavlyService = default_script.new()
 	default_instance.initialize(engine)
-	return default_instance 
+	return default_instance
 
 
 static func create_visited_flags_from_nodes(
-	engine: WeavlyEngine, 
-	nodes: Array[WeavlyModel.WeavlyNode]
+	engine: WeavlyEngine, nodes: Array[WeavlyModel.WeavlyNode]
 ) -> void:
 	for node: WeavlyModel.WeavlyNode in nodes:
 		var flag: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new(node.id, false)

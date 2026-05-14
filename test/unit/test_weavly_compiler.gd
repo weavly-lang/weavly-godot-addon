@@ -3,7 +3,6 @@ extends GutTest
 # Smoke tests for WeavlyCompiler (the JSON-to-model deserializer).
 # Pure input/output — no scene or services required.
 
-
 # =====================
 # Helpers
 # =====================
@@ -26,7 +25,8 @@ func _compile_single(statement: Dictionary) -> WeavlyModel.Statement:
 
 func test_compile_nodes_returns_correct_count() -> void:
 	var data = {
-		"nodes": [
+		"nodes":
+		[
 			_node("a", []),
 			_node("b", []),
 		]
@@ -53,7 +53,9 @@ func test_narration_line() -> void:
 
 
 func test_character_line() -> void:
-	var stmt = _compile_single({"type": "character", "name": "Alice", "id": false, "text": "Hi there"})
+	var stmt = _compile_single(
+		{"type": "character", "name": "Alice", "id": false, "text": "Hi there"}
+	)
 	assert_is(stmt, WeavlyModel.CharacterLine)
 	var line := stmt as WeavlyModel.CharacterLine
 	assert_eq(line.name, "Alice")
@@ -144,7 +146,8 @@ func test_expression_unary() -> void:
 
 func test_variable_declarations() -> void:
 	var data = {
-		"declarations": [
+		"declarations":
+		[
 			{"name": "score", "type": "number", "value": 0.0},
 			{"name": "greeting", "type": "string", "value": "hello"},
 			{"name": "active", "type": "flag", "value": false},
@@ -159,7 +162,8 @@ func test_variable_declarations() -> void:
 
 func test_number_variable_fields() -> void:
 	var data = {
-		"declarations": [
+		"declarations":
+		[
 			{"name": "hp", "type": "number", "value": 100.0, "min": 0.0, "max": 100.0},
 		]
 	}

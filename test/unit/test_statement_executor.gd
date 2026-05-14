@@ -2,13 +2,13 @@ extends GutTest
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
-
 # =====================
 # Spy services
 # =====================
 
 
-class _SpyLineService extends WeavlyLineService:
+class _SpyLineService:
+	extends WeavlyLineService
 	var narration_calls: Array[WeavlyModel.NarrationLine] = []
 	var character_calls: Array[WeavlyModel.CharacterLine] = []
 
@@ -19,21 +19,24 @@ class _SpyLineService extends WeavlyLineService:
 		character_calls.append(line)
 
 
-class _SpyCommandService extends WeavlyCommandService:
+class _SpyCommandService:
+	extends WeavlyCommandService
 	var command_calls: Array[WeavlyModel.CommandStatement] = []
 
 	func execute_command(command: WeavlyModel.CommandStatement) -> void:
 		command_calls.append(command)
 
 
-class _SpyOptionService extends WeavlyOptionService:
+class _SpyOptionService:
+	extends WeavlyOptionService
 	var add_options_calls: Array[Array] = []
 
 	func add_options(options: Array[WeavlyModel.Option]) -> void:
 		add_options_calls.append(options)
 
 
-class _SpyStatementService extends WeavlyStatementService:
+class _SpyStatementService:
+	extends WeavlyStatementService
 	var add_statements_calls: Array[Array] = []
 	var add_statement_groups_calls: Array[Array] = []
 
@@ -47,7 +50,6 @@ class _SpyStatementService extends WeavlyStatementService:
 # =====================
 # Setup
 # =====================
-
 
 var _engine: WeavlyEngine
 var _line: _SpyLineService

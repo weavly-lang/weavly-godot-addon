@@ -1,5 +1,5 @@
-extends Node
 class_name WeavlyEngine
+extends Node
 
 signal started_dialog
 signal entered_node(node_id: StringName)
@@ -16,11 +16,11 @@ var variable_service: WeavlyVariableService
 var video_service: WeavlyVideoService
 
 
-func start(node_id: String) -> void:
+func start(_node_id: String) -> void:
 	pass
 
 
-func enter_node(node_id: String) -> void:
+func enter_node(_node_id: String) -> void:
 	pass
 
 

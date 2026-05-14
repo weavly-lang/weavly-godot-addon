@@ -2,7 +2,7 @@ extends WeavlyNodeService
 
 const TYPE = "Node"
 
-var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {} 
+var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 
 
 func add_node(node: WeavlyModel.WeavlyNode) -> void:
