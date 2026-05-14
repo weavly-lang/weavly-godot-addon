@@ -1,36 +1,29 @@
-class_name WeavlyStatementService
+@abstract class_name WeavlyStatementService
 extends WeavlyService
 
 signal executed_narration_line(narration_line: WeavlyModel.NarrationLine)
 signal executed_character_line(character_line: WeavlyModel.CharacterLine)
 
 
-func pause() -> void:
-	return
+@abstract func pause() -> void
 
 
-func resume() -> void:
-	return
+@abstract func resume() -> void
 
 
-func is_paused() -> bool:
-	return false
+@abstract func is_paused() -> bool
 
 
-func clear_statements() -> void:
-	pass
+@abstract func clear_statements() -> void
 
 
-func add_statements(_statements: Array[WeavlyModel.Statement]) -> void:
-	pass
+@abstract func add_statements(statements: Array[WeavlyModel.Statement]) -> void
 
 
-func add_statement_groups(_groups: Array[Array]) -> void:
-	pass
+@abstract func add_statement_groups(groups: Array[Array]) -> void
 
 
-func advance_statements() -> void:
-	pass
+@abstract func advance_statements() -> void
 
 
 class Frame:

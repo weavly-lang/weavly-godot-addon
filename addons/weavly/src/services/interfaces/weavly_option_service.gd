@@ -1,17 +1,14 @@
-class_name WeavlyOptionService
+@abstract class_name WeavlyOptionService
 extends WeavlyService
 
 signal options_added(options: Array[WeavlyModel.Option])
 signal option_chosen(option: WeavlyModel.Option)
 
 
-func has_options() -> bool:
-	return false
+@abstract func has_options() -> bool
 
 
-func add_options(_options: Array[WeavlyModel.Option]) -> void:
-	pass
+@abstract func add_options(options: Array[WeavlyModel.Option]) -> void
 
 
-func choose_option(_option: WeavlyModel.Option) -> void:
-	pass
+@abstract func choose_option(option: WeavlyModel.Option) -> void

@@ -1,18 +1,14 @@
-class_name WeavlyNodeService
+@abstract class_name WeavlyNodeService
 extends WeavlyService
 
 
-func has(_id: String) -> bool:
-	return false
+@abstract func has(id: String) -> bool
 
 
-func get_node(_id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel.WeavlyNode:
-	return default
+@abstract func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel.WeavlyNode
 
 
-func add_node(_node: WeavlyModel.WeavlyNode) -> void:
-	pass
+@abstract func add_node(node: WeavlyModel.WeavlyNode) -> void
 
 
-func get_all_nodes() -> Array[WeavlyModel.WeavlyNode]:
-	return []
+@abstract func get_all_nodes() -> Array[WeavlyModel.WeavlyNode]

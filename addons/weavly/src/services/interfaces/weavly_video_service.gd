@@ -1,10 +1,8 @@
-class_name WeavlyVideoService
+@abstract class_name WeavlyVideoService
 extends WeavlyService
 
 
-func get_video(_id: String, default: VideoStream = null) -> VideoStream:
-	return default
+@abstract func get_video(id: String, default: VideoStream = null) -> VideoStream
 
 
-func add_video(_id: String, _path: String) -> void:
-	pass
+@abstract func add_video(id: String, path: String) -> void
