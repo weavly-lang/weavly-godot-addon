@@ -44,21 +44,21 @@ static func evaluate_expression(
 ) -> Variant:
 	if is_instance_of(expression, WeavlyModel.TrueExpression):
 		return true
-	elif is_instance_of(expression, WeavlyModel.FalseExpression):
+	if is_instance_of(expression, WeavlyModel.FalseExpression):
 		return false
-	elif is_instance_of(expression, WeavlyModel.Number):
+	if is_instance_of(expression, WeavlyModel.Number):
 		return expression.value
-	elif is_instance_of(expression, WeavlyModel.StringLiteral):
+	if is_instance_of(expression, WeavlyModel.StringLiteral):
 		return expression.value
-	elif is_instance_of(expression, WeavlyModel.Identifier):
+	if is_instance_of(expression, WeavlyModel.Identifier):
 		return evaluate_identifier(expression, engine)
-	elif is_instance_of(expression, WeavlyModel.UnaryExpression):
+	if is_instance_of(expression, WeavlyModel.UnaryExpression):
 		return evaluate_unary_expression(expression, engine)
-	elif is_instance_of(expression, WeavlyModel.BinaryExpression):
+	if is_instance_of(expression, WeavlyModel.BinaryExpression):
 		return evaluate_binary_expression(expression, engine)
-	else:
-		push_error(UNKNOWN_EXPRESSION_TYPE % expression.get_class())
-		return null
+
+	push_error(UNKNOWN_EXPRESSION_TYPE % expression.get_class())
+	return null
 
 
 static func evaluate_identifier(
@@ -79,12 +79,12 @@ static func evaluate_unary_expression(
 	if unary_expression.op == NOT:
 		if value is bool:
 			return not value
-		else:
-			push_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
-			return null
-	else:
-		push_error(UNKNOWN_OPERATOR % [unary_expression.op])
+
+		push_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
 		return null
+
+	push_error(UNKNOWN_OPERATOR % [unary_expression.op])
+	return null
 
 
 static func evaluate_binary_expression(
@@ -100,13 +100,13 @@ static func evaluate_binary_expression(
 
 	if op in [AND, OR]:
 		return evaluate_logic_expression(op, left, right)
-	elif op in [ADD, SUB, MUL, DIV]:
+	if op in [ADD, SUB, MUL, DIV]:
 		return evaluate_math_expression(op, left, right)
-	elif op in [EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ]:
+	if op in [EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ]:
 		return evaluate_compare_expression(op, left, right)
-	else:
-		push_error(UNKNOWN_OPERATOR % op)
-		return null
+
+	push_error(UNKNOWN_OPERATOR % op)
+	return null
 
 
 static func evaluate_logic_expression(op: String, left: Variant, right: Variant) -> Variant:
@@ -116,11 +116,11 @@ static func evaluate_logic_expression(op: String, left: Variant, right: Variant)
 
 	if op == AND:
 		return left and right
-	elif op == OR:
+	if op == OR:
 		return left or right
-	else:
-		push_error(UNKNOWN_OPERATOR % op)
-		return null
+
+	push_error(UNKNOWN_OPERATOR % op)
+	return null
 
 
 static func evaluate_math_expression(op: String, left: Variant, right: Variant) -> Variant:
@@ -130,19 +130,19 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 
 	if op == ADD:
 		return left + right
-	elif op == SUB:
+	if op == SUB:
 		return left - right
-	elif op == MUL:
+	if op == MUL:
 		return left * right
-	elif op == DIV:
+	if op == DIV:
 		if right == 0:
 			push_error(DIVISON_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
 			return DEFAULT_DIVISION_BY_ZERO_RETURN
-		else:
-			return left / right
-	else:
-		push_error(UNKNOWN_OPERATOR % op)
-		return null
+
+		return left / right
+
+	push_error(UNKNOWN_OPERATOR % op)
+	return null
 
 
 static func evaluate_compare_expression(op: String, left: Variant, right: Variant) -> Variant:
@@ -152,19 +152,19 @@ static func evaluate_compare_expression(op: String, left: Variant, right: Varian
 
 	if op == EQ:
 		return left == right
-	elif op == NEQ:
+	if op == NEQ:
 		return left != right
-	elif op == LESS:
+	if op == LESS:
 		return left < right
-	elif op == LESS_EQ:
+	if op == LESS_EQ:
 		return left <= right
-	elif op == GREATER:
+	if op == GREATER:
 		return left > right
-	elif op == GREATER_EQ:
+	if op == GREATER_EQ:
 		return left >= right
-	else:
-		push_error(UNKNOWN_OPERATOR % op)
-		return null
+
+	push_error(UNKNOWN_OPERATOR % op)
+	return null
 
 
 static func _get_type(value: Variant) -> String:

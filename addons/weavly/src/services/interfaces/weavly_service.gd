@@ -1,5 +1,5 @@
-extends RefCounted
 class_name WeavlyService
+extends RefCounted
 
 const MISSING_ID = "%s with id '%s' doesn't exist, returning default '%s'."
 const EXISTING_ID = "%s with id '%s' already exists."

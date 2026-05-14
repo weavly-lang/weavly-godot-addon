@@ -1,5 +1,5 @@
-extends RefCounted
 class_name WeavlyCompiler
+extends RefCounted
 
 # =====================
 # Field Keys
@@ -370,9 +370,9 @@ static func compile_variable(data: Variant) -> WeavlyModel.Variable:
 static func compile_variable_from_value(id: StringName, value: Variant) -> WeavlyModel.Variable:
 	if value is float:
 		return WeavlyModel.NumberVariable.new(id, 0, null, null)
-	elif value is String:
+	if value is String:
 		return WeavlyModel.StringVariable.new(id, "")
-	elif value is bool:
+	if value is bool:
 		return WeavlyModel.FlagVariable.new(id, false)
 
 	push_error("Unknown variable value: %s" % type_string(typeof(value)))

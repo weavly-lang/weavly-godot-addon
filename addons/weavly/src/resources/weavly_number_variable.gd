@@ -1,5 +1,5 @@
-extends Resource
 class_name WeavlyNumberVariable
+extends Resource
 
 @export var id: StringName
 @export var value: float = 0.0

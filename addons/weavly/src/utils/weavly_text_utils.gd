@@ -42,15 +42,15 @@ static func format_string_strip_quotes(value: Variant) -> Variant:
 		and value.ends_with('"')
 	):
 		return value.substr(1, value.length() - 2)
-	else:
-		return value
+
+	return value
 
 
 static func format_float_trim_zero(value: Variant) -> Variant:
 	if is_instance_of(value, Variant.Type.TYPE_FLOAT) and is_equal_approx(value, round(value)):
 		return int(round(value))
-	else:
-		return value
+
+	return value
 
 
 static func _get_variable_regex() -> RegEx:

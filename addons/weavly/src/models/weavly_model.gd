@@ -1,5 +1,5 @@
-extends RefCounted
 class_name WeavlyModel
+extends RefCounted
 
 # =====================
 # Nodes
