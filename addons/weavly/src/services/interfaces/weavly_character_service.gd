@@ -1,6 +1,7 @@
 class_name WeavlyCharacterService
 extends WeavlyService
 
+
 func add_character(_character: WeavlyCharacter) -> void:
 	pass
 
