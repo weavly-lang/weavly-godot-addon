@@ -1,24 +1,14 @@
-class_name WeavlyVariableService
+@abstract class_name WeavlyVariableService
 extends WeavlyService
 
 signal variable_changed(id: String, value: Variant)
 
+@abstract func has(id: String) -> bool
 
-func has(_id: String) -> bool:
-	return false
+@abstract func add_variable(variable: WeavlyModel.Variable) -> void
 
+@abstract func get_variable(id: String, default: Variant = null) -> Variant
 
-func add_variable(_variable: WeavlyModel.Variable) -> void:
-	pass
+@abstract func set_variable(id: String, value: Variant) -> void
 
-
-func get_variable(_id: String, default: Variant = null) -> Variant:
-	return default
-
-
-func set_variable(_id: String, _value: Variant) -> void:
-	pass
-
-
-func get_all_ids() -> Array:
-	return []
+@abstract func get_all_ids() -> Array

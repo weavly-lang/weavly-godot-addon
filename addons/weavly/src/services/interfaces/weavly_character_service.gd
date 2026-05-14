@@ -1,10 +1,6 @@
-class_name WeavlyCharacterService
+@abstract class_name WeavlyCharacterService
 extends WeavlyService
 
+@abstract func add_character(character: WeavlyCharacter) -> void
 
-func add_character(_character: WeavlyCharacter) -> void:
-	pass
-
-
-func get_character(_id: StringName, _default: WeavlyCharacter = null) -> WeavlyCharacter:
-	return null
+@abstract func get_character(id: StringName, default: WeavlyCharacter = null) -> WeavlyCharacter

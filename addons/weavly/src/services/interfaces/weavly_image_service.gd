@@ -1,10 +1,6 @@
-class_name WeavlyImageService
+@abstract class_name WeavlyImageService
 extends WeavlyService
 
+@abstract func get_image(id: String, default: Texture2D = null) -> Texture2D
 
-func get_image(_id: String, default: Texture2D = null) -> Texture2D:
-	return default
-
-
-func add_image(_id: String, _path: String) -> void:
-	pass
+@abstract func add_image(id: String, path: String) -> void

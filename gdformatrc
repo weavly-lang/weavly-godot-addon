@@ -1,6 +1,11 @@
 excluded_directories: !!set
   .git: null
   gut: null
-line_length: 100
+# Workaround for https://github.com/Scony/godot-gdscript-toolkit/issues/419
+# gdformat has an off-by-one bug with @abstract func: it wraps at >101 instead
+# of >100, so 101-char @abstract lines slip through gdformat and fail gdlint.
+# Setting line_length to 99 shifts gdformat's threshold down by one so it
+# matches gdlint's default of 100. Revert to 100 once the upstream issue is fixed.
+line_length: 99
 safety_checks: null
 use_spaces: null
