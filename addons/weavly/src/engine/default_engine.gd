@@ -1,3 +1,4 @@
+class_name DefaultWeavlyEngine
 extends WeavlyEngine
 
 const DIALOG_IN_PROGRESS = "Dialog is already in progress, cant start for node with ID '%s."

@@ -4,7 +4,6 @@ extends GutTest
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
-const DefaultEngine = preload("res://addons/weavly/src/services/implementations/default_engine.gd")
 
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke"
@@ -25,7 +24,7 @@ func before_each() -> void:
 # avoids needing an extra empty fixture dir on disk. The @export paths are set
 # before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> Node:
-	var engine = DefaultEngine.new()
+	var engine = DefaultWeavlyEngine.new()
 	engine.dialog_path = fixture_dir
 	engine.video_path = fixture_dir
 	engine.image_path = fixture_dir

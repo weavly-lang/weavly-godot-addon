@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://3kahbg5xest7"]
 
-[ext_resource type="Script" uid="uid://c35sd3ysioctm" path="res://addons/weavly/services/implementations/default_engine.gd" id="1_j8wyw"]
+[ext_resource type="Script" uid="uid://bgw533khim0w1" path="res://addons/weavly/src/engine/default_engine.gd" id="1_c3t08"]
 
 [node name="WeavlyEngine" type="Node"]
-script = ExtResource("1_j8wyw")
+script = ExtResource("1_c3t08")
