@@ -1,6 +1,6 @@
 extends GutTest
 
-# Smoke tests for WeavlyCompiler (the JSON-to-model deserializer).
+# Smoke tests for WeavlyDeserializer (the JSON-to-model deserializer).
 # Pure input/output — no scene or services required.
 
 # =====================
@@ -14,7 +14,7 @@ func _node(id: String, body: Array) -> Dictionary:
 
 func _compile_single(statement: Dictionary) -> WeavlyModel.Statement:
 	var data = {"nodes": [_node("start", [statement])]}
-	var nodes = WeavlyCompiler.compile_nodes(data)
+	var nodes = WeavlyDeserializer.compile_nodes(data)
 	return nodes[0].body[0]
 
 
@@ -31,13 +31,13 @@ func test_compile_nodes_returns_correct_count() -> void:
 			_node("b", []),
 		]
 	}
-	var nodes = WeavlyCompiler.compile_nodes(data)
+	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_eq(nodes.size(), 2)
 
 
 func test_compile_nodes_sets_id() -> void:
 	var data = {"nodes": [_node("intro", [])]}
-	var nodes = WeavlyCompiler.compile_nodes(data)
+	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_eq(nodes[0].id, "intro")
 
 
@@ -95,35 +95,35 @@ func test_set_statement() -> void:
 
 
 func test_expression_number() -> void:
-	var expr = WeavlyCompiler.compile_expression(42, "test")
+	var expr = WeavlyDeserializer.compile_expression(42, "test")
 	assert_is(expr, WeavlyModel.Number)
 	assert_eq((expr as WeavlyModel.Number).value, 42.0)
 
 
 func test_expression_string_literal() -> void:
-	var expr = WeavlyCompiler.compile_expression("hello", "test")
+	var expr = WeavlyDeserializer.compile_expression("hello", "test")
 	assert_is(expr, WeavlyModel.StringLiteral)
 	assert_eq((expr as WeavlyModel.StringLiteral).value, "hello")
 
 
 func test_expression_true() -> void:
-	var expr = WeavlyCompiler.compile_expression(true, "test")
+	var expr = WeavlyDeserializer.compile_expression(true, "test")
 	assert_is(expr, WeavlyModel.TrueExpression)
 
 
 func test_expression_false() -> void:
-	var expr = WeavlyCompiler.compile_expression(false, "test")
+	var expr = WeavlyDeserializer.compile_expression(false, "test")
 	assert_is(expr, WeavlyModel.FalseExpression)
 
 
 func test_expression_identifier() -> void:
-	var expr = WeavlyCompiler.compile_expression({"variable": "score"}, "test")
+	var expr = WeavlyDeserializer.compile_expression({"variable": "score"}, "test")
 	assert_is(expr, WeavlyModel.Identifier)
 	assert_eq((expr as WeavlyModel.Identifier).value, &"score")
 
 
 func test_expression_binary() -> void:
-	var expr = WeavlyCompiler.compile_expression({"op": "+", "left": 1, "right": 2}, "test")
+	var expr = WeavlyDeserializer.compile_expression({"op": "+", "left": 1, "right": 2}, "test")
 	assert_is(expr, WeavlyModel.BinaryExpression)
 	var bin := expr as WeavlyModel.BinaryExpression
 	assert_eq(bin.op, "+")
@@ -132,7 +132,7 @@ func test_expression_binary() -> void:
 
 
 func test_expression_unary() -> void:
-	var expr = WeavlyCompiler.compile_expression({"op": "not", "expression": true}, "test")
+	var expr = WeavlyDeserializer.compile_expression({"op": "not", "expression": true}, "test")
 	assert_is(expr, WeavlyModel.UnaryExpression)
 	var unary := expr as WeavlyModel.UnaryExpression
 	assert_eq(unary.op, "not")
@@ -153,7 +153,7 @@ func test_variable_declarations() -> void:
 			{"name": "active", "type": "flag", "value": false},
 		]
 	}
-	var vars = WeavlyCompiler.compile_variable_declarations(data)
+	var vars = WeavlyDeserializer.compile_variable_declarations(data)
 	assert_eq(vars.size(), 3)
 	assert_is(vars[0], WeavlyModel.NumberVariable)
 	assert_is(vars[1], WeavlyModel.StringVariable)
@@ -167,7 +167,7 @@ func test_number_variable_fields() -> void:
 			{"name": "hp", "type": "number", "value": 100.0, "min": 0.0, "max": 100.0},
 		]
 	}
-	var vars = WeavlyCompiler.compile_variable_declarations(data)
+	var vars = WeavlyDeserializer.compile_variable_declarations(data)
 	var v := vars[0] as WeavlyModel.NumberVariable
 	assert_eq(v.id, &"hp")
 	assert_eq(v.value, 100.0)

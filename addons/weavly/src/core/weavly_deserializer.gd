@@ -1,4 +1,4 @@
-class_name WeavlyCompiler
+class_name WeavlyDeserializer
 extends RefCounted
 
 # =====================

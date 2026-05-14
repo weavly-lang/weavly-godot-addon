@@ -26,7 +26,7 @@ func get_variable(id: String, default: Variant = null) -> Variant:
 
 func set_variable(id: String, value: Variant) -> void:
 	if not _variables.has(id):
-		_variables[id] = WeavlyCompiler.compile_variable_from_value(id, value)
+		_variables[id] = WeavlyDeserializer.compile_variable_from_value(id, value)
 
 	if is_instance_of(_variables.get(id), WeavlyModel.NumberVariable):
 		var number_variable: WeavlyModel.NumberVariable = _variables.get(id)
