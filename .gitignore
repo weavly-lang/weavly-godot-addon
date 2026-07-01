@@ -1,6 +1,5 @@
-.import/
+# Godot 4+ import cache. Everything else (*.uid, *.import) is committed.
 .godot/
-*.uid
+
 *.tmp
-*.import
 .claude/settings.local.json
