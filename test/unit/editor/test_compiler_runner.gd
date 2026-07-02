@@ -25,6 +25,15 @@ func test_build_command_program_matches_platform() -> void:
 		assert_eq(command["program"], "sh")
 
 
+func test_build_command_quotes_paths_with_spaces() -> void:
+	var command = WeavlyCompilerRunner.build_command(
+		"C:/Program Files/weavly.exe", "C:/My Projects/dialog"
+	)
+	var joined = _joined(command)
+	assert_string_contains(joined, '"C:/Program Files/weavly.exe"')
+	assert_string_contains(joined, '"C:/My Projects/dialog"')
+
+
 # =====================
 # strip_ansi
 # =====================

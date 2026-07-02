@@ -4,6 +4,7 @@ extends Control
 
 const SETTING_PROJECT_DIR = "weavly/dialog_project_dir"
 const SETTING_EXECUTABLE = "weavly/executable_path"
+const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
 const DEFAULT_PROJECT_DIR = "res://dialog"
 const DEFAULT_EXECUTABLE = "weavly"
 
@@ -19,8 +20,11 @@ var _status_label: Label
 var _code_edit: CodeEdit
 var _compile_on_save: CheckButton
 var _save_button: Button
+var _compile_button: Button
 var _current_path: String = ""
 var _dirty: bool = false
+var _compiling: bool = false
+var _compile_thread: Thread
 
 
 func _ready() -> void:
@@ -70,12 +74,14 @@ func _build_ui() -> void:
 
 	_compile_on_save = CheckButton.new()
 	_compile_on_save.text = "Compile on save"
+	_compile_on_save.toggled.connect(_on_compile_on_save_toggled)
 	toolbar.add_child(_compile_on_save)
+	_load_compile_on_save()
 
-	var compile_button: Button = Button.new()
-	compile_button.text = "Compile"
-	compile_button.pressed.connect(_on_compile_pressed)
-	toolbar.add_child(compile_button)
+	_compile_button = Button.new()
+	_compile_button.text = "Compile"
+	_compile_button.pressed.connect(_on_compile_pressed)
+	toolbar.add_child(_compile_button)
 
 	_code_edit = CodeEdit.new()
 	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -134,6 +140,9 @@ func _save_file() -> bool:
 
 
 func _compile() -> void:
+	if _compiling:
+		return
+
 	var working_dir: String = _resolve_working_dir()
 	if not DirAccess.dir_exists_absolute(working_dir):
 		_report_error("Weavly project dir not found: %s" % working_dir)
@@ -143,15 +152,32 @@ func _compile() -> void:
 	_set_status("Compiling...", _COLOR_INFO)
 	print_rich("%s Running %s build in %s" % [_LOG_PREFIX, executable, working_dir])
 
+	_set_compiling(true)
+	_compile_thread = Thread.new()
+	_compile_thread.start(_compile_worker.bind(executable, working_dir))
+
+
+func _compile_worker(executable: String, working_dir: String) -> void:
 	var result: WeavlyCompilerRunner.CompileResult = WeavlyCompilerRunner.compile(
 		executable, working_dir
 	)
+	_on_compile_finished.call_deferred(result)
+
+
+func _on_compile_finished(result: WeavlyCompilerRunner.CompileResult) -> void:
+	_join_compile_thread()
+	_set_compiling(false)
 	if result.success:
 		_set_status("Build successful", _COLOR_SUCCESS)
 		print_rich("[color=#80d685]%s Build successful.[/color]" % _LOG_PREFIX)
 		_rescan_filesystem()
 	else:
 		_report_failure(result)
+
+
+func _set_compiling(compiling: bool) -> void:
+	_compiling = compiling
+	_refresh_controls()
 
 
 func _report_failure(result: WeavlyCompilerRunner.CompileResult) -> void:
@@ -197,12 +223,38 @@ func _resolve_executable() -> String:
 
 func _refresh_controls() -> void:
 	var has_file: bool = _current_path != ""
-	_save_button.disabled = not has_file
+	_save_button.disabled = not has_file or _compiling
+	if _compile_button != null:
+		_compile_button.disabled = _compiling
 	if not has_file:
 		_path_label.text = _NO_FILE_TEXT
 		return
 	var marker: String = "*" if _dirty else ""
 	_path_label.text = "%s%s" % [_current_path, marker]
+
+
+func _load_compile_on_save() -> void:
+	if not Engine.is_editor_hint():
+		return
+	var settings: EditorSettings = EditorInterface.get_editor_settings()
+	if settings.has_setting(SETTING_COMPILE_ON_SAVE):
+		_compile_on_save.button_pressed = settings.get_setting(SETTING_COMPILE_ON_SAVE)
+
+
+func _on_compile_on_save_toggled(pressed: bool) -> void:
+	if not Engine.is_editor_hint():
+		return
+	EditorInterface.get_editor_settings().set_setting(SETTING_COMPILE_ON_SAVE, pressed)
+
+
+func _join_compile_thread() -> void:
+	if _compile_thread != null:
+		_compile_thread.wait_to_finish()
+		_compile_thread = null
+
+
+func _exit_tree() -> void:
+	_join_compile_thread()
 
 
 func _set_status(message: String, color: Color) -> void:
