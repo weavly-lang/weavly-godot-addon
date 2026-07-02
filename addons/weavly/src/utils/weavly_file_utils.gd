@@ -4,6 +4,12 @@ class_name WeavlyFileUtils
 static func find_all_files_with_extension(
 	dir_path: String, extension: String
 ) -> PackedStringArray:
+	return find_all_files_with_extensions(dir_path, [extension])
+
+
+static func find_all_files_with_extensions(
+	dir_path: String, extensions: PackedStringArray
+) -> PackedStringArray:
 	var results: PackedStringArray = []
 	var dir = DirAccess.open(dir_path)
 
@@ -23,12 +29,14 @@ static func find_all_files_with_extension(
 		var full_path = dir_path.path_join(file_name)
 
 		if dir.current_is_dir():
-			results.append_array(find_all_files_with_extension(full_path, extension))
+			results.append_array(find_all_files_with_extensions(full_path, extensions))
 			file_name = dir.get_next()
 			continue
 
-		if file_name.to_lower().ends_with(extension):
-			results.append(full_path)
+		for extension: String in extensions:
+			if file_name.to_lower().ends_with(extension):
+				results.append(full_path)
+				break
 
 		file_name = dir.get_next()
 
@@ -92,7 +100,8 @@ static func load_variables_from_resources(engine: WeavlyEngine, dir: String) -> 
 
 
 static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths = find_all_files_with_extension(dir, ".ogv")
+	var extensions: PackedStringArray = engine.video_service.supported_extensions
+	var file_paths = find_all_files_with_extensions(dir, extensions)
 
 	for file_path in file_paths:
 		var id: String = file_path.get_file().get_basename()
@@ -100,11 +109,8 @@ static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
 
 
 static func index_images_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var png_paths = find_all_files_with_extension(dir, ".png")
-	var jpg_paths = find_all_files_with_extension(dir, ".jpg")
-	var file_paths = []
-	file_paths.append_array(png_paths)
-	file_paths.append_array(jpg_paths)
+	var extensions: PackedStringArray = engine.image_service.supported_extensions
+	var file_paths = find_all_files_with_extensions(dir, extensions)
 
 	for file_path in file_paths:
 		var id: String = file_path.get_file().get_basename()
