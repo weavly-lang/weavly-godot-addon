@@ -52,9 +52,16 @@ func open_file(path: String) -> void:
 
 
 func _build_ui() -> void:
+	var margin: MarginContainer = MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	add_child(margin)
+
 	var root: VBoxContainer = VBoxContainer.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
+	margin.add_child(root)
 
 	var toolbar: HBoxContainer = HBoxContainer.new()
 	root.add_child(toolbar)
