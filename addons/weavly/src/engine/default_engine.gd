@@ -108,3 +108,7 @@ func finish() -> void:
 	finished_dialog.emit()
 	_finished = true
 	statement_service.clear_statements()
+
+
+func is_running() -> bool:
+	return not _finished

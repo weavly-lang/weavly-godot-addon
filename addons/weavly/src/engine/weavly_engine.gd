@@ -22,3 +22,5 @@ var video_service: WeavlyVideoService
 @abstract func next() -> void
 
 @abstract func finish() -> void
+
+@abstract func is_running() -> bool
