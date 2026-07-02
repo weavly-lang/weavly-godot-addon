@@ -36,9 +36,7 @@ func _get_import_options(_path: String, _preset_index: int) -> Array[Dictionary]
 	return []
 
 
-func _get_option_visibility(
-	_path: String, _option_name: StringName, _options: Dictionary
-) -> bool:
+func _get_option_visibility(_path: String, _option_name: StringName, _options: Dictionary) -> bool:
 	return true
 
 

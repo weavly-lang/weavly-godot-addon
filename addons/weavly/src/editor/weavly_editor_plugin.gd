@@ -89,10 +89,5 @@ func _register_editor_settings() -> void:
 		settings.set_setting(key, default_value)
 	settings.set_initial_value(key, default_value, false)
 	settings.add_property_info(
-		{
-			"name": key,
-			"type": TYPE_STRING,
-			"hint": PROPERTY_HINT_GLOBAL_FILE,
-			"hint_string": "",
-		}
+		{"name": key, "type": TYPE_STRING, "hint": PROPERTY_HINT_GLOBAL_FILE, "hint_string": ""}
 	)

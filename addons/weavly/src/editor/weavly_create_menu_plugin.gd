@@ -57,9 +57,7 @@ func _unique_path(folder: String) -> String:
 	if not FileAccess.file_exists(base):
 		return base
 	for index in range(2, 1000):
-		var candidate: String = folder.path_join(
-			"%s_%d%s" % [_DEFAULT_NAME, index, _EXTENSION]
-		)
+		var candidate: String = folder.path_join("%s_%d%s" % [_DEFAULT_NAME, index, _EXTENSION])
 		if not FileAccess.file_exists(candidate):
 			return candidate
 	return base

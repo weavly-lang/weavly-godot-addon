@@ -2,7 +2,6 @@
 class_name WvlSyntaxHighlighter
 extends SyntaxHighlighter
 
-
 const TEXT_COLOR = Color(0.86, 0.86, 0.86)
 const DIRECTIVE_COLOR = Color(0.90, 0.46, 0.70)
 const VARIABLE_COLOR = Color(0.90, 0.60, 0.32)
@@ -13,7 +12,7 @@ const COMMENT_COLOR = Color(0.50, 0.50, 0.50)
 
 var _number_regex: RegEx = RegEx.create_from_string("\\b\\d+(?:\\.\\d+)?\\b")
 var _variable_regex: RegEx = RegEx.create_from_string("\\$[A-Za-z_][A-Za-z0-9_]*")
-var _string_regex: RegEx = RegEx.create_from_string("\"[^\"\\n]*\"")
+var _string_regex: RegEx = RegEx.create_from_string('"[^"\\n]*"')
 var _directive_regex: RegEx = RegEx.create_from_string("@[A-Za-z_]+")
 var _character_regex: RegEx = RegEx.create_from_string("^[ \\t]*>[^:\\n]*:")
 var _comment_regex: RegEx = RegEx.create_from_string("^[ \\t]*#.*")
@@ -47,9 +46,7 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	return result
 
 
-func _paint(
-	colors: PackedColorArray, text: String, regex: RegEx, color: Color
-) -> void:
+func _paint(colors: PackedColorArray, text: String, regex: RegEx, color: Color) -> void:
 	for regex_match in regex.search_all(text):
 		for i in range(regex_match.get_start(), regex_match.get_end()):
 			colors[i] = color

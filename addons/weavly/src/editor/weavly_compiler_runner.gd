@@ -29,9 +29,7 @@ static func build_command(executable_path: String, working_dir: String) -> Dicti
 static func compile(executable_path: String, working_dir: String) -> CompileResult:
 	var command: Dictionary = build_command(executable_path, working_dir)
 	var raw_output: Array = []
-	var exit_code: int = OS.execute(
-		command["program"], command["arguments"], raw_output, true
-	)
+	var exit_code: int = OS.execute(command["program"], command["arguments"], raw_output, true)
 	return build_result(exit_code, "".join(PackedStringArray(raw_output)))
 
 
