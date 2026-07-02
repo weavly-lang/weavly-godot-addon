@@ -33,3 +33,7 @@ func next() -> void:
 
 func finish() -> void:
 	did_finish = true
+
+
+func is_running() -> bool:
+	return not did_finish
