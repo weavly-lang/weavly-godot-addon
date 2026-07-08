@@ -31,7 +31,7 @@ func add_video(id: String, path: String) -> void:
 	var group_key: String = id
 	var match: RegExMatch = _regex.search(id)
 	if match:
-		group_key = id.substr(0, id.length() - match.get_string().length())
+		group_key = id.substr(0, match.get_start()) + id.substr(match.get_end())
 
 	var paths: Array = video_index.get(group_key, [])
 	paths.append(path)

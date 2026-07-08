@@ -72,6 +72,13 @@ func test_grouping_strips_suffix() -> void:
 	assert_is(_service.get_video("intro"), VideoStream)
 
 
+func test_grouping_strips_mid_string_match() -> void:
+	_service.set_group_pattern("_v\\d+")
+	_service.add_video("intro_v1_wide", _FIXTURE_PATH)
+	_service.add_video("intro_v2_wide", _FIXTURE_PATH)
+	assert_is(_service.get_video("intro_wide"), VideoStream)
+
+
 func test_unmatched_id_is_singleton_with_pattern_set() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_video("title", _FIXTURE_PATH)
