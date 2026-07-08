@@ -25,10 +25,6 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var video_group_pattern: String = ""
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
 @export var video_extensions: PackedStringArray = [".ogv"]
-
-## Maximum number of node entries a single next() step may perform without pausing
-## before it is treated as a runaway goto cycle and aborted. Bounded goto loops
-## (counters, accumulation) stay well below this; only unbounded cycles trip it.
 @export var max_node_entries_per_step: int = 10000
 
 @export var character_service_script: Script
@@ -41,8 +37,6 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var variable_service_script: Script
 @export var video_service_script: Script
 
-# Node entry is deferred rather than recursed: goto sets a pending node that the
-# next() loop enters iteratively, keeping the loop flat (see issue #39).
 var _pending_node_id: String = ""
 var _has_pending_node: bool = false
 var _in_next: bool = false
@@ -102,9 +96,6 @@ func start(node_id: String) -> void:
 
 
 func enter_node(node_id: String) -> void:
-	# Queue the node. When called from outside the loop (start, host code) drive
-	# next() synchronously; when called from within the loop (a goto) just leave
-	# the note and let the running loop pick it up, so gotos never recurse.
 	_pending_node_id = node_id
 	_has_pending_node = true
 	if not _in_next:
