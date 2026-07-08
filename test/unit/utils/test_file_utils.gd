@@ -144,3 +144,32 @@ func test_load_variables_from_resources_loads_flag_variable() -> void:
 	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
 	assert_true(engine.variable_service.has("door_open"), "expected flag variable to be added")
 	assert_eq(engine.variable_service.get_variable("door_open"), true)
+
+
+# =====================
+# load_nodes_from_files / load_variables_from_env_files — malformed input (issue #38)
+# =====================
+
+
+func _make_engine_with_node_service() -> WeavlyEngine:
+	var engine = _make_engine()
+	engine.node_service = DefaultNodeService.new()
+	engine.node_service.initialize(engine)
+	return engine
+
+
+func test_load_nodes_skips_malformed_files_without_crashing() -> void:
+	# FIXTURE_DIR mixes an unparseable file, an array-root file, and dictionaries
+	# without a "nodes" key alongside valid_nodes.json. A single bad file must
+	# not crash startup — the valid node should still load.
+	var engine = _make_engine_with_node_service()
+	WeavlyFileUtils.load_nodes_from_files(engine, FIXTURE_DIR)
+	assert_true(engine.node_service.has("start"), "expected node from valid_nodes.json")
+	assert_push_error(1)  # invalid.json parse error
+
+
+func test_load_variables_from_env_skips_malformed_files_without_crashing() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_env_files(engine, FIXTURE_DIR)
+	assert_true(engine.variable_service.has("score"), "expected var from valid_declarations.json")
+	assert_push_error(1)  # invalid.json parse error

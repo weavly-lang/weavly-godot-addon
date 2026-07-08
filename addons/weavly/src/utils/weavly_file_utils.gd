@@ -69,9 +69,9 @@ static func load_nodes_from_files(engine: WeavlyEngine, dir: String) -> void:
 
 	var nodes: Array[WeavlyModel.WeavlyNode]
 	for file_path in file_paths:
-		var data: Dictionary = WeavlyFileUtils.load_json_file(file_path)
-		if data.has(WeavlyDeserializer.KEY_NODES):
-			nodes.append_array(WeavlyDeserializer.compile_nodes(data))
+		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
+		if data is Dictionary and data.has(WeavlyDeserializer.KEY_NODES):
+			nodes.append_array(WeavlyDeserializer.compile_nodes(data, file_path))
 
 	for node in nodes:
 		engine.node_service.add_node(node)
@@ -82,9 +82,11 @@ static func load_variables_from_env_files(engine: WeavlyEngine, dir: String) -> 
 
 	var variables: Array[WeavlyModel.Variable]
 	for file_path in file_paths:
-		var data: Dictionary = WeavlyFileUtils.load_json_file(file_path)
-		if data.has(WeavlyDeserializer.KEY_DECLARATIONS):
-			variables.append_array(WeavlyDeserializer.compile_variable_declarations(data))
+		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
+		if data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS):
+			variables.append_array(
+				WeavlyDeserializer.compile_variable_declarations(data, file_path)
+			)
 
 	for variable: WeavlyModel.Variable in variables:
 		engine.variable_service.add_variable(variable)
