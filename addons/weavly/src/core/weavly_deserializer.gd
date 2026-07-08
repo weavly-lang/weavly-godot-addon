@@ -63,6 +63,10 @@ static func _path_index(path: String, idx: int) -> String:
 	return "%s[%d]" % [path, idx]
 
 
+static func _path_root(source: String, key: String) -> String:
+	return "%s > %s" % [source, key] if source != "" else key
+
+
 static func get_required(
 	data: Dictionary, key: String, expected: Variant.Type, path: String = ""
 ) -> Variant:
@@ -95,22 +99,28 @@ static func get_required(
 # =====================
 
 
-static func compile_nodes(data: Dictionary) -> Array[WeavlyModel.WeavlyNode]:
-	var path = ""
-	var nodes_arr = get_required(data, KEY_NODES, Variant.Type.TYPE_ARRAY, path)
+static func compile_nodes(data: Dictionary, source: String = "") -> Array[WeavlyModel.WeavlyNode]:
+	var nodes_arr = get_required(data, KEY_NODES, Variant.Type.TYPE_ARRAY, source)
 	var nodes: Array[WeavlyModel.WeavlyNode] = []
+	if nodes_arr == null:
+		return nodes
 	for i in range(nodes_arr.size()):
 		var node_data = nodes_arr[i]
+		var node_path = _path_index(_path_root(source, KEY_NODES), i)
 		if not (node_data is Dictionary):
-			push_error("nodes[%d] must be a Dictionary, got %s" % [i, str(typeof(node_data))])
+			push_error("%s must be a Dictionary, got %s" % [node_path, str(typeof(node_data))])
 			continue
-		nodes.append(compile_node(node_data, _path_index(KEY_NODES, i)))
+		var node = compile_node(node_data, node_path)
+		if node != null:
+			nodes.append(node)
 	return nodes
 
 
 static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	var body_arr = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
+	if id == null or body_arr == null:
+		return null
 	var body = compile_statements(body_arr, _path_join(path, KEY_BODY))
 	return WeavlyModel.WeavlyNode.new(id, body)
 
@@ -132,12 +142,16 @@ static func compile_statements(data: Array, path: String) -> Array[WeavlyModel.S
 				)
 			)
 			continue
-		statements.append(compile_statement(statement, _path_index(path, i)))
+		var compiled = compile_statement(statement, _path_index(path, i))
+		if compiled != null:
+			statements.append(compiled)
 	return statements
 
 
 static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Statement:
 	var type = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
+	if type == null:
+		return null
 
 	match type:
 		TYPE_NARRATION:
@@ -165,6 +179,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 
 static func compile_narration_line(data: Dictionary, path: String) -> WeavlyModel.NarrationLine:
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
+	if text == null:
+		return null
 	return WeavlyModel.NarrationLine.new(text)
 
 
@@ -172,11 +188,15 @@ static func compile_character_line(data: Dictionary, path: String) -> WeavlyMode
 	var name = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_BOOL, path)
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
+	if name == null or id == null or text == null:
+		return null
 	return WeavlyModel.CharacterLine.new(name, id, text)
 
 
 static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
+	if id == null:
+		return null
 	var expr_data = get_required(data, KEY_EXPRESSION, Variant.Type.TYPE_NIL, path)
 	var expr = compile_expression(expr_data, _path_join(path, KEY_EXPRESSION))
 	return WeavlyModel.SetStatement.new(id, expr)
@@ -184,6 +204,8 @@ static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel
 
 static func compile_goto_statement(data: Dictionary, path: String) -> WeavlyModel.GotoStatement:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
+	if id == null:
+		return null
 	return WeavlyModel.GotoStatement.new(id)
 
 
@@ -198,6 +220,8 @@ static func compile_command_statement(
 ) -> WeavlyModel.CommandStatement:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
+	if id == null or text == null:
+		return null
 	return WeavlyModel.CommandStatement.new(id, text)
 
 
@@ -209,6 +233,8 @@ static func compile_command_statement(
 static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.MatchBlock:
 	var modifier_string = get_required(data, KEY_MODIFIER, Variant.Type.TYPE_STRING, path)
 	var case_data_list = get_required(data, KEY_CASES, TYPE_ARRAY, path)
+	if modifier_string == null or case_data_list == null:
+		return null
 
 	var modifier: WeavlyModel.MatchModifier
 	match modifier_string:
@@ -226,7 +252,9 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 		if not (case_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
 			continue
-		cases.append(compile_when_case(case_data, case_path))
+		var when_case = compile_when_case(case_data, case_path)
+		if when_case != null:
+			cases.append(when_case)
 
 	return WeavlyModel.MatchBlock.new(modifier, cases)
 
@@ -235,6 +263,8 @@ static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.Whe
 	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
 	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
+	if body_data_list == null:
+		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.WhenCase.new(condition, body)
 
@@ -247,13 +277,17 @@ static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.Whe
 static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.OptionBlock:
 	var option_data_list = get_required(data, KEY_OPTIONS, Variant.Type.TYPE_ARRAY, path)
 	var options: Array[WeavlyModel.Option] = []
+	if option_data_list == null:
+		return null
 	for i in range(option_data_list.size()):
 		var option_data = option_data_list[i]
 		var option_path = _path_index(_path_join(path, KEY_OPTIONS), i)
 		if not (option_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [option_path, str(typeof(option_data))])
 			continue
-		options.append(compile_option(option_data, option_path))
+		var option = compile_option(option_data, option_path)
+		if option != null:
+			options.append(option)
 	return WeavlyModel.OptionBlock.new(options)
 
 
@@ -262,8 +296,10 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	var hint = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
+	if text == null or body_data_list == null or hint == null:
+		return null
+	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.Option.new(condition, text, body, hint)
 
 
@@ -275,13 +311,17 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.RandomBlock:
 	var case_data_list = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
 	var cases: Array[WeavlyModel.RandomCase] = []
+	if case_data_list == null:
+		return null
 	for i in range(case_data_list.size()):
 		var case_data = case_data_list[i]
 		var case_path = _path_index(_path_join(path, KEY_CASES), i)
 		if not (case_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
 			continue
-		cases.append(compile_random_case(case_data, case_path))
+		var random_case = compile_random_case(case_data, case_path)
+		if random_case != null:
+			cases.append(random_case)
 	return WeavlyModel.RandomBlock.new(cases)
 
 
@@ -291,6 +331,8 @@ static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.R
 	var weight_data = get_required(data, KEY_WEIGHT, Variant.Type.TYPE_NIL, path)
 	var weight = compile_expression(weight_data, _path_join(path, KEY_WEIGHT))
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
+	if body_data_list == null:
+		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.RandomCase.new(condition, weight, body)
 
@@ -312,16 +354,22 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 
 	if data is Dictionary and data.has(KEY_VARIABLE):
 		var variable = get_required(data, KEY_VARIABLE, Variant.Type.TYPE_STRING, path)
+		if variable == null:
+			return null
 		return WeavlyModel.Identifier.new(variable)
 
 	if data is Dictionary and data.has(KEY_EXPRESSION):
 		var op = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
+		if op == null:
+			return null
 		var expression_data = get_required(data, KEY_EXPRESSION, Variant.Type.TYPE_NIL, path)
 		var expression = compile_expression(expression_data, _path_join(path, KEY_EXPRESSION))
 		return WeavlyModel.UnaryExpression.new(op, expression)
 
 	if data is Dictionary and data.has(KEY_LEFT) and data.has(KEY_RIGHT):
 		var op = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
+		if op == null:
+			return null
 		var left_data = get_required(data, KEY_LEFT, Variant.Type.TYPE_NIL, path)
 		var right_data = get_required(data, KEY_RIGHT, Variant.Type.TYPE_NIL, path)
 		var left = compile_expression(left_data, _path_join(path, KEY_LEFT))
@@ -337,33 +385,56 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 # =====================
 
 
-static func compile_variable_declarations(data: Variant) -> Array[WeavlyModel.Variable]:
+static func compile_variable_declarations(
+	data: Variant, source: String = ""
+) -> Array[WeavlyModel.Variable]:
 	var variables: Array[WeavlyModel.Variable]
-	for variable_data in data.get(KEY_DECLARATIONS):
-		var variable = compile_variable(variable_data)
+	var declarations = get_required(data, KEY_DECLARATIONS, Variant.Type.TYPE_ARRAY, source)
+	if declarations == null:
+		return variables
+	for i in range(declarations.size()):
+		var declaration_path = _path_index(_path_root(source, KEY_DECLARATIONS), i)
+		var variable = compile_variable(declarations[i], declaration_path)
 		if variable != null:
 			variables.append(variable)
 	return variables
 
 
-static func compile_variable(data: Variant) -> WeavlyModel.Variable:
-	var id = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING)
+static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Variable:
+	if path == "":
+		path = "<root>"
+
+	if not (data is Dictionary):
+		push_error(
+			"Variable declaration at %s must be a Dictionary, got %s" % [path, str(typeof(data))]
+		)
+		return null
+
+	var id = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
+	if id == null:
+		return null
 
 	if data is Dictionary and data.get(KEY_TYPE) == TYPE_NUMBER:
-		var value: float = get_required(data, KEY_VALUE, Variant.Type.TYPE_FLOAT)
+		var value: Variant = get_required(data, KEY_VALUE, Variant.Type.TYPE_FLOAT, path)
+		if value == null:
+			return null
 		var min = data.get(KEY_MIN, null)
 		var max = data.get(KEY_MAX, null)
 		return WeavlyModel.NumberVariable.new(id, value, min, max)
 
 	if data is Dictionary and data.get(KEY_TYPE) == TYPE_STRING:
-		var value: String = get_required(data, KEY_VALUE, Variant.Type.TYPE_STRING)
+		var value: Variant = get_required(data, KEY_VALUE, Variant.Type.TYPE_STRING, path)
+		if value == null:
+			return null
 		return WeavlyModel.StringVariable.new(id, value)
 
 	if data is Dictionary and data.get(KEY_TYPE) == TYPE_FLAG:
-		var value: bool = get_required(data, KEY_VALUE, Variant.Type.TYPE_BOOL)
+		var value: Variant = get_required(data, KEY_VALUE, Variant.Type.TYPE_BOOL, path)
+		if value == null:
+			return null
 		return WeavlyModel.FlagVariable.new(id, value)
 
-	push_error("Unknown variable type: %s" % str(data))
+	push_error("Unknown variable type at %s: %s" % [path, str(data)])
 	return null
 
 
