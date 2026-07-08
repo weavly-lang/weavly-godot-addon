@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="WeavlyStringVariable" load_steps=2 format=3 uid="uid://d1s7r8x2v3k4m"]
+
+[ext_resource type="Script" uid="uid://wdbxcuqsin2x" path="res://addons/weavly/src/resources/weavly_string_variable.gd" id="1_str"]
+
+[resource]
+script = ExtResource("1_str")
+id = &"player_name"
+value = "Ada"

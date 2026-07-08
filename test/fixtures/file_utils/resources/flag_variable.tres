@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="WeavlyFlagVariable" load_steps=2 format=3 uid="uid://b8f2l9q6w1e3t"]
+
+[ext_resource type="Script" uid="uid://cnmx27eukmgni" path="res://addons/weavly/src/resources/weavly_flag_variable.gd" id="1_flag"]
+
+[resource]
+script = ExtResource("1_flag")
+id = &"door_open"
+value = true
