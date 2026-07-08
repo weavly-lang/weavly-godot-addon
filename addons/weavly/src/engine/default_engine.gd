@@ -3,6 +3,7 @@ extends WeavlyEngine
 
 const DIALOG_IN_PROGRESS = "Dialog is already in progress, cant start for node with ID '%s."
 const NULL_NODE = "Can't enter node with ID '%s' because it's null, finsishing the dialog."
+const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialog."
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -25,6 +26,11 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
 @export var video_extensions: PackedStringArray = [".ogv"]
 
+## Maximum number of node entries a single next() step may perform without pausing
+## before it is treated as a runaway goto cycle and aborted. Bounded goto loops
+## (counters, accumulation) stay well below this; only unbounded cycles trip it.
+@export var max_node_entries_per_step: int = 10000
+
 @export var character_service_script: Script
 @export var command_service_script: Script
 @export var image_service_script: Script
@@ -34,6 +40,12 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var statement_service_script: Script
 @export var variable_service_script: Script
 @export var video_service_script: Script
+
+# Node entry is deferred rather than recursed: goto sets a pending node that the
+# next() loop enters iteratively, keeping the loop flat (see issue #39).
+var _pending_node_id: String = ""
+var _has_pending_node: bool = false
+var _in_next: bool = false
 
 @onready var _finished: bool = true
 
@@ -90,22 +102,45 @@ func start(node_id: String) -> void:
 
 
 func enter_node(node_id: String) -> void:
+	# Queue the node. When called from outside the loop (start, host code) drive
+	# next() synchronously; when called from within the loop (a goto) just leave
+	# the note and let the running loop pick it up, so gotos never recurse.
+	_pending_node_id = node_id
+	_has_pending_node = true
+	if not _in_next:
+		next()
+
+
+func next() -> void:
+	_in_next = true
+	statement_service.resume()
+	var node_entries: int = 0
+	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
+		if _has_pending_node:
+			node_entries += 1
+			if node_entries > max_node_entries_per_step:
+				push_error(GOTO_CYCLE % max_node_entries_per_step)
+				finish()
+				break
+			_enter_pending_node()
+		else:
+			statement_service.advance_statements()
+	_in_next = false
+
+
+func _enter_pending_node() -> void:
+	var node_id: String = _pending_node_id
+	_has_pending_node = false
+	_pending_node_id = ""
 	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id, null)
 	if node != null:
 		variable_service.set_variable(node_id, true)
 		statement_service.clear_statements()
 		statement_service.add_statements(node.body)
 		entered_node.emit(node_id)
-		next()
 	else:
 		push_error(NULL_NODE % node_id)
 		finish()
-
-
-func next() -> void:
-	statement_service.resume()
-	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
-		statement_service.advance_statements()
 
 
 func finish() -> void:
