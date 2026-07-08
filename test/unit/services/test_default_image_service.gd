@@ -72,6 +72,13 @@ func test_grouping_strips_suffix() -> void:
 	assert_is(_service.get_image("cat"), Texture2D)
 
 
+func test_grouping_strips_mid_string_match() -> void:
+	_service.set_group_pattern("_v\\d+")
+	_service.add_image("hero_v1_idle", _FIXTURE_PATH)
+	_service.add_image("hero_v2_idle", _FIXTURE_PATH)
+	assert_is(_service.get_image("hero_idle"), Texture2D)
+
+
 func test_unmatched_id_is_singleton_with_pattern_set() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_image("logo", _FIXTURE_PATH)
