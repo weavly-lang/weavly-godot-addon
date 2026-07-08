@@ -1,7 +1,7 @@
 @tool
 extends EditorImportPlugin
 
-const RECOGNIZED_EXTENSIONS = ["wvl", "wenvl"]
+const RECOGNIZED_EXTENSIONS = ["wvl"]
 
 
 func _get_importer_name() -> String:
