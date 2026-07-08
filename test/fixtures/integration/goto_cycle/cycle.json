@@ -1,0 +1,1 @@
+{"nodes":[{"id":"self_loop","body":[{"type":"goto","id":"self_loop"}]},{"id":"ping","body":[{"type":"goto","id":"pong"}]},{"id":"pong","body":[{"type":"goto","id":"ping"}]}]}
