@@ -94,7 +94,7 @@ static func load_variables_from_resources(engine: WeavlyEngine, dir: String) -> 
 	var file_paths = find_all_files_with_extension(dir, ".tres")
 	for file_path in file_paths:
 		var res = load(file_path)
-		if res is WeavlyNumberVariable:
+		if res is WeavlyNumberVariable or res is WeavlyStringVariable or res is WeavlyFlagVariable:
 			var variable: WeavlyModel.Variable = res.instantiate()
 			engine.variable_service.add_variable(variable)
 

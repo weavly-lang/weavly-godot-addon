@@ -9,6 +9,7 @@ const DefaultVariableService = preload(
 )
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
+const RESOURCES_DIR = FIXTURE_DIR + "/resources"
 const PLAIN_PATH = FIXTURE_DIR + "/plain.json"
 const INVALID_PATH = FIXTURE_DIR + "/invalid.json"
 const MISSING_PATH = FIXTURE_DIR + "/does_not_exist.json"
@@ -117,3 +118,29 @@ func test_create_service_uses_default_when_user_script_null() -> void:
 	)
 	assert_true(service is DefaultNodeService)
 	assert_eq(service.engine, engine)
+
+
+# =====================
+# load_variables_from_resources
+# =====================
+
+
+func test_load_variables_from_resources_loads_number_variable() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
+	assert_true(engine.variable_service.has("score"), "expected number variable to be added")
+	assert_eq(engine.variable_service.get_variable("score"), 7.0)
+
+
+func test_load_variables_from_resources_loads_string_variable() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
+	assert_true(engine.variable_service.has("player_name"), "expected string variable to be added")
+	assert_eq(engine.variable_service.get_variable("player_name"), "Ada")
+
+
+func test_load_variables_from_resources_loads_flag_variable() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
+	assert_true(engine.variable_service.has("door_open"), "expected flag variable to be added")
+	assert_eq(engine.variable_service.get_variable("door_open"), true)
