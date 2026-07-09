@@ -79,6 +79,23 @@ func test_match_missing_cases_is_skipped() -> void:
 	assert_push_error(1)
 
 
+func test_match_unknown_modifier_is_skipped() -> void:
+	var case_data = {"condition": true, "body": []}
+	var match_data = {"type": "match", "modifier": "bogus", "cases": [case_data]}
+	var data = {"nodes": [_node("start", [match_data])]}
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_eq(nodes[0].body.size(), 0)
+	assert_push_error(1)
+
+
+func test_match_unknown_modifier_fixture_is_skipped() -> void:
+	var path = "res://test/fixtures/deserializer/unknown_match_modifier.json"
+	var data = WeavlyFileUtils.load_json_file(path)
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_eq(nodes[0].body.size(), 0)
+	assert_push_error(1)
+
+
 # =====================
 # Variable declarations
 # =====================

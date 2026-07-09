@@ -244,6 +244,9 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 			modifier = WeavlyModel.MatchModifier.LAST
 		"all":
 			modifier = WeavlyModel.MatchModifier.ALL
+		_:
+			push_error("Unknown match modifier '%s' at %s" % [modifier_string, path])
+			return null
 
 	var cases: Array[WeavlyModel.WhenCase] = []
 	for i in range(case_data_list.size()):
