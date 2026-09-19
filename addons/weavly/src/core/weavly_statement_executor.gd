@@ -108,6 +108,10 @@ static func execute_option_block(
 		)
 		if condition:
 			possible_options.append(option)
+
+	if possible_options.is_empty():
+		return
+
 	engine.option_service.add_options(possible_options)
 
 
