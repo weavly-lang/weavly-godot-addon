@@ -73,3 +73,48 @@ func test_open_file_without_a_current_file_discards_scratch_text() -> void:
 	await _type("typed without a file")
 	_panel.open_file(path)
 	assert_str(_panel._code_edit.text).is_equal("@node a\n@endnode\n")
+
+
+# =====================
+# Save shortcut (issue #45)
+# =====================
+
+
+# is_command_or_control_pressed() reads meta on macOS and ctrl elsewhere, so the
+# event carries the modifier of the platform the suite runs on.
+func _key_event(keycode: Key, shift: bool = false, alt: bool = false) -> InputEventKey:
+	var event: InputEventKey = InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	if OS.has_feature("macos"):
+		event.meta_pressed = true
+	else:
+		event.ctrl_pressed = true
+	event.shift_pressed = shift
+	event.alt_pressed = alt
+	return event
+
+
+func test_save_shortcut_saves_with_the_platform_modifier() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	await _type("@node edited\n@endnode\n")
+	_panel._shortcut_input(_key_event(KEY_S))
+	assert_str(FileAccess.get_file_as_string(path)).is_equal("@node edited\n@endnode\n")
+
+
+func test_save_shortcut_ignores_shift_and_alt() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	await _type("@node edited\n@endnode\n")
+	_panel._shortcut_input(_key_event(KEY_S, true, false))
+	_panel._shortcut_input(_key_event(KEY_S, false, true))
+	assert_str(FileAccess.get_file_as_string(path)).is_equal("@node a\n@endnode\n")
+
+
+func test_save_shortcut_ignores_other_keys() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	await _type("@node edited\n@endnode\n")
+	_panel._shortcut_input(_key_event(KEY_D))
+	assert_str(FileAccess.get_file_as_string(path)).is_equal("@node a\n@endnode\n")
