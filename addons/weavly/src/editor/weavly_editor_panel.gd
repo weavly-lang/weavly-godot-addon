@@ -10,6 +10,15 @@ const DEFAULT_EXECUTABLE = "weavly"
 
 const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit it."
 const _LOG_PREFIX = "[Weavly]"
+const _VERSION_UNKNOWN = (
+	"%s Could not read the version of '%s'. Install the Weavly compiler %s or newer with "
+	+ "'uv tool install weavly', then restart Godot so it picks up your PATH, or point the "
+	+ "editor setting '%s' at the executable."
+)
+const _VERSION_TOO_OLD = (
+	"%s Weavly compiler %s is older than the supported %s. Upgrade it with "
+	+ "'uv tool upgrade weavly'."
+)
 
 const _COLOR_ERROR = Color(0.94, 0.42, 0.42)
 const _COLOR_SUCCESS = Color(0.50, 0.84, 0.52)
@@ -25,6 +34,7 @@ var _current_path: String = ""
 var _dirty: bool = false
 var _compiling: bool = false
 var _compile_thread: Thread
+var _checked_executable: String = ""
 
 
 func _ready() -> void:
@@ -172,15 +182,23 @@ func _compile() -> void:
 
 
 func _compile_worker(executable: String, working_dir: String) -> void:
+	var version: String = ""
+	if executable != _checked_executable:
+		version = WeavlyCompilerRunner.get_version(executable)
 	var result: WeavlyCompilerRunner.CompileResult = WeavlyCompilerRunner.compile(
 		executable, working_dir
 	)
-	_on_compile_finished.call_deferred(result)
+	_on_compile_finished.call_deferred(result, executable, version)
 
 
-func _on_compile_finished(result: WeavlyCompilerRunner.CompileResult) -> void:
+func _on_compile_finished(
+	result: WeavlyCompilerRunner.CompileResult, executable: String, version: String
+) -> void:
 	_join_compile_thread()
 	_set_compiling(false)
+	if executable != _checked_executable:
+		_checked_executable = executable
+		_report_version(executable, version)
 	if result.success:
 		_set_status("Build successful", _COLOR_SUCCESS)
 		var message: String = result.output if result.output != "" else "Build successful."
@@ -188,6 +206,14 @@ func _on_compile_finished(result: WeavlyCompilerRunner.CompileResult) -> void:
 		_rescan_filesystem()
 	else:
 		_report_failure(result)
+
+
+func _report_version(executable: String, version: String) -> void:
+	var minimum: String = WeavlyCompilerRunner.MINIMUM_VERSION
+	if version == "":
+		push_warning(_VERSION_UNKNOWN % [_LOG_PREFIX, executable, minimum, SETTING_EXECUTABLE])
+	elif not WeavlyCompilerRunner.is_version_supported(version):
+		push_warning(_VERSION_TOO_OLD % [_LOG_PREFIX, version, minimum])
 
 
 func _set_compiling(compiling: bool) -> void:
