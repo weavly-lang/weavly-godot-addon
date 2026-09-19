@@ -1,5 +1,11 @@
 extends GutTest
 
+const SYNTAX_ERROR_OUTPUT = """src/sub/broken.wvl:2:11: error: unexpected end of line
+  2 | @set $x =
+    |           ^
+  expected one of: '$', '(', '-', 'false', 'not', 'true', a number, a quoted string
+src/b.wvl:2:7: error: goto target 'nowhere' matches no node"""
+
 # =====================
 # build_command
 # =====================
@@ -57,7 +63,7 @@ func test_strip_ansi_leaves_plain_text_unchanged() -> void:
 func test_build_result_success_on_zero_exit() -> void:
 	var result = WeavlyCompilerRunner.build_result(0, "Build successful")
 	assert_true(result.success)
-	assert_eq(result.error_line, -1)
+	assert_eq(result.errors.size(), 0)
 
 
 func test_build_result_failure_on_nonzero_exit() -> void:
@@ -65,15 +71,65 @@ func test_build_result_failure_on_nonzero_exit() -> void:
 	assert_false(result.success)
 
 
-func test_build_result_parses_error_location() -> void:
-	var output = "Syntax Error in file: src/story.wvl, Line 12, Column 4\nUnexpected token"
-	var result = WeavlyCompilerRunner.build_result(1, output)
-	assert_eq(result.error_file, "src/story.wvl")
-	assert_eq(result.error_line, 12)
-	assert_eq(result.error_column, 4)
+func test_build_result_parses_errors_on_failure() -> void:
+	var result = WeavlyCompilerRunner.build_result(1, "src/story.wvl:12:4: error: boom")
+	assert_eq(result.errors.size(), 1)
 
 
 func test_build_result_strips_ansi_from_output() -> void:
 	var esc = char(27)
 	var result = WeavlyCompilerRunner.build_result(1, esc + "[31mboom" + esc + "[0m")
 	assert_eq(result.output, "boom")
+
+
+# =====================
+# parse_errors
+# =====================
+
+
+func test_parse_errors_reads_file_line_column_and_message() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors("src/story.wvl:12:4: error: unexpected 'Go'")
+	assert_eq(errors.size(), 1)
+	assert_eq(errors[0].file, "src/story.wvl")
+	assert_eq(errors[0].line, 12)
+	assert_eq(errors[0].column, 4)
+	assert_eq(errors[0].message, "unexpected 'Go'")
+
+
+func test_parse_errors_without_column() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors(
+		"src/d.wvl:2: error: invalid encoding, files must be saved as UTF-8"
+	)
+	assert_eq(errors.size(), 1)
+	assert_eq(errors[0].line, 2)
+	assert_eq(errors[0].column, -1)
+
+
+func test_parse_errors_ignores_errors_without_location() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors("error: directory 'src' already exists")
+	assert_eq(errors.size(), 0)
+
+
+func test_parse_errors_collects_every_error_and_skips_detail_lines() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors(SYNTAX_ERROR_OUTPUT)
+	assert_eq(errors.size(), 2)
+	assert_eq(errors[0].file, "src/sub/broken.wvl")
+	assert_eq(errors[0].line, 2)
+	assert_eq(errors[0].column, 11)
+	assert_eq(errors[0].message, "unexpected end of line")
+	assert_eq(errors[1].file, "src/b.wvl")
+	assert_eq(errors[1].message, "goto target 'nowhere' matches no node")
+
+
+func test_parse_errors_handles_crlf_output() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors(SYNTAX_ERROR_OUTPUT.replace("\n", "\r\n"))
+	assert_eq(errors.size(), 2)
+	assert_eq(errors[0].message, "unexpected end of line")
+	assert_eq(errors[1].column, 7)
+
+
+func test_parse_errors_resolves_paths_against_working_dir() -> void:
+	var errors = WeavlyCompilerRunner.parse_errors(
+		"src/sub/a.wvl:1:1: error: boom", "C:/Games/My Project/dialog"
+	)
+	assert_eq(errors[0].file, "C:/Games/My Project/dialog/src/sub/a.wvl")
