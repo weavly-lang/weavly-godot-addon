@@ -42,5 +42,5 @@ func advance_statements() -> void:
 		return
 
 	var statement: WeavlyModel.Statement = frame.get_current_statement()
-	WeavlyStatementExecutor.execute_statment(statement, engine)
+	WeavlyStatementExecutor.execute_statement(statement, engine)
 	frame.increase_counter()

@@ -1,7 +1,7 @@
 class_name WeavlyStatementExecutor
 
 
-static func execute_statment(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
+static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
 	if is_instance_of(statement, WeavlyModel.NarrationLine):
 		execute_narration_line(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.CharacterLine):
@@ -21,7 +21,7 @@ static func execute_statment(statement: WeavlyModel.Statement, engine: WeavlyEng
 	elif is_instance_of(statement, WeavlyModel.RandomBlock):
 		execute_random_block(statement, engine, randf)
 	else:
-		push_error("Cant execute statement, got unknown type '%s'" % [str(typeof(statement))])
+		push_error("Can't execute statement, got unknown type '%s'" % [str(typeof(statement))])
 
 
 static func execute_narration_line(

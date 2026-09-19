@@ -6,7 +6,7 @@ const WRONG_CONDITION_TYPE = "Condition can't be of type '%s', returning '%s' in
 const WRONG_VALUE_TYPE = "Can't use operator '%s' on value of type '%s'."
 const WRONG_VALUE_TYPES = "Can't use operator '%s' on values of types '%s' and '%s'."
 const NULL_VARIABLE = "Variable with ID '%s' is null."
-const DIVISON_BY_ZERO = "Division by zero detected, returning '%s'"
+const DIVISION_BY_ZERO = "Division by zero detected, returning '%s'"
 
 const NOT = "not"
 const AND = "and"
@@ -136,7 +136,7 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 		return left * right
 	if op == DIV:
 		if right == 0:
-			push_error(DIVISON_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
+			push_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
 			return DEFAULT_DIVISION_BY_ZERO_RETURN
 
 		return left / right

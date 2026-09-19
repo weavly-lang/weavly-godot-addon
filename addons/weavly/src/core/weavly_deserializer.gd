@@ -232,7 +232,7 @@ static func compile_command_statement(
 
 static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.MatchBlock:
 	var modifier_string = get_required(data, KEY_MODIFIER, Variant.Type.TYPE_STRING, path)
-	var case_data_list = get_required(data, KEY_CASES, TYPE_ARRAY, path)
+	var case_data_list = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
 	if modifier_string == null or case_data_list == null:
 		return null
 
@@ -307,7 +307,7 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 
 
 # =====================
-# Option Block
+# Random Block
 # =====================
 
 
