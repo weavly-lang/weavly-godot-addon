@@ -38,6 +38,8 @@ func _ready() -> void:
 func open_file(path: String) -> void:
 	if path == "":
 		return
+	if _dirty and _current_path != "" and not _save_file():
+		return
 	var abs_path: String = ProjectSettings.globalize_path(path)
 	var file: FileAccess = FileAccess.open(abs_path, FileAccess.READ)
 	if file == null:
