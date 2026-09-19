@@ -37,6 +37,15 @@ func test_resume_clears_paused() -> void:
 	assert_bool(_service.is_paused()).is_false()
 
 
+func test_add_statement_groups_does_not_reorder_the_callers_array() -> void:
+	var first: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
+	var second: Array[WeavlyModel.Statement] = []
+	var groups: Array[Array] = [first, second]
+	_service.add_statement_groups(groups)
+	assert_that(groups[0]).is_same(first)
+	assert_that(groups[1]).is_same(second)
+
+
 # =====================
 # advance_statements — empty stack
 # =====================

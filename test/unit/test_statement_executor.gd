@@ -1,3 +1,5 @@
+# gdlint:ignore = max-public-methods
+
 extends GdUnitTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
@@ -213,6 +215,27 @@ func test_match_last_picks_last_matching_case() -> void:
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(last)
+
+
+func test_match_last_does_not_reorder_the_blocks_cases() -> void:
+	var first := WeavlyModel.WhenCase.new(_bool_expr(true), _body("first"))
+	var last := WeavlyModel.WhenCase.new(_bool_expr(true), _body("last"))
+	var cases: Array[WeavlyModel.WhenCase] = [first, last]
+	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.LAST, cases)
+	WeavlyStatementExecutor.execute_match_block(block, _engine)
+	assert_that(block.cases[0]).is_same(first)
+	assert_that(block.cases[1]).is_same(last)
+
+
+func test_match_block_can_run_twice_with_the_same_result() -> void:
+	var cases: Array[WeavlyModel.WhenCase] = [
+		WeavlyModel.WhenCase.new(_bool_expr(true), _body("first")),
+		WeavlyModel.WhenCase.new(_bool_expr(true), _body("last")),
+	]
+	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.LAST, cases)
+	WeavlyStatementExecutor.execute_match_block(block, _engine)
+	WeavlyStatementExecutor.execute_match_block(block, _engine)
+	assert_that(_statement.add_statements_calls[0]).is_same(_statement.add_statements_calls[1])
 
 
 # =====================
