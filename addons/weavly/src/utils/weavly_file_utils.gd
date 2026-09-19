@@ -16,7 +16,7 @@ static func find_all_files_with_extensions(
 		push_error("Failed to open directory: " + dir_path)
 		return results
 
-	for entry: String in ResourceLoader.list_directory(dir_path):
+	for entry: String in _list_directory(dir_path):
 		if entry.begins_with("."):
 			continue
 
@@ -31,6 +31,24 @@ static func find_all_files_with_extensions(
 				break
 
 	return results
+
+
+# Inside a PCK only ResourceLoader reports the original names of imported assets,
+# but it lists res:// only, so paths outside the project use DirAccess. Both
+# report subdirectories with a trailing "/".
+static func _list_directory(dir_path: String) -> PackedStringArray:
+	if dir_path.begins_with("res://"):
+		return ResourceLoader.list_directory(dir_path)
+
+	var entries: PackedStringArray = []
+	var dir: DirAccess = DirAccess.open(dir_path)
+	if dir == null:
+		return entries
+
+	for directory_name: String in dir.get_directories():
+		entries.append(directory_name + "/")
+	entries.append_array(dir.get_files())
+	return entries
 
 
 static func load_json_file(path: String) -> Variant:

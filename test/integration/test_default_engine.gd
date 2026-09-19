@@ -300,3 +300,17 @@ func test_list_mode_goto_cycle_aborts_via_error() -> void:
 	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
 	assert_that(_signal_log.back()).is_equal("finished_dialog")
 	assert_bool(engine.is_running()).is_false()
+
+
+# =====================
+# Media outside res:// (issue #57)
+# =====================
+
+
+func test_engine_indexes_and_loads_images_from_an_external_directory() -> void:
+	var media_dir: String = create_temp_dir("engine_external_media")
+	Image.create(2, 2, false, Image.FORMAT_RGB8).save_png(media_dir.path_join("splash.png"))
+	var engine = _new_engine(LINEAR_FIXTURE)
+	engine.image_path = media_dir
+	add_child(auto_free(engine))
+	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
