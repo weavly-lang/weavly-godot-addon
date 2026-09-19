@@ -11,36 +11,24 @@ static func find_all_files_with_extensions(
 	dir_path: String, extensions: PackedStringArray
 ) -> PackedStringArray:
 	var results: PackedStringArray = []
-	var dir = DirAccess.open(dir_path)
 
-	if dir == null:
+	if not DirAccess.dir_exists_absolute(dir_path):
 		push_error("Failed to open directory: " + dir_path)
 		return results
 
-	dir.list_dir_begin()
-
-	var file_name = dir.get_next()
-
-	while file_name != "":
-		if file_name.begins_with("."):
-			file_name = dir.get_next()
+	for entry: String in ResourceLoader.list_directory(dir_path):
+		if entry.begins_with("."):
 			continue
 
-		var full_path = dir_path.path_join(file_name)
-
-		if dir.current_is_dir():
-			results.append_array(find_all_files_with_extensions(full_path, extensions))
-			file_name = dir.get_next()
+		if entry.ends_with("/"):
+			var sub_path: String = dir_path.path_join(entry.trim_suffix("/"))
+			results.append_array(find_all_files_with_extensions(sub_path, extensions))
 			continue
 
 		for extension: String in extensions:
-			if file_name.to_lower().ends_with(extension):
-				results.append(full_path)
+			if entry.to_lower().ends_with(extension):
+				results.append(dir_path.path_join(entry))
 				break
-
-		file_name = dir.get_next()
-
-	dir.list_dir_end()
 
 	return results
 

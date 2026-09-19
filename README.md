@@ -48,7 +48,9 @@ func _on_option_selected(option: WeavlyModel.Option) -> void:
     engine.option_service.choose_option(option)
 ```
 
-By default the engine loads compiled dialog JSON from `dialog/build` and indexes media and resources from `media/images`, `media/videos`, `characters`, and `variables` — all configurable via exports on the `WeavlyEngine` node.
+By default the engine loads compiled dialog JSON from `res://dialog/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node. Keep these paths `res://`: a path without it only works in the editor, not in an exported game.
+
+For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialog JSON is not packed.
 
 ## Writing dialogs in the editor
 

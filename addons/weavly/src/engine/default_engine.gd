@@ -16,11 +16,11 @@ const DEFAULT_STATEMENT_SERVICE = preload(DEFAULTS_PATH + "default_statement_ser
 const DEFAULT_VARIABLE_SERVICE = preload(DEFAULTS_PATH + "default_variable_service.gd")
 const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd")
 
-@export var dialog_path: String = "dialog/build"
-@export var video_path: String = "media/videos"
-@export var image_path: String = "media/images"
-@export var character_path: String = "characters"
-@export var variable_path: String = "variables"
+@export var dialog_path: String = "res://dialog/build"
+@export var video_path: String = "res://media/videos"
+@export var image_path: String = "res://media/images"
+@export var character_path: String = "res://characters"
+@export var variable_path: String = "res://variables"
 @export var image_group_pattern: String = ""
 @export var video_group_pattern: String = ""
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
