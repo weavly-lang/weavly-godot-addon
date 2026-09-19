@@ -106,7 +106,12 @@ func _shortcut_input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventKey and event.pressed):
 		return
-	if event.keycode == KEY_S and event.ctrl_pressed:
+	if (
+		event.keycode == KEY_S
+		and event.is_command_or_control_pressed()
+		and not event.shift_pressed
+		and not event.alt_pressed
+	):
 		_on_save_pressed()
 		accept_event()
 
