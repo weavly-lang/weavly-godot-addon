@@ -23,10 +23,22 @@ jobs:
     permissions:
       contents: read
       checks: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - godot: "4.5"
+            version: "4.5.2"
+          - godot: "4.6"
+            version: "4.6.3"
+          - godot: "4.7"
+            version: "4.7.2"
+    name: test (Godot ${{ matrix.godot }})
     steps:
       - uses: actions/checkout@v4
       - uses: godot-gdunit-labs/gdUnit4-action@v1
         with:
-          godot-version: "4.5.2"
+          godot-version: ${{ matrix.version }}
           version: installed
           paths: res://test
+          report-name: Test report (Godot ${{ matrix.godot }})

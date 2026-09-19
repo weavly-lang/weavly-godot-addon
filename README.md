@@ -1,6 +1,6 @@
 # Weavly Godot Addon
 
-A Godot 4.5 addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for writing branching dialogs; the [compiler](https://github.com/weavly-lang/weavly-compiler) (Python) turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
+A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for writing branching dialogs; the [compiler](https://github.com/weavly-lang/weavly-compiler) (Python) turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
 
 ## Features
 
@@ -65,4 +65,4 @@ Language reference, grammar, and compiler commands live in the [compiler repo](h
 
 ## Development
 
-Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`); both run in CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`); both run in CI, with the tests running on Godot 4.5, 4.6 and 4.7. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
