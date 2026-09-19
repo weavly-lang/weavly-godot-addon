@@ -101,6 +101,15 @@ func test_add_statement_groups_executes_first_group_first() -> void:
 	assert_bool(_engine.did_finish).is_true()
 
 
+func test_add_statement_groups_does_not_reorder_the_callers_array() -> void:
+	var first: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
+	var second: Array[WeavlyModel.Statement] = []
+	var groups: Array[Array] = [first, second]
+	_service.add_statement_groups(groups)
+	assert_that(groups[0]).is_same(first)
+	assert_that(groups[1]).is_same(second)
+
+
 # =====================
 # advance_statements
 # =====================

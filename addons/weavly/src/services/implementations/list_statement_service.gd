@@ -26,9 +26,10 @@ func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 
 
 func add_statement_groups(groups: Array[Array]) -> void:
-	groups.reverse()
-	for statements: Array[WeavlyModel.Statement] in groups:
-		add_statements(statements)
+	# Last group first, so the first group ends up on top of the stack. Iterating
+	# backwards leaves the caller's array untouched.
+	for i in range(groups.size() - 1, -1, -1):
+		add_statements(groups[i])
 
 
 func advance_statements() -> void:

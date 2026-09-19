@@ -62,7 +62,7 @@ static func execute_command_statement(
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:
-	var cases = match_block.cases.duplicate(true)
+	var cases: Array[WeavlyModel.WhenCase] = match_block.cases
 	match match_block.modifier:
 		WeavlyModel.MatchModifier.FIRST:
 			_execute_first_case(cases, engine)
@@ -81,8 +81,8 @@ static func _execute_first_case(cases: Array[WeavlyModel.WhenCase], engine: Weav
 
 
 static func _execute_last_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
-	cases.reverse()
-	for case: WeavlyModel.WhenCase in cases:
+	for i in range(cases.size() - 1, -1, -1):
+		var case: WeavlyModel.WhenCase = cases[i]
 		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
 		if condition:
 			engine.statement_service.add_statements(case.body)
