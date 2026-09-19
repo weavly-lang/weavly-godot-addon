@@ -65,4 +65,4 @@ Language reference, grammar, and compiler commands live in the [compiler repo](h
 
 ## Development
 
-Tests use [GUT](https://github.com/bitwes/Gut) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`); both run in CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`); both run in CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.

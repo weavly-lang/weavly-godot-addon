@@ -1,4 +1,4 @@
-extends GutTest
+extends WeavlyTestSuite
 
 const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_character_service.gd"
@@ -7,7 +7,7 @@ const Service = preload(
 var _service
 
 
-func before_each() -> void:
+func before_test() -> void:
 	_service = Service.new()
 	_service.initialize(null)
 
@@ -21,18 +21,18 @@ func test_add_and_get() -> void:
 	var character := WeavlyCharacter.new()
 	character.id = &"hero"
 	_service.add_character(character)
-	assert_eq(_service.get_character(&"hero"), character)
+	assert_that(_service.get_character(&"hero")).is_equal(character)
 
 
 func test_get_missing_returns_default() -> void:
-	assert_null(_service.get_character(&"missing"))
-	assert_push_error(1)
+	assert_that(_service.get_character(&"missing")).is_null()
+	assert_logged(["Character with id 'missing' doesn't exist"])
 
 
 func test_get_missing_returns_provided_default() -> void:
 	var fallback := WeavlyCharacter.new()
-	assert_eq(_service.get_character(&"missing", fallback), fallback)
-	assert_push_error(1)
+	assert_that(_service.get_character(&"missing", fallback)).is_equal(fallback)
+	assert_logged(["Character with id 'missing' doesn't exist"])
 
 
 # =====================
@@ -47,5 +47,5 @@ func test_add_duplicate_is_ignored() -> void:
 	second.id = &"hero"
 	_service.add_character(first)
 	_service.add_character(second)
-	assert_engine_error(1)
-	assert_eq(_service.get_character(&"hero"), first)
+	assert_logged([], ["Character with id 'hero' already exists."])
+	assert_that(_service.get_character(&"hero")).is_equal(first)

@@ -1,11 +1,11 @@
-extends GutTest
+extends GdUnitTestSuite
 
 const Service = preload("res://addons/weavly/src/services/implementations/list_line_service.gd")
 
 var _service
 
 
-func before_each() -> void:
+func before_test() -> void:
 	_service = Service.new()
 	_service.initialize(null)
 
@@ -17,9 +17,9 @@ func before_each() -> void:
 
 func test_narration_line_emits_signal() -> void:
 	var line := WeavlyModel.NarrationLine.new("hello")
-	watch_signals(_service)
+	monitor_signals(_service, false)
 	_service.execute_narration_line(line)
-	assert_signal_emitted_with_parameters(_service, "executed_narration_line", [line])
+	await assert_signal(_service).is_emitted("executed_narration_line", [line])
 
 
 # =====================
@@ -29,6 +29,6 @@ func test_narration_line_emits_signal() -> void:
 
 func test_character_line_emits_signal() -> void:
 	var line := WeavlyModel.CharacterLine.new("Alice", false, "hi")
-	watch_signals(_service)
+	monitor_signals(_service, false)
 	_service.execute_character_line(line)
-	assert_signal_emitted_with_parameters(_service, "executed_character_line", [line])
+	await assert_signal(_service).is_emitted("executed_character_line", [line])

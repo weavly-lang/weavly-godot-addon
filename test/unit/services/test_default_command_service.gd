@@ -1,4 +1,4 @@
-extends GutTest
+extends GdUnitTestSuite
 
 const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_command_service.gd"
@@ -7,13 +7,13 @@ const Service = preload(
 var _service
 
 
-func before_each() -> void:
+func before_test() -> void:
 	_service = Service.new()
 	_service.initialize(null)
 
 
 func test_execute_command_emits_signal() -> void:
 	var cmd := WeavlyModel.CommandStatement.new("play_sound", "explosion")
-	watch_signals(_service)
+	monitor_signals(_service, false)
 	_service.execute_command(cmd)
-	assert_signal_emitted_with_parameters(_service, "executed_command", [cmd])
+	await assert_signal(_service).is_emitted("executed_command", [cmd])
