@@ -10,9 +10,9 @@ Godot 4.5 (Forward+) addon that runs Weavly programs at runtime by consuming JSO
 
 ## Relationship to the compiler
 
-Sibling repo at `../compiler` (Python) turns `.wvl` into JSON; this addon consumes it. Read-only upstream — output-shape changes start there, this repo follows.
+Sibling repo at `../weavly-compiler` (Python) turns `.wvl` into JSON; this addon consumes it. Read-only upstream — output-shape changes start there, this repo follows.
 
-Compiler context (commands, grammar, JSON output shape): @../compiler/CLAUDE.md
+Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLAUDE.md
 
 **Naming notes:** "the compiler" = the Python project. `WeavlyDeserializer` ([core/weavly_deserializer.gd](addons/weavly/src/core/weavly_deserializer.gd)) = the GDScript JSON-to-model reader (its `compile_*` methods deserialize, they don't compile `.wvl`). `WeavlyCompilerRunner` ([editor/weavly_compiler_runner.gd](addons/weavly/src/editor/weavly_compiler_runner.gd)) = editor-side wrapper that shells out to the actual Python compiler.
 
@@ -51,7 +51,7 @@ test/                               # GUT tests: unit/ mirrors src/, integration
 
 ## Adding a new statement type
 
-Cross-cuts both repos. Update `compiler` first (grammar + `WvlTransformer`), then here:
+Cross-cuts both repos. Update `weavly-compiler` first (grammar + `WvlTransformer`), then here:
 
 1. Add `KEY_*` / `TYPE_*` constants in [weavly_deserializer.gd](addons/weavly/src/core/weavly_deserializer.gd) if needed.
 2. Add `compile_<type>` and wire into the `match` in `compile_statement`.
