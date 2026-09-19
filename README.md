@@ -1,6 +1,6 @@
 # Weavly Godot Addon
 
-A Godot 4.5 addon that runs [Weavly](https://github.com/weavly-lang/compiler) dialog programs at runtime. Weavly is a small DSL for writing branching dialogs; the [compiler](https://github.com/weavly-lang/compiler) (Python) turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
+A Godot 4.5 addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for writing branching dialogs; the [compiler](https://github.com/weavly-lang/weavly-compiler) (Python) turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
 
 ## Features
 
@@ -14,7 +14,13 @@ A Godot 4.5 addon that runs [Weavly](https://github.com/weavly-lang/compiler) di
 
 1. Copy `addons/weavly` into your project's `addons/` folder.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/compiler) and point the editor setting `weavly/executable_path` at the `weavly` executable if it is not on your PATH.
+3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.1.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+   ```bash
+   uv tool install weavly
+   ```
+
+   With Python 3.11+ already installed, `pipx install weavly` works too. Restart Godot afterwards so it picks up the updated PATH, or point the editor setting `weavly/executable_path` at the `weavly` executable.
 
 ## Quick start
 
@@ -53,7 +59,7 @@ Relevant settings:
 - `weavly/dialog_project_dir` (project setting) — the Weavly project the compile button builds, default `res://dialog`.
 - `weavly/executable_path` (editor setting) — path to the `weavly` CLI, default `weavly`.
 
-Language reference, grammar, and compiler commands live in the [compiler repo](https://github.com/weavly-lang/compiler).
+Language reference, grammar, and compiler commands live in the [compiler repo](https://github.com/weavly-lang/weavly-compiler).
 
 ## Development
 
