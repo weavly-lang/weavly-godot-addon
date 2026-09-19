@@ -1,3 +1,5 @@
+# gdlint:ignore = max-public-methods
+
 extends GdUnitTestSuite
 
 const SYNTAX_ERROR_OUTPUT = """src/sub/broken.wvl:2:11: error: unexpected end of line
@@ -133,3 +135,44 @@ func test_parse_errors_resolves_paths_against_working_dir() -> void:
 		"src/sub/a.wvl:1:1: error: boom", "C:/Games/My Project/dialog"
 	)
 	assert_that(errors[0].file).is_equal("C:/Games/My Project/dialog/src/sub/a.wvl")
+
+
+# =====================
+# Version check (issue #64)
+# =====================
+
+
+func test_build_version_command_references_executable_and_flag() -> void:
+	var command = WeavlyCompilerRunner.build_version_command("weavly")
+	var joined = _joined(command)
+	assert_str(joined).contains("weavly")
+	assert_str(joined).contains("--version")
+
+
+func test_build_version_command_quotes_paths_with_spaces() -> void:
+	var command = WeavlyCompilerRunner.build_version_command("C:/Program Files/weavly.exe")
+	assert_str(_joined(command)).contains('"C:/Program Files/weavly.exe"')
+
+
+func test_parse_version_reads_the_cli_output() -> void:
+	assert_str(WeavlyCompilerRunner.parse_version("weavly 0.1.0\n")).is_equal("0.1.0")
+
+
+func test_parse_version_returns_empty_for_unrelated_output() -> void:
+	assert_str(WeavlyCompilerRunner.parse_version("command not found")).is_equal("")
+
+
+func test_is_version_supported_accepts_the_minimum_and_newer() -> void:
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.2.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("1.0.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.1")).is_true()
+
+
+func test_is_version_supported_rejects_older_and_unknown() -> void:
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.0.9")).is_false()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("")).is_false()
+
+
+func test_get_version_is_empty_for_a_missing_executable() -> void:
+	assert_str(WeavlyCompilerRunner.get_version("weavly-does-not-exist")).is_equal("")
