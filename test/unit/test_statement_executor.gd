@@ -267,13 +267,18 @@ func test_option_block_filters_options_by_condition() -> void:
 	assert_that(passed[1]).is_same(keep_c)
 
 
-func test_option_block_with_no_passing_options_passes_empty_array() -> void:
+func test_option_block_with_no_passing_options_does_not_add_options() -> void:
 	var block := WeavlyModel.OptionBlock.new(
 		[WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false)]
 	)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
-	assert_that(_option.add_options_calls.size()).is_equal(1)
-	assert_that((_option.add_options_calls[0] as Array).size()).is_equal(0)
+	assert_that(_option.add_options_calls).is_empty()
+
+
+func test_option_block_without_options_does_not_add_options() -> void:
+	var options: Array[WeavlyModel.Option] = []
+	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(options), _engine)
+	assert_that(_option.add_options_calls).is_empty()
 
 
 # =====================
