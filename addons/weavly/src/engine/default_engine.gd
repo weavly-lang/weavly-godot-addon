@@ -1,8 +1,8 @@
 class_name WeavlyDefaultEngine
 extends WeavlyEngine
 
-const DIALOG_IN_PROGRESS = "Dialog is already in progress, cant start for node with ID '%s."
-const NULL_NODE = "Can't enter node with ID '%s' because it's null, finsishing the dialog."
+const DIALOG_IN_PROGRESS = "Dialog is already in progress, can't start for node with ID '%s'."
+const NULL_NODE = "Can't enter node with ID '%s' because it's null, finishing the dialog."
 const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialog."
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
@@ -41,7 +41,7 @@ var _pending_node_id: String = ""
 var _has_pending_node: bool = false
 var _in_next: bool = false
 
-@onready var _finished: bool = true
+var _finished: bool = true
 
 
 func _ready() -> void:

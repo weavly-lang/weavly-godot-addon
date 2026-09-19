@@ -98,7 +98,7 @@ func test_start_on_running_dialog_warns_and_does_nothing() -> void:
 	var log_after_first_start = _signal_log.duplicate()
 	engine.start("start")
 	# Second start pushes a warning and emits no further signals.
-	assert_logged([], ["Dialog is already in progress, cant start for node with ID 'start."])
+	assert_logged([], ["Dialog is already in progress, can't start for node with ID 'start'."])
 	assert_that(_signal_log).is_equal(log_after_first_start)
 
 
@@ -128,7 +128,7 @@ func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
 	assert_logged(
 		[
 			"Node with id 'does_not_exist' doesn't exist",
-			"Can't enter node with ID 'does_not_exist' because it's null, finsishing the dialog."
+			"Can't enter node with ID 'does_not_exist' because it's null, finishing the dialog."
 		]
 	)
 	assert_that(_signal_log[log_before]).is_equal("finished_dialog")

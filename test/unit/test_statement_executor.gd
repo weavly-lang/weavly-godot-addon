@@ -121,14 +121,14 @@ func _bool_expr(v: bool) -> WeavlyModel.WeavlyExpression:
 
 func test_narration_line_delegates_to_line_service() -> void:
 	var line := WeavlyModel.NarrationLine.new("hello")
-	WeavlyStatementExecutor.execute_statment(line, _engine)
+	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.narration_calls.size()).is_equal(1)
 	assert_that(_line.narration_calls[0]).is_same(line)
 
 
 func test_character_line_delegates_to_line_service() -> void:
 	var line := WeavlyModel.CharacterLine.new("Alice", false, "hi")
-	WeavlyStatementExecutor.execute_statment(line, _engine)
+	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.character_calls.size()).is_equal(1)
 	assert_that(_line.character_calls[0]).is_same(line)
 
@@ -140,7 +140,7 @@ func test_character_line_delegates_to_line_service() -> void:
 
 func test_command_statement_delegates_to_command_service() -> void:
 	var command := WeavlyModel.CommandStatement.new("cmd", "do it")
-	WeavlyStatementExecutor.execute_statment(command, _engine)
+	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_that(_command.command_calls.size()).is_equal(1)
 	assert_that(_command.command_calls[0]).is_same(command)
 
@@ -152,7 +152,7 @@ func test_command_statement_delegates_to_command_service() -> void:
 
 func test_goto_statement_delegates_to_engine_enter_node() -> void:
 	var goto := WeavlyModel.GotoStatement.new("target_node")
-	WeavlyStatementExecutor.execute_statment(goto, _engine)
+	WeavlyStatementExecutor.execute_statement(goto, _engine)
 	assert_that(_engine.last_entered_node).is_equal("target_node")
 
 
@@ -163,7 +163,7 @@ func test_goto_statement_delegates_to_engine_enter_node() -> void:
 
 func test_finish_statement_delegates_to_engine_finish() -> void:
 	var finish := WeavlyModel.FinishStatement.new()
-	WeavlyStatementExecutor.execute_statment(finish, _engine)
+	WeavlyStatementExecutor.execute_statement(finish, _engine)
 	assert_bool(_engine.did_finish).is_true()
 
 
