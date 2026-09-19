@@ -20,13 +20,13 @@ jobs:
   test:
     needs: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
       - uses: actions/checkout@v4
-      - uses: chickensoft-games/setup-godot@v2
+      - uses: godot-gdunit-labs/gdUnit4-action@v1
         with:
-          version: "4.5.0"
-          use-dotnet: false
-      - name: Import project
-        run: timeout 30 godot --headless --import || true
-      - name: Run tests
-        run: godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://test -ginclude_subdirs -gexit
+          godot-version: "4.5.2"
+          version: installed
+          paths: res://test

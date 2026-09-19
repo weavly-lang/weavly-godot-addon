@@ -1,6 +1,6 @@
 # gdlint:ignore = max-public-methods
 
-extends GutTest
+extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
@@ -10,7 +10,19 @@ const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 
 func _make_engine() -> WeavlyEngine:
-	return add_child_autofree(FakeEngine.new())
+	var engine: WeavlyEngine = auto_free(FakeEngine.new())
+	add_child(engine)
+	return engine
+
+
+func _eval(expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine = null) -> Variant:
+	if engine == null:
+		engine = _make_engine()
+	return WeavlyExpressionEvaluator.evaluate_expression(expression, engine)
+
+
+func _cond(expression: WeavlyModel.WeavlyExpression) -> bool:
+	return WeavlyExpressionEvaluator.evaluate_condition(expression, _make_engine())
 
 
 func _num(v: float) -> WeavlyModel.Number:
@@ -49,31 +61,19 @@ func _bin(
 
 
 func test_true_expression() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			WeavlyModel.TrueExpression.new(), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(WeavlyModel.TrueExpression.new())).is_equal(true)
 
 
 func test_false_expression() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			WeavlyModel.FalseExpression.new(), _make_engine()
-		),
-		false
-	)
+	assert_that(_eval(WeavlyModel.FalseExpression.new())).is_equal(false)
 
 
 func test_number() -> void:
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_num(42.0), _make_engine()), 42.0)
+	assert_that(_eval(_num(42.0))).is_equal(42.0)
 
 
 func test_string_literal() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(_slit("hello"), _make_engine()), "hello"
-	)
+	assert_that(_eval(_slit("hello"))).is_equal("hello")
 
 
 # =====================
@@ -84,25 +84,26 @@ func test_string_literal() -> void:
 func test_identifier_number_variable() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("score", 10.0)
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_id(&"score"), engine), 10.0)
+	assert_that(_eval(_id(&"score"), engine)).is_equal(10.0)
 
 
 func test_identifier_string_variable() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("name", "Alice")
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_id(&"name"), engine), "Alice")
+	assert_that(_eval(_id(&"name"), engine)).is_equal("Alice")
 
 
 func test_identifier_flag_variable() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("active", true)
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(_id(&"active"), engine), true)
+	assert_that(_eval(_id(&"active"), engine)).is_equal(true)
 
 
 func test_identifier_missing_returns_null() -> void:
-	assert_null(WeavlyExpressionEvaluator.evaluate_expression(_id(&"missing"), _make_engine()))
-	assert_engine_error(1)
-	assert_push_error(1)
+	assert_that(_eval(_id(&"missing"))).is_null()
+	assert_logged(
+		["Variable with ID 'missing' is null."], ["Variable with id 'missing' doesn't exist"]
+	)
 
 
 # =====================
@@ -111,31 +112,21 @@ func test_identifier_missing_returns_null() -> void:
 
 
 func test_not_true() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(_unary("not", _bool(true)), _make_engine()),
-		false
-	)
+	assert_that(_eval(_unary("not", _bool(true)))).is_equal(false)
 
 
 func test_not_false() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(_unary("not", _bool(false)), _make_engine()),
-		true
-	)
+	assert_that(_eval(_unary("not", _bool(false)))).is_equal(true)
 
 
 func test_not_type_mismatch_returns_null() -> void:
-	assert_null(
-		WeavlyExpressionEvaluator.evaluate_expression(_unary("not", _num(1.0)), _make_engine())
-	)
-	assert_push_error(1)
+	assert_that(_eval(_unary("not", _num(1.0)))).is_null()
+	assert_logged(["Can't use operator 'not' on value of type 'float'."])
 
 
 func test_unknown_unary_op_returns_null() -> void:
-	assert_null(
-		WeavlyExpressionEvaluator.evaluate_expression(_unary("~", _bool(true)), _make_engine())
-	)
-	assert_push_error(1)
+	assert_that(_eval(_unary("~", _bool(true)))).is_null()
+	assert_logged(["Unknown expression with operator '~'."])
 
 
 # =====================
@@ -144,58 +135,31 @@ func test_unknown_unary_op_returns_null() -> void:
 
 
 func test_add() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("+", _num(3.0), _num(4.0)), _make_engine()
-		),
-		7.0
-	)
+	assert_that(_eval(_bin("+", _num(3.0), _num(4.0)))).is_equal(7.0)
 
 
 func test_sub() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("-", _num(10.0), _num(3.0)), _make_engine()
-		),
-		7.0
-	)
+	assert_that(_eval(_bin("-", _num(10.0), _num(3.0)))).is_equal(7.0)
 
 
 func test_mul() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("*", _num(3.0), _num(4.0)), _make_engine()
-		),
-		12.0
-	)
+	assert_that(_eval(_bin("*", _num(3.0), _num(4.0)))).is_equal(12.0)
 
 
 func test_div() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("/", _num(10.0), _num(4.0)), _make_engine()
-		),
-		2.5
-	)
+	assert_that(_eval(_bin("/", _num(10.0), _num(4.0)))).is_equal(2.5)
 
 
 func test_math_type_mismatch_returns_null() -> void:
-	assert_null(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("+", _num(1.0), _slit("x")), _make_engine()
-		)
-	)
-	assert_push_error(1)
+	assert_that(_eval(_bin("+", _num(1.0), _slit("x")))).is_null()
+	assert_logged(["Can't use operator '+' on values of types 'float' and 'String'."])
 
 
 func test_division_by_zero_returns_default() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("/", _num(5.0), _num(0.0)), _make_engine()
-		),
+	assert_that(_eval(_bin("/", _num(5.0), _num(0.0)))).is_equal(
 		WeavlyExpressionEvaluator.DEFAULT_DIVISION_BY_ZERO_RETURN
 	)
-	assert_push_error(1)
+	assert_logged(["Division by zero detected, returning '0.0'"])
 
 
 # =====================
@@ -204,84 +168,40 @@ func test_division_by_zero_returns_default() -> void:
 
 
 func test_eq_true() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("==", _num(5.0), _num(5.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("==", _num(5.0), _num(5.0)))).is_equal(true)
 
 
 func test_eq_false() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("==", _num(5.0), _num(6.0)), _make_engine()
-		),
-		false
-	)
+	assert_that(_eval(_bin("==", _num(5.0), _num(6.0)))).is_equal(false)
 
 
 func test_neq() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("!=", _num(5.0), _num(6.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("!=", _num(5.0), _num(6.0)))).is_equal(true)
 
 
 func test_less() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("<", _num(3.0), _num(5.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("<", _num(3.0), _num(5.0)))).is_equal(true)
 
 
 func test_less_eq() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("<=", _num(5.0), _num(5.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("<=", _num(5.0), _num(5.0)))).is_equal(true)
 
 
 func test_greater() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin(">", _num(6.0), _num(5.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin(">", _num(6.0), _num(5.0)))).is_equal(true)
 
 
 func test_greater_eq() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin(">=", _num(5.0), _num(5.0)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin(">=", _num(5.0), _num(5.0)))).is_equal(true)
 
 
 func test_eq_strings() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("==", _slit("hi"), _slit("hi")), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("==", _slit("hi"), _slit("hi")))).is_equal(true)
 
 
 func test_compare_type_mismatch_returns_null() -> void:
-	assert_null(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("==", _num(1.0), _slit("1")), _make_engine()
-		)
-	)
-	assert_push_error(1)
+	assert_that(_eval(_bin("==", _num(1.0), _slit("1")))).is_null()
+	assert_logged(["Can't use operator '==' on values of types 'float' and 'String'."])
 
 
 # =====================
@@ -290,48 +210,24 @@ func test_compare_type_mismatch_returns_null() -> void:
 
 
 func test_and_true_true() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("and", _bool(true), _bool(true)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("and", _bool(true), _bool(true)))).is_equal(true)
 
 
 func test_and_true_false() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("and", _bool(true), _bool(false)), _make_engine()
-		),
-		false
-	)
+	assert_that(_eval(_bin("and", _bool(true), _bool(false)))).is_equal(false)
 
 
 func test_or_false_true() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("or", _bool(false), _bool(true)), _make_engine()
-		),
-		true
-	)
+	assert_that(_eval(_bin("or", _bool(false), _bool(true)))).is_equal(true)
 
 
 func test_or_false_false() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("or", _bool(false), _bool(false)), _make_engine()
-		),
-		false
-	)
+	assert_that(_eval(_bin("or", _bool(false), _bool(false)))).is_equal(false)
 
 
 func test_logic_type_mismatch_returns_null() -> void:
-	assert_null(
-		WeavlyExpressionEvaluator.evaluate_expression(
-			_bin("and", _bool(true), _num(1.0)), _make_engine()
-		)
-	)
-	assert_push_error(1)
+	assert_that(_eval(_bin("and", _bool(true), _num(1.0)))).is_null()
+	assert_logged(["Can't use operator 'and' on values of types 'bool' and 'float'."])
 
 
 # =====================
@@ -340,20 +236,12 @@ func test_logic_type_mismatch_returns_null() -> void:
 
 
 func test_condition_bool_passthrough() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_condition(
-			WeavlyModel.TrueExpression.new(), _make_engine()
-		),
-		true
-	)
+	assert_that(_cond(WeavlyModel.TrueExpression.new())).is_equal(true)
 
 
 func test_condition_non_bool_returns_default() -> void:
-	assert_eq(
-		WeavlyExpressionEvaluator.evaluate_condition(_num(1.0), _make_engine()),
-		WeavlyExpressionEvaluator.DEFAULT_CONDITION_RETURN
-	)
-	assert_push_error(1)
+	assert_that(_cond(_num(1.0))).is_equal(WeavlyExpressionEvaluator.DEFAULT_CONDITION_RETURN)
+	assert_logged(["Condition can't be of type 'float', returning 'false' instead."])
 
 
 # =====================
@@ -364,4 +252,4 @@ func test_condition_non_bool_returns_default() -> void:
 func test_nested_expression() -> void:
 	# (1 + 2) * 3 == 9
 	var expr = _bin("==", _bin("*", _bin("+", _num(1.0), _num(2.0)), _num(3.0)), _num(9.0))
-	assert_eq(WeavlyExpressionEvaluator.evaluate_expression(expr, _make_engine()), true)
+	assert_that(_eval(expr)).is_equal(true)

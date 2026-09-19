@@ -1,4 +1,4 @@
-extends GutTest
+extends WeavlyTestSuite
 
 # End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogs, drives the
 # real compiler -> executor -> service pipeline, and asserts on signals and
@@ -21,7 +21,7 @@ var _narration_log: Array[String]
 var _options_added_count: int
 
 
-func before_each() -> void:
+func before_test() -> void:
 	_signal_log = []
 	_narration_log = []
 	_options_added_count = 0
@@ -33,7 +33,7 @@ func before_each() -> void:
 # before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> Node:
 	var engine = _new_engine(fixture_dir)
-	add_child_autofree(engine)
+	add_child(auto_free(engine))
 	_connect_signal_log(engine)
 	return engine
 
@@ -46,7 +46,7 @@ func _make_list_engine(fixture_dir: String) -> Node:
 	engine.option_service_script = load(IMPL_PATH + "list_option_service.gd")
 	engine.line_service_script = load(IMPL_PATH + "list_line_service.gd")
 	engine.command_service_script = load(IMPL_PATH + "list_command_service.gd")
-	add_child_autofree(engine)
+	add_child(auto_free(engine))
 	_connect_signal_log(engine)
 	return engine
 
@@ -88,8 +88,8 @@ func _connect_content_log(engine: WeavlyEngine) -> void:
 func test_start_on_idle_emits_started_dialog_and_enters_first_node() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
-	assert_eq(_signal_log[0], "started_dialog")
-	assert_eq(_signal_log[1], "entered_node:start")
+	assert_that(_signal_log[0]).is_equal("started_dialog")
+	assert_that(_signal_log[1]).is_equal("entered_node:start")
 
 
 func test_start_on_running_dialog_warns_and_does_nothing() -> void:
@@ -98,8 +98,8 @@ func test_start_on_running_dialog_warns_and_does_nothing() -> void:
 	var log_after_first_start = _signal_log.duplicate()
 	engine.start("start")
 	# Second start pushes a warning and emits no further signals.
-	assert_engine_error(1)
-	assert_eq(_signal_log, log_after_first_start)
+	assert_logged([], ["Dialog is already in progress, cant start for node with ID 'start."])
+	assert_that(_signal_log).is_equal(log_after_first_start)
 
 
 # =====================
@@ -110,12 +110,12 @@ func test_start_on_running_dialog_warns_and_does_nothing() -> void:
 func test_enter_node_marks_node_as_visited_and_emits_entered_node() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	# Pre-condition: visited flag for "start" is initialized to false.
-	assert_false(engine.variable_service.get_variable("start"))
+	assert_bool(engine.variable_service.get_variable("start")).is_false()
 	engine.start("start")
 	# enter_node was invoked by start; assert the flag is now true and that the
 	# entered_node signal carried the expected id.
-	assert_true(engine.variable_service.get_variable("start"))
-	assert_true(_signal_log.has("entered_node:start"))
+	assert_bool(engine.variable_service.get_variable("start")).is_true()
+	assert_bool(_signal_log.has("entered_node:start")).is_true()
 
 
 func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
@@ -125,8 +125,13 @@ func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
 	engine.enter_node("does_not_exist")
 	# Unknown id pushes an error (from node_service.get_node and from the engine
 	# itself) and then calls finish, which emits finished_dialog.
-	assert_push_error(2)
-	assert_eq(_signal_log[log_before], "finished_dialog")
+	assert_logged(
+		[
+			"Node with id 'does_not_exist' doesn't exist",
+			"Can't enter node with ID 'does_not_exist' because it's null, finsishing the dialog."
+		]
+	)
+	assert_that(_signal_log[log_before]).is_equal("finished_dialog")
 
 
 # =====================
@@ -138,12 +143,12 @@ func test_finish_emits_finished_dialog_and_allows_restart() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	engine.finish()
-	assert_eq(_signal_log.back(), "finished_dialog")
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
 	var log_after_finish = _signal_log.duplicate()
 	# After finish, start should be allowed again and emit started_dialog.
 	engine.start("start")
-	assert_eq(_signal_log.size(), log_after_finish.size() + 2)
-	assert_eq(_signal_log[log_after_finish.size()], "started_dialog")
+	assert_that(_signal_log.size()).is_equal(log_after_finish.size() + 2)
+	assert_that(_signal_log[log_after_finish.size()]).is_equal("started_dialog")
 
 
 # =====================
@@ -166,12 +171,12 @@ func test_full_linear_dialog_run_signals_and_final_state() -> void:
 		"entered_node:end",
 		"finished_dialog",
 	]
-	assert_eq(_signal_log, expected_signals)
+	assert_that(_signal_log).is_equal(expected_signals)
 
 	# Variables: counter set by the dialog, visited flags for both nodes set.
-	assert_eq(engine.variable_service.get_variable("counter"), 7.0)
-	assert_true(engine.variable_service.get_variable("start"))
-	assert_true(engine.variable_service.get_variable("end"))
+	assert_that(engine.variable_service.get_variable("counter")).is_equal(7.0)
+	assert_bool(engine.variable_service.get_variable("start")).is_true()
+	assert_bool(engine.variable_service.get_variable("end")).is_true()
 
 
 # =====================
@@ -193,11 +198,11 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.next()  # option block -> options registered, loop exits
 
 	# We should now be sitting on the options at choices.
-	assert_true(engine.option_service.has_options())
+	assert_bool(engine.option_service.has_options()).is_true()
 	var options: Array = engine.option_service.pending_options
 	# has_key was set to false, so only "Roll the dice" should pass the filter.
-	assert_eq(options.size(), 1)
-	assert_eq(options[0].text, "Roll the dice")
+	assert_that(options.size()).is_equal(1)
+	assert_that(options[0].text).is_equal("Roll the dice")
 
 	# Choosing the dice option drives us through random_node -> match_node ->
 	# narration ("No key needed.", which pauses) -> goto end -> finish.
@@ -206,14 +211,14 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 
 	# Final state: dialog finished, all visited flags set, has_key was toggled
 	# to false by the last set statement.
-	assert_eq(_signal_log.back(), "finished_dialog")
-	assert_true(engine.variable_service.get_variable("start"))
-	assert_true(engine.variable_service.get_variable("choices"))
-	assert_true(engine.variable_service.get_variable("random_node"))
-	assert_true(engine.variable_service.get_variable("match_node"))
-	assert_true(engine.variable_service.get_variable("end"))
-	assert_eq(engine.variable_service.get_variable("score"), 13.0)
-	assert_false(engine.variable_service.get_variable("has_key"))
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_bool(engine.variable_service.get_variable("start")).is_true()
+	assert_bool(engine.variable_service.get_variable("choices")).is_true()
+	assert_bool(engine.variable_service.get_variable("random_node")).is_true()
+	assert_bool(engine.variable_service.get_variable("match_node")).is_true()
+	assert_bool(engine.variable_service.get_variable("end")).is_true()
+	assert_that(engine.variable_service.get_variable("score")).is_equal(13.0)
+	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
 
 
 # =====================
@@ -227,9 +232,9 @@ func test_self_referencing_goto_aborts_via_error_not_crash() -> void:
 	# overflow; now the flat loop trips the guard and finishes cleanly.
 	engine.max_node_entries_per_step = 5
 	engine.start("self_loop")
-	assert_push_error("goto cycle")
-	assert_eq(_signal_log.back(), "finished_dialog")
-	assert_false(engine.is_running())
+	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_bool(engine.is_running()).is_false()
 
 
 func test_two_node_goto_cycle_aborts_via_error() -> void:
@@ -237,9 +242,9 @@ func test_two_node_goto_cycle_aborts_via_error() -> void:
 	# Indirect cycle (ping -> pong -> ping) is caught the same way as a self-loop.
 	engine.max_node_entries_per_step = 5
 	engine.start("ping")
-	assert_push_error("goto cycle")
-	assert_eq(_signal_log.back(), "finished_dialog")
-	assert_false(engine.is_running())
+	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_bool(engine.is_running()).is_false()
 
 
 func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
@@ -248,12 +253,12 @@ func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
 	# same node three times before finishing. The counter guard allows this; a
 	# naive "node revisited" detector would wrongly abort it.
 	engine.start("countdown")
-	assert_eq(_signal_log.back(), "finished_dialog")
-	assert_eq(engine.variable_service.get_variable("i"), 0.0)
-	assert_eq(
-		_signal_log.count("entered_node:countdown"),
-		3,
-		"node should be entered exactly three times"
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_that(engine.variable_service.get_variable("i")).is_equal(0.0)
+	(
+		assert_that(_signal_log.count("entered_node:countdown"))
+		. override_failure_message("node should be entered exactly three times")
+		. is_equal(3)
 	)
 
 
@@ -269,11 +274,21 @@ func test_list_mode_streams_interleaved_narration_and_options_in_one_pass() -> v
 	# List services do not pause on lines or stop on options, so the whole town
 	# node streams out in a single start() call and then pauses on the drained
 	# stack, waiting for the host to choose.
-	assert_eq(_narration_log, ["You enter the town square.", "A fountain bubbles nearby."])
-	assert_eq(_options_added_count, 2, "both option blocks should register in one pass")
-	assert_true(engine.is_running(), "list mode pauses rather than finishing")
-	assert_true(engine.statement_service.is_paused())
-	assert_false(_signal_log.has("finished_dialog"))
+	assert_that(_narration_log).is_equal(
+		["You enter the town square.", "A fountain bubbles nearby."]
+	)
+	(
+		assert_that(_options_added_count)
+		. override_failure_message("both option blocks should register in one pass")
+		. is_equal(2)
+	)
+	(
+		assert_bool(engine.is_running())
+		. override_failure_message("list mode pauses rather than finishing")
+		. is_true()
+	)
+	assert_bool(engine.statement_service.is_paused()).is_true()
+	assert_bool(_signal_log.has("finished_dialog")).is_false()
 
 
 func test_list_mode_goto_cycle_aborts_via_error() -> void:
@@ -282,6 +297,6 @@ func test_list_mode_goto_cycle_aborts_via_error() -> void:
 	# only thing that can break a goto cycle.
 	engine.max_node_entries_per_step = 5
 	engine.start("self_loop")
-	assert_push_error("goto cycle")
-	assert_eq(_signal_log.back(), "finished_dialog")
-	assert_false(engine.is_running())
+	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
+	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_bool(engine.is_running()).is_false()

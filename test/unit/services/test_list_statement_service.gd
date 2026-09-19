@@ -1,4 +1,4 @@
-extends GutTest
+extends GdUnitTestSuite
 
 const Service = preload(
 	"res://addons/weavly/src/services/implementations/list_statement_service.gd"
@@ -9,8 +9,9 @@ var _engine: WeavlyEngine
 var _service
 
 
-func before_each() -> void:
-	_engine = add_child_autofree(FakeEngine.new())
+func before_test() -> void:
+	_engine = auto_free(FakeEngine.new())
+	add_child(_engine)
 	_service = Service.new()
 	_service.initialize(_engine)
 	_engine.statement_service = _service
@@ -22,18 +23,18 @@ func before_each() -> void:
 
 
 func test_not_paused_initially() -> void:
-	assert_false(_service.is_paused())
+	assert_bool(_service.is_paused()).is_false()
 
 
 func test_pause() -> void:
 	_service.pause()
-	assert_true(_service.is_paused())
+	assert_bool(_service.is_paused()).is_true()
 
 
 func test_resume_clears_paused() -> void:
 	_service.pause()
 	_service.resume()
-	assert_false(_service.is_paused())
+	assert_bool(_service.is_paused()).is_false()
 
 
 # =====================
@@ -43,12 +44,12 @@ func test_resume_clears_paused() -> void:
 
 func test_advance_pauses_on_empty_stack() -> void:
 	_service.advance_statements()
-	assert_true(_service.is_paused())
+	assert_bool(_service.is_paused()).is_true()
 
 
 func test_advance_does_not_call_finish_on_empty_stack() -> void:
 	_service.advance_statements()
-	assert_false(_engine.did_finish)
+	assert_bool(_engine.did_finish).is_false()
 
 
 # =====================
@@ -60,11 +61,11 @@ func test_advance_pops_exhausted_frame() -> void:
 	var stmts: Array[WeavlyModel.Statement] = []
 	_service.add_statements(stmts)
 	_service.advance_statements()
-	assert_false(_service.is_paused())
+	assert_bool(_service.is_paused()).is_false()
 
 
 func test_advance_executes_current_statement() -> void:
 	var stmts: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
 	_service.add_statements(stmts)
 	_service.advance_statements()
-	assert_true(_engine.did_finish)
+	assert_bool(_engine.did_finish).is_true()

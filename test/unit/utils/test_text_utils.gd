@@ -1,10 +1,12 @@
-extends GutTest
+extends GdUnitTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 
 func _make_engine() -> WeavlyEngine:
-	return add_child_autofree(FakeEngine.new())
+	var engine: WeavlyEngine = auto_free(FakeEngine.new())
+	add_child(engine)
+	return engine
 
 
 # =====================
@@ -13,19 +15,19 @@ func _make_engine() -> WeavlyEngine:
 
 
 func test_strip_quotes_removes_surrounding_quotes() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes('"hi"'), "hi")
+	assert_that(WeavlyTextUtils.format_string_strip_quotes('"hi"')).is_equal("hi")
 
 
 func test_strip_quotes_leaves_unquoted_string() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes("hi"), "hi")
+	assert_that(WeavlyTextUtils.format_string_strip_quotes("hi")).is_equal("hi")
 
 
 func test_strip_quotes_single_char_unchanged() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes('"'), '"')
+	assert_that(WeavlyTextUtils.format_string_strip_quotes('"')).is_equal('"')
 
 
 func test_strip_quotes_non_string_unchanged() -> void:
-	assert_eq(WeavlyTextUtils.format_string_strip_quotes(42), 42)
+	assert_that(WeavlyTextUtils.format_string_strip_quotes(42)).is_equal(42)
 
 
 # =====================
@@ -34,15 +36,15 @@ func test_strip_quotes_non_string_unchanged() -> void:
 
 
 func test_trim_zero_whole_float_returns_int() -> void:
-	assert_eq(WeavlyTextUtils.format_float_trim_zero(5.0), 5)
+	assert_that(WeavlyTextUtils.format_float_trim_zero(5.0)).is_equal(5)
 
 
 func test_trim_zero_fractional_float_unchanged() -> void:
-	assert_eq(WeavlyTextUtils.format_float_trim_zero(5.5), 5.5)
+	assert_that(WeavlyTextUtils.format_float_trim_zero(5.5)).is_equal(5.5)
 
 
 func test_trim_zero_non_float_unchanged() -> void:
-	assert_eq(WeavlyTextUtils.format_float_trim_zero("hi"), "hi")
+	assert_that(WeavlyTextUtils.format_float_trim_zero("hi")).is_equal("hi")
 
 
 # =====================
@@ -53,34 +55,40 @@ func test_trim_zero_non_float_unchanged() -> void:
 func test_inject_single_variable() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("name", "Alice")
-	assert_eq(WeavlyTextUtils.inject_variables("Hi {$name}", engine), "Hi Alice")
+	assert_that(WeavlyTextUtils.inject_variables("Hi {$name}", engine)).is_equal("Hi Alice")
 
 
 func test_inject_strips_string_quotes() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("greeting", '"hello"')
-	assert_eq(WeavlyTextUtils.inject_variables("{$greeting}", engine), "hello")
+	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal("hello")
 
 
 func test_inject_trims_float_zero() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("score", 10.0)
-	assert_eq(WeavlyTextUtils.inject_variables("You have {$score}", engine), "You have 10")
+	assert_that(WeavlyTextUtils.inject_variables("You have {$score}", engine)).is_equal(
+		"You have 10"
+	)
 
 
 func test_inject_multiple_variables() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("a", 1.0)
 	engine.variable_service.set_variable("b", 2.0)
-	assert_eq(WeavlyTextUtils.inject_variables("{$a} and {$b}", engine), "1 and 2")
+	assert_that(WeavlyTextUtils.inject_variables("{$a} and {$b}", engine)).is_equal("1 and 2")
 
 
 func test_inject_no_match_returns_verbatim() -> void:
-	assert_eq(WeavlyTextUtils.inject_variables("no vars here", _make_engine()), "no vars here")
+	assert_that(WeavlyTextUtils.inject_variables("no vars here", _make_engine())).is_equal(
+		"no vars here"
+	)
 
 
 func test_inject_custom_pipeline_applied() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("name", "Alice")
 	var upper_pipeline: Array[Callable] = [func(v: Variant) -> Variant: return str(v).to_upper()]
-	assert_eq(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline), "ALICE")
+	assert_that(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline)).is_equal(
+		"ALICE"
+	)

@@ -1,6 +1,6 @@
 excluded_directories: !!set
   .git: null
-  gut: null
+  gdUnit4: null
 # Workaround for https://github.com/Scony/godot-gdscript-toolkit/issues/419
 # gdformat has an off-by-one bug with @abstract func: it wraps at >101 instead
 # of >100, so 101-char @abstract lines slip through gdformat and fail gdlint.

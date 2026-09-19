@@ -16,4 +16,8 @@ config/icon="res://icon.svg"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gut/plugin.cfg", "res://addons/weavly/plugin.cfg")
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg", "res://addons/weavly/plugin.cfg")
+
+[gdunit4]
+
+report/godot/push_error=true

@@ -39,7 +39,7 @@ addons/weavly/src/
   resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable
   utils/                           # weavly_file_utils, weavly_text_utils
 
-test/                               # GUT tests: unit/ mirrors src/, integration/, fixtures/, helpers/
+test/                               # gdUnit4 tests: unit/ mirrors src/, integration/, fixtures/, helpers/
 ```
 
 ### Conventions
