@@ -3,7 +3,16 @@ class_name WeavlyCompilerRunner
 extends RefCounted
 
 const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
-const ERROR_LOCATION_PATTERN = "Syntax Error in file: (.+?), Line (\\d+), Column (\\d+)"
+const ERROR_LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: error: (.*)$"
+
+
+class CompileError:
+	extends RefCounted
+
+	var file: String = ""
+	var line: int = -1
+	var column: int = -1
+	var message: String = ""
 
 
 class CompileResult:
@@ -12,9 +21,7 @@ class CompileResult:
 	var success: bool = false
 	var exit_code: int = -1
 	var output: String = ""
-	var error_file: String = ""
-	var error_line: int = -1
-	var error_column: int = -1
+	var errors: Array[CompileError] = []
 
 
 static func build_command(executable_path: String, working_dir: String) -> Dictionary:
@@ -30,16 +37,18 @@ static func compile(executable_path: String, working_dir: String) -> CompileResu
 	var command: Dictionary = build_command(executable_path, working_dir)
 	var raw_output: Array = []
 	var exit_code: int = OS.execute(command["program"], command["arguments"], raw_output, true)
-	return build_result(exit_code, "".join(PackedStringArray(raw_output)))
+	return build_result(exit_code, "".join(PackedStringArray(raw_output)), working_dir)
 
 
-static func build_result(exit_code: int, raw_output: String) -> CompileResult:
+static func build_result(
+	exit_code: int, raw_output: String, working_dir: String = ""
+) -> CompileResult:
 	var result: CompileResult = CompileResult.new()
 	result.exit_code = exit_code
 	result.output = strip_ansi(raw_output).strip_edges()
 	result.success = exit_code == 0
 	if not result.success:
-		_parse_error_location(result)
+		result.errors = parse_errors(result.output, working_dir)
 	return result
 
 
@@ -49,12 +58,22 @@ static func strip_ansi(text: String) -> String:
 	return regex.sub(text, "", true)
 
 
-static func _parse_error_location(result: CompileResult) -> void:
+static func parse_errors(output: String, working_dir: String = "") -> Array[CompileError]:
 	var regex: RegEx = RegEx.new()
 	regex.compile(ERROR_LOCATION_PATTERN)
-	var found: RegExMatch = regex.search(result.output)
-	if found == null:
-		return
-	result.error_file = found.get_string(1)
-	result.error_line = found.get_string(2).to_int()
-	result.error_column = found.get_string(3).to_int()
+	var errors: Array[CompileError] = []
+	for found: RegExMatch in regex.search_all(output):
+		var error: CompileError = CompileError.new()
+		error.file = _resolve_path(found.get_string(1), working_dir)
+		error.line = found.get_string(2).to_int()
+		if found.get_string(3) != "":
+			error.column = found.get_string(3).to_int()
+		error.message = found.get_string(4).strip_edges()
+		errors.append(error)
+	return errors
+
+
+static func _resolve_path(path: String, working_dir: String) -> String:
+	if working_dir == "" or path.is_absolute_path():
+		return path
+	return working_dir.path_join(path).simplify_path()

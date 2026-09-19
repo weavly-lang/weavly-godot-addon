@@ -176,7 +176,8 @@ func _on_compile_finished(result: WeavlyCompilerRunner.CompileResult) -> void:
 	_set_compiling(false)
 	if result.success:
 		_set_status("Build successful", _COLOR_SUCCESS)
-		print_rich("[color=#80d685]%s Build successful.[/color]" % _LOG_PREFIX)
+		var message: String = result.output if result.output != "" else "Build successful."
+		print_rich("[color=#80d685]%s %s[/color]" % [_LOG_PREFIX, message])
 		_rescan_filesystem()
 	else:
 		_report_failure(result)
@@ -192,9 +193,10 @@ func _report_failure(result: WeavlyCompilerRunner.CompileResult) -> void:
 	push_error("%s Build failed (exit code %d)." % [_LOG_PREFIX, result.exit_code])
 	if result.output != "":
 		print(result.output)
-	if result.error_line > 0 and _error_is_in_open_file(result):
-		_code_edit.set_caret_line(result.error_line - 1)
-		_code_edit.set_caret_column(maxi(result.error_column - 1, 0))
+	var error: WeavlyCompilerRunner.CompileError = _first_error_in_open_file(result)
+	if error != null:
+		_code_edit.set_caret_line(error.line - 1)
+		_code_edit.set_caret_column(maxi(error.column - 1, 0))
 		_code_edit.grab_focus()
 
 
@@ -206,10 +208,16 @@ func _rescan_filesystem() -> void:
 		filesystem.scan()
 
 
-func _error_is_in_open_file(result: WeavlyCompilerRunner.CompileResult) -> bool:
-	if _current_path == "" or result.error_file == "":
-		return false
-	return _current_path.get_file() == result.error_file.get_file()
+func _first_error_in_open_file(
+	result: WeavlyCompilerRunner.CompileResult
+) -> WeavlyCompilerRunner.CompileError:
+	if _current_path == "":
+		return null
+	var open_path: String = _current_path.simplify_path()
+	for error: WeavlyCompilerRunner.CompileError in result.errors:
+		if error.file.simplify_path() == open_path:
+			return error
+	return null
 
 
 func _resolve_working_dir() -> String:
