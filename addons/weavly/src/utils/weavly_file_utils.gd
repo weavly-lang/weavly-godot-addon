@@ -12,13 +12,6 @@ static func find_all_files_with_extensions(
 ) -> PackedStringArray:
 	var results: PackedStringArray = []
 
-	# ResourceLoader.list_directory is export-safe: inside a PCK it resolves
-	# imported assets (.import/.remap companions, text-to-binary .tres) back to
-	# their original names, which a raw DirAccess listing does not. It returns
-	# [] for a missing directory without erroring, so gate on existence to keep
-	# the previous "failed to open" signal. Subdirectories come back with a
-	# trailing "/"; non-resource files (e.g. .txt) are omitted, but every type
-	# this addon indexes (.json/.tres/.png/.jpg/.ogv) is a resource.
 	if not DirAccess.dir_exists_absolute(dir_path):
 		push_error("Failed to open directory: " + dir_path)
 		return results

@@ -16,11 +16,6 @@ const DEFAULT_STATEMENT_SERVICE = preload(DEFAULTS_PATH + "default_statement_ser
 const DEFAULT_VARIABLE_SERVICE = preload(DEFAULTS_PATH + "default_variable_service.gd")
 const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd")
 
-# Discovery paths must be res:// so they resolve against the project/PCK in
-# exported builds. A bare relative path is routed to the OS filesystem (never
-# the PCK), so it works in the editor but finds nothing in an export.
-# Loose .json dialog output must additionally be covered by the export preset's
-# "Filters to export non-resource files" (e.g. *.json) to be packed at all.
 @export var dialog_path: String = "res://dialog/build"
 @export var video_path: String = "res://media/videos"
 @export var image_path: String = "res://media/images"
