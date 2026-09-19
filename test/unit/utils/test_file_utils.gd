@@ -168,3 +168,32 @@ func test_load_variables_from_env_skips_malformed_files_without_crashing() -> vo
 	WeavlyFileUtils.load_variables_from_env_files(engine, FIXTURE_DIR)
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
+
+
+# =====================
+# External directories (issue #57)
+# =====================
+
+
+func test_find_lists_files_outside_res() -> void:
+	var dir: String = create_temp_dir("find_external")
+	var image: Image = Image.create(1, 1, false, Image.FORMAT_RGB8)
+	image.save_png(dir.path_join("a.png"))
+	image.save_png(dir.path_join("b.txt"))
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(dir, ".png")
+	assert_array(results).contains_exactly([dir.path_join("a.png")])
+
+
+func test_find_recurses_into_subdirectories_outside_res() -> void:
+	var dir: String = create_temp_dir("find_external_sub")
+	DirAccess.make_dir_recursive_absolute(dir.path_join("sub"))
+	var image: Image = Image.create(1, 1, false, Image.FORMAT_RGB8)
+	image.save_png(dir.path_join("sub/nested.png"))
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(dir, ".png")
+	assert_array(results).contains_exactly([dir.path_join("sub/nested.png")])
+
+
+func test_find_returns_empty_for_a_missing_external_directory() -> void:
+	var dir: String = create_temp_dir("find_external_missing").path_join("nope")
+	assert_array(WeavlyFileUtils.find_all_files_with_extension(dir, ".png")).is_empty()
+	assert_logged(["Failed to open directory: " + dir])

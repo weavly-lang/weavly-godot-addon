@@ -48,9 +48,27 @@ func _on_option_selected(option: WeavlyModel.Option) -> void:
     engine.option_service.choose_option(option)
 ```
 
-By default the engine loads compiled dialog JSON from `res://dialog/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node. Keep these paths `res://`: a path without it only works in the editor, not in an exported game.
+By default the engine loads compiled dialog JSON from `res://dialog/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node.
 
 For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialog JSON is not packed.
+
+### Media outside the game
+
+`image_path` and `video_path` also accept paths outside `res://` — an absolute path or `user://` — for assets you want to ship next to the executable and swap without rebuilding, which is mostly interesting for video. The path decides how they are read: `res://` uses the resource system, anything else reads from disk.
+
+The engine reads these paths when it enters the tree, so set them before adding it:
+
+```gdscript
+func _ready() -> void:
+    var engine: WeavlyEngine = preload("res://addons/weavly/src/weavly_engine.tscn").instantiate()
+    if not OS.has_feature("editor"):
+        engine.video_path = OS.get_executable_path().get_base_dir().path_join("media/videos")
+    add_child(engine)
+```
+
+The `editor` check matters because `OS.get_executable_path()` points at the Godot binary while running from the editor, not at your project. External media is not part of the export, so your build step has to copy that folder next to the executable.
+
+Character and variable `.tres` resources stay `res://` only: they reference their script by resource uid, which does not survive outside the project. Dialog and variable JSON works with either kind of path.
 
 ## Writing dialogs in the editor
 

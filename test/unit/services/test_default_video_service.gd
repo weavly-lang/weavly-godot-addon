@@ -132,3 +132,24 @@ func test_invalid_pattern_duplicate_still_warns() -> void:
 	_service.add_video("intro", _FIXTURE_PATH)
 	_service.add_video("intro", "res://test/fixtures/other.tres")
 	assert_logged([], ["Video with id 'intro' already exists."])
+
+
+# =====================
+# External paths (issue #57)
+# =====================
+
+
+func test_get_video_streams_a_file_outside_res() -> void:
+	var path: String = create_temp_dir("video_external").path_join("intro.ogv")
+	FileAccess.open(path, FileAccess.WRITE).close()
+	_service.add_video("intro", path)
+	var stream: VideoStream = _service.get_video("intro")
+	assert_object(stream).is_instanceof(VideoStreamTheora)
+	assert_str(stream.file).is_equal(path)
+
+
+func test_get_video_returns_default_for_a_missing_external_file() -> void:
+	var path: String = create_temp_dir("video_external_missing").path_join("nope.ogv")
+	_service.add_video("broken", path)
+	assert_that(_service.get_video("broken")).is_null()
+	assert_logged(["Failed to load Video at path"])

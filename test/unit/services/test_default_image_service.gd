@@ -132,3 +132,22 @@ func test_invalid_pattern_duplicate_still_warns() -> void:
 	_service.add_image("splash", _FIXTURE_PATH)
 	_service.add_image("splash", "res://test/fixtures/other.tres")
 	assert_logged([], ["Image with id 'splash' already exists."])
+
+
+# =====================
+# External paths (issue #57)
+# =====================
+
+
+func test_get_image_loads_a_file_outside_res() -> void:
+	var path: String = create_temp_dir("image_external").path_join("splash.png")
+	Image.create(2, 2, false, Image.FORMAT_RGB8).save_png(path)
+	_service.add_image("splash", path)
+	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
+
+
+func test_get_image_returns_default_for_a_missing_external_file() -> void:
+	var path: String = create_temp_dir("image_external_missing").path_join("nope.png")
+	_service.add_image("broken", path)
+	assert_that(_service.get_image("broken")).is_null()
+	assert_logged(["Failed to load Image at path"])
