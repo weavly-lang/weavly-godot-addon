@@ -34,6 +34,7 @@ addons/weavly/src/
   models/
     weavly_model.gd                 # all model types as inner classes (WeavlyModel.NarrationLine, .MatchBlock, ...)
   services/
+    weavly_media_index.gd           # shared path index + group regex for image/video services
     interfaces/                     # abstract contracts, one per service
     implementations/                # default_* and list_* variants
   resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable

@@ -2,51 +2,24 @@ extends WeavlyVideoService
 
 const TYPE = "Video"
 
-var video_index: Dictionary[String, Array] = {}
-var _regex: RegEx = null
+var video_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE)
 
 
 func set_group_pattern(pattern: String) -> void:
-	if pattern == "":
-		_regex = null
-		return
-	var regex: RegEx = RegEx.new()
-	if regex.compile(pattern) != OK:
-		push_error(
-			"Failed to compile video group_pattern '%s', falling back to no grouping." % pattern
-		)
-		_regex = null
-		return
-	_regex = regex
+	video_index.set_group_pattern(pattern)
 
 
 func add_video(id: String, path: String) -> void:
-	if _regex == null:
-		if video_index.has(id):
-			push_warning(EXISTING_ID % [TYPE, id])
-			return
-		video_index[id] = [path]
-		return
-
-	var group_key: String = id
-	var match: RegExMatch = _regex.search(id)
-	if match:
-		group_key = id.substr(0, match.get_start()) + id.substr(match.get_end())
-
-	var paths: Array = video_index.get(group_key, [])
-	paths.append(path)
-	video_index[group_key] = paths
+	video_index.add(id, path)
 
 
 func get_video(id: String, default: VideoStream = null) -> VideoStream:
-	if not video_index.has(id):
+	var video_path: String = video_index.pick(id)
+	if video_path == "":
 		push_error(MISSING_ID % [TYPE, id, default])
 		return default
 
-	var video_paths: Array = video_index.get(id)
-	var video_path: String = video_paths.pick_random()
 	var video_stream: VideoStream = load(video_path) as VideoStream
-
 	if video_stream == null:
 		push_error(FAILED_LOADING % [TYPE, video_path, id, default])
 		return default
