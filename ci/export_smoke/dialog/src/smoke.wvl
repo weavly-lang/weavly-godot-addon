@@ -1,0 +1,13 @@
+@env
+score: number = 0
+@endenv
+
+@node start
+Welcome to the smoke test.
+@set $score = 7
+@goto end
+@endnode
+
+@node end
+@finish
+@endnode
