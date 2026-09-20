@@ -1,0 +1,17 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="#2b3040"/>
+  <g transform="translate(400,548) scale(30) translate(-9.866,-7.054)">
+    <path d="M16,2.56c0,-0.309 -0.251,-0.56 -0.56,-0.56l-10.88,0c-0.309,0 -0.56,0.251 -0.56,0.56l0,8.213c0,0.309 0.251,0.56 0.56,0.56l1.773,0l0.909,2.667l3.059,-2.667l5.139,0c0.309,0 0.56,-0.251 0.56,-0.56l0,-8.213Zm-1.5,7.273l-4.761,0l-1.798,1.568c-0,-0 -0.534,-1.568 -0.534,-1.568l-1.907,0l0,-6.333l9,-0l0,6.333Z" fill="#4fc3f7"/>
+  </g>
+  <text x="760" y="340" font-family="Segoe UI" font-weight="bold" font-size="150" fill="#f2f5fa">Weavly</text>
+  <text x="768" y="420" font-family="Segoe UI" font-size="46" fill="#98a1b8">Branching dialogue, written as text</text>
+  <rect x="760" y="490" width="920" height="380" rx="18" fill="#232838"/>
+  <text font-family="Consolas" font-size="36" fill="#c8d0e0">
+    <tspan x="800" y="552"><tspan fill="#4fc3f7">@node</tspan> choices</tspan>
+    <tspan x="800" y="610"><tspan fill="#ffb86c">&gt;Guide:</tspan> Which path?</tspan>
+    <tspan x="800" y="668"><tspan fill="#4fc3f7">@options</tspan></tspan>
+    <tspan x="800" y="726"><tspan fill="#4fc3f7">@option</tspan> <tspan fill="#a5d6a7">"Roll the dice"</tspan> <tspan fill="#6b7794">-&gt;</tspan> luck</tspan>
+    <tspan x="800" y="784"><tspan fill="#4fc3f7">@option</tspan> <tspan fill="#6b7794">[</tspan> <tspan fill="#ffd479">$has_key</tspan> <tspan fill="#6b7794">]</tspan> <tspan fill="#a5d6a7">"Use key"</tspan> <tspan fill="#6b7794">-&gt;</tspan> gate</tspan>
+    <tspan x="800" y="842"><tspan fill="#4fc3f7">@endoptions</tspan></tspan>
+  </text>
+</svg>
