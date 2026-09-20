@@ -42,3 +42,39 @@ jobs:
           version: installed
           paths: res://test
           report-name: Test report (Godot ${{ matrix.godot }})
+
+  export:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - godot: "4.5"
+            version: "4.5.2"
+          - godot: "4.7"
+            version: "4.7.2"
+    name: export (Godot ${{ matrix.godot }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ matrix.version }}
+          use-dotnet: false
+          include-templates: true
+      - name: Install the addon into the test game
+        run: |
+          mkdir -p ci/export_smoke/addons
+          cp -r addons/weavly ci/export_smoke/addons/weavly
+      - name: Import the test game
+        run: godot --headless --path ci/export_smoke --import
+      - name: Export the Linux build
+        run: |
+          mkdir -p build/linux
+          godot --headless --path ci/export_smoke --export-release Linux "$GITHUB_WORKSPACE/build/linux/smoke.x86_64"
+      - name: Place the external media next to the executable
+        run: cp -r ci/external_media build/linux/external_media
+      - name: Run the exported game
+        run: |
+          chmod +x build/linux/smoke.x86_64
+          timeout 120 build/linux/smoke.x86_64 --headless

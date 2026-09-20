@@ -1,0 +1,1 @@
+{"nodes":[{"id":"start","body":[{"type":"narration","text":"Welcome to the smoke test."},{"type":"set","id":"score","expression":7.0},{"type":"goto","id":"end"}]},{"id":"end","body":[{"type":"finish"}]}]}

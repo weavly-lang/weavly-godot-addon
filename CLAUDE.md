@@ -41,6 +41,8 @@ addons/weavly/src/
   utils/                           # weavly_file_utils, weavly_text_utils
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, integration/, fixtures/, helpers/
+ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
+                                    # external_media/ is copied next to the exported binary
 ```
 
 ### Conventions
