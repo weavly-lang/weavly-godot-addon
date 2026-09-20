@@ -47,7 +47,16 @@ The `(#12)` is added automatically by GitHub.
 
 ## Local checks
 
-CI (`.github/workflows/ci.yml`) runs `gdlint`, `gdformat --check`, and the gdUnit4 test suite on every push and PR. The tests run on every supported Godot version (4.5, 4.6 and 4.7, pinned to the latest patch of each); a failure on one version does not stop the others. When a new minor version of Godot is released, add it to the matrix, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range. A third job exports the test game in `ci/export_smoke/` on the oldest and newest version and runs the exported binary, which is the only way to catch bugs that appear once `res://` is a PCK. A fourth job rebuilds the compiler-built fixture (see below). Running the checks locally first means green locally ≈ green in CI.
+CI (`.github/workflows/ci.yml`) runs four jobs on every push and PR:
+
+- **`lint`** — `gdlint` and `gdformat --check`.
+- **`test`** — the gdUnit4 suite on every supported Godot version (4.5, 4.6 and 4.7, pinned to the latest patch of each). A failure on one version does not stop the others.
+- **`export`** — exports the test game in `ci/export_smoke/` on the oldest and newest version and runs the exported binary, the only way to catch bugs that appear once `res://` is a PCK.
+- **`fixtures`** — rebuilds the compiler-built fixture and checks it still matches what is committed (see below).
+
+When a new minor version of Godot is released, add it to the `test` and `export` matrices, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range.
+
+Running the checks locally first means green locally ≈ green in CI.
 
 ### Compiler-built fixtures
 
