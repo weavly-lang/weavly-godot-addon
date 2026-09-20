@@ -5,7 +5,7 @@ extends WeavlyTestSuite
 # final variable state.
 
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
-const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke"
+const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke/build"
 const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
 const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
@@ -18,12 +18,14 @@ const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
 var _signal_log: Array[String]
 var _narration_log: Array[String]
+var _command_log: Array[String]
 var _options_added_count: int
 
 
 func before_test() -> void:
 	_signal_log = []
 	_narration_log = []
+	_command_log = []
 	_options_added_count = 0
 
 
@@ -67,6 +69,10 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 		func(node_id: StringName) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
 	engine.finished_dialog.connect(func() -> void: _signal_log.append("finished_dialog"))
+	engine.command_service.executed_command.connect(
+		func(command: WeavlyModel.CommandStatement) -> void:
+			_command_log.append("%s:%s" % [command.id, command.text])
+	)
 
 
 # Records narration text and counts option registrations, used to assert that
@@ -184,16 +190,16 @@ func test_full_linear_dialog_run_signals_and_final_state() -> void:
 # =====================
 
 
-# The compiler repo ships a smoke-test dialog covering narration, character,
-# set, match, option, random, goto, and finish. Running it here verifies the
-# addon stays in sync with the compiler's emitted JSON shape.
+# Smoke-test dialog covering every statement type. CI rebuilds build/ from src/ with
+# the published compiler, so this also guards the emitted JSON shape.
 func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	var engine = _make_engine(CI_SMOKE_FIXTURE)
 	engine.start("start")
 	# start node: narration pauses immediately. Drive past the character line,
 	# the chain of set/match statements (which goto choices), the character
 	# line at choices, and finally land on the option block.
-	engine.next()  # character "Let the test begin." -> pause
+	engine.next()  # commands, then character "Let the test begin." -> pause
+	assert_that(_command_log).is_equal(["fade_in:", "play_sound:chime.ogg"])
 	engine.next()  # sets + match (-> goto choices) + character "Which path?" -> pause
 	engine.next()  # option block -> options registered, loop exits
 

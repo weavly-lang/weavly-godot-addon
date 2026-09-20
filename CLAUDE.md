@@ -14,6 +14,8 @@ Sibling repo at `../weavly-compiler` (Python) turns `.wvl` into JSON; this addon
 
 Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLAUDE.md
 
+CI guards that shape: `test/fixtures/integration/ci_smoke/` is a real Weavly project (`src/` sources, committed `build/` JSON) that a pinned compiler rebuilds on every PR, plus a weekly run against the newest release. Edit the `.wvl` sources and rebuild with `weavly build`; never hand-edit `build/`.
+
 **Naming notes:** "the compiler" = the Python project. `WeavlyDeserializer` ([core/weavly_deserializer.gd](addons/weavly/src/core/weavly_deserializer.gd)) = the GDScript JSON-to-model reader (its `compile_*` methods deserialize, they don't compile `.wvl`). `WeavlyCompilerRunner` ([editor/weavly_compiler_runner.gd](addons/weavly/src/editor/weavly_compiler_runner.gd)) = editor-side wrapper that shells out to the actual Python compiler.
 
 ## Layout
@@ -41,6 +43,7 @@ addons/weavly/src/
   utils/                           # weavly_file_utils, weavly_text_utils
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, integration/, fixtures/, helpers/
+                                    # fixtures/integration/ci_smoke/ is compiler-built, see above
 ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
                                     # external_media/ is copied next to the exported binary
 ```
