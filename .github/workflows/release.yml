@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches plugin.cfg
+        run: |
+          version=$(sed -n 's/^version="\(.*\)"$/\1/p' addons/weavly/plugin.cfg)
+          if [ -z "$version" ]; then
+            echo "::error::Could not read version from addons/weavly/plugin.cfg"
+            exit 1
+          fi
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match plugin.cfg version $version"
+            exit 1
+          fi
+
+      # Tags are immutable under the release ruleset, so the suite runs again
+      # here rather than trusting that the tagged commit is one CI has seen.
+      - uses: godot-gdunit-labs/gdUnit4-action@v1
+        with:
+          godot-version: "4.5.2"
+          version: installed
+          paths: res://test
+          publish-report: false
+
+      - name: Package the addon
+        run: |
+          mkdir -p dist
+          zip -r "dist/weavly-$GITHUB_REF_NAME.zip" addons/weavly
+
+      - name: Create the release
+        run: >
+          gh release create "$GITHUB_REF_NAME" dist/*.zip
+          --repo "$GITHUB_REPOSITORY"
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

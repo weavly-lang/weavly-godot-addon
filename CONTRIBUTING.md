@@ -129,3 +129,25 @@ git checkout -- project.godot addons/gdUnit4
 ```
 
 Importing also rewrites line endings in the vendored `addons/gdUnit4/**/*.import` files with no change to their contents, which is why they are reverted above.
+
+## Releasing
+
+Releases are tag-driven. Bump `version` in `addons/weavly/plugin.cfg`, merge that, then tag the commit on `main`:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` then checks the tag against `plugin.cfg`, runs the test suite, packages `addons/weavly/` into `weavly-<tag>.zip` and creates the GitHub release with generated notes.
+
+The release ruleset makes `v*` tags immutable — no deletion, no force-push, no update. A tag cannot be moved once pushed, so check the version bump landed before tagging. The workflow re-runs the suite rather than assuming the tagged commit is one CI has already seen, because nothing stops a tag pointing at a commit that never went through a PR.
+
+### What ends up in the archive
+
+The Asset Library does not host files. It points at the repository archive at a chosen commit and installs its contents into the user's project, so the archive must contain the addon and nothing else. The `export-ignore` rules in `.gitattributes` strip everything else, `project.godot` included — it would otherwise land on top of the user's own.
+
+This applies to `git archive`, which is what GitHub generates for downloads. Clones are unaffected, so contributors still get the whole repository, and raw file URLs keep working, which is how the Asset Library reads `branding/icon.png`.
+
+Because the root `LICENSE` and `README.md` are stripped, `addons/weavly/` carries its own copy of each. The licence copy is what keeps the installed addon MIT-compliant; keep it in step with the root one.
+
+When adding a top-level file or directory, decide whether it belongs in the archive and add an `export-ignore` line if not.

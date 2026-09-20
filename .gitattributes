@@ -5,3 +5,24 @@
 *.png binary
 *.ogv binary
 *.svg text eol=lf
+
+# The Asset Library installs the repository archive into the user's project, so
+# everything that is not the addon itself is kept out of it. This affects
+# `git archive` only: clones, and raw file URLs, are untouched.
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/CLAUDE.md export-ignore
+/CONTRIBUTING.md export-ignore
+/LICENSE export-ignore
+/README.md export-ignore
+/branding export-ignore
+/ci export-ignore
+/gdformatrc export-ignore
+/gdlintrc export-ignore
+/icon.svg export-ignore
+/icon.svg.import export-ignore
+/project.godot export-ignore
+/test export-ignore
+/addons/gdUnit4 export-ignore
