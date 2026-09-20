@@ -7,6 +7,8 @@ extends Node
 const ENGINE_SCENE = "res://addons/weavly/src/weavly_engine.tscn"
 const EXTERNAL_DIR = "external_media"
 const MAX_STEPS = 20
+const VIDEO_SIZE = Vector2i(128, 96)
+const MAX_DECODE_FRAMES = 120
 
 var _failures: PackedStringArray = []
 var _finished: bool = false
@@ -26,7 +28,7 @@ func _ready() -> void:
 
 	_check_discovery(engine)
 	_check_packed_media(engine)
-	_check_external_media(engine, external_base)
+	await _check_external_media(engine, external_base)
 	_run_dialog(engine)
 
 	if _failures.is_empty():
@@ -62,11 +64,37 @@ func _check_packed_media(engine: WeavlyEngine) -> void:
 func _check_external_media(engine: WeavlyEngine, external_base: String) -> void:
 	var stream: VideoStream = engine.video_service.get_video("clip")
 	_expect(stream != null, "external video 'clip' was not indexed next to the executable")
+	if stream != null:
+		await _check_video_decodes(stream)
 
 	var banner_path: String = external_base.path_join("images/banner.png")
 	engine.image_service.add_image("banner", banner_path)
 	var banner: Texture2D = engine.image_service.get_image("banner")
 	_expect(banner != null, "external image did not load from %s" % banner_path)
+
+
+# is_playing() stays true for an unreadable file, so only a decoded frame proves real Theora.
+func _check_video_decodes(stream: VideoStream) -> void:
+	var player: VideoStreamPlayer = VideoStreamPlayer.new()
+	player.stream = stream
+	add_child(player)
+	player.play()
+
+	var texture: Texture2D = null
+	for i in MAX_DECODE_FRAMES:
+		texture = player.get_video_texture()
+		if texture != null and texture.get_width() > 0:
+			break
+		await get_tree().process_frame
+
+	if texture == null or texture.get_width() == 0:
+		_failures.append("external video 'clip' did not decode a frame")
+		player.queue_free()
+		return
+
+	var size: Vector2i = Vector2i(texture.get_width(), texture.get_height())
+	_expect(size == VIDEO_SIZE, "decoded video frame is %s, expected %s" % [size, VIDEO_SIZE])
+	player.queue_free()
 
 
 func _run_dialog(engine: WeavlyEngine) -> void:
