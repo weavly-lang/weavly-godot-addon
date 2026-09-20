@@ -2,7 +2,7 @@
 
 ## Workflow
 
-All work happens on issue branches and lands on `main` via squash-merged PRs. Every change should trace back to a GitHub issue.
+All work happens on issue branches and lands on `main` via squash-merged PRs.
 
 ### 1. Create the branch from the issue
 
@@ -10,13 +10,13 @@ All work happens on issue branches and lands on `main` via squash-merged PRs. Ev
 gh issue develop <number> --checkout
 ```
 
-This creates a branch named `<number>-<slugified-issue-title>` (e.g. `12-add-runtime-control-flow`), links it to the issue on GitHub, and checks it out locally.
+Creates `<number>-<slugified-issue-title>`, links it to the issue, and checks it out.
 
 ### 2. Commit freely while working
 
-Intermediate commits are squashed away on merge, so they don't need to follow any convention. Use whatever helps you work (`wip`, `fix typo`, `add scene`).
+Intermediate commits are squashed on merge, so they need no convention.
 
-### 3. Rebase before opening (or if main moved ahead)
+### 3. Rebase before opening, and whenever main moves ahead
 
 ```bash
 git fetch origin
@@ -24,7 +24,7 @@ git rebase origin/main
 git push --force-with-lease
 ```
 
-This keeps history linear — no merge commits. GitHub will also block the merge button if your branch is behind `main`, so you'll need to do this before merging even if you skipped it at PR creation time.
+GitHub blocks the merge button while a branch is behind `main`.
 
 ### 4. Open the PR
 
@@ -32,122 +32,104 @@ This keeps history linear — no merge commits. GitHub will also block the merge
 gh pr create --title "<human-readable sentence>" --body "Closes #<number>"
 ```
 
-- **Title** is a real sentence — usually identical to the issue title. It becomes the squash commit message on `main`.
-- **Body** must include `Closes #<number>` so the issue auto-closes when the PR merges.
+- **Title** is a real sentence, usually the issue title. It becomes the squash commit on `main`.
+- **Body** must include `Closes #<number>`.
 
 ### 5. Squash merge
 
-Use **Squash and merge** in the GitHub UI. The result on `main` looks like:
+Use **Squash and merge**. The commit on `main` reads `Add runtime control flow (#12)`, with the `(#12)` appended by GitHub.
 
-```
-Add runtime control flow (#12)
-```
-
-The `(#12)` is added automatically by GitHub.
+`main` takes squash merges only, keeps a linear history, and requires every CI job to pass.
 
 ## Local checks
 
 CI (`.github/workflows/ci.yml`) runs four jobs on every push and PR:
 
 - **`lint`** — `gdlint` and `gdformat --check`.
-- **`test`** — the gdUnit4 suite on every supported Godot version (4.5, 4.6 and 4.7, pinned to the latest patch of each). A failure on one version does not stop the others.
-- **`export`** — exports the test game in `ci/export_smoke/` on the oldest and newest version and runs the exported binary, the only way to catch bugs that appear once `res://` is a PCK.
-- **`fixtures`** — rebuilds the compiler-built fixture and checks it still matches what is committed (see below).
+- **`test`** — the gdUnit4 suite on Godot 4.5, 4.6 and 4.7, pinned to the latest patch of each. A failure on one version does not stop the others.
+- **`export`** — exports `ci/export_smoke/` on the oldest and newest version and runs the binary, which covers what only breaks once `res://` is a PCK.
+- **`fixtures`** — rebuilds the compiler-built fixture and checks it still matches what is committed.
 
 When a new minor version of Godot is released, add it to the `test` and `export` matrices, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range.
 
-Running the checks locally first means green locally ≈ green in CI.
-
-### Compiler-built fixtures
-
-`test/fixtures/integration/ci_smoke/` is a real Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the integration test loads. It covers every statement type, so it is where the addon notices a change in the compiler's output shape.
-
-The two sources are split on purpose — `globals.wvl` declares the variables, `story.wvl` holds the nodes — so the build exercises the compiler's cross-file declaration merge. Inlining the declarations produces byte-identical `env.json` and node JSON, so nothing else would notice; an integration test asserts the node-less `globals.wvl.json` still gets emitted.
-
-The `fixtures` job installs a pinned `weavly` from PyPI, runs `weavly build`, and fails if the result differs from the committed `build/`. The pin keeps an upstream release from failing unrelated PRs; a separate weekly workflow (`.github/workflows/compiler-latest.yml`, also runnable on demand) does the same against the newest release, so a shape change surfaces there instead.
-
-After editing the sources, rebuild and commit `build/` along with them:
-
-```bash
-cd test/fixtures/integration/ci_smoke && weavly build
-```
-
-When the weekly run fails, check whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild, and adjust the addon to match; if not, it is an upstream bug.
-
 ### Linting and formatting
-
-Linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlint` + `gdformat`), a Python package:
 
 ```bash
 pip install gdtoolkit
 ```
 
-Run both from the repo root:
+From the repo root:
 
 ```bash
-gdlint .          # report lint violations
-gdformat --check .  # report files that need reformatting (no changes written)
-gdformat .          # reformat files in place
+gdlint .            # report lint violations
+gdformat --check .  # report files that need reformatting
+gdformat .          # reformat in place
 ```
 
-Config lives in `gdlintrc` and `gdformatrc` (no leading dot — that's the gdtoolkit convention). Both exclude `.git/` and the vendored `gdUnit4/` addon. `gdformatrc` pins `line_length: 99` as a workaround for an upstream `@abstract` off-by-one bug — see the comment in that file.
+Config lives in `gdlintrc` and `gdformatrc` (no leading dot, a gdtoolkit convention); both exclude `.git/` and the vendored `gdUnit4/`. `gdformatrc` pins `line_length: 99` to work around an upstream `@abstract` bug, so leave it until that is fixed.
 
 ### Running tests
 
-Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (v6.2.1), which is vendored under `addons/gdUnit4/` and enabled as an editor plugin. Suites live under `test/` (`unit`, `integration`, `fixtures`, `helpers`) and extend `GdUnitTestSuite`.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (v6.2.1), vendored under `addons/gdUnit4/` and enabled as an editor plugin. Suites live under `test/` (`unit`, `integration`, `fixtures`, `helpers`) and extend `GdUnitTestSuite`.
 
-Unexpected `push_error`, `push_warning` and engine errors fail the test (`gdunit4/report/godot/push_error` in `project.godot`). Tests that expect them extend `WeavlyTestSuite` ([test/helpers/weavly_test_suite.gd](test/helpers/weavly_test_suite.gd)) and call `assert_logged(errors, warnings)` after the code that logs them. Each expected string must be contained in one logged message:
+Unexpected `push_error`, `push_warning` and engine errors fail a test (`gdunit4/report/godot/push_error` in `project.godot`). Tests that expect them extend `WeavlyTestSuite` ([test/helpers/weavly_test_suite.gd](test/helpers/weavly_test_suite.gd)) and call `assert_logged(errors, warnings)` after the code that logs them. Each expected string must be contained in one logged message:
 
 ```gdscript
 _service.set_group_pattern("[")
 assert_logged(["missing terminating ]", "Failed to compile image group_pattern"])
 ```
 
-Use `assert_logged` instead of gdUnit4's `assert_error()`, which can only assert one error per call. The errors still show up in the Godot debugger panel even when the test passes.
+Prefer it over gdUnit4's `assert_error()`, which asserts only one error per call.
 
-**In the editor** (best for iterating on a single suite): open the project, then right-click a test file or folder in the FileSystem dock and choose **Run Tests**, or use the **GdUnit** dock.
+**In the editor**: right-click a test file or folder in the FileSystem dock and choose **Run Tests**, or use the **GdUnit** dock.
 
-**Headless** (what CI runs) from the repo root:
+**Headless**, from the repo root:
 
 ```bash
 godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://test --ignoreHeadlessMode -c
 ```
 
-`-c` keeps running the remaining tests of a suite after a failure. Reports are written to `reports/` (ignored by git).
+`-c` continues a suite after a failure. Reports land in `reports/` (gitignored). `godot` must be on your PATH; on Windows, create a `godot.bat` shim pointing at the executable.
 
-`godot` must be on your PATH. On Windows the executable is named something like `Godot_v4.5.1-stable_win64_console.exe` — create a `godot.bat` shim pointing at it.
+### Compiler-built fixtures
+
+`test/fixtures/integration/ci_smoke/` is a Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the integration tests load. It covers every statement type, so it is where a change in the compiler's output shape shows up.
+
+Edit the sources, never `build/`, and commit both together:
+
+```bash
+cd test/fixtures/integration/ci_smoke && weavly build
+```
+
+Keep the sources split, with `globals.wvl` declaring the variables and `story.wvl` holding the nodes, so the build still covers the compiler's cross-file declaration merge. An integration test enforces this.
+
+The `fixtures` job builds with a pinned `weavly` from PyPI; `.github/workflows/compiler-latest.yml` does the same weekly against the newest release. When that weekly run fails, decide whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild and adjust the addon to match; if not, it is an upstream bug.
 
 ### Check project.godot after importing
 
-`project.godot` pins `config/features` to the oldest supported Godot version. Opening the project, or running `godot --headless --path . --import`, with a newer Godot rewrites that pin to the version you used and can add compatibility keys along the way. That quietly raises the addon's minimum version and fails the oldest `test` and `export` jobs, in a diff that otherwise looks unrelated.
+`config/features` in `project.godot` pins the oldest supported Godot version. Opening the project or running `--import` with a newer Godot rewrites that pin and can add compatibility keys, which raises the addon's minimum version and fails the oldest `test` and `export` jobs. Importing also rewrites line endings in the vendored `.import` files.
 
-So after any import, check what moved and put back what you did not mean to change:
+After any import:
 
 ```bash
 git diff project.godot
 git checkout -- project.godot addons/gdUnit4
 ```
 
-Importing also rewrites line endings in the vendored `addons/gdUnit4/**/*.import` files with no change to their contents, which is why they are reverted above.
-
 ## Releasing
 
-Releases are tag-driven. Bump `version` in `addons/weavly/plugin.cfg`, merge that, then tag the commit on `main`:
+Bump `version` in `addons/weavly/plugin.cfg`, merge it, then tag the commit on `main`:
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-`.github/workflows/release.yml` then checks the tag against `plugin.cfg`, runs the test suite, packages `addons/weavly/` into `weavly-<tag>.zip` and creates the GitHub release with generated notes.
+`.github/workflows/release.yml` checks the tag against `plugin.cfg`, runs the suite, packages `addons/weavly/` into `weavly-<tag>.zip` and creates the release with generated notes.
 
-The release ruleset makes `v*` tags immutable — no deletion, no force-push, no update. A tag cannot be moved once pushed, so check the version bump landed before tagging. The workflow re-runs the suite rather than assuming the tagged commit is one CI has already seen, because nothing stops a tag pointing at a commit that never went through a PR.
+`v*` tags cannot be moved or deleted, so confirm the version bump landed before tagging.
 
 ### What ends up in the archive
 
-The Asset Library does not host files. It points at the repository archive at a chosen commit and installs its contents into the user's project, so the archive must contain the addon and nothing else. The `export-ignore` rules in `.gitattributes` strip everything else, `project.godot` included — it would otherwise land on top of the user's own.
+The Asset Library installs the repository archive into the user's project, so it holds the addon and nothing else. The `export-ignore` rules in `.gitattributes` strip the rest, `project.godot` included; add a rule when you add a top-level file or directory.
 
-This applies to `git archive`, which is what GitHub generates for downloads. Clones are unaffected, so contributors still get the whole repository, and raw file URLs keep working, which is how the Asset Library reads `branding/icon.png`.
-
-Because the root `LICENSE` and `README.md` are stripped, `addons/weavly/` carries its own copy of each. The licence copy is what keeps the installed addon MIT-compliant; keep it in step with the root one.
-
-When adding a top-level file or directory, decide whether it belongs in the archive and add an `export-ignore` line if not.
+This affects `git archive` only, leaving clones and raw file URLs untouched. Because the root `LICENSE` and `README.md` are stripped, `addons/weavly/` keeps its own copies — keep the licence in step with the root one.
