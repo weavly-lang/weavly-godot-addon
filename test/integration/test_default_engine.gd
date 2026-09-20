@@ -6,6 +6,7 @@ extends WeavlyTestSuite
 
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke/build"
+const CI_SMOKE_GLOBALS_JSON = CI_SMOKE_FIXTURE + "/globals.wvl.json"
 const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
 const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
@@ -225,6 +226,34 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	assert_bool(engine.variable_service.get_variable("end")).is_true()
 	assert_that(engine.variable_service.get_variable("score")).is_equal(13.0)
 	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
+
+
+# The node-less build artifact is the only trace of the split sources, so it is what
+# this asserts: node ids and declarations look identical either way.
+func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> void:
+	var hint: String = (
+		"globals.wvl.json is gone. Keep the ci_smoke sources split, declarations in "
+		+ "globals.wvl and nodes in story.wvl, so the compiler's cross-file "
+		+ "declaration merge stays covered."
+	)
+	var exists: bool = FileAccess.file_exists(CI_SMOKE_GLOBALS_JSON)
+	assert_bool(exists).override_failure_message(hint).is_true()
+	if not exists:
+		return
+	var globals: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string(CI_SMOKE_GLOBALS_JSON)
+	)
+	assert_that(globals["nodes"]).is_empty()
+
+	var engine = _make_engine(CI_SMOKE_FIXTURE)
+	var ids: Array[String] = []
+	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
+		ids.append(node.id)
+	ids.sort()
+	assert_that(ids).is_equal(["choices", "end", "match_node", "random_node", "start"])
+	assert_bool(engine.variable_service.has("score")).is_true()
+	assert_bool(engine.variable_service.has("player_name")).is_true()
+	assert_bool(engine.variable_service.has("has_key")).is_true()
 
 
 # =====================

@@ -53,6 +53,8 @@ CI (`.github/workflows/ci.yml`) runs `gdlint`, `gdformat --check`, and the gdUni
 
 `test/fixtures/integration/ci_smoke/` is a real Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the integration test loads. It covers every statement type, so it is where the addon notices a change in the compiler's output shape.
 
+The two sources are split on purpose — `globals.wvl` declares the variables, `story.wvl` holds the nodes — so the build exercises the compiler's cross-file declaration merge. Inlining the declarations produces byte-identical `env.json` and node JSON, so nothing else would notice; an integration test asserts the node-less `globals.wvl.json` still gets emitted.
+
 The `fixtures` job installs a pinned `weavly` from PyPI, runs `weavly build`, and fails if the result differs from the committed `build/`. The pin keeps an upstream release from failing unrelated PRs; a separate weekly workflow (`.github/workflows/compiler-latest.yml`, also runnable on demand) does the same against the newest release, so a shape change surfaces there instead.
 
 After editing the sources, rebuild and commit `build/` along with them:
