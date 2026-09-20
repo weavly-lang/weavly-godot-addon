@@ -1,0 +1,7 @@
+# Normalize text to LF in the repository. CI rebuilds test/fixtures/integration/ci_smoke/
+# and compares the result byte for byte, which CRLF would break.
+* text=auto eol=lf
+
+*.png binary
+*.ogv binary
+*.svg text eol=lf

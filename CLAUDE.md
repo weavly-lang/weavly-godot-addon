@@ -2,17 +2,17 @@
 
 ## Project
 
-Godot 4.5 (Forward+) addon that runs Weavly programs at runtime by consuming JSON emitted by the Weavly compiler, plus editor tooling to edit and compile `.wvl` files inside Godot. The runtime does not parse `.wvl` source.
+Godot addon that runs Weavly programs at runtime by consuming JSON emitted by the Weavly compiler, plus editor tooling to edit and compile `.wvl` files inside Godot. The runtime does not parse `.wvl` source. The dev project targets Forward+; CI tests 4.5, 4.6 and 4.7.
 
 - Addon code: `addons/weavly/src/`
 - Engine scene: `addons/weavly/src/weavly_engine.tscn` — the instantiable `WeavlyEngine` node, scripted with `WeavlyDefaultEngine`.
-- Sample dialog project: `dialog/` (`src/` holds `.wvl` sources, `build/` the compiled JSON).
+- `dialog/` is a gitignored scratch project for trying the editor tooling by hand, so it is absent from a fresh clone. Create one with `weavly init dialog`; that path is what `weavly/dialog_project_dir` defaults to.
 
 ## Relationship to the compiler
 
 Sibling repo at `../weavly-compiler` (Python) turns `.wvl` into JSON; this addon consumes it. Read-only upstream — output-shape changes start there, this repo follows.
 
-Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLAUDE.md
+Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLAUDE.md — this import only resolves when that repo is checked out beside this one; without it, read the compiler's own docs instead.
 
 CI guards that shape: `test/fixtures/integration/ci_smoke/` is a real Weavly project (`src/` sources, committed `build/` JSON) that a pinned compiler rebuilds on every PR, plus a weekly run against the newest release. Edit the `.wvl` sources and rebuild with `weavly build`; never hand-edit `build/`.
 
@@ -40,7 +40,7 @@ addons/weavly/src/
     interfaces/                     # abstract contracts, one per service
     implementations/                # default_* and list_* variants
   resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable
-  utils/                           # weavly_file_utils, weavly_text_utils
+  utils/                            # weavly_file_utils, weavly_text_utils
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, integration/, fixtures/, helpers/
                                     # fixtures/integration/ci_smoke/ is compiler-built, see above
@@ -78,4 +78,6 @@ Never commit directly to `main`. Never use the branch slug as a commit message.
 
 ## Status
 
-`WeavlyEngine` ([engine/weavly_engine.gd](addons/weavly/src/engine/weavly_engine.gd)) is `@abstract`; runtime control flow lives in `WeavlyDefaultEngine` ([engine/default_engine.gd](addons/weavly/src/engine/default_engine.gd)). Deserializer/executor/evaluator layers and the editor tooling are wired.
+`WeavlyEngine` ([engine/weavly_engine.gd](addons/weavly/src/engine/weavly_engine.gd)) is `@abstract`; runtime control flow lives in `WeavlyDefaultEngine` ([engine/default_engine.gd](addons/weavly/src/engine/default_engine.gd)). Every statement type the compiler emits is deserialized, executed and covered by tests, and the editor tooling is wired.
+
+`plugin.cfg` says 0.1.0, but nothing is tagged or released yet.

@@ -1,6 +1,8 @@
 # Weavly Godot Addon
 
-A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for writing branching dialogs; the [compiler](https://github.com/weavly-lang/weavly-compiler) (Python) turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
+[![CI](https://github.com/weavly-lang/weavly-godot-addon/actions/workflows/ci.yml/badge.svg)](https://github.com/weavly-lang/weavly-godot-addon/actions/workflows/ci.yml)
+
+A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for branching dialogs: its Python compiler turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
 
 ## Features
 
@@ -83,4 +85,8 @@ Language reference, grammar, and compiler commands live in the [compiler repo](h
 
 ## Development
 
-Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`); both run in CI, with the tests running on Godot 4.5, 4.6 and 4.7. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`). CI runs both on Godot 4.5, 4.6 and 4.7, exports a test game and runs it to check the addon in an exported build, and rebuilds the test fixtures with the published compiler. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
+
+## License
+
+[MIT](LICENSE). The vendored test framework under `addons/gdUnit4/` is MIT as well, with its own [license](addons/gdUnit4/LICENSE); it is a development dependency and is not part of the addon you ship.
