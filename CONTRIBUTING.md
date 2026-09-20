@@ -116,3 +116,16 @@ godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res
 `-c` keeps running the remaining tests of a suite after a failure. Reports are written to `reports/` (ignored by git).
 
 `godot` must be on your PATH. On Windows the executable is named something like `Godot_v4.5.1-stable_win64_console.exe` — create a `godot.bat` shim pointing at it.
+
+### Check project.godot after importing
+
+`project.godot` pins `config/features` to the oldest supported Godot version. Opening the project, or running `godot --headless --path . --import`, with a newer Godot rewrites that pin to the version you used and can add compatibility keys along the way. That quietly raises the addon's minimum version and fails the oldest `test` and `export` jobs, in a diff that otherwise looks unrelated.
+
+So after any import, check what moved and put back what you did not mean to change:
+
+```bash
+git diff project.godot
+git checkout -- project.godot addons/gdUnit4
+```
+
+Importing also rewrites line endings in the vendored `addons/gdUnit4/**/*.import` files with no change to their contents, which is why they are reverted above.
