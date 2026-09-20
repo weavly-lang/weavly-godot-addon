@@ -47,7 +47,23 @@ The `(#12)` is added automatically by GitHub.
 
 ## Local checks
 
-CI (`.github/workflows/ci.yml`) runs `gdlint`, `gdformat --check`, and the gdUnit4 test suite on every push and PR. The tests run on every supported Godot version (4.5, 4.6 and 4.7, pinned to the latest patch of each); a failure on one version does not stop the others. When a new minor version of Godot is released, add it to the matrix, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range. A third job exports the test game in `ci/export_smoke/` on the oldest and newest version and runs the exported binary, which is the only way to catch bugs that appear once `res://` is a PCK. Running the checks locally first means green locally ≈ green in CI.
+CI (`.github/workflows/ci.yml`) runs `gdlint`, `gdformat --check`, and the gdUnit4 test suite on every push and PR. The tests run on every supported Godot version (4.5, 4.6 and 4.7, pinned to the latest patch of each); a failure on one version does not stop the others. When a new minor version of Godot is released, add it to the matrix, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range. A third job exports the test game in `ci/export_smoke/` on the oldest and newest version and runs the exported binary, which is the only way to catch bugs that appear once `res://` is a PCK. A fourth job rebuilds the compiler-built fixture (see below). Running the checks locally first means green locally ≈ green in CI.
+
+### Compiler-built fixtures
+
+`test/fixtures/integration/ci_smoke/` is a real Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the integration test loads. It covers every statement type, so it is where the addon notices a change in the compiler's output shape.
+
+The two sources are split on purpose — `globals.wvl` declares the variables, `story.wvl` holds the nodes — so the build exercises the compiler's cross-file declaration merge. Inlining the declarations produces byte-identical `env.json` and node JSON, so nothing else would notice; an integration test asserts the node-less `globals.wvl.json` still gets emitted.
+
+The `fixtures` job installs a pinned `weavly` from PyPI, runs `weavly build`, and fails if the result differs from the committed `build/`. The pin keeps an upstream release from failing unrelated PRs; a separate weekly workflow (`.github/workflows/compiler-latest.yml`, also runnable on demand) does the same against the newest release, so a shape change surfaces there instead.
+
+After editing the sources, rebuild and commit `build/` along with them:
+
+```bash
+cd test/fixtures/integration/ci_smoke && weavly build
+```
+
+When the weekly run fails, check whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild, and adjust the addon to match; if not, it is an upstream bug.
 
 ### Linting and formatting
 
