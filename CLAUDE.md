@@ -80,4 +80,4 @@ Never commit directly to `main`. Never use the branch slug as a commit message.
 
 `WeavlyEngine` ([engine/weavly_engine.gd](addons/weavly/src/engine/weavly_engine.gd)) is `@abstract`; runtime control flow lives in `WeavlyDefaultEngine` ([engine/default_engine.gd](addons/weavly/src/engine/default_engine.gd)). Every statement type the compiler emits is deserialized, executed and covered by tests, and the editor tooling is wired.
 
-`plugin.cfg` says 0.1.0, but nothing is tagged or released yet.
+Releases are tag-driven from `plugin.cfg`; see CONTRIBUTING.

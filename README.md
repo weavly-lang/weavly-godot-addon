@@ -14,7 +14,7 @@ A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-comp
 
 ## Installation
 
-1. Copy `addons/weavly` into your project's `addons/` folder.
+1. Download the latest `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project root, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
 3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.1.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
@@ -56,7 +56,7 @@ For exports, add `*.json` to *Filters to export non-resource files* in your expo
 
 ### Media outside the game
 
-`image_path` and `video_path` also accept paths outside `res://` — an absolute path or `user://` — for assets you want to ship next to the executable and swap without rebuilding, which is mostly interesting for video. The path decides how they are read: `res://` uses the resource system, anything else reads from disk.
+`image_path` and `video_path` also accept paths outside `res://` — an absolute path or `user://` — for assets you want to ship next to the executable and swap without rebuilding. The path decides how they are read: `res://` uses the resource system, anything else reads from disk.
 
 The engine reads these paths when it enters the tree, so set them before adding it:
 
@@ -68,9 +68,9 @@ func _ready() -> void:
     add_child(engine)
 ```
 
-The `editor` check matters because `OS.get_executable_path()` points at the Godot binary while running from the editor, not at your project. External media is not part of the export, so your build step has to copy that folder next to the executable.
+The `editor` check is needed because `OS.get_executable_path()` points at the Godot binary when running from the editor. External media is not part of the export, so your build step has to copy that folder next to the executable.
 
-Character and variable `.tres` resources stay `res://` only: they reference their script by resource uid, which does not survive outside the project. Dialog and variable JSON works with either kind of path.
+Character and variable `.tres` resources stay `res://` only, since they reference their script by resource uid. Dialog and variable JSON works with either kind of path.
 
 ## Writing dialogs in the editor
 
@@ -85,8 +85,8 @@ Language reference, grammar, and compiler commands live in the [compiler repo](h
 
 ## Development
 
-Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`). CI runs both on Godot 4.5, 4.6 and 4.7, exports a test game and runs it to check the addon in an exported build, and rebuilds the test fixtures with the published compiler. See [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-driven workflow.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (`test/`), linting and formatting use [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit) (`gdlintrc` / `gdformatrc`). CI runs the suite on Godot 4.5, 4.6 and 4.7, exports a test game and runs the binary, and rebuilds the test fixtures with the published compiler. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
 
 ## License
 
-[MIT](LICENSE). The vendored test framework under `addons/gdUnit4/` is MIT as well, with its own [license](addons/gdUnit4/LICENSE); it is a development dependency and is not part of the addon you ship.
+[MIT](LICENSE). The vendored test framework under `addons/gdUnit4/` is MIT as well ([license](addons/gdUnit4/LICENSE)) and is a development dependency, not part of the addon you ship.
