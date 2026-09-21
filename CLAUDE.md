@@ -6,7 +6,7 @@ Godot addon that runs Weavly programs at runtime by consuming JSON emitted by th
 
 - Addon code: `addons/weavly/src/`
 - Engine scene: `addons/weavly/src/weavly_engine.tscn` — the instantiable `WeavlyEngine` node, scripted with `WeavlyDefaultEngine`.
-- `dialog/` is a gitignored scratch project for trying the editor tooling by hand, so it is absent from a fresh clone. Create one with `weavly init dialog`; that path is what `weavly/dialog_project_dir` defaults to.
+- `dialogue/` is a gitignored scratch project for trying the editor tooling by hand, so it is absent from a fresh clone. Create one with `weavly init dialogue`; that path is what `weavly/dialogue_project_dir` defaults to.
 
 ## Relationship to the compiler
 

@@ -1,6 +1,6 @@
 extends WeavlyTestSuite
 
-# End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogs, drives the
+# End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogues, drives the
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
@@ -31,7 +31,7 @@ func before_test() -> void:
 
 
 # Build a WeavlyDefaultEngine pointed at a fixture dir. All asset paths point at the
-# same dir; non-dialog asset lookups simply find no matching extensions, which
+# same dir; non-dialogue asset lookups simply find no matching extensions, which
 # avoids needing an extra empty fixture dir on disk. The @export paths are set
 # before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> Node:
@@ -56,7 +56,7 @@ func _make_list_engine(fixture_dir: String) -> Node:
 
 func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 	var engine = WeavlyDefaultEngine.new()
-	engine.dialog_path = fixture_dir
+	engine.dialogue_path = fixture_dir
 	engine.video_path = fixture_dir
 	engine.image_path = fixture_dir
 	engine.character_path = fixture_dir
@@ -65,11 +65,11 @@ func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 
 
 func _connect_signal_log(engine: WeavlyEngine) -> void:
-	engine.started_dialog.connect(func() -> void: _signal_log.append("started_dialog"))
+	engine.started_dialogue.connect(func() -> void: _signal_log.append("started_dialogue"))
 	engine.entered_node.connect(
 		func(node_id: StringName) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
-	engine.finished_dialog.connect(func() -> void: _signal_log.append("finished_dialog"))
+	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
 	engine.command_service.executed_command.connect(
 		func(command: WeavlyModel.CommandStatement) -> void:
 			_command_log.append("%s:%s" % [command.id, command.text])
@@ -92,20 +92,20 @@ func _connect_content_log(engine: WeavlyEngine) -> void:
 # =====================
 
 
-func test_start_on_idle_emits_started_dialog_and_enters_first_node() -> void:
+func test_start_on_idle_emits_started_dialogue_and_enters_first_node() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
-	assert_that(_signal_log[0]).is_equal("started_dialog")
+	assert_that(_signal_log[0]).is_equal("started_dialogue")
 	assert_that(_signal_log[1]).is_equal("entered_node:start")
 
 
-func test_start_on_running_dialog_warns_and_does_nothing() -> void:
+func test_start_on_running_dialogue_warns_and_does_nothing() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	var log_after_first_start = _signal_log.duplicate()
 	engine.start("start")
 	# Second start pushes a warning and emits no further signals.
-	assert_logged([], ["Dialog is already in progress, can't start for node with ID 'start'."])
+	assert_logged([], ["Dialogue is already in progress, can't start for node with ID 'start'."])
 	assert_that(_signal_log).is_equal(log_after_first_start)
 
 
@@ -131,14 +131,14 @@ func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
 	var log_before = _signal_log.size()
 	engine.enter_node("does_not_exist")
 	# Unknown id pushes an error (from node_service.get_node and from the engine
-	# itself) and then calls finish, which emits finished_dialog.
+	# itself) and then calls finish, which emits finished_dialogue.
 	assert_logged(
 		[
 			"Node with id 'does_not_exist' doesn't exist",
-			"Can't enter node with ID 'does_not_exist' because it's null, finishing the dialog."
+			"Can't enter node with ID 'does_not_exist' because it's null, finishing the dialogue."
 		]
 	)
-	assert_that(_signal_log[log_before]).is_equal("finished_dialog")
+	assert_that(_signal_log[log_before]).is_equal("finished_dialogue")
 
 
 # =====================
@@ -146,16 +146,16 @@ func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
 # =====================
 
 
-func test_finish_emits_finished_dialog_and_allows_restart() -> void:
+func test_finish_emits_finished_dialogue_and_allows_restart() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	engine.finish()
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	var log_after_finish = _signal_log.duplicate()
-	# After finish, start should be allowed again and emit started_dialog.
+	# After finish, start should be allowed again and emit started_dialogue.
 	engine.start("start")
 	assert_that(_signal_log.size()).is_equal(log_after_finish.size() + 2)
-	assert_that(_signal_log[log_after_finish.size()]).is_equal("started_dialog")
+	assert_that(_signal_log[log_after_finish.size()]).is_equal("started_dialogue")
 
 
 # =====================
@@ -163,24 +163,24 @@ func test_finish_emits_finished_dialog_and_allows_restart() -> void:
 # =====================
 
 
-func test_full_linear_dialog_run_signals_and_final_state() -> void:
+func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	# start node body: narration, character, set, goto
-	# Narration pauses, so drive forward with next() until the dialog finishes.
+	# Narration pauses, so drive forward with next() until the dialogue finishes.
 	engine.next()  # character line -> pause
 	engine.next()  # set counter, goto end, narration "Goodbye" -> pause
 	engine.next()  # finish
 
 	var expected_signals: Array[String] = [
-		"started_dialog",
+		"started_dialogue",
 		"entered_node:start",
 		"entered_node:end",
-		"finished_dialog",
+		"finished_dialogue",
 	]
 	assert_that(_signal_log).is_equal(expected_signals)
 
-	# Variables: counter set by the dialog, visited flags for both nodes set.
+	# Variables: counter set by the dialogue, visited flags for both nodes set.
 	assert_that(engine.variable_service.get_variable("counter")).is_equal(7.0)
 	assert_bool(engine.variable_service.get_variable("start")).is_true()
 	assert_bool(engine.variable_service.get_variable("end")).is_true()
@@ -191,7 +191,7 @@ func test_full_linear_dialog_run_signals_and_final_state() -> void:
 # =====================
 
 
-# Smoke-test dialog covering every statement type. CI rebuilds build/ from src/ with
+# Smoke-test dialogue covering every statement type. CI rebuilds build/ from src/ with
 # the published compiler, so this also guards the emitted JSON shape.
 func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	var engine = _make_engine(CI_SMOKE_FIXTURE)
@@ -216,9 +216,9 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.option_service.choose_option(options[0])
 	engine.next()  # past the narration, into end's FinishStatement
 
-	# Final state: dialog finished, all visited flags set, has_key was toggled
+	# Final state: dialogue finished, all visited flags set, has_key was toggled
 	# to false by the last set statement.
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.variable_service.get_variable("start")).is_true()
 	assert_bool(engine.variable_service.get_variable("choices")).is_true()
 	assert_bool(engine.variable_service.get_variable("random_node")).is_true()
@@ -267,8 +267,10 @@ func test_self_referencing_goto_aborts_via_error_not_crash() -> void:
 	# overflow; now the flat loop trips the guard and finishes cleanly.
 	engine.max_node_entries_per_step = 5
 	engine.start("self_loop")
-	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_logged(
+		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
+	)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
 
@@ -277,8 +279,10 @@ func test_two_node_goto_cycle_aborts_via_error() -> void:
 	# Indirect cycle (ping -> pong -> ping) is caught the same way as a self-loop.
 	engine.max_node_entries_per_step = 5
 	engine.start("ping")
-	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_logged(
+		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
+	)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
 
@@ -288,7 +292,7 @@ func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
 	# same node three times before finishing. The counter guard allows this; a
 	# naive "node revisited" detector would wrongly abort it.
 	engine.start("countdown")
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_that(engine.variable_service.get_variable("i")).is_equal(0.0)
 	(
 		assert_that(_signal_log.count("entered_node:countdown"))
@@ -323,7 +327,7 @@ func test_list_mode_streams_interleaved_narration_and_options_in_one_pass() -> v
 		. is_true()
 	)
 	assert_bool(engine.statement_service.is_paused()).is_true()
-	assert_bool(_signal_log.has("finished_dialog")).is_false()
+	assert_bool(_signal_log.has("finished_dialogue")).is_false()
 
 
 func test_list_mode_goto_cycle_aborts_via_error() -> void:
@@ -332,8 +336,10 @@ func test_list_mode_goto_cycle_aborts_via_error() -> void:
 	# only thing that can break a goto cycle.
 	engine.max_node_entries_per_step = 5
 	engine.start("self_loop")
-	assert_logged(["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialog."])
-	assert_that(_signal_log.back()).is_equal("finished_dialog")
+	assert_logged(
+		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
+	)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
 

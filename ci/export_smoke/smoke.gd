@@ -18,18 +18,18 @@ func _ready() -> void:
 	var external_base: String = OS.get_executable_path().get_base_dir().path_join(EXTERNAL_DIR)
 
 	var engine: WeavlyEngine = (load(ENGINE_SCENE) as PackedScene).instantiate()
-	engine.dialog_path = "res://dialog/build"
+	engine.dialogue_path = "res://dialogue/build"
 	engine.image_path = "res://media/images"
 	engine.character_path = "res://characters"
 	engine.variable_path = "res://variables"
 	engine.video_path = external_base.path_join("videos")
-	engine.finished_dialog.connect(func() -> void: _finished = true)
+	engine.finished_dialogue.connect(func() -> void: _finished = true)
 	add_child(engine)
 
 	_check_discovery(engine)
 	_check_packed_media(engine)
 	await _check_external_media(engine, external_base)
-	_run_dialog(engine)
+	_run_dialogue(engine)
 
 	if _failures.is_empty():
 		print("Export smoke test passed.")
@@ -46,8 +46,8 @@ func _expect(condition: bool, message: String) -> void:
 
 
 func _check_discovery(engine: WeavlyEngine) -> void:
-	_expect(engine.node_service.has("start"), "node 'start' not found in the packed dialog JSON")
-	_expect(engine.node_service.has("end"), "node 'end' not found in the packed dialog JSON")
+	_expect(engine.node_service.has("start"), "node 'start' not found in the packed dialogue JSON")
+	_expect(engine.node_service.has("end"), "node 'end' not found in the packed dialogue JSON")
 	_expect(engine.variable_service.has("score"), "variable 'score' not found in env.json")
 	_expect(engine.variable_service.has("lives"), "variable 'lives' not found in variables/*.tres")
 	_expect(
@@ -97,14 +97,14 @@ func _check_video_decodes(stream: VideoStream) -> void:
 	player.queue_free()
 
 
-func _run_dialog(engine: WeavlyEngine) -> void:
+func _run_dialogue(engine: WeavlyEngine) -> void:
 	engine.start("start")
 	var steps: int = 0
 	while not _finished and steps < MAX_STEPS:
 		engine.next()
 		steps += 1
 
-	_expect(_finished, "dialog did not reach finish within %d steps" % MAX_STEPS)
+	_expect(_finished, "dialogue did not reach finish within %d steps" % MAX_STEPS)
 	_expect(
 		engine.variable_service.get_variable("score") == 7.0,
 		"score is %s, expected 7.0" % engine.variable_service.get_variable("score")

@@ -1,5 +1,5 @@
 .godot/
 *.tmp
 .claude/settings.local.json
-/dialog/
+/dialogue/
 reports/

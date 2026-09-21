@@ -1,9 +1,9 @@
 class_name WeavlyDefaultEngine
 extends WeavlyEngine
 
-const DIALOG_IN_PROGRESS = "Dialog is already in progress, can't start for node with ID '%s'."
-const NULL_NODE = "Can't enter node with ID '%s' because it's null, finishing the dialog."
-const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialog."
+const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
+const NULL_NODE = "Can't enter node with ID '%s' because it's null, finishing the dialogue."
+const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialogue."
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -16,7 +16,7 @@ const DEFAULT_STATEMENT_SERVICE = preload(DEFAULTS_PATH + "default_statement_ser
 const DEFAULT_VARIABLE_SERVICE = preload(DEFAULTS_PATH + "default_variable_service.gd")
 const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd")
 
-@export var dialog_path: String = "res://dialog/build"
+@export var dialogue_path: String = "res://dialogue/build"
 @export var video_path: String = "res://media/videos"
 @export var image_path: String = "res://media/images"
 @export var character_path: String = "res://characters"
@@ -77,9 +77,9 @@ func _ready() -> void:
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
-	WeavlyFileUtils.load_nodes_from_files(self, dialog_path)
+	WeavlyFileUtils.load_nodes_from_files(self, dialogue_path)
 	WeavlyFileUtils.load_variables_from_resources(self, variable_path)
-	WeavlyFileUtils.load_variables_from_env_files(self, dialog_path)
+	WeavlyFileUtils.load_variables_from_env_files(self, dialogue_path)
 	WeavlyFileUtils.index_videos_from_files(self, video_path)
 	WeavlyFileUtils.index_images_from_files(self, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)
@@ -88,10 +88,10 @@ func _ready() -> void:
 
 func start(node_id: String) -> void:
 	if not _finished:
-		push_warning(DIALOG_IN_PROGRESS % node_id)
+		push_warning(DIALOGUE_IN_PROGRESS % node_id)
 	else:
 		_finished = false
-		started_dialog.emit()
+		started_dialogue.emit()
 		enter_node(node_id)
 
 
@@ -135,7 +135,7 @@ func _enter_pending_node() -> void:
 
 
 func finish() -> void:
-	finished_dialog.emit()
+	finished_dialogue.emit()
 	_finished = true
 	statement_service.clear_statements()
 

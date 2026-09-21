@@ -35,11 +35,11 @@ func test_build_command_program_matches_platform() -> void:
 
 func test_build_command_quotes_paths_with_spaces() -> void:
 	var command = WeavlyCompilerRunner.build_command(
-		"C:/Program Files/weavly.exe", "C:/My Projects/dialog"
+		"C:/Program Files/weavly.exe", "C:/My Projects/dialogue"
 	)
 	var joined = _joined(command)
 	assert_str(joined).contains('"C:/Program Files/weavly.exe"')
-	assert_str(joined).contains('"C:/My Projects/dialog"')
+	assert_str(joined).contains('"C:/My Projects/dialogue"')
 
 
 # =====================
@@ -132,9 +132,9 @@ func test_parse_errors_handles_crlf_output() -> void:
 
 func test_parse_errors_resolves_paths_against_working_dir() -> void:
 	var errors = WeavlyCompilerRunner.parse_errors(
-		"src/sub/a.wvl:1:1: error: boom", "C:/Games/My Project/dialog"
+		"src/sub/a.wvl:1:1: error: boom", "C:/Games/My Project/dialogue"
 	)
-	assert_that(errors[0].file).is_equal("C:/Games/My Project/dialog/src/sub/a.wvl")
+	assert_that(errors[0].file).is_equal("C:/Games/My Project/dialogue/src/sub/a.wvl")
 
 
 # =====================

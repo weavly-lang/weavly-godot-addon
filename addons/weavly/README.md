@@ -1,6 +1,6 @@
 # Weavly
 
-Runs [Weavly](https://github.com/weavly-lang/weavly-compiler) branching dialogs at runtime, plus editor tooling for writing and compiling `.wvl` files inside Godot.
+Runs [Weavly](https://github.com/weavly-lang/weavly-compiler) branching dialogues at runtime, plus editor tooling for writing and compiling `.wvl` files inside Godot.
 
 Enable **Weavly** under *Project Settings → Plugins*, then instance `addons/weavly/src/weavly_engine.tscn` in your scene:
 
@@ -14,7 +14,7 @@ func _ready() -> void:
     engine.start("start")
 ```
 
-The engine has no UI of its own; your game listens to service signals and renders however it likes. By default it loads compiled dialog JSON from `res://dialog/build`. For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialog JSON is not packed.
+The engine has no UI of its own; your game listens to service signals and renders however it likes. By default it loads compiled dialogue JSON from `res://dialogue/build`. For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialogue JSON is not packed.
 
 For the editor tooling you also need the Weavly compiler (0.1.0 or newer): `uv tool install weavly`.
 
