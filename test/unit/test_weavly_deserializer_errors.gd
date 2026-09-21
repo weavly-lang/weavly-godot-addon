@@ -131,13 +131,13 @@ func test_declarations_wrong_type_returns_empty() -> void:
 
 func test_node_error_includes_source_file_path() -> void:
 	var data = {"nodes": [{"id": "start"}]}  # missing body
-	WeavlyDeserializer.compile_nodes(data, "res://dialog/build/scene2.json")
-	assert_logged(["Missing required field 'body' at res://dialog/build/scene2.json > nodes[0]"])
+	WeavlyDeserializer.compile_nodes(data, "res://dialogue/build/scene2.json")
+	assert_logged(["Missing required field 'body' at res://dialogue/build/scene2.json > nodes[0]"])
 
 
 func test_declaration_error_includes_source_file_path() -> void:
 	var data = {"declarations": [{"name": "score", "type": "number"}]}  # missing value
-	WeavlyDeserializer.compile_variable_declarations(data, "res://dialog/build/env.json")
+	WeavlyDeserializer.compile_variable_declarations(data, "res://dialogue/build/env.json")
 	assert_logged(
-		["Missing required field 'value' at res://dialog/build/env.json > declarations[0]"]
+		["Missing required field 'value' at res://dialogue/build/env.json > declarations[0]"]
 	)

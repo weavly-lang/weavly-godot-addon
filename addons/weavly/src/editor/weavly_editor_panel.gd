@@ -2,10 +2,10 @@
 class_name WeavlyEditorPanel
 extends Control
 
-const SETTING_PROJECT_DIR = "weavly/dialog_project_dir"
+const SETTING_PROJECT_DIR = "weavly/dialogue_project_dir"
 const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
-const DEFAULT_PROJECT_DIR = "res://dialog"
+const DEFAULT_PROJECT_DIR = "res://dialogue"
 const DEFAULT_EXECUTABLE = "weavly"
 
 const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit it."

@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/weavly-lang/weavly-godot-addon/actions/workflows/ci.yml/badge.svg)](https://github.com/weavly-lang/weavly-godot-addon/actions/workflows/ci.yml)
 
-A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialog programs at runtime. Weavly is a small DSL for branching dialogs: its Python compiler turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
+A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-compiler) dialogue programs at runtime. Weavly is a small DSL for branching dialogues: its Python compiler turns `.wvl` source into JSON, and this addon consumes that JSON in your game. It also ships editor tooling so you can write and compile `.wvl` files without leaving Godot.
 
 ## Features
 
-- **Runtime engine** — an instantiable `WeavlyEngine` node that loads compiled dialogs and drives them statement by statement: narration and character lines, options, `match`/`random` blocks, variables, gotos, and custom commands.
+- **Runtime engine** — an instantiable `WeavlyEngine` node that loads compiled dialogues and drives them statement by statement: narration and character lines, options, `match`/`random` blocks, variables, gotos, and custom commands.
 - **Signal-based UI contract** — the engine has no UI of its own. Your game listens to service signals (`executed_narration_line`, `options_added`, `executed_command`, `variable_changed`, ...) and renders however it likes.
 - **Swappable services** — every concern (lines, options, variables, nodes, characters, images, videos, commands, statement flow) sits behind an abstract service. Override any of them via the engine's `*_service_script` exports in the inspector.
 - **Asset indexing** — images, videos, character resources, and variable resources are discovered from configurable folders at startup, with optional regex grouping for random variant selection.
@@ -36,7 +36,7 @@ func _ready() -> void:
     engine.line_service.executed_narration_line.connect(_show_narration)
     engine.line_service.executed_character_line.connect(_show_character_line)
     engine.option_service.options_added.connect(_show_options)
-    engine.finished_dialog.connect(_on_dialog_finished)
+    engine.finished_dialogue.connect(_on_dialogue_finished)
     engine.start("start")
 
 
@@ -50,9 +50,9 @@ func _on_option_selected(option: WeavlyModel.Option) -> void:
     engine.option_service.choose_option(option)
 ```
 
-By default the engine loads compiled dialog JSON from `res://dialog/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node.
+By default the engine loads compiled dialogue JSON from `res://dialogue/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node.
 
-For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialog JSON is not packed.
+For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialogue JSON is not packed.
 
 ### Media outside the game
 
@@ -70,15 +70,15 @@ func _ready() -> void:
 
 The `editor` check is needed because `OS.get_executable_path()` points at the Godot binary when running from the editor. External media is not part of the export, so your build step has to copy that folder next to the executable.
 
-Character and variable `.tres` resources stay `res://` only, since they reference their script by resource uid. Dialog and variable JSON works with either kind of path.
+Character and variable `.tres` resources stay `res://` only, since they reference their script by resource uid. Dialogue and variable JSON works with either kind of path.
 
-## Writing dialogs in the editor
+## Writing dialogues in the editor
 
-Right-click a folder in the FileSystem dock and choose **WeavlyFile...** to create a `.wvl` file, or double-click an existing one to open it in the Weavly main screen. The panel saves with `Ctrl+S` and can compile the dialog project on demand or on every save.
+Right-click a folder in the FileSystem dock and choose **WeavlyFile...** to create a `.wvl` file, or double-click an existing one to open it in the Weavly main screen. The panel saves with `Ctrl+S` and can compile the dialogue project on demand or on every save.
 
 Relevant settings:
 
-- `weavly/dialog_project_dir` (project setting) — the Weavly project the compile button builds, default `res://dialog`.
+- `weavly/dialogue_project_dir` (project setting) — the Weavly project the compile button builds, default `res://dialogue`.
 - `weavly/executable_path` (editor setting) — path to the `weavly` CLI, default `weavly`.
 
 Language reference, grammar, and compiler commands live in the [compiler repo](https://github.com/weavly-lang/weavly-compiler).

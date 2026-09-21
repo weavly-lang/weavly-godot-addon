@@ -1,9 +1,9 @@
 @abstract class_name WeavlyEngine
 extends Node
 
-signal started_dialog
+signal started_dialogue
 signal entered_node(node_id: StringName)
-signal finished_dialog
+signal finished_dialogue
 
 var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService

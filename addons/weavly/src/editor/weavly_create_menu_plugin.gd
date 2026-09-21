@@ -2,7 +2,7 @@
 extends EditorContextMenuPlugin
 
 const _MENU_LABEL = "WeavlyFile..."
-const _DEFAULT_NAME = "new_dialog"
+const _DEFAULT_NAME = "new_dialogue"
 const _EXTENSION = ".wvl"
 const _TEMPLATE = "@node first_node\nHello World!\n@endnode\n"
 
