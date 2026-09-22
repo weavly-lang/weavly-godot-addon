@@ -32,9 +32,12 @@ var _compile_on_save: CheckButton
 var _line_wrap: CheckButton
 var _save_button: Button
 var _compile_button: Button
-var _find_bar: HBoxContainer
+var _find_bar: VBoxContainer
 var _find_field: LineEdit
 var _find_count: Label
+var _match_case: CheckButton
+var _replace_row: HBoxContainer
+var _replace_field: LineEdit
 var _current_path: String = ""
 var _dirty: bool = false
 var _compiling: bool = false
@@ -128,34 +131,61 @@ func _build_ui() -> void:
 
 
 func _build_find_bar(root: VBoxContainer) -> void:
-	_find_bar = HBoxContainer.new()
+	_find_bar = VBoxContainer.new()
 	_find_bar.visible = false
 	root.add_child(_find_bar)
+
+	var find_row: HBoxContainer = HBoxContainer.new()
+	_find_bar.add_child(find_row)
 
 	_find_field = LineEdit.new()
 	_find_field.placeholder_text = "Find"
 	_find_field.custom_minimum_size.x = 240
 	_find_field.text_changed.connect(_on_find_text_changed)
 	_find_field.gui_input.connect(_on_find_field_input)
-	_find_bar.add_child(_find_field)
+	find_row.add_child(_find_field)
 
 	_find_count = Label.new()
-	_find_bar.add_child(_find_count)
+	find_row.add_child(_find_count)
 
 	var previous: Button = Button.new()
 	previous.text = "Previous"
 	previous.pressed.connect(_find_previous)
-	_find_bar.add_child(previous)
+	find_row.add_child(previous)
 
 	var next: Button = Button.new()
 	next.text = "Next"
 	next.pressed.connect(_find_next)
-	_find_bar.add_child(next)
+	find_row.add_child(next)
+
+	_match_case = CheckButton.new()
+	_match_case.text = "Match case"
+	_match_case.toggled.connect(_on_match_case_toggled)
+	find_row.add_child(_match_case)
 
 	var close: Button = Button.new()
 	close.text = "Close"
 	close.pressed.connect(_close_find)
-	_find_bar.add_child(close)
+	find_row.add_child(close)
+
+	_replace_row = HBoxContainer.new()
+	_find_bar.add_child(_replace_row)
+
+	_replace_field = LineEdit.new()
+	_replace_field.placeholder_text = "Replace"
+	_replace_field.custom_minimum_size.x = 240
+	_replace_field.gui_input.connect(_on_replace_field_input)
+	_replace_row.add_child(_replace_field)
+
+	var replace: Button = Button.new()
+	replace.text = "Replace"
+	replace.pressed.connect(_replace)
+	_replace_row.add_child(replace)
+
+	var replace_all: Button = Button.new()
+	replace_all.text = "Replace All"
+	replace_all.pressed.connect(_replace_all)
+	_replace_row.add_child(replace_all)
 
 
 func _shortcut_input(event: InputEvent) -> void:
@@ -170,7 +200,10 @@ func _shortcut_input(event: InputEvent) -> void:
 		_on_save_pressed()
 		accept_event()
 	elif event.keycode == KEY_F and command:
-		_open_find()
+		_open_find(false)
+		accept_event()
+	elif event.keycode == KEY_H and command:
+		_open_find(true)
 		accept_event()
 	elif event.keycode == KEY_F3 and _find_bar.visible:
 		if event.shift_pressed:
@@ -188,10 +221,11 @@ func _on_text_changed() -> void:
 		_refresh_controls()
 
 
-func _open_find() -> void:
+func _open_find(with_replace: bool) -> void:
 	if _code_edit.has_selection() and not _code_edit.get_selected_text().contains("\n"):
 		_find_field.text = _code_edit.get_selected_text()
 	_find_bar.visible = true
+	_replace_row.visible = with_replace
 	_find_field.grab_focus()
 	_find_field.select_all()
 	_code_edit.set_search_text(_find_field.text)
@@ -218,6 +252,17 @@ func _on_find_field_input(event: InputEvent) -> void:
 		_find_field.accept_event()
 
 
+func _on_replace_field_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed):
+		return
+	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+		_replace()
+		_replace_field.accept_event()
+	elif event.keycode == KEY_ESCAPE:
+		_close_find()
+		_replace_field.accept_event()
+
+
 func _on_find_text_changed(text: String) -> void:
 	_code_edit.set_search_text(text)
 	var line: int = _code_edit.get_caret_line()
@@ -225,9 +270,18 @@ func _on_find_text_changed(text: String) -> void:
 	if _code_edit.has_selection():
 		line = _code_edit.get_selection_from_line()
 		column = _code_edit.get_selection_from_column()
-	if not _select_match(_code_edit.search(text, 0, line, column)):
+	if not _select_match(_code_edit.search(text, _search_flags(), line, column)):
 		_code_edit.deselect()
 	_update_find_count()
+
+
+func _on_match_case_toggled(_pressed: bool) -> void:
+	_code_edit.set_search_flags(_search_flags())
+	_on_find_text_changed(_find_field.text)
+
+
+func _search_flags() -> int:
+	return TextEdit.SEARCH_MATCH_CASE if _match_case.button_pressed else 0
 
 
 func _find_next() -> void:
@@ -237,7 +291,7 @@ func _find_next() -> void:
 	if _code_edit.has_selection():
 		line = _code_edit.get_selection_to_line()
 		column = _code_edit.get_selection_to_column()
-	_select_match(_code_edit.search(text, 0, line, column))
+	_select_match(_code_edit.search(text, _search_flags(), line, column))
 	_update_find_count()
 
 
@@ -267,6 +321,27 @@ func _select_match(found: Vector2i) -> bool:
 	return true
 
 
+func _replace() -> void:
+	if _selected_match() in _find_matches():
+		_code_edit.insert_text_at_caret(_replace_field.text)
+	_find_next()
+
+
+func _replace_all() -> void:
+	var matches: Array[Vector2i] = _find_matches()
+	if matches.is_empty():
+		return
+	var length: int = _find_field.text.length()
+	_code_edit.begin_complex_operation()
+	for i: int in range(matches.size() - 1, -1, -1):
+		var found: Vector2i = matches[i]
+		_code_edit.remove_text(found.y, found.x, found.y, found.x + length)
+		_code_edit.insert_text(_replace_field.text, found.y, found.x)
+	_code_edit.end_complex_operation()
+	_update_find_count()
+	_set_status("Replaced %d" % matches.size(), _COLOR_INFO)
+
+
 func _selected_match() -> Vector2i:
 	if (
 		not _code_edit.has_selection()
@@ -281,12 +356,14 @@ func _find_matches() -> Array[Vector2i]:
 	var text: String = _find_field.text
 	if text == "":
 		return matches
+	var match_case: bool = _match_case.button_pressed
 	for line: int in _code_edit.get_line_count():
 		var line_text: String = _code_edit.get_line(line)
-		var column: int = line_text.findn(text)
+		var column: int = line_text.find(text) if match_case else line_text.findn(text)
 		while column != -1:
 			matches.append(Vector2i(column, line))
-			column = line_text.findn(text, column + text.length())
+			var from: int = column + text.length()
+			column = line_text.find(text, from) if match_case else line_text.findn(text, from)
 	return matches
 
 
