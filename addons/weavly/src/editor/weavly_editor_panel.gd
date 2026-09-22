@@ -32,6 +32,9 @@ var _compile_on_save: CheckButton
 var _line_wrap: CheckButton
 var _save_button: Button
 var _compile_button: Button
+var _find_bar: HBoxContainer
+var _find_field: LineEdit
+var _find_count: Label
 var _current_path: String = ""
 var _dirty: bool = false
 var _compiling: bool = false
@@ -61,6 +64,8 @@ func open_file(path: String) -> void:
 	_code_edit.text = file.get_as_text()
 	file.close()
 	_dirty = false
+	if _find_bar.visible:
+		_update_find_count()
 	_set_status("", _COLOR_INFO)
 	_refresh_controls()
 
@@ -119,26 +124,184 @@ func _build_ui() -> void:
 	_line_wrap.toggled.connect(_on_line_wrap_toggled)
 	_line_wrap.button_pressed = _load_line_wrap()
 
+	_build_find_bar(root)
+
+
+func _build_find_bar(root: VBoxContainer) -> void:
+	_find_bar = HBoxContainer.new()
+	_find_bar.visible = false
+	root.add_child(_find_bar)
+
+	_find_field = LineEdit.new()
+	_find_field.placeholder_text = "Find"
+	_find_field.custom_minimum_size.x = 240
+	_find_field.text_changed.connect(_on_find_text_changed)
+	_find_field.gui_input.connect(_on_find_field_input)
+	_find_bar.add_child(_find_field)
+
+	_find_count = Label.new()
+	_find_bar.add_child(_find_count)
+
+	var previous: Button = Button.new()
+	previous.text = "Previous"
+	previous.pressed.connect(_find_previous)
+	_find_bar.add_child(previous)
+
+	var next: Button = Button.new()
+	next.text = "Next"
+	next.pressed.connect(_find_next)
+	_find_bar.add_child(next)
+
+	var close: Button = Button.new()
+	close.text = "Close"
+	close.pressed.connect(_close_find)
+	_find_bar.add_child(close)
+
 
 func _shortcut_input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or _current_path == "":
 		return
 	if not (event is InputEventKey and event.pressed):
 		return
-	if (
-		event.keycode == KEY_S
-		and event.is_command_or_control_pressed()
-		and not event.shift_pressed
-		and not event.alt_pressed
-	):
+	var command: bool = (
+		event.is_command_or_control_pressed() and not event.shift_pressed and not event.alt_pressed
+	)
+	if event.keycode == KEY_S and command:
 		_on_save_pressed()
+		accept_event()
+	elif event.keycode == KEY_F and command:
+		_open_find()
+		accept_event()
+	elif event.keycode == KEY_F3 and _find_bar.visible:
+		if event.shift_pressed:
+			_find_previous()
+		else:
+			_find_next()
 		accept_event()
 
 
 func _on_text_changed() -> void:
+	if _find_bar.visible:
+		_update_find_count()
 	if not _dirty:
 		_dirty = true
 		_refresh_controls()
+
+
+func _open_find() -> void:
+	if _code_edit.has_selection() and not _code_edit.get_selected_text().contains("\n"):
+		_find_field.text = _code_edit.get_selected_text()
+	_find_bar.visible = true
+	_find_field.grab_focus()
+	_find_field.select_all()
+	_code_edit.set_search_text(_find_field.text)
+	_update_find_count()
+
+
+func _close_find() -> void:
+	_find_bar.visible = false
+	_code_edit.set_search_text("")
+	_code_edit.grab_focus()
+
+
+func _on_find_field_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed):
+		return
+	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+		if event.shift_pressed:
+			_find_previous()
+		else:
+			_find_next()
+		_find_field.accept_event()
+	elif event.keycode == KEY_ESCAPE:
+		_close_find()
+		_find_field.accept_event()
+
+
+func _on_find_text_changed(text: String) -> void:
+	_code_edit.set_search_text(text)
+	var line: int = _code_edit.get_caret_line()
+	var column: int = _code_edit.get_caret_column()
+	if _code_edit.has_selection():
+		line = _code_edit.get_selection_from_line()
+		column = _code_edit.get_selection_from_column()
+	if not _select_match(_code_edit.search(text, 0, line, column)):
+		_code_edit.deselect()
+	_update_find_count()
+
+
+func _find_next() -> void:
+	var text: String = _find_field.text
+	var line: int = _code_edit.get_caret_line()
+	var column: int = _code_edit.get_caret_column()
+	if _code_edit.has_selection():
+		line = _code_edit.get_selection_to_line()
+		column = _code_edit.get_selection_to_column()
+	_select_match(_code_edit.search(text, 0, line, column))
+	_update_find_count()
+
+
+func _find_previous() -> void:
+	var matches: Array[Vector2i] = _find_matches()
+	if matches.is_empty():
+		return
+	var line: int = _code_edit.get_caret_line()
+	var column: int = _code_edit.get_caret_column()
+	if _code_edit.has_selection():
+		line = _code_edit.get_selection_from_line()
+		column = _code_edit.get_selection_from_column()
+	var previous: Vector2i = matches[-1]
+	for found: Vector2i in matches:
+		if found.y > line or (found.y == line and found.x >= column):
+			break
+		previous = found
+	_select_match(previous)
+	_update_find_count()
+
+
+func _select_match(found: Vector2i) -> bool:
+	if _find_field.text == "" or found.y == -1:
+		return false
+	_code_edit.select(found.y, found.x, found.y, found.x + _find_field.text.length())
+	_code_edit.adjust_viewport_to_caret()
+	return true
+
+
+func _selected_match() -> Vector2i:
+	if (
+		not _code_edit.has_selection()
+		or _code_edit.get_selected_text().length() != _find_field.text.length()
+	):
+		return Vector2i(-1, -1)
+	return Vector2i(_code_edit.get_selection_from_column(), _code_edit.get_selection_from_line())
+
+
+func _find_matches() -> Array[Vector2i]:
+	var matches: Array[Vector2i] = []
+	var text: String = _find_field.text
+	if text == "":
+		return matches
+	for line: int in _code_edit.get_line_count():
+		var line_text: String = _code_edit.get_line(line)
+		var column: int = line_text.findn(text)
+		while column != -1:
+			matches.append(Vector2i(column, line))
+			column = line_text.findn(text, column + text.length())
+	return matches
+
+
+func _update_find_count() -> void:
+	if _find_field.text == "":
+		_find_count.text = ""
+		return
+	var matches: Array[Vector2i] = _find_matches()
+	var current: int = matches.find(_selected_match())
+	if matches.is_empty():
+		_find_count.text = "No matches"
+	elif current == -1:
+		_find_count.text = "%d matches" % matches.size()
+	else:
+		_find_count.text = "%d of %d" % [current + 1, matches.size()]
 
 
 func _on_save_pressed() -> void:

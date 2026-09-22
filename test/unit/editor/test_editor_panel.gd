@@ -1,5 +1,7 @@
 extends GdUnitTestSuite
 
+const _FIND_TEXT = "alpha beta\nbeta gamma\nBETA\n"
+
 var _panel: WeavlyEditorPanel
 var _dir: String
 
@@ -135,3 +137,108 @@ func test_line_wrap_toggle_sets_wrap_mode() -> void:
 	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_NONE)
 	_panel._line_wrap.button_pressed = true
 	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_BOUNDARY)
+
+
+# =====================
+# Find (issue #97)
+# =====================
+
+
+func _open_with_text(text: String) -> void:
+	_panel.open_file(_write_file("find.wvl", text))
+
+
+func _key(keycode: Key, shift: bool = false) -> InputEventKey:
+	var event: InputEventKey = InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	event.shift_pressed = shift
+	return event
+
+
+func _selection() -> Vector2i:
+	return Vector2i(
+		_panel._code_edit.get_selection_from_column(), _panel._code_edit.get_selection_from_line()
+	)
+
+
+func test_find_shortcut_opens_the_bar() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	assert_bool(_panel._find_bar.visible).is_true()
+
+
+func test_find_prefills_with_the_selection() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._code_edit.select(1, 5, 1, 10)
+	_panel._shortcut_input(_key_event(KEY_F))
+	assert_str(_panel._find_field.text).is_equal("gamma")
+
+
+func test_find_ignores_a_multiline_selection() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._code_edit.select(0, 0, 1, 4)
+	_panel._shortcut_input(_key_event(KEY_F))
+	assert_str(_panel._find_field.text).is_empty()
+
+
+func test_typing_selects_the_first_match_and_counts() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	_panel._find_field.text = "beta"
+	_panel._on_find_text_changed("beta")
+	assert_bool(_panel._code_edit.has_selection()).is_true()
+	assert_that(_selection()).is_equal(Vector2i(6, 0))
+	assert_str(_panel._find_count.text).is_equal("1 of 3")
+
+
+func test_find_reports_no_matches() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	_panel._find_field.text = "delta"
+	_panel._on_find_text_changed("delta")
+	assert_bool(_panel._code_edit.has_selection()).is_false()
+	assert_str(_panel._find_count.text).is_equal("No matches")
+
+
+func test_enter_and_f3_go_to_the_next_match_and_wrap() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	_panel._find_field.text = "beta"
+	_panel._on_find_text_changed("beta")
+	_panel._on_find_field_input(_key(KEY_ENTER))
+	assert_that(_selection()).is_equal(Vector2i(0, 1))
+	_panel._shortcut_input(_key(KEY_F3))
+	assert_that(_selection()).is_equal(Vector2i(0, 2))
+	assert_str(_panel._find_count.text).is_equal("3 of 3")
+	_panel._on_find_field_input(_key(KEY_ENTER))
+	assert_that(_selection()).is_equal(Vector2i(6, 0))
+
+
+func test_shift_goes_to_the_previous_match_and_wraps() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	_panel._find_field.text = "beta"
+	_panel._on_find_text_changed("beta")
+	_panel._on_find_field_input(_key(KEY_ENTER, true))
+	assert_that(_selection()).is_equal(Vector2i(0, 2))
+	_panel._shortcut_input(_key(KEY_F3, true))
+	assert_that(_selection()).is_equal(Vector2i(0, 1))
+	_panel._on_find_field_input(_key(KEY_ENTER, true))
+	assert_that(_selection()).is_equal(Vector2i(6, 0))
+
+
+func test_escape_closes_the_bar() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._shortcut_input(_key_event(KEY_F))
+	_panel._find_field.text = "beta"
+	_panel._on_find_text_changed("beta")
+	_panel._on_find_field_input(_key(KEY_ESCAPE))
+	assert_bool(_panel._find_bar.visible).is_false()
+
+
+func test_f3_does_nothing_while_the_bar_is_closed() -> void:
+	_open_with_text(_FIND_TEXT)
+	_panel._find_field.text = "beta"
+	_panel._shortcut_input(_key(KEY_F3))
+	assert_bool(_panel._code_edit.has_selection()).is_false()
