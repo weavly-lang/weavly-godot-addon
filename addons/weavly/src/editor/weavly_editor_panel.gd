@@ -242,17 +242,20 @@ func _find_next() -> void:
 
 
 func _find_previous() -> void:
-	var text: String = _find_field.text
+	var matches: Array[Vector2i] = _find_matches()
+	if matches.is_empty():
+		return
 	var line: int = _code_edit.get_caret_line()
 	var column: int = _code_edit.get_caret_column()
 	if _code_edit.has_selection():
 		line = _code_edit.get_selection_from_line()
 		column = _code_edit.get_selection_from_column()
-	column -= 1
-	if column < 0:
-		line = posmod(line - 1, _code_edit.get_line_count())
-		column = _code_edit.get_line(line).length()
-	_select_match(_code_edit.search(text, TextEdit.SEARCH_BACKWARDS, line, column))
+	var previous: Vector2i = matches[-1]
+	for found: Vector2i in matches:
+		if found.y > line or (found.y == line and found.x >= column):
+			break
+		previous = found
+	_select_match(previous)
 	_update_find_count()
 
 
@@ -264,31 +267,41 @@ func _select_match(found: Vector2i) -> bool:
 	return true
 
 
-func _update_find_count() -> void:
+func _selected_match() -> Vector2i:
+	if (
+		not _code_edit.has_selection()
+		or _code_edit.get_selected_text().length() != _find_field.text.length()
+	):
+		return Vector2i(-1, -1)
+	return Vector2i(_code_edit.get_selection_from_column(), _code_edit.get_selection_from_line())
+
+
+func _find_matches() -> Array[Vector2i]:
+	var matches: Array[Vector2i] = []
 	var text: String = _find_field.text
 	if text == "":
-		_find_count.text = ""
-		return
-	var total: int = 0
-	var current: int = 0
+		return matches
 	for line: int in _code_edit.get_line_count():
 		var line_text: String = _code_edit.get_line(line)
 		var column: int = line_text.findn(text)
 		while column != -1:
-			total += 1
-			if (
-				_code_edit.has_selection()
-				and line == _code_edit.get_selection_from_line()
-				and column == _code_edit.get_selection_from_column()
-			):
-				current = total
+			matches.append(Vector2i(column, line))
 			column = line_text.findn(text, column + text.length())
-	if total == 0:
+	return matches
+
+
+func _update_find_count() -> void:
+	if _find_field.text == "":
+		_find_count.text = ""
+		return
+	var matches: Array[Vector2i] = _find_matches()
+	var current: int = matches.find(_selected_match())
+	if matches.is_empty():
 		_find_count.text = "No matches"
-	elif current == 0:
-		_find_count.text = "%d matches" % total
+	elif current == -1:
+		_find_count.text = "%d matches" % matches.size()
 	else:
-		_find_count.text = "%d of %d" % [current, total]
+		_find_count.text = "%d of %d" % [current + 1, matches.size()]
 
 
 func _on_save_pressed() -> void:
