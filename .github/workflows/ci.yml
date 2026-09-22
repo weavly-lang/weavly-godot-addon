@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install weavly==0.1.0
+      - run: pip install weavly==0.2.0
       - name: Rebuild the fixtures from their .wvl sources
         run: weavly build
         working-directory: test/fixtures/integration/ci_smoke

@@ -46,11 +46,11 @@ class NarrationLine:
 class CharacterLine:
 	extends LineStatement
 	var name: String
-	var id: bool
+	var name_is_id: bool
 
-	func _init(name: String, id: bool, text: String):
+	func _init(name: String, name_is_id: bool, text: String):
 		self.name = name
-		self.id = id
+		self.name_is_id = name_is_id
 		super(text)
 
 

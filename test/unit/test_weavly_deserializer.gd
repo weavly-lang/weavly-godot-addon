@@ -54,12 +54,22 @@ func test_narration_line() -> void:
 
 func test_character_line() -> void:
 	var stmt = _compile_single(
-		{"type": "character", "name": "Alice", "id": false, "text": "Hi there"}
+		{"type": "character", "name": "Alice", "name_is_id": false, "text": "Hi there"}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.CharacterLine)
 	var line := stmt as WeavlyModel.CharacterLine
 	assert_that(line.name).is_equal("Alice")
+	assert_that(line.name_is_id).is_false()
 	assert_that(line.text).is_equal("Hi there")
+
+
+func test_character_line_with_a_variable_name() -> void:
+	var stmt = _compile_single(
+		{"type": "character", "name": "speaker", "name_is_id": true, "text": "Hi there"}
+	)
+	var line := stmt as WeavlyModel.CharacterLine
+	assert_that(line.name).is_equal("speaker")
+	assert_that(line.name_is_id).is_true()
 
 
 func test_goto_statement() -> void:
