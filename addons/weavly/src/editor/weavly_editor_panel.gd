@@ -5,6 +5,7 @@ extends Control
 const SETTING_PROJECT_DIR = "weavly/dialogue_project_dir"
 const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
+const SETTING_LINE_WRAP = "weavly/line_wrap"
 const DEFAULT_PROJECT_DIR = "res://dialogue"
 const DEFAULT_EXECUTABLE = "weavly"
 
@@ -28,6 +29,7 @@ var _path_label: Label
 var _status_label: Label
 var _code_edit: CodeEdit
 var _compile_on_save: CheckButton
+var _line_wrap: CheckButton
 var _save_button: Button
 var _compile_button: Button
 var _current_path: String = ""
@@ -97,6 +99,10 @@ func _build_ui() -> void:
 	toolbar.add_child(_compile_on_save)
 	_load_compile_on_save()
 
+	_line_wrap = CheckButton.new()
+	_line_wrap.text = "Wrap lines"
+	toolbar.add_child(_line_wrap)
+
 	_compile_button = Button.new()
 	_compile_button.text = "Compile"
 	_compile_button.pressed.connect(_on_compile_pressed)
@@ -109,6 +115,9 @@ func _build_ui() -> void:
 	_code_edit.syntax_highlighter = WvlSyntaxHighlighter.new()
 	_code_edit.text_changed.connect(_on_text_changed)
 	root.add_child(_code_edit)
+
+	_line_wrap.toggled.connect(_on_line_wrap_toggled)
+	_line_wrap.button_pressed = _load_line_wrap()
 
 
 func _shortcut_input(event: InputEvent) -> void:
@@ -293,6 +302,23 @@ func _on_compile_on_save_toggled(pressed: bool) -> void:
 	if not Engine.is_editor_hint():
 		return
 	EditorInterface.get_editor_settings().set_setting(SETTING_COMPILE_ON_SAVE, pressed)
+
+
+func _load_line_wrap() -> bool:
+	if not Engine.is_editor_hint():
+		return true
+	var settings: EditorSettings = EditorInterface.get_editor_settings()
+	if settings.has_setting(SETTING_LINE_WRAP):
+		return settings.get_setting(SETTING_LINE_WRAP)
+	return true
+
+
+func _on_line_wrap_toggled(pressed: bool) -> void:
+	_code_edit.wrap_mode = (
+		TextEdit.LINE_WRAPPING_BOUNDARY if pressed else TextEdit.LINE_WRAPPING_NONE
+	)
+	if Engine.is_editor_hint():
+		EditorInterface.get_editor_settings().set_setting(SETTING_LINE_WRAP, pressed)
 
 
 func _join_compile_thread() -> void:
