@@ -24,8 +24,12 @@ const _VERSION_TOO_OLD = (
 const _COLOR_ERROR = Color(0.94, 0.42, 0.42)
 const _COLOR_SUCCESS = Color(0.50, 0.84, 0.52)
 const _COLOR_INFO = Color(0.66, 0.74, 0.88)
+const _NODE_STRIP_COLORS: Array[Color] = [Color(0.35, 0.56, 0.88), Color(0.88, 0.67, 0.35)]
+const _NODE_STRIP_WIDTH = 4
+const _NODE_STRIP_GAP = 6
 
 var _path_label: Label
+var _node_picker: OptionButton
 var _status_label: Label
 var _code_edit: CodeEdit
 var _compile_on_save: CheckButton
@@ -43,6 +47,12 @@ var _dirty: bool = false
 var _compiling: bool = false
 var _compile_thread: Thread
 var _checked_executable: String = ""
+var _node_start_regex: RegEx = RegEx.create_from_string(
+	"^[ \\t]*@node[ \\t]+([A-Za-z_][A-Za-z0-9_]*)"
+)
+var _node_end_regex: RegEx = RegEx.create_from_string("^[ \\t]*@endnode\\b")
+var _node_lines: PackedInt32Array = []
+var _line_nodes: PackedInt32Array = []
 
 
 func _ready() -> void:
@@ -67,6 +77,7 @@ func open_file(path: String) -> void:
 	_code_edit.text = file.get_as_text()
 	file.close()
 	_dirty = false
+	_update_nodes()
 	if _find_bar.visible:
 		_update_find_count()
 	_set_status("", _COLOR_INFO)
@@ -92,6 +103,11 @@ func _build_ui() -> void:
 	_path_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_path_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	toolbar.add_child(_path_label)
+
+	_node_picker = OptionButton.new()
+	_node_picker.tooltip_text = "Go to node"
+	_node_picker.item_selected.connect(_on_node_selected)
+	toolbar.add_child(_node_picker)
 
 	_status_label = Label.new()
 	toolbar.add_child(_status_label)
@@ -122,7 +138,14 @@ func _build_ui() -> void:
 	_code_edit.gutters_draw_line_numbers = true
 	_code_edit.syntax_highlighter = WvlSyntaxHighlighter.new()
 	_code_edit.text_changed.connect(_on_text_changed)
+	_code_edit.caret_changed.connect(_sync_node_picker)
 	root.add_child(_code_edit)
+
+	var gutter: int = _code_edit.get_gutter_count()
+	_code_edit.add_gutter(gutter)
+	_code_edit.set_gutter_type(gutter, TextEdit.GUTTER_TYPE_CUSTOM)
+	_code_edit.set_gutter_width(gutter, _NODE_STRIP_WIDTH + _NODE_STRIP_GAP)
+	_code_edit.set_gutter_custom_draw(gutter, _draw_node_gutter)
 
 	_line_wrap.toggled.connect(_on_line_wrap_toggled)
 	_line_wrap.button_pressed = _load_line_wrap()
@@ -214,11 +237,53 @@ func _shortcut_input(event: InputEvent) -> void:
 
 
 func _on_text_changed() -> void:
+	_update_nodes()
 	if _find_bar.visible:
 		_update_find_count()
 	if not _dirty:
 		_dirty = true
 		_refresh_controls()
+
+
+func _update_nodes() -> void:
+	_node_lines.clear()
+	_node_picker.clear()
+	_line_nodes.resize(_code_edit.get_line_count())
+	var node: int = -1
+	for line: int in _code_edit.get_line_count():
+		var text: String = _code_edit.get_line(line)
+		var start: RegExMatch = _node_start_regex.search(text)
+		if start != null:
+			node = _node_lines.size()
+			_node_lines.append(line)
+			_node_picker.add_item(start.get_string(1))
+		_line_nodes[line] = node
+		if _node_end_regex.search(text) != null:
+			node = -1
+	_node_picker.disabled = _node_lines.is_empty()
+	_sync_node_picker()
+	_code_edit.queue_redraw()
+
+
+func _sync_node_picker() -> void:
+	var line: int = _code_edit.get_caret_line()
+	_node_picker.select(_line_nodes[line] if line < _line_nodes.size() else -1)
+
+
+func _on_node_selected(index: int) -> void:
+	_code_edit.deselect()
+	_code_edit.set_caret_line(_node_lines[index])
+	_code_edit.set_caret_column(0)
+	_code_edit.center_viewport_to_caret()
+	_code_edit.grab_focus()
+
+
+func _draw_node_gutter(line: int, _gutter: int, area: Rect2) -> void:
+	if line >= _line_nodes.size() or _line_nodes[line] == -1:
+		return
+	var color: Color = _NODE_STRIP_COLORS[_line_nodes[line] % _NODE_STRIP_COLORS.size()]
+	var strip: Rect2 = Rect2(area.position, Vector2(_NODE_STRIP_WIDTH, area.size.y))
+	_code_edit.draw_rect(strip, color)
 
 
 func _open_find(with_replace: bool) -> void:
