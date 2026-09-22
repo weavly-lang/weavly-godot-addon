@@ -16,7 +16,7 @@ A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-comp
 
 1. Download the latest `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project root, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.1.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
+3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.2.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
    ```bash
    uv tool install weavly

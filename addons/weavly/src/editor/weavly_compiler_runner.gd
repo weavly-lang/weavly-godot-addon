@@ -5,7 +5,7 @@ extends RefCounted
 const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
 const ERROR_LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: error: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
-const MINIMUM_VERSION = "0.1.0"
+const MINIMUM_VERSION = "0.2.0"
 
 
 class CompileError:

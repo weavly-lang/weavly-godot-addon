@@ -11,6 +11,7 @@ const KEY_DECLARATIONS = "declarations"
 
 # Common keys
 const KEY_ID = "id"
+const KEY_NAME_IS_ID = "name_is_id"
 const KEY_BODY = "body"
 const KEY_TYPE = "type"
 const KEY_TEXT = "text"
@@ -186,11 +187,11 @@ static func compile_narration_line(data: Dictionary, path: String) -> WeavlyMode
 
 static func compile_character_line(data: Dictionary, path: String) -> WeavlyModel.CharacterLine:
 	var name = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
-	var id = get_required(data, KEY_ID, Variant.Type.TYPE_BOOL, path)
+	var name_is_id = get_required(data, KEY_NAME_IS_ID, Variant.Type.TYPE_BOOL, path)
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
-	if name == null or id == null or text == null:
+	if name == null or name_is_id == null or text == null:
 		return null
-	return WeavlyModel.CharacterLine.new(name, id, text)
+	return WeavlyModel.CharacterLine.new(name, name_is_id, text)
 
 
 static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:

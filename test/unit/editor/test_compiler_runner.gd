@@ -163,13 +163,14 @@ func test_parse_version_returns_empty_for_unrelated_output() -> void:
 
 
 func test_is_version_supported_accepts_the_minimum_and_newer() -> void:
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.0")).is_true()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.2.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.3.0")).is_true()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("1.0.0")).is_true()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.1")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.2.1")).is_true()
 
 
 func test_is_version_supported_rejects_older_and_unknown() -> void:
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.9")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.0.9")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("")).is_false()
 
