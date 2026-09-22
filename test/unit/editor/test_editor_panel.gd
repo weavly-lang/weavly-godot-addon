@@ -118,3 +118,20 @@ func test_save_shortcut_ignores_other_keys() -> void:
 	await _type("@node edited\n@endnode\n")
 	_panel._shortcut_input(_key_event(KEY_D))
 	assert_str(FileAccess.get_file_as_string(path)).is_equal("@node a\n@endnode\n")
+
+
+# =====================
+# Line wrap (issue #95)
+# =====================
+
+
+func test_line_wrap_is_on_by_default() -> void:
+	assert_bool(_panel._line_wrap.button_pressed).is_true()
+	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_BOUNDARY)
+
+
+func test_line_wrap_toggle_sets_wrap_mode() -> void:
+	_panel._line_wrap.button_pressed = false
+	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_NONE)
+	_panel._line_wrap.button_pressed = true
+	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_BOUNDARY)
