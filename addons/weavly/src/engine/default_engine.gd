@@ -78,8 +78,7 @@ func _ready() -> void:
 	video_service.set_supported_extensions(video_extensions)
 
 	WeavlyFileUtils.load_nodes_from_files(self, dialogue_path)
-	WeavlyFileUtils.load_variables_from_resources(self, variable_path)
-	WeavlyFileUtils.load_variables_from_env_files(self, dialogue_path)
+	WeavlyFileUtils.load_variables(self, dialogue_path, variable_path)
 	WeavlyFileUtils.index_videos_from_files(self, video_path)
 	WeavlyFileUtils.index_images_from_files(self, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)

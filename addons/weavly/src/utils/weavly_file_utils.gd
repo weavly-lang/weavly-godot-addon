@@ -1,5 +1,8 @@
 class_name WeavlyFileUtils
 
+const DUPLICATE_VARIABLE = "Variable '%s' is declared in both %s and %s, using the one in %s."
+const DEFAULT_OUT_OF_RANGE = "Variable '%s' in %s has default %s outside its range, using %s."
+
 
 static func find_all_files_with_extension(
 	dir_path: String, extension: String
@@ -83,28 +86,64 @@ static func load_nodes_from_files(engine: WeavlyEngine, dir: String) -> void:
 		engine.node_service.add_node(node)
 
 
-static func load_variables_from_env_files(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths = find_all_files_with_extension(dir, ".json")
+# .wvl declarations load first, so they win over a resource with the same name.
+static func load_variables(
+	engine: WeavlyEngine, dialogue_dir: String, variable_dir: String
+) -> void:
+	var sources: Dictionary[String, String] = {}
+	load_variables_from_env_files(engine, dialogue_dir, sources)
+	load_variables_from_resources(engine, variable_dir, sources)
 
-	var variables: Array[WeavlyModel.Variable]
-	for file_path in file_paths:
+
+static func load_variables_from_env_files(
+	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
+) -> void:
+	for file_path: String in find_all_files_with_extension(dir, ".json"):
 		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
-		if data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS):
-			variables.append_array(
-				WeavlyDeserializer.compile_variable_declarations(data, file_path)
-			)
+		if not (data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS)):
+			continue
+		var variables: Array[WeavlyModel.Variable] = (
+			WeavlyDeserializer.compile_variable_declarations(data, file_path)
+		)
+		for variable: WeavlyModel.Variable in variables:
+			_add_variable(engine, variable, file_path, sources)
 
-	for variable: WeavlyModel.Variable in variables:
-		engine.variable_service.add_variable(variable)
 
-
-static func load_variables_from_resources(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths = find_all_files_with_extension(dir, ".tres")
-	for file_path in file_paths:
+static func load_variables_from_resources(
+	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
+) -> void:
+	for file_path: String in find_all_files_with_extension(dir, ".tres"):
 		var res = load(file_path)
 		if res is WeavlyNumberVariable or res is WeavlyStringVariable or res is WeavlyFlagVariable:
 			var variable: WeavlyModel.Variable = res.instantiate()
-			engine.variable_service.add_variable(variable)
+			if variable is WeavlyModel.NumberVariable:
+				_clamp_default(variable, file_path)
+			_add_variable(engine, variable, file_path, sources)
+
+
+static func _add_variable(
+	engine: WeavlyEngine,
+	variable: WeavlyModel.Variable,
+	source: String,
+	sources: Dictionary[String, String],
+) -> void:
+	var id: String = variable.id
+	if sources.has(id):
+		push_error(DUPLICATE_VARIABLE % [id, sources[id], source, sources[id]])
+		return
+	sources[id] = source
+	engine.variable_service.add_variable(variable)
+
+
+static func _clamp_default(variable: WeavlyModel.NumberVariable, source: String) -> void:
+	var clamped: float = variable.value
+	if variable.min != null:
+		clamped = maxf(variable.min, clamped)
+	if variable.max != null:
+		clamped = minf(variable.max, clamped)
+	if clamped != variable.value:
+		push_error(DEFAULT_OUT_OF_RANGE % [variable.id, source, variable.value, clamped])
+		variable.value = clamped
 
 
 static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
