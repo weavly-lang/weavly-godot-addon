@@ -113,6 +113,12 @@ During a dialogue, the state is the one taken when the current node was entered,
 
 Mistakes a script makes at runtime, such as reading an undefined variable, are reported with the `.wvl` file and line of the statement that caused them, like `story.wvl:12: error: Variable 'score' isn't defined.` The engine also emits `runtime_error(message, source, line)`, so a game can show or log them.
 
+### Images and videos
+
+Images and videos are found in `image_path` and `video_path`, including subfolders, and their id is the path relative to that folder without extension, so `splash.png` is `splash` and `alice/icon.png` is `alice/icon`. Files that differ only in extension, like `icon.png` and `icon.jpg`, share an id; both paths are reported and the first is used.
+
+With `image_group_pattern` or `video_group_pattern` set, files in the same folder whose names are the same once the pattern is removed form a group. With `_\d+$`, `alice/icon_1.png` and `alice/icon_2.png` are both `alice/icon`, while `bob/icon_3.png` is `bob/icon`. Every `get_image("alice/icon")` or `get_video("alice/icon")` picks a new file from the group, so keep the returned resource if the same line should show the same file twice.
+
 ### Media outside the game
 
 `image_path` and `video_path` also accept paths outside `res://` — an absolute path or `user://` — for assets you want to ship next to the executable and swap without rebuilding. The path decides how they are read: `res://` uses the resource system, anything else reads from disk.

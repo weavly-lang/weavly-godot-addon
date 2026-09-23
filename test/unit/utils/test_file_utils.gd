@@ -8,6 +8,9 @@ const DefaultNodeService = preload(
 const DefaultVariableService = preload(
 	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
 )
+const DefaultImageService = preload(
+	"res://addons/weavly/src/services/implementations/default_image_service.gd"
+)
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
 const RESOURCES_DIR = FIXTURE_DIR + "/resources"
@@ -283,3 +286,63 @@ func test_an_extern_without_a_resource_is_not_an_error() -> void:
 	assert_logged(["Failed to open directory: " + VARIABLES_DIR + "/range_does_not_exist"])
 	assert_bool(engine.variable_service.has("reputation")).is_false()
 	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
+
+
+# =====================
+# index_images_from_files
+# =====================
+
+
+func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
+	var engine = _make_engine()
+	engine.image_service = DefaultImageService.new()
+	engine.image_service.initialize(engine)
+	engine.image_service.set_group_pattern(group_pattern)
+	WeavlyFileUtils.index_images_from_files(engine, dir)
+	return engine
+
+
+func _save_images(dir: String, files: Array[String]) -> void:
+	var image: Image = Image.create(1, 1, false, Image.FORMAT_RGB8)
+	for file: String in files:
+		DirAccess.make_dir_recursive_absolute(dir.path_join(file).get_base_dir())
+		image.save_png(dir.path_join(file))
+
+
+func _image_ids(engine: WeavlyEngine) -> Array:
+	return engine.image_service.image_index.paths.keys()
+
+
+func test_an_image_id_is_its_path_relative_to_the_folder() -> void:
+	var dir: String = create_temp_dir("index_ids")
+	_save_images(dir, ["splash.png", "backgrounds/bob.png", "characters/bob.png"])
+	var engine = _index_images(dir, "")
+	assert_array(_image_ids(engine)).contains_exactly_in_any_order(
+		["splash", "backgrounds/bob", "characters/bob"]
+	)
+
+
+func test_a_trailing_slash_on_the_folder_gives_the_same_ids() -> void:
+	var dir: String = create_temp_dir("index_trailing_slash")
+	_save_images(dir, ["alice/icon.png"])
+	var engine = _index_images(dir + "/", "")
+	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon"])
+
+
+func test_files_that_differ_only_in_extension_report_both_paths() -> void:
+	var dir: String = create_temp_dir("index_duplicate")
+	_save_images(dir, ["alice/icon.jpg", "alice/icon.png"])
+	_index_images(dir, "")
+	var first: String = dir.path_join("alice/icon.jpg")
+	var second: String = dir.path_join("alice/icon.png")
+	assert_logged(
+		["Image id 'alice/icon' is used by both %s and %s, using %s." % [first, second, first]]
+	)
+
+
+func test_a_group_pattern_groups_numbered_files_per_folder() -> void:
+	var dir: String = create_temp_dir("index_grouped")
+	_save_images(dir, ["alice/icon_1.png", "alice/icon_2.png", "bob/icon_3.png"])
+	var engine = _index_images(dir, "_\\d+$")
+	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon", "bob/icon"])
+	assert_array(engine.image_service.image_index.paths["alice/icon"]).has_size(2)
