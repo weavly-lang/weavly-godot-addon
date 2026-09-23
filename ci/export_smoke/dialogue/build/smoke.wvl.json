@@ -1,1 +1,1 @@
-{"nodes":[{"id":"start","body":[{"type":"narration","text":"Welcome to the smoke test."},{"type":"set","id":"score","expression":7.0},{"type":"goto","id":"end"}]},{"id":"end","body":[{"type":"finish"}]}]}
+{"source":"smoke.wvl","nodes":[{"id":"start","line":5,"body":[{"type":"narration","line":6,"text":"Welcome to the smoke test."},{"type":"set","line":7,"id":"score","expression":7.0},{"type":"goto","line":8,"id":"end"}]},{"id":"end","line":11,"body":[{"type":"finish","line":12}]}]}
