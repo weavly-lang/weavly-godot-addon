@@ -4,6 +4,7 @@ const UNKNOWN_EXPRESSION_TYPE = "Unknown expression of type '%s'."
 const UNDEFINED_VARIABLE = "Variable '%s' isn't defined."
 const UNKNOWN_FUNCTION = "Unknown function '%s'."
 const UNKNOWN_NODE = "Node '%s' in %s() doesn't exist."
+const WRONG_ARGUMENT_TYPE = "%s() takes numbers, got a value of type '%s'."
 const UNKNOWN_OPERATOR = "Unknown expression with operator '%s'."
 const WRONG_CONDITION_TYPE = "Condition can't be of type '%s', returning '%s' instead."
 const WRONG_VALUE_TYPE = "Can't use operator '%s' on value of type '%s'."
@@ -43,8 +44,36 @@ class EvaluationError:
 	extends RefCounted
 
 
+# name -> [minimum argument count, maximum or -1 for no limit, implementation]
+static var _number_functions: Dictionary = {
+	"random": [2, 2, _random],
+	"min": [2, -1, func(values: Array[float]) -> float: return values.min()],
+	"max": [2, -1, func(values: Array[float]) -> float: return values.max()],
+	"clamp": [3, 3, _clamp],
+	"round": [1, 1, func(values: Array[float]) -> float: return roundf(values[0])],
+	"floor": [1, 1, func(values: Array[float]) -> float: return floorf(values[0])],
+	"ceil": [1, 1, func(values: Array[float]) -> float: return ceilf(values[0])],
+	"abs": [1, 1, func(values: Array[float]) -> float: return absf(values[0])],
+}
+
+
 static func is_error(value: Variant) -> bool:
 	return value is EvaluationError
+
+
+static func is_number_function(name: String) -> bool:
+	return _number_functions.has(name)
+
+
+# Empty when the count fits, worded like the compiler's error otherwise.
+static func argument_count_error(name: String, count: int) -> String:
+	var minimum: int = _number_functions[name][0]
+	var maximum: int = _number_functions[name][1]
+	if count >= minimum and (maximum == -1 or count <= maximum):
+		return ""
+	var expected: String = "at least %d" % minimum if maximum == -1 else str(minimum)
+	var noun: String = "argument" if expected == "1" else "arguments"
+	return "%s() takes %s %s, got %d" % [name, expected, noun, count]
 
 
 static func evaluate_condition(
@@ -98,6 +127,8 @@ static func evaluate_identifier(
 
 
 static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
+	if is_number_function(call.name):
+		return _evaluate_number_call(call, engine)
 	if call.name not in NODE_FUNCTIONS:
 		push_error(UNKNOWN_FUNCTION % call.name)
 		return ERROR
@@ -108,6 +139,37 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 	if call.name == VISITED:
 		return count > 0
 	return float(count)
+
+
+static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
+	var count_error: String = argument_count_error(call.name, call.args.size())
+	if count_error != "":
+		push_error(count_error + ".")
+		return ERROR
+	var values: Array[float] = []
+	for arg: WeavlyModel.WeavlyExpression in call.args:
+		var value: Variant = evaluate_expression(arg, engine)
+		if is_error(value):
+			return ERROR
+		if value is not float:
+			push_error(WRONG_ARGUMENT_TYPE % [call.name, _get_type(value)])
+			return ERROR
+		values.append(value)
+	var implementation: Callable = _number_functions[call.name][2]
+	return implementation.call(values)
+
+
+# A whole number between the two bounds, in either order, both included.
+static func _random(values: Array[float]) -> float:
+	var low: int = ceili(minf(values[0], values[1]))
+	var high: int = floori(maxf(values[0], values[1]))
+	if low > high:
+		return float(roundi(values[0]))
+	return float(randi_range(low, high))
+
+
+static func _clamp(values: Array[float]) -> float:
+	return clampf(values[0], minf(values[1], values[2]), maxf(values[1], values[2]))
 
 
 static func evaluate_unary_expression(

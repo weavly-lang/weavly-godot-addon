@@ -1,0 +1,1 @@
+{"nodes":[{"id":"start","body":[{"type":"set","id":"hp","expression":{"call":"clamp","args":[{"op":"-","left":{"variable":"hp"},"right":50.0},0.0,100.0]}},{"type":"set","id":"roll","expression":{"call":"random","args":[1.0,6.0]}},{"type":"finish"}]}]}

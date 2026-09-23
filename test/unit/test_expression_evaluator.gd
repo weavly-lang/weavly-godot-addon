@@ -323,3 +323,79 @@ func test_call_of_an_unknown_function_returns_error() -> void:
 	var result: Variant = _eval(WeavlyModel.Call.new("bogus", "shop"), engine)
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Unknown function 'bogus'."])
+
+
+# =====================
+# Built-in functions
+# =====================
+
+
+func _call(name: String, values: Array) -> Variant:
+	var args: Array[WeavlyModel.WeavlyExpression] = []
+	for value: Variant in values:
+		args.append(_num(value) if value is float else value)
+	return _eval(WeavlyModel.Call.new(name, "", args))
+
+
+func test_min_and_max_take_two_or_more_numbers() -> void:
+	assert_that(_call("min", [3.0, 1.0])).is_equal(1.0)
+	assert_that(_call("min", [3.0, 1.0, -2.0])).is_equal(-2.0)
+	assert_that(_call("max", [3.0, 7.0, 5.0])).is_equal(7.0)
+
+
+func test_clamp_limits_a_value() -> void:
+	assert_that(_call("clamp", [-5.0, 0.0, 10.0])).is_equal(0.0)
+	assert_that(_call("clamp", [15.0, 0.0, 10.0])).is_equal(10.0)
+	assert_that(_call("clamp", [4.0, 0.0, 10.0])).is_equal(4.0)
+
+
+func test_clamp_with_low_above_high_uses_the_range_between_them() -> void:
+	assert_that(_call("clamp", [15.0, 10.0, 0.0])).is_equal(10.0)
+	assert_that(_call("clamp", [-5.0, 10.0, 0.0])).is_equal(0.0)
+
+
+func test_rounding_functions() -> void:
+	assert_that(_call("round", [2.5])).is_equal(3.0)
+	assert_that(_call("round", [2.4])).is_equal(2.0)
+	assert_that(_call("floor", [2.7])).is_equal(2.0)
+	assert_that(_call("ceil", [2.1])).is_equal(3.0)
+	assert_that(_call("abs", [-4.0])).is_equal(4.0)
+
+
+func test_random_stays_within_its_bounds_and_is_whole() -> void:
+	var seen: Dictionary = {}
+	for i in 200:
+		var value: float = _call("random", [1.0, 3.0])
+		assert_that(value).is_equal(roundf(value))
+		assert_bool(value >= 1.0 and value <= 3.0).is_true()
+		seen[value] = true
+	assert_that(seen.size()).is_equal(3)
+
+
+func test_random_accepts_bounds_in_either_order() -> void:
+	for i in 50:
+		var value: float = _call("random", [6.0, 4.0])
+		assert_bool(value >= 4.0 and value <= 6.0).is_true()
+
+
+func test_function_arguments_are_expressions() -> void:
+	var sum: WeavlyModel.BinaryExpression = _bin("+", _num(2.0), _num(3.0))
+	assert_that(_call("max", [sum, 1.0])).is_equal(5.0)
+
+
+func test_function_with_a_non_number_argument_returns_error() -> void:
+	var result: Variant = _call("abs", [_slit("x")])
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["abs() takes numbers, got a value of type 'String'."])
+
+
+func test_function_with_a_failing_argument_reports_once() -> void:
+	var result: Variant = _call("min", [_id(&"missing"), 1.0])
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+func test_function_with_the_wrong_argument_count_returns_error() -> void:
+	var result: Variant = _call("clamp", [1.0, 2.0])
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["clamp() takes 3 arguments, got 2."])
