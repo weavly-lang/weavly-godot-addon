@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
@@ -13,6 +14,7 @@ const RESOURCES_DIR = FIXTURE_DIR + "/resources"
 const PLAIN_PATH = FIXTURE_DIR + "/plain.json"
 const INVALID_PATH = FIXTURE_DIR + "/invalid.json"
 const MISSING_PATH = FIXTURE_DIR + "/does_not_exist.json"
+const VARIABLES_DIR = "res://test/fixtures/variables"
 
 
 func _make_engine() -> WeavlyEngine:
@@ -197,3 +199,47 @@ func test_find_returns_empty_for_a_missing_external_directory() -> void:
 	var dir: String = create_temp_dir("find_external_missing").path_join("nope")
 	assert_array(WeavlyFileUtils.find_all_files_with_extension(dir, ".png")).is_empty()
 	assert_logged(["Failed to open directory: " + dir])
+
+
+# =====================
+# load_variables: declared more than once
+# =====================
+
+
+func test_wvl_declaration_wins_over_a_resource_with_the_same_name() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables(
+		engine, VARIABLES_DIR + "/dialogue", VARIABLES_DIR + "/resources"
+	)
+	assert_that(engine.variable_service.get_variable("score")).is_equal(1.0)
+	var env: String = VARIABLES_DIR + "/dialogue/env.json"
+	var resource: String = VARIABLES_DIR + "/resources/score.tres"
+	assert_logged(
+		[
+			(
+				"Variable 'score' is declared in both %s and %s, using the one in %s."
+				% [env, resource, env]
+			)
+		]
+	)
+
+
+func test_two_resources_with_the_same_name_report_once() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/twice")
+	assert_logged(["Variable 'gold' is declared in both "])
+	assert_bool(engine.variable_service.get_variable("gold") in [1.0, 2.0]).is_true()
+
+
+func test_resource_default_outside_its_range_is_clamped() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/range")
+	assert_that(engine.variable_service.get_variable("health")).is_equal(100.0)
+	assert_logged(
+		[
+			(
+				"Variable 'health' in %s/range/health.tres has default 150.0 outside its range,"
+				% VARIABLES_DIR
+			)
+		]
+	)

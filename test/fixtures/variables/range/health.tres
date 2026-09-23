@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WeavlyNumberVariable" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b71tg0ijlbg6m" path="res://addons/weavly/src/resources/weavly_number_variable.gd" id="1_num"]
+
+[resource]
+script = ExtResource("1_num")
+id = &"health"
+value = 150.0
+has_min = false
+min = 0.0
+has_max = true
+max = 100.0

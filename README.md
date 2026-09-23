@@ -54,6 +54,10 @@ By default the engine loads compiled dialogue JSON from `res://dialogue/build` a
 
 For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialogue JSON is not packed.
 
+### Variables
+
+Declare each variable once, either in an `@env` block in a `.wvl` file or as a `WeavlyNumberVariable`, `WeavlyStringVariable` or `WeavlyFlagVariable` resource under `variable_path`. A name declared twice is an error when the engine loads; if a `.wvl` file and a resource declare the same name, the `.wvl` declaration is used.
+
 ### Commands
 
 Any `@name` that isn't a Weavly keyword is a command for your game. Its comma-separated arguments are expressions, evaluated when the command runs:
