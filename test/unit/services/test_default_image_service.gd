@@ -41,10 +41,12 @@ func test_get_missing_id_returns_provided_default() -> void:
 # =====================
 
 
-func test_add_duplicate_is_ignored() -> void:
+func test_add_duplicate_keeps_the_first_and_reports_both() -> void:
 	_service.add_image("splash", _FIXTURE_PATH)
 	_service.add_image("splash", "res://test/fixtures/other.tres")
-	assert_logged([], ["Image with id 'splash' already exists."])
+	assert_logged(
+		["Image id 'splash' is used by both %s and res://test/fixtures/other.tres" % _FIXTURE_PATH]
+	)
 	assert_that(_service.get_image("splash")).is_not_null()
 
 
@@ -97,11 +99,12 @@ func test_grouped_and_ungrouped_coexist() -> void:
 	assert_object(_service.get_image("logo")).is_instanceof(Texture2D)
 
 
-func test_duplicates_allowed_when_pattern_set() -> void:
+func test_duplicate_is_reported_when_pattern_set() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_image("cat_1", _FIXTURE_PATH)
 	_service.add_image("cat_1", _FIXTURE_PATH)
 	assert_object(_service.get_image("cat")).is_instanceof(Texture2D)
+	assert_logged(["Image id 'cat_1' is used by both"])
 
 
 # =====================
@@ -121,7 +124,7 @@ func test_invalid_pattern_falls_back_to_no_grouping() -> void:
 	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
 
 
-func test_invalid_pattern_duplicate_still_warns() -> void:
+func test_invalid_pattern_duplicate_is_still_reported() -> void:
 	_service.set_group_pattern("[")
 	assert_logged(
 		[
@@ -131,7 +134,7 @@ func test_invalid_pattern_duplicate_still_warns() -> void:
 	)
 	_service.add_image("splash", _FIXTURE_PATH)
 	_service.add_image("splash", "res://test/fixtures/other.tres")
-	assert_logged([], ["Image with id 'splash' already exists."])
+	assert_logged(["Image id 'splash' is used by both"])
 
 
 # =====================

@@ -8,6 +8,9 @@ const DefaultNodeService = preload(
 const DefaultVariableService = preload(
 	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
 )
+const DefaultImageService = preload(
+	"res://addons/weavly/src/services/implementations/default_image_service.gd"
+)
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
 const RESOURCES_DIR = FIXTURE_DIR + "/resources"
@@ -283,3 +286,51 @@ func test_an_extern_without_a_resource_is_not_an_error() -> void:
 	assert_logged(["Failed to open directory: " + VARIABLES_DIR + "/range_does_not_exist"])
 	assert_bool(engine.variable_service.has("reputation")).is_false()
 	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
+
+
+# =====================
+# index_images_from_files
+# =====================
+
+
+func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
+	var engine = _make_engine()
+	engine.image_service = DefaultImageService.new()
+	engine.image_service.initialize(engine)
+	engine.image_service.set_group_pattern(group_pattern)
+	WeavlyFileUtils.index_images_from_files(engine, dir)
+	return engine
+
+
+func _save_images(dir: String, files: Array[String]) -> void:
+	var image: Image = Image.create(1, 1, false, Image.FORMAT_RGB8)
+	for file: String in files:
+		DirAccess.make_dir_recursive_absolute(dir.path_join(file).get_base_dir())
+		image.save_png(dir.path_join(file))
+
+
+func _duplicate_bob(dir: String) -> String:
+	var first: String = dir.path_join("backgrounds/bob.png")
+	var second: String = dir.path_join("characters/bob.png")
+	return "Image id 'bob' is used by both %s and %s, using %s." % [first, second, first]
+
+
+func test_an_id_in_two_subfolders_reports_both_paths() -> void:
+	var dir: String = create_temp_dir("index_duplicate")
+	_save_images(dir, ["backgrounds/bob.png", "characters/bob.png"])
+	_index_images(dir, "")
+	assert_logged([_duplicate_bob(dir)])
+
+
+func test_an_id_in_two_subfolders_reports_both_paths_with_a_group_pattern() -> void:
+	var dir: String = create_temp_dir("index_duplicate_grouped")
+	_save_images(dir, ["backgrounds/bob.png", "characters/bob.png"])
+	_index_images(dir, "_\\d+$")
+	assert_logged([_duplicate_bob(dir)])
+
+
+func test_a_group_pattern_combines_numbered_files() -> void:
+	var dir: String = create_temp_dir("index_grouped")
+	_save_images(dir, ["bob_1.png", "bob_2.png"])
+	var engine = _index_images(dir, "_\\d+$")
+	assert_array(engine.image_service.image_index.paths["bob"]).has_size(2)
