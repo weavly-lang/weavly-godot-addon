@@ -39,6 +39,7 @@ const KEY_NAME = "name"
 const KEY_VALUE = "value"
 const KEY_MIN = "min"
 const KEY_MAX = "max"
+const KEY_EXTERN = "extern"
 
 # Type values
 const TYPE_NARRATION = "narration"
@@ -475,6 +476,9 @@ static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Va
 	if id == null:
 		return null
 
+	if data.get(KEY_EXTERN, false) == true:
+		return _compile_extern_declaration(data, id, path)
+
 	if data is Dictionary and data.get(KEY_TYPE) == TYPE_NUMBER:
 		var value: Variant = get_required(data, KEY_VALUE, Variant.Type.TYPE_FLOAT, path)
 		if value == null:
@@ -497,6 +501,24 @@ static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Va
 
 	push_error("Unknown variable type at %s: %s" % [path, str(data)])
 	return null
+
+
+static func _compile_extern_declaration(
+	data: Dictionary, id: String, path: String
+) -> WeavlyModel.Variable:
+	var variable: WeavlyModel.Variable
+	match data.get(KEY_TYPE):
+		TYPE_NUMBER:
+			variable = WeavlyModel.NumberVariable.new(id, 0.0, null, null)
+		TYPE_STRING:
+			variable = WeavlyModel.StringVariable.new(id, "")
+		TYPE_FLAG:
+			variable = WeavlyModel.FlagVariable.new(id, false)
+		_:
+			push_error("Unknown variable type at %s: %s" % [path, str(data)])
+			return null
+	variable.extern = true
+	return variable
 
 
 static func compile_variable_from_value(id: StringName, value: Variant) -> WeavlyModel.Variable:

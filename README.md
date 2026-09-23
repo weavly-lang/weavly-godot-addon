@@ -58,6 +58,8 @@ For exports, add `*.json` to *Filters to export non-resource files* in your expo
 
 Declare each variable once, either in an `@env` block in a `.wvl` file or as a `WeavlyNumberVariable`, `WeavlyStringVariable` or `WeavlyFlagVariable` resource under `variable_path`. A name declared twice is an error when the engine loads; if a `.wvl` file and a resource declare the same name, the `.wvl` declaration is used.
 
+A variable declared with `extern name: type` in `.wvl` gets its value from outside the script: from a resource with that name and type, or from game code calling `engine.variable_service.set_variable()`. Reading it before either has happened is an error.
+
 ### Commands
 
 Any `@name` that isn't a Weavly keyword is a command for your game. Its comma-separated arguments are expressions, evaluated when the command runs:

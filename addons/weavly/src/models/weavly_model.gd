@@ -264,9 +264,13 @@ class Identifier:
 class Variable:
 	extends RefCounted
 	var id: StringName
+	var extern: bool = false
 
 	func _init(id: StringName):
 		self.id = id
+
+	func get_type_name() -> String:
+		return ""
 
 
 class NumberVariable:
@@ -281,6 +285,9 @@ class NumberVariable:
 		self.min = min
 		self.max = max
 
+	func get_type_name() -> String:
+		return "number"
+
 
 class StringVariable:
 	extends Variable
@@ -290,6 +297,9 @@ class StringVariable:
 		super._init(id)
 		self.value = value
 
+	func get_type_name() -> String:
+		return "string"
+
 
 class FlagVariable:
 	extends Variable
@@ -298,3 +308,6 @@ class FlagVariable:
 	func _init(id: StringName, value: bool):
 		super._init(id)
 		self.value = value
+
+	func get_type_name() -> String:
+		return "flag"

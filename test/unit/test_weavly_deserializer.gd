@@ -243,3 +243,17 @@ func test_expression_call_with_a_failing_argument_is_rejected() -> void:
 func test_expression_call_without_args_is_rejected() -> void:
 	assert_object(WeavlyDeserializer.compile_expression({"call": "round"}, "test")).is_null()
 	assert_logged(["Missing required field 'args' at test"])
+
+
+func test_extern_declaration() -> void:
+	var data = {"declarations": [{"type": "string", "name": "title", "extern": true}]}
+	var variables = WeavlyDeserializer.compile_variable_declarations(data)
+	assert_object(variables[0]).is_instanceof(WeavlyModel.StringVariable)
+	assert_that(variables[0].id).is_equal(&"title")
+	assert_bool(variables[0].extern).is_true()
+
+
+func test_extern_declaration_of_an_unknown_type_is_skipped() -> void:
+	var data = {"declarations": [{"type": "list", "name": "items", "extern": true}]}
+	assert_that(WeavlyDeserializer.compile_variable_declarations(data)).is_empty()
+	assert_logged(["Unknown variable type at declarations[0]"])

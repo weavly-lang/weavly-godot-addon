@@ -243,3 +243,43 @@ func test_resource_default_outside_its_range_is_clamped() -> void:
 			)
 		]
 	)
+
+
+# =====================
+# load_variables: extern declarations
+# =====================
+
+
+func test_a_resource_defines_an_extern_variable() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables(
+		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_resources"
+	)
+	assert_that(engine.variable_service.get_variable("reputation")).is_equal(5.0)
+	assert_bool(engine.variable_service.has("title")).is_false()
+
+
+func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables(
+		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_wrong"
+	)
+	assert_logged(
+		[
+			(
+				"Variable 'title' in %s/extern_wrong/title.tres is a number, " % VARIABLES_DIR
+				+ "but it's declared extern as a string."
+			)
+		]
+	)
+	assert_bool(engine.variable_service.has("title")).is_false()
+
+
+func test_an_extern_without_a_resource_is_not_an_error() -> void:
+	var engine = _make_engine()
+	WeavlyFileUtils.load_variables(
+		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/range_does_not_exist"
+	)
+	assert_logged(["Failed to open directory: " + VARIABLES_DIR + "/range_does_not_exist"])
+	assert_bool(engine.variable_service.has("reputation")).is_false()
+	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()

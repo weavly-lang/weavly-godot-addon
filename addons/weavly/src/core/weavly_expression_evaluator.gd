@@ -2,6 +2,7 @@ class_name WeavlyExpressionEvaluator
 
 const UNKNOWN_EXPRESSION_TYPE = "Unknown expression of type '%s'."
 const UNDEFINED_VARIABLE = "Variable '%s' isn't defined."
+const UNDEFINED_EXTERN = "Variable '%s' is declared extern but was never defined."
 const UNKNOWN_FUNCTION = "Unknown function '%s'."
 const UNKNOWN_NODE = "Node '%s' in %s() doesn't exist."
 const WRONG_ARGUMENT_TYPE = "%s() takes numbers, got a value of type '%s'."
@@ -117,7 +118,11 @@ static func evaluate_identifier(
 	identifier: WeavlyModel.Identifier, engine: WeavlyEngine
 ) -> Variant:
 	if not engine.variable_service.has(identifier.value):
-		push_error(UNDEFINED_VARIABLE % identifier.value)
+		var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(
+			identifier.value
+		)
+		var message: String = UNDEFINED_EXTERN if declared != null else UNDEFINED_VARIABLE
+		push_error(message % identifier.value)
 		return ERROR
 	var value: Variant = engine.variable_service.get_variable(identifier.value)
 	if value == null:

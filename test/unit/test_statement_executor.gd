@@ -538,3 +538,13 @@ func test_finish_records_a_visit_to_the_current_node() -> void:
 	_engine.current_node_id = "here"
 	WeavlyStatementExecutor.execute_statement(WeavlyModel.FinishStatement.new(), _engine)
 	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
+
+
+func test_set_defines_an_undefined_extern() -> void:
+	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
+		&"reputation", 0.0, null, null
+	)
+	variable.extern = true
+	_engine.variable_service.add_variable(variable)
+	_run_set("reputation", WeavlyModel.Number.new(2.0))
+	assert_that(_engine.variable_service.get_variable("reputation")).is_equal(2.0)
