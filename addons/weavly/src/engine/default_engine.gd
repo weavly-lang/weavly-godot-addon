@@ -135,9 +135,14 @@ func _enter_pending_node() -> void:
 
 
 func finish() -> void:
-	finished_dialogue.emit()
+	if _finished:
+		return
 	_finished = true
+	_has_pending_node = false
+	_pending_node_id = ""
 	statement_service.clear_statements()
+	option_service.clear_options()
+	finished_dialogue.emit()
 
 
 func is_running() -> bool:

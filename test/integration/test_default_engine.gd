@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 # End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogues, drives the
@@ -10,6 +11,7 @@ const CI_SMOKE_GLOBALS_JSON = CI_SMOKE_FIXTURE + "/globals.wvl.json"
 const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
 const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
+const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -156,6 +158,86 @@ func test_finish_emits_finished_dialogue_and_allows_restart() -> void:
 	engine.start("start")
 	assert_that(_signal_log.size()).is_equal(log_after_finish.size() + 2)
 	assert_that(_signal_log[log_after_finish.size()]).is_equal("started_dialogue")
+
+
+func test_finish_twice_emits_finished_dialogue_once() -> void:
+	var engine = _make_engine(LINEAR_FIXTURE)
+	engine.start("start")
+	engine.finish()
+	engine.finish()
+	assert_int(_signal_log.count("finished_dialogue")).is_equal(1)
+
+
+func test_finish_while_options_are_showing_lets_the_next_start_run() -> void:
+	var engine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("menu")
+	assert_bool(engine.option_service.has_options()).is_true()
+	engine.finish()
+	assert_bool(engine.option_service.has_options()).is_false()
+	engine.start("after")
+	var expected_signals: Array[String] = [
+		"started_dialogue",
+		"entered_node:menu",
+		"finished_dialogue",
+		"started_dialogue",
+		"entered_node:after",
+	]
+	assert_that(_signal_log).is_equal(expected_signals)
+	assert_bool(engine.is_running()).is_true()
+
+
+func test_choosing_an_option_after_finish_is_ignored() -> void:
+	var engine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("menu")
+	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	engine.finish()
+	var log_after_finish: Array[String] = _signal_log.duplicate()
+	engine.option_service.choose_option(option)
+	assert_logged([], ["Can't choose option 'Go on' because it isn't offered right now."])
+	assert_that(_signal_log).is_equal(log_after_finish)
+
+
+func test_start_from_finished_dialogue_after_game_calls_finish() -> void:
+	var engine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("menu")
+	engine.finished_dialogue.connect(func() -> void: engine.start("after"), CONNECT_ONE_SHOT)
+	engine.finish()
+	assert_bool(engine.is_running()).is_true()
+	assert_that(_signal_log.slice(-3)).is_equal(
+		["finished_dialogue", "started_dialogue", "entered_node:after"]
+	)
+
+
+func test_start_from_finished_dialogue_after_finish_statement() -> void:
+	var engine = _make_engine(LINEAR_FIXTURE)
+	engine.finished_dialogue.connect(func() -> void: engine.start("start"), CONNECT_ONE_SHOT)
+	engine.start("start")
+	engine.next()
+	engine.next()
+	engine.next()  # end's @finish, whose handler starts "start" again
+	assert_bool(engine.is_running()).is_true()
+	assert_that(_signal_log.slice(-3)).is_equal(
+		["finished_dialogue", "started_dialogue", "entered_node:start"]
+	)
+
+
+func test_double_choose_runs_the_option_once() -> void:
+	var engine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("menu")
+	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	engine.option_service.choose_option(option)
+	engine.option_service.choose_option(option)
+	assert_logged([], ["Can't choose option 'Go on' because it isn't offered right now."])
+	assert_int(_signal_log.count("entered_node:after")).is_equal(1)
+
+
+func test_choosing_a_hint_keeps_the_options_showing() -> void:
+	var engine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("menu")
+	var hint: WeavlyModel.Option = engine.option_service.pending_options[1]
+	engine.option_service.choose_option(hint)
+	assert_logged([], ["Can't choose option 'Locked' because it's a hint."])
+	assert_bool(engine.option_service.has_options()).is_true()
 
 
 # =====================
