@@ -32,6 +32,10 @@ var _location_node_id: String = ""
 
 @abstract func is_running() -> bool
 
+@abstract func hold() -> void
+
+@abstract func release() -> void
+
 
 func report_error(message: String) -> void:
 	push_error(_locate(message))

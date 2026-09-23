@@ -17,6 +17,7 @@ const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
 const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
 const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locations_without_lines"
 const TEXT_FIXTURE = "res://test/fixtures/integration/text"
+const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -576,3 +577,85 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 	assert_that(option.text).is_equal("Pay 3")
 	engine.option_service.choose_option(option)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
+# =====================
+# hold / release
+# =====================
+
+
+func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
+	var engine = _make_engine(HOLD_FIXTURE)
+	_connect_content_log(engine)
+	engine.command_service.executed_command.connect(
+		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void:
+			for i in holds:
+				engine.hold()
+	)
+	return engine
+
+
+func test_a_hold_in_the_command_handler_stops_the_dialogue_until_released() -> void:
+	var engine = _make_holding_engine()
+	engine.start("start")
+	assert_that(_narration_log).is_empty()
+	engine.release()
+	assert_that(_narration_log).is_equal(["After"])
+
+
+func test_next_while_held_does_nothing() -> void:
+	var engine = _make_holding_engine()
+	engine.start("start")
+	engine.next()
+	assert_that(_narration_log).is_empty()
+
+
+func test_two_holds_need_two_releases() -> void:
+	var engine = _make_holding_engine(2)
+	engine.start("start")
+	engine.release()
+	assert_that(_narration_log).is_empty()
+	engine.release()
+	assert_that(_narration_log).is_equal(["After"])
+
+
+func test_releasing_inside_the_handler_continues_the_same_step() -> void:
+	var engine = _make_engine(HOLD_FIXTURE)
+	_connect_content_log(engine)
+	engine.command_service.executed_command.connect(
+		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void:
+			engine.hold()
+			engine.release()
+	)
+	engine.start("start")
+	assert_that(_narration_log).is_equal(["After"])
+
+
+func test_a_hold_while_a_line_waits_does_not_advance_on_release() -> void:
+	var engine = _make_holding_engine()
+	engine.start("start")
+	engine.release()
+	engine.hold()
+	engine.release()
+	assert_that(_signal_log.back()).is_not_equal("finished_dialogue")
+	engine.next()
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
+func test_finish_clears_holds() -> void:
+	var engine = _make_engine(HOLD_FIXTURE)
+	_connect_content_log(engine)
+	engine.command_service.executed_command.connect(
+		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void: engine.hold(),
+		CONNECT_ONE_SHOT
+	)
+	engine.start("start")
+	engine.finish()
+	engine.start("start")
+	assert_that(_narration_log).is_equal(["After"])
+
+
+func test_release_without_a_hold_warns() -> void:
+	var engine = _make_engine(HOLD_FIXTURE)
+	engine.release()
+	assert_logged([], ["release() was called without a matching hold()."])

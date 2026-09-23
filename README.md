@@ -81,7 +81,16 @@ func _on_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
             play_sound(args[0], args[1])
 ```
 
-Commands don't pause the dialogue. If an argument can't be evaluated, the error is reported and the command is skipped.
+Commands don't pause the dialogue. To wait for an effect, call `engine.hold()` in the handler and `engine.release()` when it's done. While the dialogue is held, `next()` does nothing, so a continue button can't cut the wait short, and holds are counted, so several commands can wait at once:
+
+```gdscript
+        "shake":
+            engine.hold()
+            await shake_camera(args[0])
+            engine.release()
+```
+
+If an argument can't be evaluated, the error is reported and the command is skipped.
 
 ### Runtime errors
 

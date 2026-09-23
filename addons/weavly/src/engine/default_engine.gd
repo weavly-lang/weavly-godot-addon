@@ -4,6 +4,7 @@ extends WeavlyEngine
 const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
 const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
 const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialogue."
+const NOT_HELD = "release() was called without a matching hold()."
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -42,6 +43,9 @@ var _has_pending_node: bool = false
 var _in_next: bool = false
 
 var _finished: bool = true
+
+var _holds: int = 0
+var _hold_interrupted_step: bool = false
 
 
 func _ready() -> void:
@@ -102,6 +106,8 @@ func enter_node(node_id: String) -> void:
 
 
 func next() -> void:
+	if _holds > 0:
+		return
 	_in_next = true
 	statement_service.resume()
 	var node_entries: int = 0
@@ -138,6 +144,8 @@ func finish() -> void:
 	if _finished:
 		return
 	_finished = true
+	_holds = 0
+	_hold_interrupted_step = false
 	_has_pending_node = false
 	_pending_node_id = ""
 	current_node_id = ""
@@ -149,3 +157,25 @@ func finish() -> void:
 
 func is_running() -> bool:
 	return not _finished
+
+
+func hold() -> void:
+	if _holds == 0:
+		_hold_interrupted_step = _in_next
+	_holds += 1
+	statement_service.pause()
+
+
+# The last release continues only a step the hold interrupted; a line on screen keeps waiting.
+func release() -> void:
+	if _holds == 0:
+		push_warning(NOT_HELD)
+		return
+	_holds -= 1
+	if _holds > 0 or not _hold_interrupted_step:
+		return
+	_hold_interrupted_step = false
+	if _in_next:
+		statement_service.resume()
+	else:
+		next()
