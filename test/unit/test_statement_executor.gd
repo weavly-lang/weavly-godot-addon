@@ -39,6 +39,9 @@ class _SpyOptionService:
 	func add_options(options: Array[WeavlyModel.Option]) -> void:
 		add_options_calls.append(options)
 
+	func clear_options() -> void:
+		pass
+
 	func choose_option(_option: WeavlyModel.Option) -> void:
 		pass
 
