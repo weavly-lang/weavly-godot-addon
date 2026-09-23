@@ -2,8 +2,6 @@ class_name WeavlyStatementExecutor
 
 const UNDEFINED_SET_TARGET = "Can't set variable '%s' because it isn't defined."
 const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead."
-const NO_OPTION = "No option in this options block is available, skipping it."
-const ONLY_HINTS = "Every available option in this options block is a hint, so none can be chosen."
 
 
 static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
@@ -143,12 +141,8 @@ static func execute_option_block(
 		if condition:
 			possible_options.append(option)
 
-	engine.current_line = option_block.line
 	if possible_options.is_empty():
-		engine.report_warning(NO_OPTION)
 		return
-	if possible_options.all(func(option: WeavlyModel.Option) -> bool: return option.hint):
-		engine.report_warning(ONLY_HINTS)
 
 	engine.option_service.add_options(possible_options)
 

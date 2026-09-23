@@ -12,7 +12,11 @@ func add_options(options: Array[WeavlyModel.Option]) -> void:
 	for option: WeavlyModel.Option in options:
 		engine.current_line = option.line
 		filled.append(WeavlyTextUtils.fill_option(option, engine))
-	pending_options = filled
+	if filled.any(func(option: WeavlyModel.Option) -> bool: return not option.hint):
+		pending_options = filled
+	else:
+		# Nothing can be chosen, so the hints wait for next() like a line.
+		engine.statement_service.pause()
 	options_added.emit(filled)
 
 
@@ -21,11 +25,11 @@ func clear_options() -> void:
 
 
 func choose_option(option: WeavlyModel.Option) -> void:
-	if not pending_options.has(option):
-		push_warning(NOT_PENDING % option.text)
-		return
 	if option.hint:
 		push_warning(HINT_CHOSEN % option.text)
+		return
+	if not pending_options.has(option):
+		push_warning(NOT_PENDING % option.text)
 		return
 	pending_options = []
 	engine.statement_service.add_statements(option.body)

@@ -45,12 +45,8 @@ var _location_node_id: String = ""
 
 
 func report_error(message: String) -> void:
-	push_error(_locate(message, "error"))
+	push_error(_locate(message))
 	runtime_error.emit(message, current_source, current_line)
-
-
-func report_warning(message: String) -> void:
-	push_warning(_locate(message, "warning"))
 
 
 func set_location(node: WeavlyModel.WeavlyNode) -> void:
@@ -65,12 +61,12 @@ func clear_location() -> void:
 	_location_node_id = ""
 
 
-func _locate(message: String, severity: String) -> String:
+func _locate(message: String) -> String:
 	if current_source != "" and current_line > 0:
-		return "%s:%d: %s: %s" % [current_source, current_line, severity, message]
+		return "%s:%d: error: %s" % [current_source, current_line, message]
 	if _location_node_id != "":
 		var file: String = current_source + ", " if current_source != "" else ""
-		return "%snode '%s': %s: %s" % [file, _location_node_id, severity, message]
+		return "%snode '%s': error: %s" % [file, _location_node_id, message]
 	return message
 
 

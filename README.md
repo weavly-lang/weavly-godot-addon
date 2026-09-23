@@ -64,7 +64,15 @@ Line and option text can use `{$name}`. The line and option signals deliver copi
 
 ### Options, match and random
 
-An `@options` block whose options all have a false condition is skipped with a warning, since the player never gets a choice. It also warns when every available option is a hint, since the player can't choose a hint and the dialogue can't continue. A `@random` block without an eligible case is skipped silently, because cases whose conditions can all be false are a normal pattern.
+An `@options` block whose options all have a false condition is skipped, and so is a `@random` block without an eligible case, since conditions that can all be false are a normal pattern.
+
+A hint is shown but can't be chosen. When every available option in a block is a hint, `options_added` still delivers them, but the dialogue waits for `next()` as it does after a line and then continues after the block, so show a continue button instead of choices:
+
+```gdscript
+func _show_options(options: Array[WeavlyModel.Option]) -> void:
+    var choosable: bool = options.any(func(option: WeavlyModel.Option) -> bool: return not option.hint)
+    continue_button.visible = not choosable
+```
 
 `@match all` evaluates every condition first and then runs the bodies of the matching cases in order, so a `@set` in one body doesn't change which later cases match.
 
