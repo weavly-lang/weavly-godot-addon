@@ -34,9 +34,11 @@ class Statement:
 class LineStatement:
 	extends Statement
 	var text: String
+	var raw_text: String
 
 	func _init(text: String):
 		self.text = text
+		self.raw_text = text
 
 
 class NarrationLine:
@@ -49,10 +51,12 @@ class NarrationLine:
 class CharacterLine:
 	extends LineStatement
 	var name: String
+	var raw_name: String
 	var name_is_id: bool
 
 	func _init(name: String, name_is_id: bool, text: String):
 		self.name = name
+		self.raw_name = name
 		self.name_is_id = name_is_id
 		super(text)
 
@@ -137,6 +141,7 @@ class Option:
 	extends RefCounted
 	var condition: WeavlyExpression
 	var text: String
+	var raw_text: String
 	var body: Array[Statement]
 	var hint: bool
 	var line: int = 0
@@ -144,6 +149,7 @@ class Option:
 	func _init(condition: WeavlyExpression, text: String, body: Array[Statement], hint: bool):
 		self.condition = condition
 		self.text = text
+		self.raw_text = text
 		self.body = body
 		self.hint = hint
 

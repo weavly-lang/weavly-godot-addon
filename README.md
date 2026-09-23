@@ -60,6 +60,8 @@ Declare each variable once, either in an `@env` block in a `.wvl` file or as a `
 
 A variable declared with `extern name: type` in `.wvl` gets its value from outside the script: from a resource with that name and type, or from game code calling `engine.variable_service.set_variable()`. Reading it before either has happened is an error.
 
+Line and option text can use `{$name}`. The line and option signals deliver copies with those filled in, and keep the original in `raw_text` for games that do their own substitution, for example for localization. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in variables the same way.
+
 ### Commands
 
 Any `@name` that isn't a Weavly keyword is a command for your game. Its comma-separated arguments are expressions, evaluated when the command runs:

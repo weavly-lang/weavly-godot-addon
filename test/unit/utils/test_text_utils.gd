@@ -1,4 +1,4 @@
-extends GdUnitTestSuite
+extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
@@ -58,10 +58,10 @@ func test_inject_single_variable() -> void:
 	assert_that(WeavlyTextUtils.inject_variables("Hi {$name}", engine)).is_equal("Hi Alice")
 
 
-func test_inject_strips_string_quotes() -> void:
+func test_inject_keeps_quotes_that_are_part_of_the_value() -> void:
 	var engine = _make_engine()
 	engine.variable_service.set_variable("greeting", '"hello"')
-	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal("hello")
+	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal('"hello"')
 
 
 func test_inject_trims_float_zero() -> void:
@@ -92,3 +92,73 @@ func test_inject_custom_pipeline_applied() -> void:
 	assert_that(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline)).is_equal(
 		"ALICE"
 	)
+
+
+func test_inject_keeps_an_unknown_variable_and_reports_it_once() -> void:
+	var text: String = WeavlyTextUtils.inject_variables(
+		"{$missing} and {$missing}", _make_engine()
+	)
+	assert_that(text).is_equal("{$missing} and {$missing}")
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+# =====================
+# fill_*
+# =====================
+
+
+func _engine_with_name() -> WeavlyEngine:
+	var engine: WeavlyEngine = _make_engine()
+	engine.variable_service.set_variable("name", "Ada")
+	return engine
+
+
+func test_fill_narration_line_copies_with_filled_text() -> void:
+	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new("Hi {$name}")
+	line.line = 4
+	var filled: WeavlyModel.NarrationLine = WeavlyTextUtils.fill_narration_line(
+		line, _engine_with_name()
+	)
+	assert_that(filled.text).is_equal("Hi Ada")
+	assert_that(filled.raw_text).is_equal("Hi {$name}")
+	assert_int(filled.line).is_equal(4)
+	assert_that(line.text).is_equal("Hi {$name}")
+
+
+func test_fill_character_line_resolves_a_name_that_is_an_id() -> void:
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", true, "{$name}!")
+	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
+		line, _engine_with_name()
+	)
+	assert_that(filled.name).is_equal("Ada")
+	assert_that(filled.raw_name).is_equal("name")
+	assert_that(filled.text).is_equal("Ada!")
+	assert_that(filled.raw_text).is_equal("{$name}!")
+
+
+func test_fill_character_line_keeps_a_literal_name() -> void:
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", false, "Hi")
+	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
+		line, _engine_with_name()
+	)
+	assert_that(filled.name).is_equal("name")
+
+
+func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> void:
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("speaker", true, "Hi")
+	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
+		line, _make_engine()
+	)
+	assert_that(filled.name).is_equal("speaker")
+	assert_logged(["Variable 'speaker' isn't defined."])
+
+
+func test_fill_option_copies_with_filled_text() -> void:
+	var body: Array[WeavlyModel.Statement] = []
+	var option: WeavlyModel.Option = WeavlyModel.Option.new(
+		WeavlyModel.TrueExpression.new(), "Ask {$name}", body, false
+	)
+	var filled: WeavlyModel.Option = WeavlyTextUtils.fill_option(option, _engine_with_name())
+	assert_that(filled.text).is_equal("Ask Ada")
+	assert_that(filled.raw_text).is_equal("Ask {$name}")
+	assert_that(filled.body).is_same(option.body)

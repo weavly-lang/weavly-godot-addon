@@ -118,17 +118,18 @@ static func evaluate_identifier(
 	identifier: WeavlyModel.Identifier, engine: WeavlyEngine
 ) -> Variant:
 	if not engine.variable_service.has(identifier.value):
-		var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(
-			identifier.value
-		)
-		var message: String = UNDEFINED_EXTERN if declared != null else UNDEFINED_VARIABLE
-		engine.report_error(message % identifier.value)
+		report_undefined_variable(identifier.value, engine)
 		return ERROR
 	var value: Variant = engine.variable_service.get_variable(identifier.value)
 	if value == null:
 		engine.report_error(NULL_VARIABLE % identifier.value)
 		return ERROR
 	return value
+
+
+static func report_undefined_variable(id: String, engine: WeavlyEngine) -> void:
+	var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
+	engine.report_error((UNDEFINED_EXTERN if declared != null else UNDEFINED_VARIABLE) % id)
 
 
 static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:

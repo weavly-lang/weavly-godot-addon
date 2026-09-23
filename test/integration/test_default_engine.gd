@@ -16,6 +16,7 @@ const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
 const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
 const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
 const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locations_without_lines"
+const TEXT_FIXTURE = "res://test/fixtures/integration/text"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -547,3 +548,31 @@ func test_an_error_before_any_node_is_entered_has_no_location() -> void:
 	assert_that(reports).is_equal(
 		[["Can't enter node 'typo' because it doesn't exist, finishing the dialogue.", "", 0]]
 	)
+
+
+# =====================
+# Variables in text
+# =====================
+
+
+func test_lines_and_options_arrive_with_variables_filled_in() -> void:
+	var engine = _make_engine(TEXT_FIXTURE)
+	var narration: Array[WeavlyModel.NarrationLine] = []
+	var characters: Array[WeavlyModel.CharacterLine] = []
+	engine.line_service.executed_narration_line.connect(
+		func(line: WeavlyModel.NarrationLine) -> void: narration.append(line)
+	)
+	engine.line_service.executed_character_line.connect(
+		func(line: WeavlyModel.CharacterLine) -> void: characters.append(line)
+	)
+	engine.start("start")
+	engine.next()
+	engine.next()
+	assert_that(narration[0].text).is_equal("Hi Ada, you have 3 coins.")
+	assert_that(narration[0].raw_text).is_equal("Hi {$name}, you have {$coins} coins.")
+	assert_that(characters[0].name).is_equal("Ada")
+	assert_that(characters[0].text).is_equal("I am Ada.")
+	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	assert_that(option.text).is_equal("Pay 3")
+	engine.option_service.choose_option(option)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
