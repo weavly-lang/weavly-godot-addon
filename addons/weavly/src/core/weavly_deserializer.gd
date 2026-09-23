@@ -27,6 +27,7 @@ const KEY_LEFT = "left"
 const KEY_RIGHT = "right"
 const KEY_CALL = "call"
 const KEY_NODE = "node"
+const KEY_ARGS = "args"
 
 # Block keys
 const KEY_CASES = "cases"
@@ -404,6 +405,8 @@ static func compile_call(data: Dictionary, path: String) -> WeavlyModel.Call:
 	var name = get_required(data, KEY_CALL, Variant.Type.TYPE_STRING, path)
 	if name == null:
 		return null
+	if WeavlyExpressionEvaluator.is_number_function(name):
+		return _compile_number_call(name, data, path)
 	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
 		push_error("Unknown function '%s' at %s" % [name, path])
 		return null
@@ -411,6 +414,25 @@ static func compile_call(data: Dictionary, path: String) -> WeavlyModel.Call:
 	if node_id == null:
 		return null
 	return WeavlyModel.Call.new(name, node_id)
+
+
+static func _compile_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
+	var args_data = get_required(data, KEY_ARGS, Variant.Type.TYPE_ARRAY, path)
+	if args_data == null:
+		return null
+	var count_error: String = WeavlyExpressionEvaluator.argument_count_error(
+		name, args_data.size()
+	)
+	if count_error != "":
+		push_error("%s at %s" % [count_error, path])
+		return null
+	var args: Array[WeavlyModel.WeavlyExpression] = []
+	for i in range(args_data.size()):
+		var arg = compile_expression(args_data[i], _path_index(_path_join(path, KEY_ARGS), i))
+		if arg == null:
+			return null
+		args.append(arg)
+	return WeavlyModel.Call.new(name, "", args)
 
 
 # =====================

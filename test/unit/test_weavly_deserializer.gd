@@ -209,3 +209,29 @@ func test_expression_call_without_node_is_rejected() -> void:
 	var expr = WeavlyDeserializer.compile_expression({"call": "visit_count"}, "test")
 	assert_object(expr).is_null()
 	assert_logged(["Missing required field 'node' at test"])
+
+
+func test_expression_call_with_arguments() -> void:
+	var data = {"call": "max", "args": [1.0, {"variable": "hp"}]}
+	var call := WeavlyDeserializer.compile_expression(data, "test") as WeavlyModel.Call
+	assert_that(call.name).is_equal("max")
+	assert_that(call.args.size()).is_equal(2)
+	assert_object(call.args[0]).is_instanceof(WeavlyModel.Number)
+	assert_object(call.args[1]).is_instanceof(WeavlyModel.Identifier)
+
+
+func test_expression_call_with_the_wrong_argument_count_is_rejected() -> void:
+	var data = {"call": "min", "args": [1.0]}
+	assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+	assert_logged(["min() takes at least 2 arguments, got 1 at test"])
+
+
+func test_expression_call_with_a_failing_argument_is_rejected() -> void:
+	var data = {"call": "abs", "args": [{"bogus": 1}]}
+	assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+	assert_logged(["Unknown expression type at test.args[0]"])
+
+
+func test_expression_call_without_args_is_rejected() -> void:
+	assert_object(WeavlyDeserializer.compile_expression({"call": "round"}, "test")).is_null()
+	assert_logged(["Missing required field 'args' at test"])

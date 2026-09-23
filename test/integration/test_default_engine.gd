@@ -13,6 +13,7 @@ const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
 const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
 const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
+const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -473,3 +474,17 @@ func test_game_calling_finish_counts_no_visit() -> void:
 func test_nodes_create_no_variables() -> void:
 	var engine = _make_engine(VISITS_FIXTURE)
 	assert_that(engine.variable_service.get_all_ids()).is_equal(["count"])
+
+
+# =====================
+# Built-in functions
+# =====================
+
+
+func test_built_in_functions_run_inside_set_statements() -> void:
+	var engine = _make_engine(FUNCTIONS_FIXTURE)
+	engine.start("start")
+	assert_that(engine.variable_service.get_variable("hp")).is_equal(0.0)
+	var roll: float = engine.variable_service.get_variable("roll")
+	assert_bool(roll >= 1.0 and roll <= 6.0 and roll == roundf(roll)).is_true()
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")

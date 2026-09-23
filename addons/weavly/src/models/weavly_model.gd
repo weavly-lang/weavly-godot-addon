@@ -240,10 +240,12 @@ class Call:
 	extends WeavlyExpression
 	var name: String
 	var node_id: String
+	var args: Array[WeavlyExpression]
 
-	func _init(name: String, node_id: String):
+	func _init(name: String, node_id: String, args: Array[WeavlyExpression] = []):
 		self.name = name
 		self.node_id = node_id
+		self.args = args
 
 
 class Identifier:
