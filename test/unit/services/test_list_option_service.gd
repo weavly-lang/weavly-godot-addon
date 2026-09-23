@@ -12,9 +12,11 @@ func _make_option(text: String = "option") -> WeavlyModel.Option:
 	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), text, body, false)
 
 
-func _offer(option: WeavlyModel.Option) -> void:
+# Returns the copy the service offers, as a game receives it.
+func _offer(option: WeavlyModel.Option) -> WeavlyModel.Option:
 	var options: Array[WeavlyModel.Option] = [option]
 	_service.add_options(options)
+	return _service.pending_options[0]
 
 
 func before_test() -> void:
@@ -59,7 +61,7 @@ func test_add_options_emits_signal() -> void:
 func test_choose_option_adds_body_to_statement_service() -> void:
 	var body: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
 	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), "opt", body, false)
-	_offer(opt)
+	opt = _offer(opt)
 	_service.choose_option(opt)
 	_engine.statement_service.advance_statements()
 	assert_bool(_engine.did_finish).is_true()
@@ -67,7 +69,7 @@ func test_choose_option_adds_body_to_statement_service() -> void:
 
 func test_choose_option_emits_signal() -> void:
 	var opt := _make_option()
-	_offer(opt)
+	opt = _offer(opt)
 	monitor_signals(_service, false)
 	_service.choose_option(opt)
 	await assert_signal(_service).is_emitted("option_chosen", [opt])
@@ -75,7 +77,7 @@ func test_choose_option_emits_signal() -> void:
 
 func test_choose_option_calls_engine_next() -> void:
 	var opt := _make_option()
-	_offer(opt)
+	opt = _offer(opt)
 	_service.choose_option(opt)
 	assert_bool(_engine.did_next).is_true()
 
@@ -83,7 +85,7 @@ func test_choose_option_calls_engine_next() -> void:
 func test_choose_option_ignores_an_option_that_is_not_offered() -> void:
 	var offered: WeavlyModel.Option = _make_option("offered")
 	var stale: WeavlyModel.Option = _make_option("stale")
-	_offer(offered)
+	offered = _offer(offered)
 	monitor_signals(_service, false)
 	_service.choose_option(stale)
 	assert_logged([], ["Can't choose option 'stale' because it isn't offered right now."])
@@ -95,7 +97,7 @@ func test_choose_option_twice_chooses_it_once() -> void:
 	var option: WeavlyModel.Option = _make_option("twice")
 	var chosen: Array[WeavlyModel.Option] = []
 	_service.option_chosen.connect(func(o: WeavlyModel.Option) -> void: chosen.append(o))
-	_offer(option)
+	option = _offer(option)
 	_service.choose_option(option)
 	_service.choose_option(option)
 	assert_logged([], ["Can't choose option 'twice' because it isn't offered right now."])
@@ -107,7 +109,7 @@ func test_choose_option_ignores_a_hint() -> void:
 	var hint: WeavlyModel.Option = WeavlyModel.Option.new(
 		WeavlyModel.TrueExpression.new(), "locked", body, true
 	)
-	_offer(hint)
+	hint = _offer(hint)
 	monitor_signals(_service, false)
 	_service.choose_option(hint)
 	assert_logged([], ["Can't choose option 'locked' because it's a hint."])
