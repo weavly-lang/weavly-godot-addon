@@ -5,6 +5,13 @@ const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for n
 const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
 const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialogue."
 const NOT_HELD = "release() was called without a matching hold()."
+const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected version %d."
+const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
+
+const STATE_VERSION = 1
+const KEY_VERSION = "version"
+const KEY_NODE = "node"
+const KEY_SERVICES = "services"
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -47,6 +54,9 @@ var _finished: bool = true
 var _holds: int = 0
 var _hold_interrupted_step: bool = false
 
+var _checkpoint: Dictionary = {}
+var _initial_state: Dictionary = {}
+
 
 func _ready() -> void:
 	character_service = WeavlyFileUtils.create_service(
@@ -86,6 +96,7 @@ func _ready() -> void:
 	WeavlyFileUtils.index_videos_from_files(self, video_path)
 	WeavlyFileUtils.index_images_from_files(self, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)
+	_initial_state = get_state()
 
 
 func start(node_id: String) -> void:
@@ -133,6 +144,11 @@ func _enter_pending_node() -> void:
 		finish()
 		return
 	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
+	_checkpoint = {
+		KEY_VERSION: STATE_VERSION,
+		KEY_NODE: node_id,
+		KEY_SERVICES: _collect_service_states(),
+	}
 	current_node_id = node_id
 	set_location(node)
 	statement_service.clear_statements()
@@ -143,16 +159,21 @@ func _enter_pending_node() -> void:
 func finish() -> void:
 	if _finished:
 		return
+	_stop()
+	finished_dialogue.emit()
+
+
+func _stop() -> void:
 	_finished = true
 	_holds = 0
 	_hold_interrupted_step = false
 	_has_pending_node = false
 	_pending_node_id = ""
+	_checkpoint = {}
 	current_node_id = ""
 	clear_location()
 	statement_service.clear_statements()
 	option_service.clear_options()
-	finished_dialogue.emit()
 
 
 func is_running() -> bool:
@@ -164,6 +185,63 @@ func hold() -> void:
 		_hold_interrupted_step = _in_next
 	_holds += 1
 	statement_service.pause()
+
+
+# While a dialogue runs, the state as its current node was entered, so loading replays that node.
+func get_state() -> Dictionary:
+	if not _finished and not _checkpoint.is_empty():
+		return _checkpoint.duplicate(true)
+	return {KEY_VERSION: STATE_VERSION, KEY_SERVICES: _collect_service_states()}
+
+
+func set_state(state: Dictionary) -> void:
+	if state.get(KEY_VERSION) != STATE_VERSION:
+		push_error(UNKNOWN_STATE_VERSION % [state.get(KEY_VERSION), STATE_VERSION])
+		return
+	_stop()
+	var saved: Variant = state.get(KEY_SERVICES, {})
+	var service_states: Dictionary = saved if saved is Dictionary else {}
+	var services: Dictionary = _services()
+	for slot: String in services:
+		var service_state: Variant = service_states.get(slot, {})
+		services[slot].set_state(service_state if service_state is Dictionary else {})
+	state_loaded.emit()
+
+	var node_id: Variant = state.get(KEY_NODE)
+	if node_id is not String:
+		return
+	if not node_service.has(node_id):
+		push_error(MISSING_SAVED_NODE % node_id)
+		return
+	start(node_id)
+
+
+func reset_state() -> void:
+	set_state(_initial_state.duplicate(true))
+
+
+func _services() -> Dictionary:
+	return {
+		"character": character_service,
+		"command": command_service,
+		"image": image_service,
+		"line": line_service,
+		"node": node_service,
+		"option": option_service,
+		"statement": statement_service,
+		"variable": variable_service,
+		"video": video_service,
+	}
+
+
+func _collect_service_states() -> Dictionary:
+	var states: Dictionary = {}
+	var services: Dictionary = _services()
+	for slot: String in services:
+		var state: Dictionary = services[slot].get_state()
+		if not state.is_empty():
+			states[slot] = state
+	return states
 
 
 # The last release continues only a step the hold interrupted; a line on screen keeps waiting.

@@ -80,3 +80,30 @@ func test_record_visit_counts_up() -> void:
 	_service.record_visit("start")
 	assert_int(_service.get_visit_count("start")).is_equal(2)
 	assert_int(_service.get_visit_count("other")).is_equal(0)
+
+
+# =====================
+# get_state / set_state
+# =====================
+
+
+func test_state_round_trips_visit_counts_as_ints() -> void:
+	_service.add_node(WeavlyModel.WeavlyNode.new("start", []))
+	_service.record_visit("start")
+	assert_that(_service.get_state()).is_equal({"start": 1})
+	_service.set_state({"start": 3.0})
+	assert_int(_service.get_visit_count("start")).is_equal(3)
+
+
+func test_set_state_replaces_the_counts() -> void:
+	_service.add_node(WeavlyModel.WeavlyNode.new("start", []))
+	_service.add_node(WeavlyModel.WeavlyNode.new("other", []))
+	_service.record_visit("other")
+	_service.set_state({"start": 1.0})
+	assert_int(_service.get_visit_count("other")).is_equal(0)
+
+
+func test_set_state_skips_a_node_that_no_longer_exists() -> void:
+	_service.set_state({"gone": 2.0})
+	assert_int(_service.get_visit_count("gone")).is_equal(0)
+	assert_logged([], ["Saved visits to node 'gone' are skipped because it no longer exists."])

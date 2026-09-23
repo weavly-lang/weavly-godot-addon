@@ -18,6 +18,8 @@ const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
 const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locations_without_lines"
 const TEXT_FIXTURE = "res://test/fixtures/integration/text"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
+const SAVE_FIXTURE = "res://test/fixtures/integration/save"
+const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -659,3 +661,104 @@ func test_release_without_a_hold_warns() -> void:
 	var engine = _make_engine(HOLD_FIXTURE)
 	engine.release()
 	assert_logged([], ["release() was called without a matching hold()."])
+
+
+# =====================
+# Save and load
+# =====================
+
+
+func _through_json(state: Dictionary) -> Dictionary:
+	return JSON.parse_string(JSON.stringify(state))
+
+
+# start: gold += 5, "In start", goto shop. shop: seen_shop = visited(shop), gold += 1, "In shop".
+func _save_in_shop(engine: WeavlyEngine) -> Dictionary:
+	engine.start("start")
+	engine.next()
+	return _through_json(engine.get_state())
+
+
+func test_a_save_taken_mid_node_replays_that_node_without_applying_it_twice() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	_connect_content_log(engine)
+	var state: Dictionary = _save_in_shop(engine)
+	assert_that(state["node"]).is_equal("shop")
+	engine.next()
+	engine.set_state(state)
+	assert_bool(engine.is_running()).is_true()
+	assert_that(_narration_log.back()).is_equal("In shop")
+	assert_that(engine.variable_service.get_variable("gold")).is_equal(6.0)
+	assert_int(engine.node_service.get_visit_count("start")).is_equal(1)
+	assert_int(engine.node_service.get_visit_count("shop")).is_equal(0)
+
+
+func test_visited_of_the_current_node_is_the_same_after_a_load() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	var state: Dictionary = _save_in_shop(engine)
+	engine.next()
+	engine.set_state(state)
+	assert_bool(engine.variable_service.get_variable("seen_shop")).is_false()
+
+
+func test_get_state_outside_a_dialogue_has_no_node() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	var state: Dictionary = engine.get_state()
+	assert_bool(state.has("node")).is_false()
+	assert_that(state["services"]["variable"]["gold"]).is_equal(0.0)
+
+
+func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	var idle: Dictionary = engine.get_state()
+	engine.start("start")
+	engine.set_state(idle)
+	assert_bool(engine.is_running()).is_false()
+	assert_bool(_signal_log.has("finished_dialogue")).is_false()
+	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
+
+
+func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	engine.set_state({"version": 1, "node": "gone", "services": {"variable": {"gold": 3.0}}})
+	assert_logged(["Can't resume at node 'gone' because it no longer exists."])
+	assert_that(engine.variable_service.get_variable("gold")).is_equal(3.0)
+	assert_bool(engine.is_running()).is_false()
+
+
+func test_a_state_of_an_unknown_version_restores_nothing() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
+	assert_logged(["Can't load a state of version '2', expected version 1."])
+	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
+
+
+func test_reset_state_starts_a_new_game() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	_save_in_shop(engine)
+	engine.next()
+	engine.reset_state()
+	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
+	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
+	assert_bool(engine.is_running()).is_false()
+
+
+func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
+	var engine = _make_engine(SAVE_FIXTURE)
+	var events: Array[String] = []
+	engine.state_loaded.connect(func() -> void: events.append("state_loaded"))
+	engine.variable_service.variable_changed.connect(
+		func(id: String, _value: Variant) -> void: events.append(id)
+	)
+	engine.set_state({"version": 1, "services": {"variable": {"gold": 3.0}}})
+	assert_that(events).is_equal(["state_loaded"])
+
+
+func test_a_custom_services_state_is_saved_and_restored() -> void:
+	var engine = _new_engine(SAVE_FIXTURE)
+	engine.command_service_script = load(STATEFUL_COMMAND_SERVICE)
+	add_child(auto_free(engine))
+	var state: Dictionary = engine.get_state()
+	assert_that(state["services"]["command"]).is_equal({"volume": 0.5})
+	engine.set_state(_through_json(state))
+	assert_that(engine.command_service.restored).is_equal({"volume": 0.5})

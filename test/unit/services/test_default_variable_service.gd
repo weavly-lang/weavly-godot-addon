@@ -197,3 +197,60 @@ func test_adding_a_variable_of_another_type_for_an_extern_is_rejected() -> void:
 
 func test_get_declaration_of_an_unknown_name_is_null() -> void:
 	assert_object(_service.get_declaration("missing")).is_null()
+
+
+# =====================
+# get_state / set_state
+# =====================
+
+
+func test_get_state_holds_values_only() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 3.0, 0.0, 10.0))
+	_service.add_variable(WeavlyModel.StringVariable.new(&"name", "Ada"))
+	assert_that(_service.get_state()).is_equal({"score": 3.0, "name": "Ada"})
+
+
+func test_set_state_restores_values_without_emitting() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 3.0, null, null))
+	monitor_signals(_service, false)
+	_service.set_state({"score": 8.0})
+	assert_that(_service.get_variable("score")).is_equal(8.0)
+	await assert_signal(_service).is_not_emitted("variable_changed")
+
+
+func test_set_state_gives_variables_missing_from_it_their_default() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 3.0, null, null))
+	_service.add_variable(WeavlyModel.FlagVariable.new(&"added_later", true))
+	_service.set_variable("score", 5.0)
+	_service.set_variable("added_later", false)
+	_service.set_state({"score": 8.0})
+	assert_that(_service.get_variable("score")).is_equal(8.0)
+	assert_that(_service.get_variable("added_later")).is_equal(true)
+
+
+func test_set_state_skips_a_variable_that_no_longer_exists() -> void:
+	_service.set_state({"gone": 1.0})
+	assert_bool(_service.has("gone")).is_false()
+	assert_logged([], ["Saved variable 'gone' no longer exists, skipping it."])
+
+
+func test_set_state_checks_types_and_clamps() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 3.0, 0.0, 10.0))
+	_service.add_variable(WeavlyModel.FlagVariable.new(&"flag", false))
+	_service.set_state({"score": 50.0, "flag": "yes"})
+	assert_that(_service.get_variable("score")).is_equal(10.0)
+	assert_that(_service.get_variable("flag")).is_equal(false)
+	assert_logged(["Can't set variable 'flag' to a value of type 'String' because it's a flag."])
+
+
+func test_set_state_leaves_an_extern_undefined_unless_saved() -> void:
+	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
+		&"reputation", 0.0, null, null
+	)
+	variable.extern = true
+	_service.add_variable(variable)
+	_service.set_variable("reputation", 4.0)
+	_service.set_state({})
+	assert_bool(_service.has("reputation")).is_false()
+	_service.set_state({"reputation": 2.0})
+	assert_that(_service.get_variable("reputation")).is_equal(2.0)

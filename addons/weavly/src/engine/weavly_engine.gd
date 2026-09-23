@@ -5,6 +5,7 @@ signal started_dialogue
 signal entered_node(node_id: StringName)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
+signal state_loaded
 
 var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService
@@ -35,6 +36,12 @@ var _location_node_id: String = ""
 @abstract func hold() -> void
 
 @abstract func release() -> void
+
+@abstract func get_state() -> Dictionary
+
+@abstract func set_state(state: Dictionary) -> void
+
+@abstract func reset_state() -> void
 
 
 func report_error(message: String) -> void:

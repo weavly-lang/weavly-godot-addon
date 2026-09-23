@@ -51,3 +51,15 @@ func hold() -> void:
 
 func release() -> void:
 	holds -= 1
+
+
+func get_state() -> Dictionary:
+	return {}
+
+
+func set_state(_state: Dictionary) -> void:
+	pass
+
+
+func reset_state() -> void:
+	pass
