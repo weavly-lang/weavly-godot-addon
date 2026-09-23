@@ -46,5 +46,9 @@ $player_name: Which path?
 @endnode
 
 @node end
+@set $choice_visits = visit_count(choices)
+@set $been_to_start = visited(start)
+@set $score = max($score, 20)
+@log $reputation, visit_count(choices) + 1
 @finish
 @endnode

@@ -76,7 +76,7 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
 	engine.command_service.executed_command.connect(
 		func(command: WeavlyModel.CommandStatement, args: Array) -> void:
-			_command_log.append("%s:%s" % [command.id, ",".join(args)])
+			_command_log.append("%s:%s" % [command.id, ",".join(args.map(str))])
 	)
 
 
@@ -278,6 +278,8 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 # the published compiler, so this also guards the emitted JSON shape.
 func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	var engine = _make_engine(CI_SMOKE_FIXTURE)
+	# reputation is declared extern, so the game defines it.
+	engine.variable_service.set_variable("reputation", 3.0)
 	engine.start("start")
 	# start node: narration pauses immediately. Drive past the character line,
 	# the chain of set/match statements (which goto choices), the character
@@ -300,11 +302,14 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.next()  # past the narration, into end's FinishStatement
 
 	# Final state: dialogue finished, every node visited once, has_key was toggled
-	# to false by the last set statement.
+	# to false by the last set statement, and end read the visits and reputation.
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	for node_id: String in ["start", "choices", "random_node", "match_node", "end"]:
 		assert_int(engine.node_service.get_visit_count(node_id)).is_equal(1)
-	assert_that(engine.variable_service.get_variable("score")).is_equal(13.0)
+	assert_that(engine.variable_service.get_variable("choice_visits")).is_equal(1.0)
+	assert_bool(engine.variable_service.get_variable("been_to_start")).is_true()
+	assert_that(engine.variable_service.get_variable("score")).is_equal(20.0)
+	assert_that(_command_log.back()).is_equal("log:3.0,2.0")
 	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
 
 
@@ -334,6 +339,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_bool(engine.variable_service.has("player_name")).is_true()
 	assert_bool(engine.variable_service.has("has_key")).is_true()
+	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
 
 
 # =====================
