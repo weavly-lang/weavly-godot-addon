@@ -325,18 +325,78 @@ func test_option_block_filters_options_by_condition() -> void:
 	assert_that(passed[1]).is_same(keep_c)
 
 
-func test_option_block_with_no_passing_options_does_not_add_options() -> void:
+func test_option_block_with_no_passing_options_warns_and_adds_none() -> void:
 	var block := WeavlyModel.OptionBlock.new(
 		[WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false)]
 	)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
 	assert_that(_option.add_options_calls).is_empty()
+	assert_logged([], ["No option in this options block is available, skipping it."])
 
 
-func test_option_block_without_options_does_not_add_options() -> void:
+func test_option_block_without_options_warns_and_adds_none() -> void:
 	var options: Array[WeavlyModel.Option] = []
 	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(options), _engine)
 	assert_that(_option.add_options_calls).is_empty()
+	assert_logged([], ["No option in this options block is available, skipping it."])
+
+
+func test_option_block_warning_points_at_the_block() -> void:
+	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("choices", [])
+	node.source = "story.wvl"
+	_engine.set_location(node)
+	var option := WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false)
+	option.line = 6
+	var block := WeavlyModel.OptionBlock.new([option])
+	block.line = 5
+	WeavlyStatementExecutor.execute_statement(block, _engine)
+	assert_logged([], ["story.wvl:5: warning: No option in this options block is available"])
+
+
+func test_option_block_with_an_available_option_does_not_warn() -> void:
+	var block := (
+		WeavlyModel
+		. OptionBlock
+		. new(
+			[
+				WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false),
+				WeavlyModel.Option.new(_bool_expr(true), "b", _body("b"), false),
+			]
+		)
+	)
+	WeavlyStatementExecutor.execute_option_block(block, _engine)
+	assert_that(_option.add_options_calls.size()).is_equal(1)
+
+
+func test_option_block_with_only_hints_available_warns_and_still_adds_them() -> void:
+	var block := (
+		WeavlyModel
+		. OptionBlock
+		. new(
+			[
+				WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false),
+				WeavlyModel.Option.new(_bool_expr(true), "locked", [], true),
+			]
+		)
+	)
+	WeavlyStatementExecutor.execute_option_block(block, _engine)
+	assert_that(_option.add_options_calls.size()).is_equal(1)
+	assert_logged([], ["Every available option in this options block is a hint"])
+
+
+func test_option_block_with_a_hint_and_a_choosable_option_does_not_warn() -> void:
+	var block := (
+		WeavlyModel
+		. OptionBlock
+		. new(
+			[
+				WeavlyModel.Option.new(_bool_expr(true), "a", _body("a"), false),
+				WeavlyModel.Option.new(_bool_expr(true), "locked", [], true),
+			]
+		)
+	)
+	WeavlyStatementExecutor.execute_option_block(block, _engine)
+	assert_that(_option.add_options_calls.size()).is_equal(1)
 
 
 # =====================

@@ -62,6 +62,12 @@ A variable declared with `extern name: type` in `.wvl` gets its value from outsi
 
 Line and option text can use `{$name}`. The line and option signals deliver copies with those filled in, and keep the original in `raw_text` for games that do their own substitution, for example for localization. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in variables the same way.
 
+### Options, match and random
+
+An `@options` block whose options all have a false condition is skipped with a warning, since the player never gets a choice. It also warns when every available option is a hint, since the player can't choose a hint and the dialogue can't continue. A `@random` block without an eligible case is skipped silently, because cases whose conditions can all be false are a normal pattern.
+
+`@match all` evaluates every condition first and then runs the bodies of the matching cases in order, so a `@set` in one body doesn't change which later cases match.
+
 ### Commands
 
 Any `@name` that isn't a Weavly keyword is a command for your game. Its comma-separated arguments are expressions, evaluated when the command runs:
