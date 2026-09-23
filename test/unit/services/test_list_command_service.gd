@@ -19,10 +19,10 @@ func before_test() -> void:
 # =====================
 
 
-func test_stop_command_pauses_statement_service() -> void:
+func test_stop_command_holds_the_dialogue() -> void:
 	var cmd := WeavlyModel.CommandStatement.new("stop")
 	_service.execute_command(cmd, ["explosion"])
-	assert_bool(_engine.statement_service.is_paused()).is_true()
+	assert_int(_engine.holds).is_equal(1)
 
 
 func test_stop_command_emits_signal() -> void:
@@ -37,10 +37,10 @@ func test_stop_command_emits_signal() -> void:
 # =====================
 
 
-func test_non_stop_command_does_not_pause() -> void:
+func test_non_stop_command_does_not_hold() -> void:
 	var cmd := WeavlyModel.CommandStatement.new("play_sound")
 	_service.execute_command(cmd, ["explosion"])
-	assert_bool(_engine.statement_service.is_paused()).is_false()
+	assert_int(_engine.holds).is_equal(0)
 
 
 func test_non_stop_command_emits_signal() -> void:
