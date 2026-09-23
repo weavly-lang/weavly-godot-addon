@@ -3,6 +3,7 @@ extends WeavlyNodeService
 const TYPE = "Node"
 
 var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
+var _visits: Dictionary[String, int] = {}
 
 
 func has(id: String) -> bool:
@@ -24,3 +25,11 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 
 func get_all_nodes() -> Array[WeavlyModel.WeavlyNode]:
 	return _nodes.values()
+
+
+func record_visit(id: String) -> void:
+	_visits[id] = get_visit_count(id) + 1
+
+
+func get_visit_count(id: String) -> int:
+	return _visits.get(id, 0)

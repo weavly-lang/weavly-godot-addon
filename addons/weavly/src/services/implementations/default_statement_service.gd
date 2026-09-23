@@ -34,6 +34,7 @@ func add_statement_groups(groups: Array[Array]) -> void:
 
 func advance_statements() -> void:
 	if _stack.is_empty():
+		engine.leave_current_node()
 		engine.finish()
 		return
 

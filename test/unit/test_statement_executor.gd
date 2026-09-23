@@ -488,3 +488,21 @@ func test_case_condition_that_fails_counts_as_false() -> void:
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+
+
+# =====================
+# Visits
+# =====================
+
+
+func test_goto_records_a_visit_to_the_current_node() -> void:
+	_engine.current_node_id = "here"
+	WeavlyStatementExecutor.execute_statement(WeavlyModel.GotoStatement.new("there"), _engine)
+	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
+	assert_that(_engine.current_node_id).is_empty()
+
+
+func test_finish_records_a_visit_to_the_current_node() -> void:
+	_engine.current_node_id = "here"
+	WeavlyStatementExecutor.execute_statement(WeavlyModel.FinishStatement.new(), _engine)
+	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)

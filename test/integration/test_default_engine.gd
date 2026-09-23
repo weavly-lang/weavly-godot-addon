@@ -12,6 +12,7 @@ const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
 const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
 const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
+const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -116,15 +117,11 @@ func test_start_on_running_dialogue_warns_and_does_nothing() -> void:
 # =====================
 
 
-func test_enter_node_marks_node_as_visited_and_emits_entered_node() -> void:
+func test_enter_node_emits_entered_node_without_counting_a_visit() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
-	# Pre-condition: visited flag for "start" is initialized to false.
-	assert_bool(engine.variable_service.get_variable("start")).is_false()
 	engine.start("start")
-	# enter_node was invoked by start; assert the flag is now true and that the
-	# entered_node signal carried the expected id.
-	assert_bool(engine.variable_service.get_variable("start")).is_true()
 	assert_bool(_signal_log.has("entered_node:start")).is_true()
+	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
 
 
 func test_start_with_unknown_id_reports_once_and_finishes() -> void:
@@ -265,10 +262,10 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 	]
 	assert_that(_signal_log).is_equal(expected_signals)
 
-	# Variables: counter set by the dialogue, visited flags for both nodes set.
+	# start is left by its goto, end by its @finish.
 	assert_that(engine.variable_service.get_variable("counter")).is_equal(7.0)
-	assert_bool(engine.variable_service.get_variable("start")).is_true()
-	assert_bool(engine.variable_service.get_variable("end")).is_true()
+	assert_int(engine.node_service.get_visit_count("start")).is_equal(1)
+	assert_int(engine.node_service.get_visit_count("end")).is_equal(1)
 
 
 # =====================
@@ -301,14 +298,11 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.option_service.choose_option(options[0])
 	engine.next()  # past the narration, into end's FinishStatement
 
-	# Final state: dialogue finished, all visited flags set, has_key was toggled
+	# Final state: dialogue finished, every node visited once, has_key was toggled
 	# to false by the last set statement.
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
-	assert_bool(engine.variable_service.get_variable("start")).is_true()
-	assert_bool(engine.variable_service.get_variable("choices")).is_true()
-	assert_bool(engine.variable_service.get_variable("random_node")).is_true()
-	assert_bool(engine.variable_service.get_variable("match_node")).is_true()
-	assert_bool(engine.variable_service.get_variable("end")).is_true()
+	for node_id: String in ["start", "choices", "random_node", "match_node", "end"]:
+		assert_int(engine.node_service.get_visit_count(node_id)).is_equal(1)
 	assert_that(engine.variable_service.get_variable("score")).is_equal(13.0)
 	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
 
@@ -440,3 +434,42 @@ func test_engine_indexes_and_loads_images_from_an_external_directory() -> void:
 	engine.image_path = media_dir
 	add_child(auto_free(engine))
 	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
+
+
+# =====================
+# Visits
+# =====================
+
+
+func test_visits_count_on_leaving_a_node_and_its_own_goto() -> void:
+	var engine = _make_engine(VISITS_FIXTURE)
+	_connect_content_log(engine)
+	engine.start("hub")
+	engine.next()
+	engine.next()
+	engine.next()
+	engine.next()
+	assert_that(_narration_log).is_equal(["First time", "Back again", "Back again", "Done"])
+	# Two gotos into hub, then the end of its body.
+	assert_int(engine.node_service.get_visit_count("hub")).is_equal(3)
+	assert_that(engine.variable_service.get_variable("count")).is_equal(2.0)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
+func test_finish_statement_counts_a_visit() -> void:
+	var engine = _make_engine(VISITS_FIXTURE)
+	engine.start("finisher")
+	engine.next()
+	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
+
+
+func test_game_calling_finish_counts_no_visit() -> void:
+	var engine = _make_engine(VISITS_FIXTURE)
+	engine.start("finisher")
+	engine.finish()
+	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(0)
+
+
+func test_nodes_create_no_variables() -> void:
+	var engine = _make_engine(VISITS_FIXTURE)
+	assert_that(engine.variable_service.get_all_ids()).is_equal(["count"])

@@ -54,12 +54,14 @@ static func execute_set_statement(
 static func execute_goto_statement(
 	goto_statement: WeavlyModel.GotoStatement, engine: WeavlyEngine
 ) -> void:
+	engine.leave_current_node()
 	engine.enter_node(goto_statement.id)
 
 
 static func execute_finish_statement(
 	_finish_statement: WeavlyModel.FinishStatement, engine: WeavlyEngine
 ) -> void:
+	engine.leave_current_node()
 	engine.finish()
 
 

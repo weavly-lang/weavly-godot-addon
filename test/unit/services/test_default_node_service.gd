@@ -64,3 +64,19 @@ func test_get_all_nodes() -> void:
 	assert_that(all_nodes.size()).is_equal(2)
 	assert_bool(all_nodes.has(a)).is_true()
 	assert_bool(all_nodes.has(b)).is_true()
+
+
+# =====================
+# visits
+# =====================
+
+
+func test_visit_count_is_zero_before_any_visit() -> void:
+	assert_int(_service.get_visit_count("start")).is_equal(0)
+
+
+func test_record_visit_counts_up() -> void:
+	_service.record_visit("start")
+	_service.record_visit("start")
+	assert_int(_service.get_visit_count("start")).is_equal(2)
+	assert_int(_service.get_visit_count("other")).is_equal(0)
