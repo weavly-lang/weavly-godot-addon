@@ -62,6 +62,21 @@ func test_group_pattern_still_reports_a_duplicate_id() -> void:
 	assert_logged(["Image id 'idle_1' is used by both res://a/idle_1.png and res://b/idle_1.png"])
 
 
+func test_group_pattern_groups_only_within_a_folder() -> void:
+	_index.set_group_pattern("_\\d+$")
+	_index.add("alice/icon_1", "res://alice/icon_1.png")
+	_index.add("alice/icon_2", "res://alice/icon_2.png")
+	_index.add("bob/icon_3", "res://bob/icon_3.png")
+	assert_array(_index.paths.keys()).contains_exactly(["alice/icon", "bob/icon"])
+	assert_array(_index.paths["alice/icon"]).has_size(2)
+
+
+func test_group_pattern_does_not_apply_to_folder_names() -> void:
+	_index.set_group_pattern("_\\d+$")
+	_index.add("set_1/bob", "res://set_1/bob.png")
+	assert_str(_index.pick("set_1/bob")).is_equal("res://set_1/bob.png")
+
+
 func test_group_pattern_groups_an_id_with_its_numbered_variants() -> void:
 	_index.set_group_pattern("_\\d+$")
 	_index.add("idle", "res://idle.png")

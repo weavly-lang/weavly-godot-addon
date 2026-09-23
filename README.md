@@ -115,9 +115,9 @@ Mistakes a script makes at runtime, such as reading an undefined variable, are r
 
 ### Images and videos
 
-Images and videos are found in `image_path` and `video_path`, including subfolders, and their id is the file name without extension, so `backgrounds/bob.png` is `bob`. Ids must be unique across subfolders: when two files share one, both paths are reported and the first is used.
+Images and videos are found in `image_path` and `video_path`, including subfolders, and their id is the path relative to that folder without extension, so `splash.png` is `splash` and `alice/icon.png` is `alice/icon`. Files that differ only in extension, like `icon.png` and `icon.jpg`, share an id; both paths are reported and the first is used.
 
-With `image_group_pattern` or `video_group_pattern` set, files whose ids are the same once the pattern is removed form a group. With `_\d+$`, `bob_1.png` and `bob_2.png` are both `bob`. Every `get_image("bob")` or `get_video("bob")` picks a new file from the group, so keep the returned resource if the same line should show the same file twice.
+With `image_group_pattern` or `video_group_pattern` set, files in the same folder whose names are the same once the pattern is removed form a group. With `_\d+$`, `alice/icon_1.png` and `alice/icon_2.png` are both `alice/icon`, while `bob/icon_3.png` is `bob/icon`. Every `get_image("alice/icon")` or `get_video("alice/icon")` picks a new file from the group, so keep the returned resource if the same line should show the same file twice.
 
 ### Media outside the game
 

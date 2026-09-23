@@ -162,8 +162,7 @@ static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = find_all_files_with_extensions(dir, extensions)
 
 	for file_path in file_paths:
-		var id: String = file_path.get_file().get_basename()
-		engine.video_service.add_video(id, file_path)
+		engine.video_service.add_video(media_id(dir, file_path), file_path)
 
 
 static func index_images_from_files(engine: WeavlyEngine, dir: String) -> void:
@@ -171,8 +170,13 @@ static func index_images_from_files(engine: WeavlyEngine, dir: String) -> void:
 	var file_paths = find_all_files_with_extensions(dir, extensions)
 
 	for file_path in file_paths:
-		var id: String = file_path.get_file().get_basename()
-		engine.image_service.add_image(id, file_path)
+		engine.image_service.add_image(media_id(dir, file_path), file_path)
+
+
+# The path relative to dir without extension, so dir/alice/icon.png is alice/icon.
+static func media_id(dir: String, file_path: String) -> String:
+	var relative: String = file_path.trim_prefix(dir).replace("\\", "/").trim_prefix("/")
+	return relative.get_basename()
 
 
 static func index_characters_from_resources(engine: WeavlyEngine, dir: String) -> void:

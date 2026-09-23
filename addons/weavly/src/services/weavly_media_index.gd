@@ -34,15 +34,23 @@ func add(id: String, path: String) -> void:
 		return
 	_sources[id] = path
 
-	var group_key: String = id
-	if _regex != null:
-		var found: RegExMatch = _regex.search(id)
-		if found:
-			group_key = id.substr(0, found.get_start()) + id.substr(found.get_end())
-
+	var group_key: String = _group_key(id)
 	var group: Array = paths.get(group_key, [])
 	group.append(path)
 	paths[group_key] = group
+
+
+# The pattern only applies to the file name, so files in different folders never share a group.
+func _group_key(id: String) -> String:
+	if _regex == null:
+		return id
+	var name: String = id.get_file()
+	var found: RegExMatch = _regex.search(name)
+	if not found:
+		return id
+	var grouped: String = name.substr(0, found.get_start()) + name.substr(found.get_end())
+	var folder: String = id.get_base_dir()
+	return folder.path_join(grouped) if folder != "" else grouped
 
 
 # Empty when the id is unknown; a group returns one of its paths at random.
