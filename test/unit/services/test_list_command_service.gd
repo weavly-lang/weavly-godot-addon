@@ -20,16 +20,16 @@ func before_test() -> void:
 
 
 func test_stop_command_pauses_statement_service() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("stop", "")
-	_service.execute_command(cmd)
+	var cmd := WeavlyModel.CommandStatement.new("stop")
+	_service.execute_command(cmd, ["explosion"])
 	assert_bool(_engine.statement_service.is_paused()).is_true()
 
 
 func test_stop_command_emits_signal() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("stop", "")
+	var cmd := WeavlyModel.CommandStatement.new("stop")
 	monitor_signals(_service, false)
-	_service.execute_command(cmd)
-	await assert_signal(_service).is_emitted("executed_command", [cmd])
+	_service.execute_command(cmd, ["explosion"])
+	await assert_signal(_service).is_emitted("executed_command", [cmd, ["explosion"]])
 
 
 # =====================
@@ -38,13 +38,13 @@ func test_stop_command_emits_signal() -> void:
 
 
 func test_non_stop_command_does_not_pause() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("play_sound", "explosion")
-	_service.execute_command(cmd)
+	var cmd := WeavlyModel.CommandStatement.new("play_sound")
+	_service.execute_command(cmd, ["explosion"])
 	assert_bool(_engine.statement_service.is_paused()).is_false()
 
 
 func test_non_stop_command_emits_signal() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("play_sound", "explosion")
+	var cmd := WeavlyModel.CommandStatement.new("play_sound")
 	monitor_signals(_service, false)
-	_service.execute_command(cmd)
-	await assert_signal(_service).is_emitted("executed_command", [cmd])
+	_service.execute_command(cmd, ["explosion"])
+	await assert_signal(_service).is_emitted("executed_command", [cmd, ["explosion"]])

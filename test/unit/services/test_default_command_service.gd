@@ -13,7 +13,7 @@ func before_test() -> void:
 
 
 func test_execute_command_emits_signal() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("play_sound", "explosion")
+	var cmd := WeavlyModel.CommandStatement.new("play_sound")
 	monitor_signals(_service, false)
-	_service.execute_command(cmd)
-	await assert_signal(_service).is_emitted("executed_command", [cmd])
+	_service.execute_command(cmd, ["explosion"])
+	await assert_signal(_service).is_emitted("executed_command", [cmd, ["explosion"]])

@@ -224,10 +224,16 @@ static func compile_command_statement(
 	data: Dictionary, path: String
 ) -> WeavlyModel.CommandStatement:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
-	if id == null or text == null:
+	var args_data = get_required(data, KEY_ARGS, Variant.Type.TYPE_ARRAY, path)
+	if id == null or args_data == null:
 		return null
-	return WeavlyModel.CommandStatement.new(id, text)
+	var args: Array[WeavlyModel.WeavlyExpression] = []
+	for i in range(args_data.size()):
+		var arg = compile_expression(args_data[i], _path_index(_path_join(path, KEY_ARGS), i))
+		if arg == null:
+			return null
+		args.append(arg)
+	return WeavlyModel.CommandStatement.new(id, args)
 
 
 # =====================

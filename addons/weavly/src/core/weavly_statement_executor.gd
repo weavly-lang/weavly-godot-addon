@@ -68,7 +68,13 @@ static func execute_finish_statement(
 static func execute_command_statement(
 	command_statement: WeavlyModel.CommandStatement, engine: WeavlyEngine
 ) -> void:
-	engine.command_service.execute_command(command_statement)
+	var args: Array = []
+	for arg: WeavlyModel.WeavlyExpression in command_statement.args:
+		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(arg, engine)
+		if WeavlyExpressionEvaluator.is_error(value):
+			return
+		args.append(value)
+	engine.command_service.execute_command(command_statement, args)
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:

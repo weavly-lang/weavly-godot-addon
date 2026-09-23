@@ -16,7 +16,7 @@ A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-comp
 
 1. Download the latest `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project root, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.2.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
+3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.3.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
    ```bash
    uv tool install weavly
@@ -53,6 +53,27 @@ func _on_option_selected(option: WeavlyModel.Option) -> void:
 By default the engine loads compiled dialogue JSON from `res://dialogue/build` and indexes media and resources from `res://media/images`, `res://media/videos`, `res://characters`, and `res://variables` — all configurable via exports on the `WeavlyEngine` node.
 
 For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialogue JSON is not packed.
+
+### Commands
+
+Any `@name` that isn't a Weavly keyword is a command for your game. Its comma-separated arguments are expressions, evaluated when the command runs:
+
+```
+@play_sound "door", $volume * 0.5
+```
+
+```gdscript
+func _ready() -> void:
+    engine.command_service.executed_command.connect(_on_command)
+
+
+func _on_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
+    match command.id:
+        "play_sound":
+            play_sound(args[0], args[1])
+```
+
+Commands don't pause the dialogue. If an argument can't be evaluated, the error is reported and the command is skipped.
 
 ### Media outside the game
 

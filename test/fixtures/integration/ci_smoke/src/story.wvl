@@ -1,7 +1,7 @@
 @node start
 Welcome to the smoke test.
 @fade_in
-@play_sound: chime.ogg
+@play_sound "chime.ogg"
 >Guide: Let the test begin.
 @set $score = 10
 @increase $score 5

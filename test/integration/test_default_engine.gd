@@ -75,8 +75,8 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 	)
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
 	engine.command_service.executed_command.connect(
-		func(command: WeavlyModel.CommandStatement) -> void:
-			_command_log.append("%s:%s" % [command.id, command.text])
+		func(command: WeavlyModel.CommandStatement, args: Array) -> void:
+			_command_log.append("%s:%s" % [command.id, ",".join(args)])
 	)
 
 

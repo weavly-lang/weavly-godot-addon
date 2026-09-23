@@ -82,11 +82,11 @@ class FinishStatement:
 class CommandStatement:
 	extends Statement
 	var id: String
-	var text: String
+	var args: Array[WeavlyExpression]
 
-	func _init(id: String, text: String):
+	func _init(id: String, args: Array[WeavlyExpression] = []):
 		self.id = id
-		self.text = text
+		self.args = args
 
 
 # =====================
