@@ -201,6 +201,9 @@ static func evaluate_binary_expression(
 	binary_expression: WeavlyModel.BinaryExpression, engine: WeavlyEngine
 ) -> Variant:
 	var op = binary_expression.op
+	if op in [AND, OR]:
+		return evaluate_logic_expression(binary_expression, engine)
+
 	var left: Variant = WeavlyExpressionEvaluator.evaluate_expression(
 		binary_expression.left, engine
 	)
@@ -210,8 +213,6 @@ static func evaluate_binary_expression(
 	if is_error(left) or is_error(right):
 		return ERROR
 
-	if op in [AND, OR]:
-		return evaluate_logic_expression(op, left, right, engine)
 	if op in [ADD, SUB, MUL, DIV]:
 		return evaluate_math_expression(op, left, right, engine)
 	if op in [EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ]:
@@ -221,20 +222,27 @@ static func evaluate_binary_expression(
 	return ERROR
 
 
+# The right side is only evaluated when the left side doesn't decide the result.
 static func evaluate_logic_expression(
-	op: String, left: Variant, right: Variant, engine: WeavlyEngine
+	binary_expression: WeavlyModel.BinaryExpression, engine: WeavlyEngine
 ) -> Variant:
-	if left is not bool or right is not bool:
-		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
+	var op: String = binary_expression.op
+	var left: Variant = evaluate_expression(binary_expression.left, engine)
+	if is_error(left):
 		return ERROR
+	if left is not bool:
+		engine.report_error(WRONG_VALUE_TYPE % [op, _get_type(left)])
+		return ERROR
+	if (op == AND and not left) or (op == OR and left):
+		return left
 
-	if op == AND:
-		return left and right
-	if op == OR:
-		return left or right
-
-	engine.report_error(UNKNOWN_OPERATOR % op)
-	return ERROR
+	var right: Variant = evaluate_expression(binary_expression.right, engine)
+	if is_error(right):
+		return ERROR
+	if right is not bool:
+		engine.report_error(WRONG_VALUE_TYPE % [op, _get_type(right)])
+		return ERROR
+	return right
 
 
 static func evaluate_math_expression(

@@ -234,7 +234,7 @@ func test_logic_type_mismatch_returns_error() -> void:
 		assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_bin("and", _bool(true), _num(1.0)))))
 		. is_true()
 	)
-	assert_logged(["Can't use operator 'and' on values of types 'bool' and 'float'."])
+	assert_logged(["Can't use operator 'and' on value of type 'float'."])
 
 
 # =====================
@@ -408,3 +408,34 @@ func test_reading_an_undefined_extern_names_it_extern() -> void:
 	engine.variable_service.add_variable(variable)
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id(&"brave"), engine))).is_true()
 	assert_logged(["Variable 'brave' is declared extern but was never defined."])
+
+
+# =====================
+# and / or stop early
+# =====================
+
+
+func test_false_and_skips_the_right_side() -> void:
+	assert_that(_eval(_bin("and", _bool(false), _id(&"missing")))).is_equal(false)
+
+
+func test_true_or_skips_the_right_side() -> void:
+	assert_that(_eval(_bin("or", _bool(true), _id(&"missing")))).is_equal(true)
+
+
+func test_true_and_evaluates_the_right_side() -> void:
+	var result: Variant = _eval(_bin("and", _bool(true), _id(&"missing")))
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+func test_false_or_evaluates_the_right_side() -> void:
+	var result: Variant = _eval(_bin("or", _bool(false), _id(&"missing")))
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+func test_a_left_side_that_is_not_a_flag_is_reported_before_the_right_side_runs() -> void:
+	var result: Variant = _eval(_bin("or", _num(1.0), _id(&"missing")))
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Can't use operator 'or' on value of type 'float'."])
