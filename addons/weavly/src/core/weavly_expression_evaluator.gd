@@ -1,6 +1,7 @@
 class_name WeavlyExpressionEvaluator
 
 const UNKNOWN_EXPRESSION_TYPE = "Unknown expression of type '%s'."
+const UNDEFINED_VARIABLE = "Variable '%s' isn't defined."
 const UNKNOWN_OPERATOR = "Unknown expression with operator '%s'."
 const WRONG_CONDITION_TYPE = "Condition can't be of type '%s', returning '%s' instead."
 const WRONG_VALUE_TYPE = "Can't use operator '%s' on value of type '%s'."
@@ -27,11 +28,25 @@ const GREATER_EQ = ">="
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
 
+# Returned when evaluation fails; the failure has already been reported.
+# gdlint:ignore = class-variable-name
+static var ERROR: EvaluationError = EvaluationError.new()
+
+
+class EvaluationError:
+	extends RefCounted
+
+
+static func is_error(value: Variant) -> bool:
+	return value is EvaluationError
+
 
 static func evaluate_condition(
 	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
 ) -> bool:
 	var value = evaluate_expression(expression, engine)
+	if is_error(value):
+		return DEFAULT_CONDITION_RETURN
 	if value is not bool:
 		push_error(WRONG_CONDITION_TYPE % [_get_type(value), DEFAULT_CONDITION_RETURN])
 		return DEFAULT_CONDITION_RETURN
@@ -57,16 +72,20 @@ static func evaluate_expression(
 	if is_instance_of(expression, WeavlyModel.BinaryExpression):
 		return evaluate_binary_expression(expression, engine)
 
-	push_error(UNKNOWN_EXPRESSION_TYPE % expression.get_class())
-	return null
+	push_error(UNKNOWN_EXPRESSION_TYPE % _get_type(expression))
+	return ERROR
 
 
 static func evaluate_identifier(
 	identifier: WeavlyModel.Identifier, engine: WeavlyEngine
 ) -> Variant:
+	if not engine.variable_service.has(identifier.value):
+		push_error(UNDEFINED_VARIABLE % identifier.value)
+		return ERROR
 	var value: Variant = engine.variable_service.get_variable(identifier.value)
 	if value == null:
 		push_error(NULL_VARIABLE % identifier.value)
+		return ERROR
 	return value
 
 
@@ -76,15 +95,17 @@ static func evaluate_unary_expression(
 	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(
 		unary_expression.expression, engine
 	)
+	if is_error(value):
+		return ERROR
 	if unary_expression.op == NOT:
 		if value is bool:
 			return not value
 
 		push_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
-		return null
+		return ERROR
 
 	push_error(UNKNOWN_OPERATOR % [unary_expression.op])
-	return null
+	return ERROR
 
 
 static func evaluate_binary_expression(
@@ -97,6 +118,8 @@ static func evaluate_binary_expression(
 	var right: Variant = WeavlyExpressionEvaluator.evaluate_expression(
 		binary_expression.right, engine
 	)
+	if is_error(left) or is_error(right):
+		return ERROR
 
 	if op in [AND, OR]:
 		return evaluate_logic_expression(op, left, right)
@@ -106,13 +129,13 @@ static func evaluate_binary_expression(
 		return evaluate_compare_expression(op, left, right)
 
 	push_error(UNKNOWN_OPERATOR % op)
-	return null
+	return ERROR
 
 
 static func evaluate_logic_expression(op: String, left: Variant, right: Variant) -> Variant:
 	if left is not bool or right is not bool:
 		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
-		return null
+		return ERROR
 
 	if op == AND:
 		return left and right
@@ -120,13 +143,13 @@ static func evaluate_logic_expression(op: String, left: Variant, right: Variant)
 		return left or right
 
 	push_error(UNKNOWN_OPERATOR % op)
-	return null
+	return ERROR
 
 
 static func evaluate_math_expression(op: String, left: Variant, right: Variant) -> Variant:
 	if left is not float or right is not float:
 		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
-		return null
+		return ERROR
 
 	if op == ADD:
 		return left + right
@@ -142,13 +165,13 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 		return left / right
 
 	push_error(UNKNOWN_OPERATOR % op)
-	return null
+	return ERROR
 
 
 static func evaluate_compare_expression(op: String, left: Variant, right: Variant) -> Variant:
 	if typeof(left) != typeof(right):
 		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
-		return null
+		return ERROR
 
 	if op == EQ:
 		return left == right
@@ -164,7 +187,7 @@ static func evaluate_compare_expression(op: String, left: Variant, right: Varian
 		return left >= right
 
 	push_error(UNKNOWN_OPERATOR % op)
-	return null
+	return ERROR
 
 
 static func _get_type(value: Variant) -> String:

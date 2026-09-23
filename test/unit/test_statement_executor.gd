@@ -1,6 +1,6 @@
 # gdlint:ignore = max-public-methods
 
-extends GdUnitTestSuite
+extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
@@ -404,3 +404,87 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 	var block := WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.5))
 	assert_that(_statement.add_statements_calls.size()).is_equal(0)
+
+
+# =====================
+# Errors leave state unchanged
+# =====================
+
+
+func _add_score() -> void:
+	_engine.variable_service.add_variable(
+		WeavlyModel.NumberVariable.new(&"score", 10.0, 0.0, 100.0)
+	)
+
+
+func _run_set(id: String, expression: WeavlyModel.WeavlyExpression) -> void:
+	WeavlyStatementExecutor.execute_set_statement(
+		WeavlyModel.SetStatement.new(id, expression), _engine
+	)
+
+
+func test_set_with_an_undefined_variable_in_the_expression_keeps_the_value() -> void:
+	_add_score()
+	var expression = WeavlyModel.BinaryExpression.new(
+		"+", WeavlyModel.Identifier.new(&"scroe"), WeavlyModel.Number.new(5.0)
+	)
+	_run_set("score", expression)
+	assert_logged(["Variable 'scroe' isn't defined."])
+	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+
+
+func test_set_with_a_value_of_the_wrong_type_keeps_the_value() -> void:
+	_add_score()
+	_run_set("score", WeavlyModel.StringLiteral.new("high"))
+	assert_logged(
+		["Can't set variable 'score' to a value of type 'String' because it's a number."]
+	)
+	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+
+
+func test_set_of_an_undefined_variable_creates_nothing() -> void:
+	_add_score()
+	_run_set("scroe", WeavlyModel.Number.new(5.0))
+	assert_logged(["Can't set variable 'scroe' because it isn't defined."])
+	assert_bool(_engine.variable_service.has("scroe")).is_false()
+	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+
+
+func test_random_weight_that_fails_counts_as_zero() -> void:
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
+	var missing: WeavlyModel.Identifier = WeavlyModel.Identifier.new(&"missing")
+	var cases: Array[WeavlyModel.RandomCase] = [
+		WeavlyModel.RandomCase.new(_bool_expr(true), missing, _body()),
+		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
+	]
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
+	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	assert_logged(["Variable 'missing' isn't defined."])
+	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+
+
+func test_random_weight_that_is_not_a_number_counts_as_zero() -> void:
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
+	var text: WeavlyModel.StringLiteral = WeavlyModel.StringLiteral.new("x")
+	var cases: Array[WeavlyModel.RandomCase] = [
+		WeavlyModel.RandomCase.new(_bool_expr(true), text, _body()),
+		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
+	]
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
+	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	assert_logged(["Random weight can't be of type 'String', using 0 instead."])
+	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+
+
+func test_case_condition_that_fails_counts_as_false() -> void:
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
+	var cases: Array[WeavlyModel.WhenCase] = [
+		WeavlyModel.WhenCase.new(WeavlyModel.Identifier.new(&"missing"), _body("skipped")),
+		WeavlyModel.WhenCase.new(_bool_expr(true), picked),
+	]
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.FIRST, cases
+	)
+	WeavlyStatementExecutor.execute_match_block(block, _engine)
+	assert_logged(["Variable 'missing' isn't defined."])
+	assert_that(_statement.add_statements_calls[0]).is_same(picked)

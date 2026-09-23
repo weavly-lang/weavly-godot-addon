@@ -106,3 +106,42 @@ func test_add_duplicate_is_ignored() -> void:
 	_service.add_variable(second)
 	assert_logged([], ["Variable with id 'score' already exists."])
 	assert_that(_service.get_variable("score")).is_equal(1.0)
+
+
+# =====================
+# type checks
+# =====================
+
+
+func test_set_variable_with_the_wrong_type_keeps_the_value() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 10.0, 0.0, 100.0))
+	_service.set_variable("score", "high")
+	assert_that(_service.get_variable("score")).is_equal(10.0)
+	assert_logged(
+		["Can't set variable 'score' to a value of type 'String' because it's a number."]
+	)
+
+
+func test_set_variable_with_the_wrong_type_emits_nothing() -> void:
+	_service.add_variable(WeavlyModel.FlagVariable.new(&"has_key", false))
+	monitor_signals(_service, false)
+	_service.set_variable("has_key", 1.0)
+	assert_logged(["Can't set variable 'has_key' to a value of type 'float' because it's a flag."])
+	await assert_signal(_service).is_not_emitted("variable_changed")
+
+
+func test_set_variable_accepts_an_int_for_a_number() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"score", 10.0, null, null))
+	_service.set_variable("score", 5)
+	assert_that(_service.get_variable("score")).is_equal(5.0)
+
+
+func test_set_variable_still_creates_an_unknown_variable() -> void:
+	_service.set_variable("gold", 3.0)
+	assert_that(_service.get_variable("gold")).is_equal(3.0)
+
+
+func test_set_variable_with_an_unsupported_value_creates_nothing() -> void:
+	_service.set_variable("thing", Vector2.ZERO)
+	assert_bool(_service.has("thing")).is_false()
+	assert_logged(["Unknown variable value: Vector2"])

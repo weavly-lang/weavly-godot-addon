@@ -198,8 +198,9 @@ static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
-	var expr_data = get_required(data, KEY_EXPRESSION, Variant.Type.TYPE_NIL, path)
-	var expr = compile_expression(expr_data, _path_join(path, KEY_EXPRESSION))
+	var expr = compile_required_expression(data, KEY_EXPRESSION, path)
+	if expr == null:
+		return null
 	return WeavlyModel.SetStatement.new(id, expr)
 
 
@@ -255,19 +256,19 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 		var case_path = _path_index(_path_join(path, KEY_CASES), i)
 		if not (case_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
-			continue
+			return null
 		var when_case = compile_when_case(case_data, case_path)
-		if when_case != null:
-			cases.append(when_case)
+		if when_case == null:
+			return null
+		cases.append(when_case)
 
 	return WeavlyModel.MatchBlock.new(modifier, cases)
 
 
 static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.WhenCase:
-	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
-	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
+	var condition = compile_required_expression(data, KEY_CONDITION, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	if body_data_list == null:
+	if condition == null or body_data_list == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.WhenCase.new(condition, body)
@@ -288,20 +289,20 @@ static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.
 		var option_path = _path_index(_path_join(path, KEY_OPTIONS), i)
 		if not (option_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [option_path, str(typeof(option_data))])
-			continue
+			return null
 		var option = compile_option(option_data, option_path)
-		if option != null:
-			options.append(option)
+		if option == null:
+			return null
+		options.append(option)
 	return WeavlyModel.OptionBlock.new(options)
 
 
 static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option:
-	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
-	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
+	var condition = compile_required_expression(data, KEY_CONDITION, path)
 	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
 	var hint = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
-	if text == null or body_data_list == null or hint == null:
+	if condition == null or text == null or body_data_list == null or hint == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.Option.new(condition, text, body, hint)
@@ -322,20 +323,19 @@ static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.
 		var case_path = _path_index(_path_join(path, KEY_CASES), i)
 		if not (case_data is Dictionary):
 			push_error("%s must be a Dictionary; got %s" % [case_path, str(typeof(case_data))])
-			continue
+			return null
 		var random_case = compile_random_case(case_data, case_path)
-		if random_case != null:
-			cases.append(random_case)
+		if random_case == null:
+			return null
+		cases.append(random_case)
 	return WeavlyModel.RandomBlock.new(cases)
 
 
 static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.RandomCase:
-	var condition_data = get_required(data, KEY_CONDITION, Variant.Type.TYPE_NIL, path)
-	var condition = compile_expression(condition_data, _path_join(path, KEY_CONDITION))
-	var weight_data = get_required(data, KEY_WEIGHT, Variant.Type.TYPE_NIL, path)
-	var weight = compile_expression(weight_data, _path_join(path, KEY_WEIGHT))
+	var condition = compile_required_expression(data, KEY_CONDITION, path)
+	var weight = compile_required_expression(data, KEY_WEIGHT, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	if body_data_list == null:
+	if condition == null or weight == null or body_data_list == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
 	return WeavlyModel.RandomCase.new(condition, weight, body)
@@ -344,6 +344,16 @@ static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.R
 # =====================
 # Expressions
 # =====================
+
+
+# Null when the field is missing or its expression fails; either is reported once.
+static func compile_required_expression(
+	data: Dictionary, key: String, path: String
+) -> WeavlyModel.WeavlyExpression:
+	var expression_data = get_required(data, key, Variant.Type.TYPE_NIL, path)
+	if expression_data == null:
+		return null
+	return compile_expression(expression_data, _path_join(path, key))
 
 
 static func compile_expression(data: Variant, path: String) -> WeavlyModel.WeavlyExpression:
@@ -366,18 +376,19 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 		var op = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
 		if op == null:
 			return null
-		var expression_data = get_required(data, KEY_EXPRESSION, Variant.Type.TYPE_NIL, path)
-		var expression = compile_expression(expression_data, _path_join(path, KEY_EXPRESSION))
+		var expression = compile_required_expression(data, KEY_EXPRESSION, path)
+		if expression == null:
+			return null
 		return WeavlyModel.UnaryExpression.new(op, expression)
 
 	if data is Dictionary and data.has(KEY_LEFT) and data.has(KEY_RIGHT):
 		var op = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
 		if op == null:
 			return null
-		var left_data = get_required(data, KEY_LEFT, Variant.Type.TYPE_NIL, path)
-		var right_data = get_required(data, KEY_RIGHT, Variant.Type.TYPE_NIL, path)
-		var left = compile_expression(left_data, _path_join(path, KEY_LEFT))
-		var right = compile_expression(right_data, _path_join(path, KEY_RIGHT))
+		var left = compile_required_expression(data, KEY_LEFT, path)
+		var right = compile_required_expression(data, KEY_RIGHT, path)
+		if left == null or right == null:
+			return null
 		return WeavlyModel.BinaryExpression.new(op, left, right)
 
 	push_error("Unknown expression type at %s: %s" % [path, str(data)])
