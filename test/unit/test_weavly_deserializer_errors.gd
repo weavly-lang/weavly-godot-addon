@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 # Malformed-input tests for WeavlyDeserializer (see issue #38).
@@ -141,3 +142,71 @@ func test_declaration_error_includes_source_file_path() -> void:
 	assert_logged(
 		["Missing required field 'value' at res://dialogue/build/env.json > declarations[0]"]
 	)
+
+
+# =====================
+# Failed parts drop their statement
+# =====================
+
+
+func _body_of(statement: Dictionary) -> Array:
+	var data = {"nodes": [_node("start", [statement, {"type": "finish"}])]}
+	return WeavlyDeserializer.compile_nodes(data)[0].body
+
+
+func test_set_with_unknown_expression_is_dropped() -> void:
+	var body = _body_of({"type": "set", "id": "score", "expression": {"bogus": 1}})
+	assert_that(body.size()).is_equal(1)
+	assert_that(body[0]).is_instanceof(WeavlyModel.FinishStatement)
+	assert_logged(["Unknown expression type at nodes[0].body[0].expression"])
+
+
+func test_set_missing_expression_reports_once() -> void:
+	var body = _body_of({"type": "set", "id": "score"})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'expression' at nodes[0].body[0]"])
+
+
+func test_set_with_a_failing_nested_operand_is_dropped() -> void:
+	var expression = {"op": "+", "left": 1.0, "right": {"op": "not", "expression": {"x": 1}}}
+	var body = _body_of({"type": "set", "id": "score", "expression": expression})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown expression type at nodes[0].body[0].expression.right.expression"])
+
+
+func test_match_with_a_failing_case_condition_is_dropped() -> void:
+	var cases = [
+		{"condition": {"bogus": 1}, "body": []},
+		{"condition": true, "body": []},
+	]
+	var body = _body_of({"type": "match", "modifier": "first", "cases": cases})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown expression type at nodes[0].body[0].cases[0].condition"])
+
+
+func test_option_block_with_a_failing_condition_is_dropped() -> void:
+	var items = [
+		{"condition": {"bogus": 1}, "text": "a", "body": [], "hint": false},
+		{"condition": true, "text": "b", "body": [], "hint": false},
+	]
+	var body = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown expression type at nodes[0].body[0].items[0].condition"])
+
+
+func test_random_block_with_a_failing_weight_is_dropped() -> void:
+	var cases = [
+		{"condition": true, "weight": {"bogus": 1}, "body": []},
+		{"condition": true, "weight": 1.0, "body": []},
+	]
+	var body = _body_of({"type": "random", "cases": cases})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown expression type at nodes[0].body[0].cases[0].weight"])
+
+
+func test_a_failing_statement_inside_a_case_body_keeps_the_block() -> void:
+	var cases = [{"condition": true, "body": [{"type": "bogus"}]}]
+	var body = _body_of({"type": "match", "modifier": "first", "cases": cases})
+	assert_that(body.size()).is_equal(2)
+	assert_that(body[0].cases[0].body).is_empty()
+	assert_logged(["Unknown statement type 'bogus' at nodes[0].body[0].cases[0].body[0]"])

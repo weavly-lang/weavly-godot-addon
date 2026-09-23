@@ -99,11 +99,9 @@ func test_identifier_flag_variable() -> void:
 	assert_that(_eval(_id(&"active"), engine)).is_equal(true)
 
 
-func test_identifier_missing_returns_null() -> void:
-	assert_that(_eval(_id(&"missing"))).is_null()
-	assert_logged(
-		["Variable with ID 'missing' is null."], ["Variable with id 'missing' doesn't exist"]
-	)
+func test_identifier_missing_returns_error() -> void:
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id(&"missing")))).is_true()
+	assert_logged(["Variable 'missing' isn't defined."])
 
 
 # =====================
@@ -119,13 +117,13 @@ func test_not_false() -> void:
 	assert_that(_eval(_unary("not", _bool(false)))).is_equal(true)
 
 
-func test_not_type_mismatch_returns_null() -> void:
-	assert_that(_eval(_unary("not", _num(1.0)))).is_null()
+func test_not_type_mismatch_returns_error() -> void:
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_unary("not", _num(1.0))))).is_true()
 	assert_logged(["Can't use operator 'not' on value of type 'float'."])
 
 
-func test_unknown_unary_op_returns_null() -> void:
-	assert_that(_eval(_unary("~", _bool(true)))).is_null()
+func test_unknown_unary_op_returns_error() -> void:
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_unary("~", _bool(true))))).is_true()
 	assert_logged(["Unknown expression with operator '~'."])
 
 
@@ -150,8 +148,11 @@ func test_div() -> void:
 	assert_that(_eval(_bin("/", _num(10.0), _num(4.0)))).is_equal(2.5)
 
 
-func test_math_type_mismatch_returns_null() -> void:
-	assert_that(_eval(_bin("+", _num(1.0), _slit("x")))).is_null()
+func test_math_type_mismatch_returns_error() -> void:
+	(
+		assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_bin("+", _num(1.0), _slit("x")))))
+		. is_true()
+	)
 	assert_logged(["Can't use operator '+' on values of types 'float' and 'String'."])
 
 
@@ -199,8 +200,11 @@ func test_eq_strings() -> void:
 	assert_that(_eval(_bin("==", _slit("hi"), _slit("hi")))).is_equal(true)
 
 
-func test_compare_type_mismatch_returns_null() -> void:
-	assert_that(_eval(_bin("==", _num(1.0), _slit("1")))).is_null()
+func test_compare_type_mismatch_returns_error() -> void:
+	(
+		assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_bin("==", _num(1.0), _slit("1")))))
+		. is_true()
+	)
 	assert_logged(["Can't use operator '==' on values of types 'float' and 'String'."])
 
 
@@ -225,8 +229,11 @@ func test_or_false_false() -> void:
 	assert_that(_eval(_bin("or", _bool(false), _bool(false)))).is_equal(false)
 
 
-func test_logic_type_mismatch_returns_null() -> void:
-	assert_that(_eval(_bin("and", _bool(true), _num(1.0)))).is_null()
+func test_logic_type_mismatch_returns_error() -> void:
+	(
+		assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_bin("and", _bool(true), _num(1.0)))))
+		. is_true()
+	)
 	assert_logged(["Can't use operator 'and' on values of types 'bool' and 'float'."])
 
 
@@ -253,3 +260,24 @@ func test_nested_expression() -> void:
 	# (1 + 2) * 3 == 9
 	var expr = _bin("==", _bin("*", _bin("+", _num(1.0), _num(2.0)), _num(3.0)), _num(9.0))
 	assert_that(_eval(expr)).is_equal(true)
+
+
+# =====================
+# Errors
+# =====================
+
+
+func test_error_passes_through_operators_without_further_reports() -> void:
+	var expr = _unary("not", _bin("==", _bin("+", _id(&"missing"), _num(1.0)), _num(2.0)))
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(expr))).is_true()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+func test_condition_on_an_error_is_false_without_a_type_report() -> void:
+	assert_bool(_cond(_id(&"missing"))).is_false()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
+func test_null_expression_returns_error() -> void:
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(null))).is_true()
+	assert_logged(["Unknown expression of type 'Nil'."])

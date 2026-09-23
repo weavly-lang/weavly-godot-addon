@@ -1,6 +1,7 @@
 extends WeavlyVariableService
 
 const TYPE = "Variable"
+const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
 
 var _variables: Dictionary[StringName, WeavlyModel.Variable]
 var _variable_states: Dictionary[String, Variant] = {}
@@ -25,11 +26,24 @@ func get_variable(id: String, default: Variant = null) -> Variant:
 
 
 func set_variable(id: String, value: Variant) -> void:
-	if not _variables.has(id):
-		_variables[id] = WeavlyDeserializer.compile_variable_from_value(id, value)
+	if value is int:
+		value = float(value)
 
-	if is_instance_of(_variables.get(id), WeavlyModel.NumberVariable):
-		var number_variable: WeavlyModel.NumberVariable = _variables.get(id)
+	if not _variables.has(id):
+		var created: WeavlyModel.Variable = WeavlyDeserializer.compile_variable_from_value(
+			id, value
+		)
+		if created == null:
+			return
+		_variables[id] = created
+
+	var variable: WeavlyModel.Variable = _variables.get(id)
+	if typeof(value) != typeof(variable.value):
+		push_error(WRONG_TYPE % [id, type_string(typeof(value)), _type_name(variable)])
+		return
+
+	if is_instance_of(variable, WeavlyModel.NumberVariable):
+		var number_variable: WeavlyModel.NumberVariable = variable
 		if number_variable.min != null:
 			value = max(number_variable.min, value)
 		if number_variable.max != null:
@@ -41,3 +55,11 @@ func set_variable(id: String, value: Variant) -> void:
 
 func get_all_ids() -> Array:
 	return _variable_states.keys()
+
+
+func _type_name(variable: WeavlyModel.Variable) -> String:
+	if is_instance_of(variable, WeavlyModel.NumberVariable):
+		return "number"
+	if is_instance_of(variable, WeavlyModel.StringVariable):
+		return "string"
+	return "flag"

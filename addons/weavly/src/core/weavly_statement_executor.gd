@@ -1,5 +1,8 @@
 class_name WeavlyStatementExecutor
 
+const UNDEFINED_SET_TARGET = "Can't set variable '%s' because it isn't defined."
+const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead."
+
 
 static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
 	if is_instance_of(statement, WeavlyModel.NarrationLine):
@@ -39,7 +42,12 @@ static func execute_character_line(
 static func execute_set_statement(
 	set_statement: WeavlyModel.SetStatement, engine: WeavlyEngine
 ) -> void:
+	if not engine.variable_service.has(set_statement.id):
+		push_error(UNDEFINED_SET_TARGET % set_statement.id)
+		return
 	var value = WeavlyExpressionEvaluator.evaluate_expression(set_statement.expression, engine)
+	if WeavlyExpressionEvaluator.is_error(value):
+		return
 	engine.variable_service.set_variable(set_statement.id, value)
 
 
@@ -125,7 +133,7 @@ static func execute_random_block(
 	var total_weight: float = 0
 	for case: WeavlyModel.RandomCase in random_block.cases:
 		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
-		var weight: float = WeavlyExpressionEvaluator.evaluate_expression(case.weight, engine)
+		var weight: float = _evaluate_weight(case.weight, engine)
 		if condition and weight > 0:
 			possible_cases.append(case)
 			evaluated_weights.append(weight)
@@ -141,3 +149,15 @@ static func execute_random_block(
 		if random <= current:
 			engine.statement_service.add_statements(possible_cases[i].body)
 			return
+
+
+static func _evaluate_weight(
+	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
+) -> float:
+	var weight: Variant = WeavlyExpressionEvaluator.evaluate_expression(expression, engine)
+	if WeavlyExpressionEvaluator.is_error(weight):
+		return 0.0
+	if weight is not float:
+		push_error(WRONG_WEIGHT_TYPE % type_string(typeof(weight)))
+		return 0.0
+	return weight

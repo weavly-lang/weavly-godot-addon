@@ -127,18 +127,21 @@ func test_enter_node_marks_node_as_visited_and_emits_entered_node() -> void:
 	assert_bool(_signal_log.has("entered_node:start")).is_true()
 
 
-func test_enter_node_with_unknown_id_pushes_error_and_finishes() -> void:
+func test_start_with_unknown_id_reports_once_and_finishes() -> void:
+	var engine = _make_engine(LINEAR_FIXTURE)
+	engine.start("typo")
+	assert_logged(["Can't enter node 'typo' because it doesn't exist, finishing the dialogue."])
+	assert_that(_signal_log).is_equal(["started_dialogue", "finished_dialogue"])
+	assert_bool(engine.is_running()).is_false()
+
+
+func test_enter_node_with_unknown_id_reports_once_and_finishes() -> void:
 	var engine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	var log_before = _signal_log.size()
 	engine.enter_node("does_not_exist")
-	# Unknown id pushes an error (from node_service.get_node and from the engine
-	# itself) and then calls finish, which emits finished_dialogue.
 	assert_logged(
-		[
-			"Node with id 'does_not_exist' doesn't exist",
-			"Can't enter node with ID 'does_not_exist' because it's null, finishing the dialogue."
-		]
+		["Can't enter node 'does_not_exist' because it doesn't exist, finishing the dialogue."]
 	)
 	assert_that(_signal_log[log_before]).is_equal("finished_dialogue")
 

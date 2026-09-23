@@ -2,7 +2,7 @@ class_name WeavlyDefaultEngine
 extends WeavlyEngine
 
 const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
-const NULL_NODE = "Can't enter node with ID '%s' because it's null, finishing the dialogue."
+const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
 const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialogue."
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
@@ -123,15 +123,15 @@ func _enter_pending_node() -> void:
 	var node_id: String = _pending_node_id
 	_has_pending_node = false
 	_pending_node_id = ""
-	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id, null)
-	if node != null:
-		variable_service.set_variable(node_id, true)
-		statement_service.clear_statements()
-		statement_service.add_statements(node.body)
-		entered_node.emit(node_id)
-	else:
-		push_error(NULL_NODE % node_id)
+	if not node_service.has(node_id):
+		push_error(MISSING_NODE % node_id)
 		finish()
+		return
+	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
+	variable_service.set_variable(node_id, true)
+	statement_service.clear_statements()
+	statement_service.add_statements(node.body)
+	entered_node.emit(node_id)
 
 
 func finish() -> void:
