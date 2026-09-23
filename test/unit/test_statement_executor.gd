@@ -24,9 +24,11 @@ class _SpyLineService:
 class _SpyCommandService:
 	extends WeavlyCommandService
 	var command_calls: Array[WeavlyModel.CommandStatement] = []
+	var args_calls: Array[Array] = []
 
-	func execute_command(command: WeavlyModel.CommandStatement) -> void:
+	func execute_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
 		command_calls.append(command)
+		args_calls.append(args)
 
 
 class _SpyOptionService:
@@ -144,10 +146,40 @@ func test_character_line_delegates_to_line_service() -> void:
 
 
 func test_command_statement_delegates_to_command_service() -> void:
-	var command := WeavlyModel.CommandStatement.new("cmd", "do it")
+	var command := WeavlyModel.CommandStatement.new("cmd")
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_that(_command.command_calls.size()).is_equal(1)
 	assert_that(_command.command_calls[0]).is_same(command)
+	assert_that(_command.args_calls[0]).is_empty()
+
+
+func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
+	_engine.variable_service.add_variable(
+		WeavlyModel.NumberVariable.new(&"volume", 0.8, null, null)
+	)
+	var args: Array[WeavlyModel.WeavlyExpression] = [
+		WeavlyModel.StringLiteral.new("door"),
+		WeavlyModel.BinaryExpression.new(
+			"*", WeavlyModel.Identifier.new(&"volume"), WeavlyModel.Number.new(0.5)
+		),
+		WeavlyModel.Call.new(
+			"max", "", [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
+		),
+	]
+	var command := WeavlyModel.CommandStatement.new("play_sound", args)
+	WeavlyStatementExecutor.execute_statement(command, _engine)
+	_engine.variable_service.set_variable("volume", 0.2)
+	WeavlyStatementExecutor.execute_statement(command, _engine)
+	assert_that(_command.args_calls[0]).is_equal(["door", 0.4, 2.0])
+	assert_that(_command.args_calls[1]).is_equal(["door", 0.1, 2.0])
+
+
+func test_command_with_a_failing_argument_is_skipped() -> void:
+	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new(&"missing")]
+	var command := WeavlyModel.CommandStatement.new("play_sound", args)
+	WeavlyStatementExecutor.execute_statement(command, _engine)
+	assert_logged(["Variable 'missing' isn't defined."])
+	assert_that(_command.command_calls).is_empty()
 
 
 # =====================

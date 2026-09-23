@@ -85,11 +85,19 @@ func test_finish_statement() -> void:
 
 
 func test_command_statement() -> void:
-	var stmt = _compile_single({"type": "command", "id": "shake_cam", "text": "strong"})
+	var data = {"type": "command", "id": "play_sound", "args": ["door", {"variable": "volume"}]}
+	var stmt = _compile_single(data)
 	assert_object(stmt).is_instanceof(WeavlyModel.CommandStatement)
 	var cmd := stmt as WeavlyModel.CommandStatement
-	assert_that(cmd.id).is_equal("shake_cam")
-	assert_that(cmd.text).is_equal("strong")
+	assert_that(cmd.id).is_equal("play_sound")
+	assert_that(cmd.args.size()).is_equal(2)
+	assert_object(cmd.args[0]).is_instanceof(WeavlyModel.StringLiteral)
+	assert_object(cmd.args[1]).is_instanceof(WeavlyModel.Identifier)
+
+
+func test_command_statement_without_arguments() -> void:
+	var stmt = _compile_single({"type": "command", "id": "fade_in", "args": []})
+	assert_that((stmt as WeavlyModel.CommandStatement).args).is_empty()
 
 
 func test_set_statement() -> void:

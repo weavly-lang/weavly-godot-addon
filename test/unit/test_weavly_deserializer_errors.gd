@@ -210,3 +210,15 @@ func test_a_failing_statement_inside_a_case_body_keeps_the_block() -> void:
 	assert_that(body.size()).is_equal(2)
 	assert_that(body[0].cases[0].body).is_empty()
 	assert_logged(["Unknown statement type 'bogus' at nodes[0].body[0].cases[0].body[0]"])
+
+
+func test_command_with_a_failing_argument_is_dropped() -> void:
+	var body = _body_of({"type": "command", "id": "shake", "args": [1.0, {"bogus": 1}]})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown expression type at nodes[0].body[0].args[1]"])
+
+
+func test_command_without_args_is_dropped() -> void:
+	var body = _body_of({"type": "command", "id": "shake", "text": "strong"})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'args' at nodes[0].body[0]"])
