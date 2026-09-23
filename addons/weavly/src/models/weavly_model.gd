@@ -10,6 +10,8 @@ class WeavlyNode:
 	extends RefCounted
 	var id: String
 	var body: Array[Statement]
+	var source: String = ""
+	var line: int = 0
 
 	func _init(id: String, body: Array[Statement]):
 		self.id = id
@@ -23,6 +25,7 @@ class WeavlyNode:
 
 class Statement:
 	extends RefCounted
+	var line: int = 0
 
 	func _init():
 		pass
@@ -110,6 +113,7 @@ class WhenCase:
 	extends RefCounted
 	var condition: WeavlyExpression
 	var body: Array[Statement]
+	var line: int = 0
 
 	func _init(condition: WeavlyExpression, body: Array[Statement]):
 		self.condition = condition
@@ -135,6 +139,7 @@ class Option:
 	var text: String
 	var body: Array[Statement]
 	var hint: bool
+	var line: int = 0
 
 	func _init(condition: WeavlyExpression, text: String, body: Array[Statement], hint: bool):
 		self.condition = condition
@@ -161,6 +166,7 @@ class RandomCase:
 	var condition: WeavlyExpression
 	var weight: WeavlyExpression
 	var body: Array[Statement]
+	var line: int = 0
 
 	func _init(
 		condition: WeavlyExpression,

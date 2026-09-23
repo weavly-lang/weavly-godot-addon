@@ -8,6 +8,7 @@ extends RefCounted
 # Top-level keys
 const KEY_NODES = "nodes"
 const KEY_DECLARATIONS = "declarations"
+const KEY_SOURCE = "source"
 
 # Common keys
 const KEY_ID = "id"
@@ -17,6 +18,7 @@ const KEY_TYPE = "type"
 const KEY_TEXT = "text"
 const KEY_WEIGHT = "weight"
 const KEY_MODIFIER = "modifier"
+const KEY_LINE = "line"
 
 # Expression keys
 const KEY_EXPRESSION = "expression"
@@ -72,6 +74,22 @@ static func _path_root(source: String, key: String) -> String:
 	return "%s > %s" % [source, key] if source != "" else key
 
 
+# 0 for builds from before compiler 0.3.0, which carry no lines.
+static func _optional_line(data: Dictionary) -> int:
+	var line: Variant = data.get(KEY_LINE)
+	if line is float or line is int:
+		return int(line)
+	return 0
+
+
+# Builds from before compiler 0.3.0 carry no source: story.wvl.json -> story.wvl.
+static func _source_name(data: Dictionary, source: String) -> String:
+	var name: Variant = data.get(KEY_SOURCE)
+	if name is String:
+		return name
+	return source.get_file().trim_suffix(".json")
+
+
 static func get_required(
 	data: Dictionary, key: String, expected: Variant.Type, path: String = ""
 ) -> Variant:
@@ -109,6 +127,7 @@ static func compile_nodes(data: Dictionary, source: String = "") -> Array[Weavly
 	var nodes: Array[WeavlyModel.WeavlyNode] = []
 	if nodes_arr == null:
 		return nodes
+	var source_name: String = _source_name(data, source)
 	for i in range(nodes_arr.size()):
 		var node_data = nodes_arr[i]
 		var node_path = _path_index(_path_root(source, KEY_NODES), i)
@@ -117,6 +136,7 @@ static func compile_nodes(data: Dictionary, source: String = "") -> Array[Weavly
 			continue
 		var node = compile_node(node_data, node_path)
 		if node != null:
+			node.source = source_name
 			nodes.append(node)
 	return nodes
 
@@ -127,7 +147,9 @@ static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNo
 	if id == null or body_arr == null:
 		return null
 	var body = compile_statements(body_arr, _path_join(path, KEY_BODY))
-	return WeavlyModel.WeavlyNode.new(id, body)
+	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new(id, body)
+	node.line = _optional_line(data)
+	return node
 
 
 # =====================
@@ -149,6 +171,7 @@ static func compile_statements(data: Array, path: String) -> Array[WeavlyModel.S
 			continue
 		var compiled = compile_statement(statement, _path_index(path, i))
 		if compiled != null:
+			compiled.line = _optional_line(statement)
 			statements.append(compiled)
 	return statements
 
@@ -270,6 +293,7 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 		var when_case = compile_when_case(case_data, case_path)
 		if when_case == null:
 			return null
+		when_case.line = _optional_line(case_data)
 		cases.append(when_case)
 
 	return WeavlyModel.MatchBlock.new(modifier, cases)
@@ -303,6 +327,7 @@ static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.
 		var option = compile_option(option_data, option_path)
 		if option == null:
 			return null
+		option.line = _optional_line(option_data)
 		options.append(option)
 	return WeavlyModel.OptionBlock.new(options)
 
@@ -337,6 +362,7 @@ static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.
 		var random_case = compile_random_case(case_data, case_path)
 		if random_case == null:
 			return null
+		random_case.line = _optional_line(case_data)
 		cases.append(random_case)
 	return WeavlyModel.RandomBlock.new(cases)
 

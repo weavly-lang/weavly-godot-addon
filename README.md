@@ -81,6 +81,10 @@ func _on_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
 
 Commands don't pause the dialogue. If an argument can't be evaluated, the error is reported and the command is skipped.
 
+### Runtime errors
+
+Mistakes a script makes at runtime, such as reading an undefined variable, are reported with the `.wvl` file and line of the statement that caused them, like `story.wvl:12: error: Variable 'score' isn't defined.` The engine also emits `runtime_error(message, source, line)`, so a game can show or log them.
+
 ### Media outside the game
 
 `image_path` and `video_path` also accept paths outside `res://` — an absolute path or `user://` — for assets you want to ship next to the executable and swap without rebuilding. The path decides how they are read: `res://` uses the resource system, anything else reads from disk.
