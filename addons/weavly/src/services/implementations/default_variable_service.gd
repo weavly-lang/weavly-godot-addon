@@ -2,6 +2,7 @@ extends WeavlyVariableService
 
 const TYPE = "Variable"
 const EXTERN_TYPE_MISMATCH = "Variable '%s' is a %s, but it's declared extern as a %s."
+const UNKNOWN_SAVED_VARIABLE = "Saved variable '%s' no longer exists, skipping it."
 
 var _variables: Dictionary[StringName, WeavlyModel.Variable]
 var _variable_states: Dictionary[String, Variant] = {}
@@ -51,10 +52,38 @@ func set_variable(id: String, value: Variant) -> void:
 			return
 		_variables[id] = created
 
+	if _store(id, value):
+		variable_changed.emit(id, _variable_states[id])
+
+
+func get_all_ids() -> Array:
+	return _variable_states.keys()
+
+
+func get_state() -> Dictionary:
+	return _variable_states.duplicate()
+
+
+# Values only; every variable missing from the state keeps its default.
+func set_state(state: Dictionary) -> void:
+	_variable_states.clear()
+	for variable: WeavlyModel.Variable in _variables.values():
+		if not variable.extern:
+			_variable_states[variable.id] = variable.value
+	for id: String in state:
+		if not _variables.has(id):
+			push_warning(UNKNOWN_SAVED_VARIABLE % id)
+			continue
+		var value: Variant = state[id]
+		_store(id, float(value) if value is int else value)
+
+
+# Type-checks and clamps against the declaration; false when the value was rejected.
+func _store(id: String, value: Variant) -> bool:
 	var variable: WeavlyModel.Variable = _variables.get(id)
 	if typeof(value) != typeof(variable.value):
 		push_error(WRONG_TYPE % [id, type_string(typeof(value)), variable.get_type_name()])
-		return
+		return false
 
 	if is_instance_of(variable, WeavlyModel.NumberVariable):
 		var number_variable: WeavlyModel.NumberVariable = variable
@@ -64,8 +93,4 @@ func set_variable(id: String, value: Variant) -> void:
 			value = min(number_variable.max, value)
 
 	_variable_states[id] = value
-	variable_changed.emit(id, value)
-
-
-func get_all_ids() -> Array:
-	return _variable_states.keys()
+	return true

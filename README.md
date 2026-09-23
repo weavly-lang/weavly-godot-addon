@@ -92,6 +92,23 @@ Commands don't pause the dialogue. To wait for an effect, call `engine.hold()` i
 
 If an argument can't be evaluated, the error is reported and the command is skipped.
 
+### Saving and loading
+
+`engine.get_state()` returns the runtime state as a Dictionary of JSON-safe values: variable values, visit counts, and the state of any custom service that saves its own. Weavly doesn't write files, so the game stores the state however it likes, for example inside its own save:
+
+```gdscript
+func save_game() -> void:
+    var file: FileAccess = FileAccess.open("user://save.json", FileAccess.WRITE)
+    file.store_string(JSON.stringify(engine.get_state()))
+
+
+func load_game() -> void:
+    var text: String = FileAccess.get_file_as_string("user://save.json")
+    engine.set_state(JSON.parse_string(text))
+```
+
+During a dialogue, the state is the one taken when the current node was entered, and `set_state()` replays that node from its first statement. A save therefore loses progress inside the current node, so keep nodes short if the player can save at any time. `set_state()` emits `state_loaded` once, and `reset_state()` goes back to the state after loading, for a new game. What the game did in response to Weavly, like media shown or music started by a command, isn't part of the state.
+
 ### Runtime errors
 
 Mistakes a script makes at runtime, such as reading an undefined variable, are reported with the `.wvl` file and line of the statement that caused them, like `story.wvl:12: error: Variable 'score' isn't defined.` The engine also emits `runtime_error(message, source, line)`, so a game can show or log them.

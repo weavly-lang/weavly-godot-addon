@@ -1,6 +1,7 @@
 extends WeavlyNodeService
 
 const TYPE = "Node"
+const UNKNOWN_SAVED_NODE = "Saved visits to node '%s' are skipped because it no longer exists."
 
 var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 var _visits: Dictionary[String, int] = {}
@@ -33,3 +34,17 @@ func record_visit(id: String) -> void:
 
 func get_visit_count(id: String) -> int:
 	return _visits.get(id, 0)
+
+
+func get_state() -> Dictionary:
+	return _visits.duplicate()
+
+
+# JSON reads every number as a float, so counts are converted back.
+func set_state(state: Dictionary) -> void:
+	_visits.clear()
+	for id: String in state:
+		if not _nodes.has(id):
+			push_warning(UNKNOWN_SAVED_NODE % id)
+			continue
+		_visits[id] = int(state[id])
