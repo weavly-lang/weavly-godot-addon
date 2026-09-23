@@ -2,6 +2,7 @@ extends WeavlyVariableService
 
 const TYPE = "Variable"
 const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
+const EXTERN_TYPE_MISMATCH = "Variable '%s' is a %s, but it's declared extern as a %s."
 
 var _variables: Dictionary[StringName, WeavlyModel.Variable]
 var _variable_states: Dictionary[String, Variant] = {}
@@ -12,11 +13,25 @@ func has(id: String) -> bool:
 
 
 func add_variable(variable: WeavlyModel.Variable) -> void:
-	if _variables.has(variable.id):
+	var declared: WeavlyModel.Variable = _variables.get(variable.id)
+	if declared != null and not (declared.extern and not variable.extern):
 		push_warning(EXISTING_ID % [TYPE, variable.id])
 		return
+	if declared != null and declared.get_type_name() != variable.get_type_name():
+		push_error(
+			(
+				EXTERN_TYPE_MISMATCH
+				% [variable.id, variable.get_type_name(), declared.get_type_name()]
+			)
+		)
+		return
 	_variables[variable.id] = variable
-	_variable_states[variable.id] = variable.value
+	if not variable.extern:
+		_variable_states[variable.id] = variable.value
+
+
+func get_declaration(id: String) -> WeavlyModel.Variable:
+	return _variables.get(id)
 
 
 func get_variable(id: String, default: Variant = null) -> Variant:
@@ -39,7 +54,7 @@ func set_variable(id: String, value: Variant) -> void:
 
 	var variable: WeavlyModel.Variable = _variables.get(id)
 	if typeof(value) != typeof(variable.value):
-		push_error(WRONG_TYPE % [id, type_string(typeof(value)), _type_name(variable)])
+		push_error(WRONG_TYPE % [id, type_string(typeof(value)), variable.get_type_name()])
 		return
 
 	if is_instance_of(variable, WeavlyModel.NumberVariable):
@@ -55,11 +70,3 @@ func set_variable(id: String, value: Variant) -> void:
 
 func get_all_ids() -> Array:
 	return _variable_states.keys()
-
-
-func _type_name(variable: WeavlyModel.Variable) -> String:
-	if is_instance_of(variable, WeavlyModel.NumberVariable):
-		return "number"
-	if is_instance_of(variable, WeavlyModel.StringVariable):
-		return "string"
-	return "flag"

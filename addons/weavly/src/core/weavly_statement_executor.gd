@@ -42,7 +42,7 @@ static func execute_character_line(
 static func execute_set_statement(
 	set_statement: WeavlyModel.SetStatement, engine: WeavlyEngine
 ) -> void:
-	if not engine.variable_service.has(set_statement.id):
+	if engine.variable_service.get_declaration(set_statement.id) == null:
 		push_error(UNDEFINED_SET_TARGET % set_statement.id)
 		return
 	var value = WeavlyExpressionEvaluator.evaluate_expression(set_statement.expression, engine)

@@ -2,6 +2,7 @@ class_name WeavlyFileUtils
 
 const DUPLICATE_VARIABLE = "Variable '%s' is declared in both %s and %s, using the one in %s."
 const DEFAULT_OUT_OF_RANGE = "Variable '%s' in %s has default %s outside its range, using %s."
+const EXTERN_TYPE_MISMATCH = "Variable '%s' in %s is a %s, but it's declared extern as a %s."
 
 
 static func find_all_files_with_extension(
@@ -128,7 +129,17 @@ static func _add_variable(
 	sources: Dictionary[String, String],
 ) -> void:
 	var id: String = variable.id
-	if sources.has(id):
+	var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
+	if sources.has(id) and declared != null and declared.extern and not variable.extern:
+		if variable.get_type_name() != declared.get_type_name():
+			push_error(
+				(
+					EXTERN_TYPE_MISMATCH
+					% [id, source, variable.get_type_name(), declared.get_type_name()]
+				)
+			)
+			return
+	elif sources.has(id):
 		push_error(DUPLICATE_VARIABLE % [id, sources[id], source, sources[id]])
 		return
 	sources[id] = source

@@ -399,3 +399,12 @@ func test_function_with_the_wrong_argument_count_returns_error() -> void:
 	var result: Variant = _call("clamp", [1.0, 2.0])
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["clamp() takes 3 arguments, got 2."])
+
+
+func test_reading_an_undefined_extern_names_it_extern() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new(&"brave", false)
+	variable.extern = true
+	engine.variable_service.add_variable(variable)
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id(&"brave"), engine))).is_true()
+	assert_logged(["Variable 'brave' is declared extern but was never defined."])

@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 const Service = preload(
@@ -145,3 +146,54 @@ func test_set_variable_with_an_unsupported_value_creates_nothing() -> void:
 	_service.set_variable("thing", Vector2.ZERO)
 	assert_bool(_service.has("thing")).is_false()
 	assert_logged(["Unknown variable value: Vector2"])
+
+
+# =====================
+# extern declarations
+# =====================
+
+
+func _add_extern(id: StringName) -> void:
+	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(id, 0.0, null, null)
+	variable.extern = true
+	_service.add_variable(variable)
+
+
+func test_an_extern_declaration_has_no_value() -> void:
+	_add_extern(&"reputation")
+	assert_bool(_service.has("reputation")).is_false()
+	assert_bool(_service.get_declaration("reputation").extern).is_true()
+	assert_that(_service.get_all_ids()).is_empty()
+
+
+func test_game_code_defines_an_extern_variable() -> void:
+	_add_extern(&"reputation")
+	_service.set_variable("reputation", 3.0)
+	assert_that(_service.get_variable("reputation")).is_equal(3.0)
+
+
+func test_game_code_setting_an_extern_to_the_wrong_type_is_rejected() -> void:
+	_add_extern(&"reputation")
+	_service.set_variable("reputation", "high")
+	assert_logged(
+		["Can't set variable 'reputation' to a value of type 'String' because it's a number."]
+	)
+	assert_bool(_service.has("reputation")).is_false()
+
+
+func test_adding_a_variable_defines_a_matching_extern() -> void:
+	_add_extern(&"reputation")
+	_service.add_variable(WeavlyModel.NumberVariable.new(&"reputation", 4.0, 0.0, 10.0))
+	assert_that(_service.get_variable("reputation")).is_equal(4.0)
+	assert_bool(_service.get_declaration("reputation").extern).is_false()
+
+
+func test_adding_a_variable_of_another_type_for_an_extern_is_rejected() -> void:
+	_add_extern(&"reputation")
+	_service.add_variable(WeavlyModel.StringVariable.new(&"reputation", "high"))
+	assert_logged(["Variable 'reputation' is a string, but it's declared extern as a number."])
+	assert_bool(_service.has("reputation")).is_false()
+
+
+func test_get_declaration_of_an_unknown_name_is_null() -> void:
+	assert_object(_service.get_declaration("missing")).is_null()
