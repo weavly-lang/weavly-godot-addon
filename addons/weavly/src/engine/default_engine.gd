@@ -83,7 +83,6 @@ func _ready() -> void:
 	WeavlyFileUtils.index_videos_from_files(self, video_path)
 	WeavlyFileUtils.index_images_from_files(self, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)
-	WeavlyFileUtils.create_visited_flags_from_nodes(self, node_service.get_all_nodes())
 
 
 func start(node_id: String) -> void:
@@ -128,7 +127,7 @@ func _enter_pending_node() -> void:
 		finish()
 		return
 	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
-	variable_service.set_variable(node_id, true)
+	current_node_id = node_id
 	statement_service.clear_statements()
 	statement_service.add_statements(node.body)
 	entered_node.emit(node_id)
@@ -140,6 +139,7 @@ func finish() -> void:
 	_finished = true
 	_has_pending_node = false
 	_pending_node_id = ""
+	current_node_id = ""
 	statement_service.clear_statements()
 	option_service.clear_options()
 	finished_dialogue.emit()

@@ -236,6 +236,16 @@ class StringLiteral:
 		self.value = value
 
 
+class Call:
+	extends WeavlyExpression
+	var name: String
+	var node_id: String
+
+	func _init(name: String, node_id: String):
+		self.name = name
+		self.node_id = node_id
+
+
 class Identifier:
 	extends WeavlyExpression
 	var value: StringName

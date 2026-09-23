@@ -1,4 +1,5 @@
-extends GdUnitTestSuite
+# gdlint:ignore = max-public-methods
+extends WeavlyTestSuite
 
 # Smoke tests for WeavlyDeserializer (the JSON-to-model deserializer).
 # Pure input/output — no scene or services required.
@@ -183,3 +184,28 @@ func test_number_variable_fields() -> void:
 	assert_that(v.value).is_equal(100.0)
 	assert_that(v.min).is_equal(0.0)
 	assert_that(v.max).is_equal(100.0)
+
+
+# =====================
+# Calls
+# =====================
+
+
+func test_expression_call() -> void:
+	var expr = WeavlyDeserializer.compile_expression({"call": "visited", "node": "shop"}, "test")
+	assert_object(expr).is_instanceof(WeavlyModel.Call)
+	var call := expr as WeavlyModel.Call
+	assert_that(call.name).is_equal("visited")
+	assert_that(call.node_id).is_equal("shop")
+
+
+func test_expression_call_with_unknown_function_is_rejected() -> void:
+	var expr = WeavlyDeserializer.compile_expression({"call": "bogus", "node": "shop"}, "test")
+	assert_object(expr).is_null()
+	assert_logged(["Unknown function 'bogus' at test"])
+
+
+func test_expression_call_without_node_is_rejected() -> void:
+	var expr = WeavlyDeserializer.compile_expression({"call": "visit_count"}, "test")
+	assert_object(expr).is_null()
+	assert_logged(["Missing required field 'node' at test"])

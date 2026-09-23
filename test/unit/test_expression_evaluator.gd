@@ -281,3 +281,45 @@ func test_condition_on_an_error_is_false_without_a_type_report() -> void:
 func test_null_expression_returns_error() -> void:
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(null))).is_true()
 	assert_logged(["Unknown expression of type 'Nil'."])
+
+
+# =====================
+# Calls
+# =====================
+
+
+func _engine_with_node(id: String) -> WeavlyEngine:
+	var engine: WeavlyEngine = _make_engine()
+	engine.node_service.add_node(WeavlyModel.WeavlyNode.new(id, []))
+	return engine
+
+
+func test_visited_is_false_before_a_visit() -> void:
+	var engine: WeavlyEngine = _engine_with_node("shop")
+	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(false)
+
+
+func test_visited_is_true_after_a_visit() -> void:
+	var engine: WeavlyEngine = _engine_with_node("shop")
+	engine.node_service.record_visit("shop")
+	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(true)
+
+
+func test_visit_count_is_a_number() -> void:
+	var engine: WeavlyEngine = _engine_with_node("shop")
+	engine.node_service.record_visit("shop")
+	engine.node_service.record_visit("shop")
+	assert_that(_eval(WeavlyModel.Call.new("visit_count", "shop"), engine)).is_equal(2.0)
+
+
+func test_call_on_an_unknown_node_returns_error() -> void:
+	var result: Variant = _eval(WeavlyModel.Call.new("visited", "shpo"))
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Node 'shpo' in visited() doesn't exist."])
+
+
+func test_call_of_an_unknown_function_returns_error() -> void:
+	var engine: WeavlyEngine = _engine_with_node("shop")
+	var result: Variant = _eval(WeavlyModel.Call.new("bogus", "shop"), engine)
+	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+	assert_logged(["Unknown function 'bogus'."])

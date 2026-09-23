@@ -9,3 +9,7 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 @abstract func add_node(node: WeavlyModel.WeavlyNode) -> void
 
 @abstract func get_all_nodes() -> Array[WeavlyModel.WeavlyNode]
+
+@abstract func record_visit(id: String) -> void
+
+@abstract func get_visit_count(id: String) -> int

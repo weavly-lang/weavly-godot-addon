@@ -15,6 +15,8 @@ var statement_service: WeavlyStatementService
 var variable_service: WeavlyVariableService
 var video_service: WeavlyVideoService
 
+var current_node_id: String = ""
+
 @abstract func start(node_id: String) -> void
 
 @abstract func enter_node(node_id: String) -> void
@@ -24,3 +26,11 @@ var video_service: WeavlyVideoService
 @abstract func finish() -> void
 
 @abstract func is_running() -> bool
+
+
+# Counts a visit to the current node; later calls until the next node is entered do nothing.
+func leave_current_node() -> void:
+	if current_node_id == "":
+		return
+	node_service.record_visit(current_node_id)
+	current_node_id = ""

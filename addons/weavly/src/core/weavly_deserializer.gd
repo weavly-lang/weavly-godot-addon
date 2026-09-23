@@ -25,6 +25,8 @@ const KEY_VARIABLE = "variable"
 const KEY_OP = "op"
 const KEY_LEFT = "left"
 const KEY_RIGHT = "right"
+const KEY_CALL = "call"
+const KEY_NODE = "node"
 
 # Block keys
 const KEY_CASES = "cases"
@@ -366,6 +368,9 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 	if data is String:
 		return WeavlyModel.StringLiteral.new(String(data))
 
+	if data is Dictionary and data.has(KEY_CALL):
+		return compile_call(data, path)
+
 	if data is Dictionary and data.has(KEY_VARIABLE):
 		var variable = get_required(data, KEY_VARIABLE, Variant.Type.TYPE_STRING, path)
 		if variable == null:
@@ -393,6 +398,19 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 
 	push_error("Unknown expression type at %s: %s" % [path, str(data)])
 	return null
+
+
+static func compile_call(data: Dictionary, path: String) -> WeavlyModel.Call:
+	var name = get_required(data, KEY_CALL, Variant.Type.TYPE_STRING, path)
+	if name == null:
+		return null
+	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
+		push_error("Unknown function '%s' at %s" % [name, path])
+		return null
+	var node_id = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
+	if node_id == null:
+		return null
+	return WeavlyModel.Call.new(name, node_id)
 
 
 # =====================

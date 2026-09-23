@@ -2,6 +2,8 @@ class_name WeavlyExpressionEvaluator
 
 const UNKNOWN_EXPRESSION_TYPE = "Unknown expression of type '%s'."
 const UNDEFINED_VARIABLE = "Variable '%s' isn't defined."
+const UNKNOWN_FUNCTION = "Unknown function '%s'."
+const UNKNOWN_NODE = "Node '%s' in %s() doesn't exist."
 const UNKNOWN_OPERATOR = "Unknown expression with operator '%s'."
 const WRONG_CONDITION_TYPE = "Condition can't be of type '%s', returning '%s' instead."
 const WRONG_VALUE_TYPE = "Can't use operator '%s' on value of type '%s'."
@@ -24,6 +26,10 @@ const LESS = "<"
 const LESS_EQ = "<="
 const GREATER = ">"
 const GREATER_EQ = ">="
+
+const VISITED = "visited"
+const VISIT_COUNT = "visit_count"
+const NODE_FUNCTIONS = [VISITED, VISIT_COUNT]
 
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
@@ -67,6 +73,8 @@ static func evaluate_expression(
 		return expression.value
 	if is_instance_of(expression, WeavlyModel.Identifier):
 		return evaluate_identifier(expression, engine)
+	if is_instance_of(expression, WeavlyModel.Call):
+		return evaluate_call(expression, engine)
 	if is_instance_of(expression, WeavlyModel.UnaryExpression):
 		return evaluate_unary_expression(expression, engine)
 	if is_instance_of(expression, WeavlyModel.BinaryExpression):
@@ -87,6 +95,19 @@ static func evaluate_identifier(
 		push_error(NULL_VARIABLE % identifier.value)
 		return ERROR
 	return value
+
+
+static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
+	if call.name not in NODE_FUNCTIONS:
+		push_error(UNKNOWN_FUNCTION % call.name)
+		return ERROR
+	if not engine.node_service.has(call.node_id):
+		push_error(UNKNOWN_NODE % [call.node_id, call.name])
+		return ERROR
+	var count: int = engine.node_service.get_visit_count(call.node_id)
+	if call.name == VISITED:
+		return count > 0
+	return float(count)
 
 
 static func evaluate_unary_expression(

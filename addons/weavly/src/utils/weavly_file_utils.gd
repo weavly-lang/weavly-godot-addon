@@ -146,11 +146,3 @@ static func create_service(
 	var default_instance: WeavlyService = default_script.new()
 	default_instance.initialize(engine)
 	return default_instance
-
-
-static func create_visited_flags_from_nodes(
-	engine: WeavlyEngine, nodes: Array[WeavlyModel.WeavlyNode]
-) -> void:
-	for node: WeavlyModel.WeavlyNode in nodes:
-		var flag: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new(node.id, false)
-		engine.variable_service.add_variable(flag)
