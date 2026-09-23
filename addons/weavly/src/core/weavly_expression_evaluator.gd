@@ -84,7 +84,7 @@ static func evaluate_condition(
 	if is_error(value):
 		return DEFAULT_CONDITION_RETURN
 	if value is not bool:
-		push_error(WRONG_CONDITION_TYPE % [_get_type(value), DEFAULT_CONDITION_RETURN])
+		engine.report_error(WRONG_CONDITION_TYPE % [_get_type(value), DEFAULT_CONDITION_RETURN])
 		return DEFAULT_CONDITION_RETURN
 
 	return value
@@ -110,7 +110,7 @@ static func evaluate_expression(
 	if is_instance_of(expression, WeavlyModel.BinaryExpression):
 		return evaluate_binary_expression(expression, engine)
 
-	push_error(UNKNOWN_EXPRESSION_TYPE % _get_type(expression))
+	engine.report_error(UNKNOWN_EXPRESSION_TYPE % _get_type(expression))
 	return ERROR
 
 
@@ -122,11 +122,11 @@ static func evaluate_identifier(
 			identifier.value
 		)
 		var message: String = UNDEFINED_EXTERN if declared != null else UNDEFINED_VARIABLE
-		push_error(message % identifier.value)
+		engine.report_error(message % identifier.value)
 		return ERROR
 	var value: Variant = engine.variable_service.get_variable(identifier.value)
 	if value == null:
-		push_error(NULL_VARIABLE % identifier.value)
+		engine.report_error(NULL_VARIABLE % identifier.value)
 		return ERROR
 	return value
 
@@ -135,10 +135,10 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 	if is_number_function(call.name):
 		return _evaluate_number_call(call, engine)
 	if call.name not in NODE_FUNCTIONS:
-		push_error(UNKNOWN_FUNCTION % call.name)
+		engine.report_error(UNKNOWN_FUNCTION % call.name)
 		return ERROR
 	if not engine.node_service.has(call.node_id):
-		push_error(UNKNOWN_NODE % [call.node_id, call.name])
+		engine.report_error(UNKNOWN_NODE % [call.node_id, call.name])
 		return ERROR
 	var count: int = engine.node_service.get_visit_count(call.node_id)
 	if call.name == VISITED:
@@ -149,7 +149,7 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
 	var count_error: String = argument_count_error(call.name, call.args.size())
 	if count_error != "":
-		push_error(count_error + ".")
+		engine.report_error(count_error + ".")
 		return ERROR
 	var values: Array[float] = []
 	for arg: WeavlyModel.WeavlyExpression in call.args:
@@ -157,7 +157,7 @@ static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) 
 		if is_error(value):
 			return ERROR
 		if value is not float:
-			push_error(WRONG_ARGUMENT_TYPE % [call.name, _get_type(value)])
+			engine.report_error(WRONG_ARGUMENT_TYPE % [call.name, _get_type(value)])
 			return ERROR
 		values.append(value)
 	var implementation: Callable = _number_functions[call.name][2]
@@ -189,10 +189,10 @@ static func evaluate_unary_expression(
 		if value is bool:
 			return not value
 
-		push_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
+		engine.report_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
 		return ERROR
 
-	push_error(UNKNOWN_OPERATOR % [unary_expression.op])
+	engine.report_error(UNKNOWN_OPERATOR % [unary_expression.op])
 	return ERROR
 
 
@@ -210,19 +210,21 @@ static func evaluate_binary_expression(
 		return ERROR
 
 	if op in [AND, OR]:
-		return evaluate_logic_expression(op, left, right)
+		return evaluate_logic_expression(op, left, right, engine)
 	if op in [ADD, SUB, MUL, DIV]:
-		return evaluate_math_expression(op, left, right)
+		return evaluate_math_expression(op, left, right, engine)
 	if op in [EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ]:
-		return evaluate_compare_expression(op, left, right)
+		return evaluate_compare_expression(op, left, right, engine)
 
-	push_error(UNKNOWN_OPERATOR % op)
+	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
 
 
-static func evaluate_logic_expression(op: String, left: Variant, right: Variant) -> Variant:
+static func evaluate_logic_expression(
+	op: String, left: Variant, right: Variant, engine: WeavlyEngine
+) -> Variant:
 	if left is not bool or right is not bool:
-		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
+		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
 	if op == AND:
@@ -230,13 +232,15 @@ static func evaluate_logic_expression(op: String, left: Variant, right: Variant)
 	if op == OR:
 		return left or right
 
-	push_error(UNKNOWN_OPERATOR % op)
+	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
 
 
-static func evaluate_math_expression(op: String, left: Variant, right: Variant) -> Variant:
+static func evaluate_math_expression(
+	op: String, left: Variant, right: Variant, engine: WeavlyEngine
+) -> Variant:
 	if left is not float or right is not float:
-		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
+		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
 	if op == ADD:
@@ -247,18 +251,20 @@ static func evaluate_math_expression(op: String, left: Variant, right: Variant) 
 		return left * right
 	if op == DIV:
 		if right == 0:
-			push_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
+			engine.report_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
 			return DEFAULT_DIVISION_BY_ZERO_RETURN
 
 		return left / right
 
-	push_error(UNKNOWN_OPERATOR % op)
+	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
 
 
-static func evaluate_compare_expression(op: String, left: Variant, right: Variant) -> Variant:
+static func evaluate_compare_expression(
+	op: String, left: Variant, right: Variant, engine: WeavlyEngine
+) -> Variant:
 	if typeof(left) != typeof(right):
-		push_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
+		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
 	if op == EQ:
@@ -274,7 +280,7 @@ static func evaluate_compare_expression(op: String, left: Variant, right: Varian
 	if op == GREATER_EQ:
 		return left >= right
 
-	push_error(UNKNOWN_OPERATOR % op)
+	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
 
 

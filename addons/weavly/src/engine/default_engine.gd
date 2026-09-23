@@ -89,6 +89,7 @@ func start(node_id: String) -> void:
 		push_warning(DIALOGUE_IN_PROGRESS % node_id)
 	else:
 		_finished = false
+		clear_location()
 		started_dialogue.emit()
 		enter_node(node_id)
 
@@ -108,7 +109,7 @@ func next() -> void:
 		if _has_pending_node:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
-				push_error(GOTO_CYCLE % max_node_entries_per_step)
+				report_error(GOTO_CYCLE % max_node_entries_per_step)
 				finish()
 				break
 			_enter_pending_node()
@@ -122,11 +123,12 @@ func _enter_pending_node() -> void:
 	_has_pending_node = false
 	_pending_node_id = ""
 	if not node_service.has(node_id):
-		push_error(MISSING_NODE % node_id)
+		report_error(MISSING_NODE % node_id)
 		finish()
 		return
 	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
 	current_node_id = node_id
+	set_location(node)
 	statement_service.clear_statements()
 	statement_service.add_statements(node.body)
 	entered_node.emit(node_id)
@@ -139,6 +141,7 @@ func finish() -> void:
 	_has_pending_node = false
 	_pending_node_id = ""
 	current_node_id = ""
+	clear_location()
 	statement_service.clear_statements()
 	option_service.clear_options()
 	finished_dialogue.emit()

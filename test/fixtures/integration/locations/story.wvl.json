@@ -1,0 +1,1 @@
+{"source":"chapter/story.wvl","nodes":[{"id":"start","line":1,"body":[{"type":"set","line":2,"id":"score","expression":{"variable":"scroe"}},{"type":"match","line":3,"modifier":"first","cases":[{"line":4,"condition":{"variable":"missing"},"body":[]}]},{"type":"narration","line":6,"text":"Done"}]}]}

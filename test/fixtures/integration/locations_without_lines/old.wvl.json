@@ -1,0 +1,1 @@
+{"nodes":[{"id":"start","body":[{"type":"set","id":"score","expression":{"variable":"scroe"}},{"type":"narration","text":"Done"}]}]}

@@ -1,7 +1,6 @@
 extends WeavlyVariableService
 
 const TYPE = "Variable"
-const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
 const EXTERN_TYPE_MISMATCH = "Variable '%s' is a %s, but it's declared extern as a %s."
 
 var _variables: Dictionary[StringName, WeavlyModel.Variable]

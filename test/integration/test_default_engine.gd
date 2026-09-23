@@ -14,6 +14,8 @@ const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
 const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
 const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
 const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
+const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
+const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locations_without_lines"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 
@@ -494,3 +496,54 @@ func test_built_in_functions_run_inside_set_statements() -> void:
 	var roll: float = engine.variable_service.get_variable("roll")
 	assert_bool(roll >= 1.0 and roll <= 6.0 and roll == roundf(roll)).is_true()
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
+# =====================
+# Error locations
+# =====================
+
+
+func _collect_reports(engine: WeavlyEngine) -> Array[Array]:
+	var reports: Array[Array] = []
+	engine.runtime_error.connect(
+		func(message: String, source: String, line: int) -> void:
+			reports.append([message, source, line])
+	)
+	return reports
+
+
+func test_runtime_errors_name_the_file_and_line_of_the_statement_or_case() -> void:
+	var engine = _make_engine(LOCATIONS_FIXTURE)
+	var reports: Array[Array] = _collect_reports(engine)
+	engine.start("start")
+	assert_logged(
+		[
+			"chapter/story.wvl:2: error: Variable 'scroe' isn't defined.",
+			"chapter/story.wvl:4: error: Variable 'missing' isn't defined.",
+		]
+	)
+	(
+		assert_that(reports)
+		. is_equal(
+			[
+				["Variable 'scroe' isn't defined.", "chapter/story.wvl", 2],
+				["Variable 'missing' isn't defined.", "chapter/story.wvl", 4],
+			]
+		)
+	)
+
+
+func test_runtime_errors_without_lines_name_the_file_and_node() -> void:
+	var engine = _make_engine(LOCATIONS_WITHOUT_LINES_FIXTURE)
+	engine.start("start")
+	assert_logged(["old.wvl, node 'start': error: Variable 'scroe' isn't defined."])
+
+
+func test_an_error_before_any_node_is_entered_has_no_location() -> void:
+	var engine = _make_engine(LOCATIONS_FIXTURE)
+	var reports: Array[Array] = _collect_reports(engine)
+	engine.start("typo")
+	assert_logged(["Can't enter node 'typo' because it doesn't exist, finishing the dialogue."])
+	assert_that(reports).is_equal(
+		[["Can't enter node 'typo' because it doesn't exist, finishing the dialogue.", "", 0]]
+	)
