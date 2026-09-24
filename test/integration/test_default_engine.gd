@@ -19,6 +19,7 @@ const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locatio
 const TEXT_FIXTURE = "res://test/fixtures/integration/text"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save"
+const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
@@ -762,3 +763,31 @@ func test_a_custom_services_state_is_saved_and_restored() -> void:
 	assert_that(state["services"]["command"]).is_equal({"volume": 0.5})
 	engine.set_state(_through_json(state))
 	assert_that(engine.command_service.restored).is_equal({"volume": 0.5})
+
+
+# =====================
+# Options without a choice
+# =====================
+
+
+func test_a_block_of_only_hints_shows_them_and_continues_on_next() -> void:
+	var engine = _make_engine(HINTS_ONLY_FIXTURE)
+	_connect_content_log(engine)
+	var shown: Array[String] = []
+	engine.option_service.options_added.connect(
+		func(options: Array[WeavlyModel.Option]) -> void:
+			for option: WeavlyModel.Option in options:
+				shown.append(option.text)
+	)
+	engine.start("locked")
+	assert_that(shown).is_equal(["Locked door"])
+	assert_that(_narration_log).is_empty()
+	engine.next()
+	assert_that(_narration_log).is_equal(["You walk on"])
+
+
+func test_a_block_without_an_available_option_is_skipped() -> void:
+	var engine = _make_engine(HINTS_ONLY_FIXTURE)
+	_connect_content_log(engine)
+	engine.start("none")
+	assert_that(_narration_log).is_equal(["Nothing to choose"])
