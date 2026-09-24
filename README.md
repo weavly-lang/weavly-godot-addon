@@ -62,6 +62,8 @@ A variable declared with `extern name: type` in `.wvl` gets its value from outsi
 
 Line and option text can use `{$name}`. The line and option signals deliver copies with those filled in, and keep the original in `raw_text` for games that do their own substitution, for example for localization. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in variables the same way.
 
+Numbers are shown with at most two decimals and whole numbers without any, so `1 / 3` shows as `0.33` and `10` as `10`; games that need other formatting can pass their own pipeline to `inject_variables`. Numbers also compare approximately: `==`, `!=`, `<=` and `>=` treat values that differ only by floating-point rounding as equal, so `0.1 + 0.2 == 0.3` is true and `0.1 + 0.2 > 0.3` is false.
+
 ### Options, match and random
 
 An `@options` block whose options all have a false condition is skipped, and so is a `@random` block without an eligible case, since conditions that can all be false are a normal pattern.

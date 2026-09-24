@@ -35,6 +35,7 @@ const NODE_FUNCTIONS = [VISITED, VISIT_COUNT]
 
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
+const NUMBER_TOLERANCE: float = 1e-9
 
 # Returned when evaluation fails; the failure has already been reported.
 # gdlint:ignore = class-variable-name
@@ -276,6 +277,8 @@ static func evaluate_compare_expression(
 		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
+	if left is float:
+		return _compare_numbers(op, left, right, engine)
 	if op == EQ:
 		return left == right
 	if op == NEQ:
@@ -288,6 +291,33 @@ static func evaluate_compare_expression(
 		return left > right
 	if op == GREATER_EQ:
 		return left >= right
+
+	engine.report_error(UNKNOWN_OPERATOR % op)
+	return ERROR
+
+
+# Tighter than is_equal_approx, which treats 1000000 and 1000001 as equal.
+static func approximately_equal(a: float, b: float) -> bool:
+	return absf(a - b) <= NUMBER_TOLERANCE * maxf(1.0, maxf(absf(a), absf(b)))
+
+
+# Approximately equal numbers count as equal, so 0.1 + 0.2 == 0.3.
+static func _compare_numbers(
+	op: String, left: float, right: float, engine: WeavlyEngine
+) -> Variant:
+	var equal: bool = approximately_equal(left, right)
+	if op == EQ:
+		return equal
+	if op == NEQ:
+		return not equal
+	if op == LESS:
+		return left < right and not equal
+	if op == LESS_EQ:
+		return left < right or equal
+	if op == GREATER:
+		return left > right and not equal
+	if op == GREATER_EQ:
+		return left > right or equal
 
 	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
