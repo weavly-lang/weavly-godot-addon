@@ -91,11 +91,14 @@ static func format_string_strip_quotes(value: Variant) -> Variant:
 	return value
 
 
+# Rounds to at most two decimals and drops them for whole numbers.
 static func format_float_trim_zero(value: Variant) -> Variant:
-	if is_instance_of(value, Variant.Type.TYPE_FLOAT) and is_equal_approx(value, round(value)):
-		return int(round(value))
-
-	return value
+	if value is not float:
+		return value
+	var rounded: float = snappedf(value, 0.01)
+	if WeavlyExpressionEvaluator.approximately_equal(rounded, round(rounded)):
+		return int(round(rounded))
+	return rounded
 
 
 static func _get_variable_regex() -> RegEx:

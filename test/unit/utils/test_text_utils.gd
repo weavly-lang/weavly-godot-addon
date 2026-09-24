@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
@@ -43,6 +44,22 @@ func test_trim_zero_fractional_float_unchanged() -> void:
 	assert_that(WeavlyTextUtils.format_float_trim_zero(5.5)).is_equal(5.5)
 
 
+func test_trim_zero_rounds_to_two_decimals() -> void:
+	assert_float(WeavlyTextUtils.format_float_trim_zero(1.0 / 3.0)).is_equal_approx(0.33, 0.0001)
+	assert_float(WeavlyTextUtils.format_float_trim_zero(2.678)).is_equal_approx(2.68, 0.0001)
+
+
+func test_trim_zero_a_float_that_rounds_to_a_whole_number_returns_int() -> void:
+	assert_that(WeavlyTextUtils.format_float_trim_zero(2.999)).is_equal(3)
+	assert_that(WeavlyTextUtils.format_float_trim_zero(-0.001)).is_equal(0)
+
+
+func test_trim_zero_keeps_the_decimals_of_a_large_number() -> void:
+	var engine = _make_engine()
+	engine.variable_service.set_variable("gold", 1000000.5)
+	assert_that(WeavlyTextUtils.inject_variables("{$gold}", engine)).is_equal("1000000.5")
+
+
 func test_trim_zero_non_float_unchanged() -> void:
 	assert_that(WeavlyTextUtils.format_float_trim_zero("hi")).is_equal("hi")
 
@@ -69,6 +86,16 @@ func test_inject_trims_float_zero() -> void:
 	engine.variable_service.set_variable("score", 10.0)
 	assert_that(WeavlyTextUtils.inject_variables("You have {$score}", engine)).is_equal(
 		"You have 10"
+	)
+
+
+func test_inject_rounds_decimals() -> void:
+	var engine = _make_engine()
+	engine.variable_service.set_variable("third", 1.0 / 3.0)
+	engine.variable_service.set_variable("sum", 0.1 + 0.2)
+	engine.variable_service.set_variable("half", 2.5)
+	assert_that(WeavlyTextUtils.inject_variables("{$third} {$sum} {$half}", engine)).is_equal(
+		"0.33 0.3 2.5"
 	)
 
 

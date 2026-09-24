@@ -196,6 +196,39 @@ func test_greater_eq() -> void:
 	assert_that(_eval(_bin(">=", _num(5.0), _num(5.0)))).is_equal(true)
 
 
+func _sum(a: float, b: float) -> WeavlyModel.BinaryExpression:
+	return _bin("+", _num(a), _num(b))
+
+
+func test_eq_numbers_compares_approximately() -> void:
+	assert_that(_eval(_bin("==", _sum(0.1, 0.2), _num(0.3)))).is_equal(true)
+	assert_that(_eval(_bin("!=", _sum(0.1, 0.2), _num(0.3)))).is_equal(false)
+
+
+func test_less_eq_and_greater_eq_count_approximately_equal_numbers_as_equal() -> void:
+	assert_that(_eval(_bin("<=", _sum(0.1, 0.2), _num(0.3)))).is_equal(true)
+	assert_that(_eval(_bin(">=", _num(0.3), _sum(0.1, 0.2)))).is_equal(true)
+
+
+func test_less_and_greater_are_false_for_approximately_equal_numbers() -> void:
+	assert_that(_eval(_bin(">", _sum(0.1, 0.2), _num(0.3)))).is_equal(false)
+	assert_that(_eval(_bin("<", _num(0.3), _sum(0.1, 0.2)))).is_equal(false)
+
+
+func test_numbers_that_differ_are_still_ordered() -> void:
+	assert_that(_eval(_bin("<", _num(0.3), _num(0.31)))).is_equal(true)
+	assert_that(_eval(_bin("==", _num(0.3), _num(0.31)))).is_equal(false)
+
+
+func test_large_numbers_that_differ_by_one_are_not_equal() -> void:
+	assert_that(_eval(_bin("==", _num(1000000.0), _num(1000001.0)))).is_equal(false)
+	assert_that(_eval(_bin("<", _num(1000000.0), _num(1000001.0)))).is_equal(true)
+
+
+func test_small_numbers_that_differ_are_not_equal() -> void:
+	assert_that(_eval(_bin("==", _num(0.000001), _num(0.000002)))).is_equal(false)
+
+
 func test_eq_strings() -> void:
 	assert_that(_eval(_bin("==", _slit("hi"), _slit("hi")))).is_equal(true)
 
