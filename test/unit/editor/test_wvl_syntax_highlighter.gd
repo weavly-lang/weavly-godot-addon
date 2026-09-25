@@ -208,3 +208,76 @@ func test_strings_and_comments_win_over_keywords_and_functions() -> void:
 	assert_array(_spans('@if "and" == $x', KEYWORD)).is_empty()
 	assert_array(_spans("@goto x # visited(x) and", FUNCTION)).is_empty()
 	assert_array(_spans("@goto x # visited(x) and", KEYWORD)).is_empty()
+
+
+# =====================
+# Storylets (issue #153)
+# =====================
+
+
+func test_pool_and_slot_are_types_in_an_env_block() -> void:
+	var text: String = "@env\ncity: pool\nbob: slot\n@endenv"
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["pool"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["slot"])
+
+
+func test_meta_and_draw_are_directives() -> void:
+	var text: String = "@node a\n@meta\n@endmeta\n@draw city, night\n@endnode"
+	var directive: Color = WvlSyntaxHighlighter.DIRECTIVE_COLOR
+	assert_array(_spans_at(text, 1, directive)).contains_exactly(["@meta"])
+	assert_array(_spans_at(text, 2, directive)).contains_exactly(["@endmeta"])
+	assert_array(_spans_at(text, 3, directive)).contains_exactly(["@draw"])
+
+
+func test_meta_keys_are_keywords_and_their_values_expressions() -> void:
+	var text: String = (
+		"@node a\n@meta\npool: city\nwhen: $gold > 2 and visited(x)\nonce: true\n" + "@endmeta"
+	)
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["pool"])
+	assert_array(_spans_at(text, 3, KEYWORD)).contains_exactly(["when", "and"])
+	assert_array(_spans_at(text, 3, FUNCTION)).contains_exactly(["visited"])
+	assert_array(_spans_at(text, 4, KEYWORD)).contains_exactly(["once", "true"])
+
+
+func test_meta_keys_after_the_meta_block_are_text() -> void:
+	var text: String = "@node a\n@meta\npool: city\n@endmeta\npool: the water is cold\n@endnode"
+	assert_array(_spans_at(text, 4, KEYWORD)).is_empty()
+
+
+func test_skip_count_is_a_function_with_or_without_an_argument() -> void:
+	var spans: Array[String] = _spans("@set $n = skip_count() + skip_count(bob)", FUNCTION)
+	assert_array(spans).contains_exactly(["skip_count", "skip_count"])
+
+
+# =====================
+# Interpolations (issue #153)
+# =====================
+
+
+func test_an_interpolation_in_narration_is_an_expression() -> void:
+	var line: String = "You pay {visit_count(shop) * 2} and {not $a} (not really)"
+	assert_array(_spans(line, FUNCTION)).contains_exactly(["visit_count"])
+	assert_array(_spans(line, KEYWORD)).contains_exactly(["not"])
+	assert_array(_spans(line, WvlSyntaxHighlighter.NUMBER_COLOR)).contains_exactly(["2"])
+
+
+func test_an_interpolation_in_a_character_line_is_an_expression() -> void:
+	assert_array(_spans("> Bob: {max($gold, 1)} coins", FUNCTION)).contains_exactly(["max"])
+
+
+func test_an_escaped_brace_is_text() -> void:
+	assert_array(_spans("Write \\{visited(x)} here", FUNCTION)).is_empty()
+
+
+func test_an_interpolation_in_option_text_is_an_expression() -> void:
+	var line: String = '@option [not $poor] "Buy for {max($price, 1)}" -> shop'
+	assert_array(_spans(line, FUNCTION)).contains_exactly(["max"])
+	assert_array(_spans(line, KEYWORD)).contains_exactly(["not"])
+	var strings: Array[String] = _spans(line, WvlSyntaxHighlighter.STRING_COLOR)
+	assert_array(strings).contains_exactly(['"Buy for ', '"'])
+
+
+func test_a_string_inside_an_interpolation_is_a_string() -> void:
+	var strings: Array[String] = _spans('Hi {"and"}', WvlSyntaxHighlighter.STRING_COLOR)
+	assert_array(strings).contains_exactly(['"and"'])
+	assert_array(_spans('Hi {"and"}', KEYWORD)).is_empty()

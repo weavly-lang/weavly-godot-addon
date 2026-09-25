@@ -22,24 +22,30 @@ var _keyword_regex: RegEx = RegEx.create_from_string(
 )
 var _function_regex: RegEx = RegEx.create_from_string("(?<![@$\\w])[A-Za-z_]\\w*(?=\\()")
 var _extern_regex: RegEx = RegEx.create_from_string("^[ \\t]*(extern)(?!\\w)")
-var _type_regex: RegEx = RegEx.create_from_string(":[ \\t]*(number|string|flag)(?!\\w)")
+var _type_regex: RegEx = RegEx.create_from_string(":[ \\t]*(number|string|flag|pool|slot)(?!\\w)")
 var _flag_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]+)")
+var _meta_key_regex: RegEx = RegEx.create_from_string(
+	"^[ \\t]*(pool|slot|when|priority|weight|once)[ \\t]*:"
+)
+var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|hint|continue)\\b")
+var _interpolation_regex: RegEx = RegEx.create_from_string("(?<!\\\\)\\{[^{}\\n]*\\}")
 
-var _env_lines: Dictionary[int, bool] = {}
-var _env_lines_stale: bool = true
+# Line -> "@env" or "@meta" for the lines inside such a block.
+var _block_lines: Dictionary[int, String] = {}
+var _block_lines_stale: bool = true
 
 
 func _update_cache() -> void:
-	_env_lines_stale = true
+	_block_lines_stale = true
 	var editor: TextEdit = get_text_edit()
 	if editor != null and not editor.lines_edited_from.is_connected(_on_lines_edited):
 		editor.lines_edited_from.connect(_on_lines_edited)
 
 
-# A line's colors depend on the lines above it once it's inside an env block.
+# A line's colors depend on the lines above it once it's inside an env or meta block.
 func _on_lines_edited(_from_line: int, _to_line: int) -> void:
-	_env_lines_stale = true
+	_block_lines_stale = true
 	clear_highlighting_cache()
 
 
@@ -59,17 +65,27 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 
 	_paint_numbers(colors, text)
 	_paint(colors, text, _variable_regex, VARIABLE_COLOR)
-	if _in_env_block(editor, line):
-		_paint(colors, text, _extern_regex, KEYWORD_COLOR, 1)
-		_paint(colors, text, _type_regex, KEYWORD_COLOR, 1)
-		_paint(colors, text, _flag_value_regex, KEYWORD_COLOR, 1)
-	elif text.strip_edges(true, false).begins_with("@"):
-		var end: int = _expression_end(text)
-		_paint(colors, text, _keyword_regex, KEYWORD_COLOR, 0, end)
-		_paint(colors, text, _function_regex, FUNCTION_COLOR, 0, end)
+	# Where text that can hold {} interpolations starts; the line's length when it has none.
+	var text_start: int = 0
+	match _block_at(editor, line):
+		"@env":
+			_paint(colors, text, _extern_regex, KEYWORD_COLOR, 1)
+			_paint(colors, text, _type_regex, KEYWORD_COLOR, 1)
+			_paint(colors, text, _flag_value_regex, KEYWORD_COLOR, 1)
+			text_start = length
+		"@meta":
+			_paint(colors, text, _meta_key_regex, KEYWORD_COLOR, 1)
+			_paint_expression_words(colors, text, 0, length)
+			text_start = length
+		_:
+			if text.strip_edges(true, false).begins_with("@"):
+				var end: int = _expression_end(text)
+				_paint_expression_words(colors, text, 0, end)
+				text_start = 0 if _text_directive_regex.search(text) != null else end
 	_paint(colors, text, _string_regex, STRING_COLOR)
 	_paint(colors, text, _character_regex, CHARACTER_COLOR)
 	_paint(colors, text, _directive_regex, DIRECTIVE_COLOR)
+	_paint_interpolations(colors, text, text_start)
 	_paint_comment(colors, text)
 
 	var result: Dictionary = {}
@@ -85,34 +101,53 @@ func _paint(
 	regex: RegEx,
 	color: Color,
 	group: int = 0,
+	start: int = 0,
 	end: int = -1,
 ) -> void:
-	for regex_match: RegExMatch in regex.search_all(text, 0, end):
+	for regex_match: RegExMatch in regex.search_all(text, start, end):
 		for i: int in range(regex_match.get_start(group), regex_match.get_end(group)):
 			colors[i] = color
 
 
-func _in_env_block(editor: TextEdit, line: int) -> bool:
-	if _env_lines_stale:
-		_find_env_lines(editor)
-	return _env_lines.has(line)
+func _paint_expression_words(colors: PackedColorArray, text: String, start: int, end: int) -> void:
+	_paint(colors, text, _keyword_regex, KEYWORD_COLOR, 0, start, end)
+	_paint(colors, text, _function_regex, FUNCTION_COLOR, 0, start, end)
 
 
-func _find_env_lines(editor: TextEdit) -> void:
-	_env_lines.clear()
-	_env_lines_stale = false
-	var inside: bool = false
+# An interpolation is colored as an expression, even inside an option's quoted text.
+func _paint_interpolations(colors: PackedColorArray, text: String, start: int) -> void:
+	for found: RegExMatch in _interpolation_regex.search_all(text, start):
+		var from: int = found.get_start()
+		var to: int = found.get_end()
+		for i: int in range(from, to):
+			colors[i] = TEXT_COLOR
+		_paint(colors, text, _number_regex, NUMBER_COLOR, 0, from, to)
+		_paint(colors, text, _variable_regex, VARIABLE_COLOR, 0, from, to)
+		_paint_expression_words(colors, text, from, to)
+		_paint(colors, text, _string_regex, STRING_COLOR, 0, from, to)
+
+
+func _block_at(editor: TextEdit, line: int) -> String:
+	if _block_lines_stale:
+		_find_block_lines(editor)
+	return _block_lines.get(line, "")
+
+
+func _find_block_lines(editor: TextEdit) -> void:
+	_block_lines.clear()
+	_block_lines_stale = false
+	var block: String = ""
 	for i: int in editor.get_line_count():
 		var found: RegExMatch = _block_directive_regex.search(editor.get_line(i))
 		if found != null:
 			match found.get_string(1):
-				"@env":
-					inside = true
+				"@env", "@meta":
+					block = found.get_string(1)
 					continue
-				"@endenv", "@node", "@endnode":
-					inside = false
-		if inside:
-			_env_lines[i] = true
+				"@endenv", "@endmeta", "@node", "@endnode":
+					block = ""
+		if block != "":
+			_block_lines[i] = block
 
 
 # An inline statement after ':' is line text unless it's another directive.
