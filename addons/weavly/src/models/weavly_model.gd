@@ -99,6 +99,14 @@ class FinishStatement:
 	extends Statement
 
 
+class DrawStatement:
+	extends Statement
+	var pools: Array[String]
+
+	func _init(pools: Array[String]):
+		self.pools = pools
+
+
 class CommandStatement:
 	extends Statement
 	var id: String

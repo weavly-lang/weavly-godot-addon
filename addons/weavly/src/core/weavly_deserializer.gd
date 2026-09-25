@@ -64,6 +64,7 @@ const TYPE_NUMBER = "number"
 const TYPE_STRING = "string"
 const TYPE_FLAG = "flag"
 const TYPE_RANDOM = "random"
+const TYPE_DRAW = "draw"
 
 # Variable type -> value an extern starts with; its type is the declared value's type.
 const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
@@ -279,6 +280,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 			return compile_command_statement(data, path)
 		TYPE_RANDOM:
 			return compile_random_block(data, path)
+		TYPE_DRAW:
+			return compile_draw_statement(data, path)
 		_:
 			push_error("Unknown statement type '%s' at %s" % [type, path])
 			return null
@@ -317,6 +320,16 @@ static func compile_goto_statement(data: Dictionary, path: String) -> WeavlyMode
 	if id == null:
 		return null
 	return WeavlyModel.GotoStatement.new(id)
+
+
+static func compile_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:
+	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
+	if pools_data == null:
+		return null
+	var pools: Array[String] = []
+	if not _compile_list(pools_data, _path_join(path, KEY_POOLS), _compile_name, pools):
+		return null
+	return WeavlyModel.DrawStatement.new(pools)
 
 
 static func compile_finish_statement(

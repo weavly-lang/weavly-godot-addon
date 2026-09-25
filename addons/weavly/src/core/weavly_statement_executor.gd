@@ -24,6 +24,8 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 		execute_option_block(statement, engine)
 	elif statement is WeavlyModel.RandomBlock:
 		execute_random_block(statement, engine, engine.rng.randf)
+	elif statement is WeavlyModel.DrawStatement:
+		execute_draw_statement(statement, engine)
 	else:
 		engine.report_error(
 			"Can't execute statement of type '%s'." % type_string(typeof(statement))
@@ -70,6 +72,17 @@ static func execute_goto_statement(
 ) -> void:
 	engine.leave_current_node()
 	engine.enter_node(goto_statement.id)
+
+
+# Without an eligible node, execution continues with the next statement.
+static func execute_draw_statement(
+	draw_statement: WeavlyModel.DrawStatement, engine: WeavlyEngine
+) -> void:
+	var node_id: String = WeavlyStoryletSelector.draw(engine, draw_statement.pools)
+	if node_id == "":
+		return
+	engine.leave_current_node()
+	engine.enter_node(node_id)
 
 
 static func execute_finish_statement(
