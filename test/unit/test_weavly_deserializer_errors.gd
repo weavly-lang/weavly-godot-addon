@@ -88,6 +88,13 @@ func test_statement_missing_type_is_skipped() -> void:
 	assert_logged(["Missing required field 'type' at nodes[0].body[0]"])
 
 
+func test_statement_that_is_not_a_dictionary_is_skipped() -> void:
+	var data = _build([_node("start", ["Hi", _statement({"type": "finish"})])])
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_that(nodes[0].body.size()).is_equal(1)
+	assert_logged(["nodes[0].body[0] must be a Dictionary, got String"])
+
+
 func test_statement_missing_line_is_skipped() -> void:
 	var data = _build([_node("start", [{"type": "narration", "text": ["Hi"]}])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
@@ -163,7 +170,7 @@ func test_variable_missing_value_is_skipped() -> void:
 func test_variable_declaration_non_dictionary_is_skipped() -> void:
 	var vars = WeavlyDeserializer.compile_variable_declarations({"declarations": [42]})
 	assert_that(vars.size()).is_equal(0)
-	assert_logged(["Variable declaration at declarations[0] must be a Dictionary, got 2"])
+	assert_logged(["Variable declaration at declarations[0] must be a Dictionary, got int"])
 
 
 func test_declarations_wrong_type_returns_empty() -> void:
