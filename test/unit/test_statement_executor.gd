@@ -24,11 +24,9 @@ class _SpyLineService:
 class _SpyCommandService:
 	extends WeavlyCommandService
 	var command_calls: Array[WeavlyModel.CommandStatement] = []
-	var args_calls: Array[Array] = []
 
-	func execute_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
+	func execute_command(command: WeavlyModel.CommandStatement) -> void:
 		command_calls.append(command)
-		args_calls.append(args)
 
 
 class _SpyOptionService:
@@ -145,12 +143,15 @@ func test_character_line_delegates_to_line_service() -> void:
 # =====================
 
 
-func test_command_statement_delegates_to_command_service() -> void:
+func test_command_statement_delegates_a_filled_copy_to_command_service() -> void:
 	var command := WeavlyModel.CommandStatement.new("cmd")
+	command.line = 4
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_that(_command.command_calls.size()).is_equal(1)
-	assert_that(_command.command_calls[0]).is_same(command)
-	assert_that(_command.args_calls[0]).is_empty()
+	assert_that(_command.command_calls[0]).is_not_same(command)
+	assert_that(_command.command_calls[0].id).is_equal("cmd")
+	assert_int(_command.command_calls[0].line).is_equal(4)
+	assert_that(_command.command_calls[0].values).is_empty()
 
 
 func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
@@ -170,8 +171,9 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	_engine.variable_service.set_variable("volume", 0.2)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
-	assert_that(_command.args_calls[0]).is_equal(["door", 0.4, 2.0])
-	assert_that(_command.args_calls[1]).is_equal(["door", 0.1, 2.0])
+	assert_that(_command.command_calls[0].values).is_equal(["door", 0.4, 2.0])
+	assert_that(_command.command_calls[1].values).is_equal(["door", 0.1, 2.0])
+	assert_that(command.values).is_empty()
 
 
 func test_command_with_a_failing_argument_is_skipped() -> void:

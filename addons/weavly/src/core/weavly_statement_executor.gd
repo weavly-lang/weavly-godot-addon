@@ -35,13 +35,19 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 static func execute_narration_line(
 	narration_line: WeavlyModel.NarrationLine, engine: WeavlyEngine
 ) -> void:
-	engine.line_service.execute_narration_line(narration_line)
+	if engine.is_rendering():
+		engine.add_rendered(WeavlyTextUtils.fill_narration_line(narration_line, engine))
+	else:
+		engine.line_service.execute_narration_line(narration_line)
 
 
 static func execute_character_line(
 	character_line: WeavlyModel.CharacterLine, engine: WeavlyEngine
 ) -> void:
-	engine.line_service.execute_character_line(character_line)
+	if engine.is_rendering():
+		engine.add_rendered(WeavlyTextUtils.fill_character_line(character_line, engine))
+	else:
+		engine.line_service.execute_character_line(character_line)
 
 
 static func execute_set_statement(
@@ -95,13 +101,15 @@ static func execute_finish_statement(
 static func execute_command_statement(
 	command_statement: WeavlyModel.CommandStatement, engine: WeavlyEngine
 ) -> void:
-	var args: Array = []
-	for arg: WeavlyModel.WeavlyExpression in command_statement.args:
-		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(arg, engine)
-		if WeavlyExpressionEvaluator.is_error(value):
-			return
-		args.append(value)
-	engine.command_service.execute_command(command_statement, args)
+	var filled: WeavlyModel.CommandStatement = WeavlyTextUtils.fill_command(
+		command_statement, engine
+	)
+	if filled == null:
+		return
+	if engine.is_rendering():
+		engine.add_rendered(filled)
+	else:
+		engine.command_service.execute_command(filled)
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:
@@ -151,7 +159,12 @@ static func execute_option_block(
 	if possible_options.is_empty():
 		return
 
-	engine.option_service.add_options(possible_options)
+	if engine.is_rendering():
+		var rendered: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(possible_options)
+		rendered.line = option_block.line
+		engine.add_rendered(WeavlyTextUtils.fill_option_block(rendered, engine))
+	else:
+		engine.option_service.add_options(possible_options)
 
 
 static func execute_random_block(

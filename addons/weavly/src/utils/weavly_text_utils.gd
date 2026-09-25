@@ -92,6 +92,44 @@ static func fill_option(option: WeavlyModel.Option, engine: WeavlyEngine) -> Wea
 	return filled
 
 
+static func fill_options(
+	options: Array[WeavlyModel.Option], engine: WeavlyEngine
+) -> Array[WeavlyModel.Option]:
+	var filled: Array[WeavlyModel.Option] = []
+	for option: WeavlyModel.Option in options:
+		engine.current_line = option.line
+		filled.append(fill_option(option, engine))
+	return filled
+
+
+static func fill_option_block(
+	block: WeavlyModel.OptionBlock, engine: WeavlyEngine
+) -> WeavlyModel.OptionBlock:
+	var filled: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(
+		fill_options(block.options, engine)
+	)
+	filled.line = block.line
+	return filled
+
+
+# Null when an argument fails; the evaluator has reported it.
+static func fill_command(
+	command: WeavlyModel.CommandStatement, engine: WeavlyEngine
+) -> WeavlyModel.CommandStatement:
+	var values: Array = []
+	for arg: WeavlyModel.WeavlyExpression in command.args:
+		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(arg, engine)
+		if WeavlyExpressionEvaluator.is_error(value):
+			return null
+		values.append(value)
+	var filled: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
+		command.id, command.args
+	)
+	filled.values = values
+	filled.line = command.line
+	return filled
+
+
 # Rounds to at most two decimals and drops them for whole numbers.
 static func format_float_trim_zero(value: Variant) -> Variant:
 	if value is not float:

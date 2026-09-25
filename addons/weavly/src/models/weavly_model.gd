@@ -111,6 +111,8 @@ class CommandStatement:
 	extends Statement
 	var id: String
 	var args: Array[WeavlyExpression]
+	# The evaluated args, set on filled copies.
+	var values: Array = []
 
 	func _init(id: String, args: Array[WeavlyExpression] = []):
 		self.id = id

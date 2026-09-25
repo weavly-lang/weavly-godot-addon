@@ -176,6 +176,42 @@ func test_fill_option_copies_with_filled_text() -> void:
 	assert_that(filled.body).is_same(option.body)
 
 
+func test_fill_option_block_copies_with_filled_options() -> void:
+	var body: Array[WeavlyModel.Statement] = []
+	var options: Array[WeavlyModel.Option] = [
+		WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), _segments(["Hi"]), body, true)
+	]
+	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(options)
+	block.line = 7
+	var filled: WeavlyModel.OptionBlock = WeavlyTextUtils.fill_option_block(block, _make_engine())
+	assert_that(filled).is_not_same(block)
+	assert_int(filled.line).is_equal(7)
+	assert_that(filled.options[0].text).is_equal("Hi")
+	assert_bool(filled.options[0].hint).is_true()
+
+
+func test_fill_command_copies_with_evaluated_values() -> void:
+	var args: Array[WeavlyModel.WeavlyExpression] = [
+		WeavlyModel.StringLiteral.new("door"), WeavlyModel.Identifier.new("name")
+	]
+	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("sound", args)
+	command.line = 3
+	var filled: WeavlyModel.CommandStatement = WeavlyTextUtils.fill_command(
+		command, _engine_with_name()
+	)
+	assert_that(filled.values).is_equal(["door", "Ada"])
+	assert_that(filled.args).is_same(command.args)
+	assert_int(filled.line).is_equal(3)
+	assert_that(command.values).is_empty()
+
+
+func test_fill_command_with_a_failing_argument_is_null() -> void:
+	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
+	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("sound", args)
+	assert_object(WeavlyTextUtils.fill_command(command, _make_engine())).is_null()
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
 # =====================
 # fill_text
 # =====================
