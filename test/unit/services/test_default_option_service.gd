@@ -11,7 +11,14 @@ var _service
 
 func _make_option(text: String = "option") -> WeavlyModel.Option:
 	var body: Array[WeavlyModel.Statement] = []
-	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), text, body, false)
+	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), [text], body, false)
+
+
+func _filled(options: Array[WeavlyModel.Option]) -> Array[WeavlyModel.Option]:
+	var filled: Array[WeavlyModel.Option] = []
+	for option: WeavlyModel.Option in options:
+		filled.append(WeavlyTextUtils.fill_option(option, _engine))
+	return filled
 
 
 # Returns the copy the service offers, as a game receives it.
@@ -52,12 +59,12 @@ func test_add_options_emits_signal() -> void:
 	var opts: Array[WeavlyModel.Option] = [_make_option()]
 	monitor_signals(_service, false)
 	_service.add_options(opts)
-	await assert_signal(_service).is_emitted("options_added", [opts])
+	await assert_signal(_service).is_emitted("options_added", [_filled(opts)])
 
 
 func _make_hint(text: String = "locked") -> WeavlyModel.Option:
 	var body: Array[WeavlyModel.Statement] = []
-	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), text, body, true)
+	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), [text], body, true)
 
 
 func test_add_options_with_only_hints_pauses_without_waiting_for_a_choice() -> void:
@@ -66,7 +73,7 @@ func test_add_options_with_only_hints_pauses_without_waiting_for_a_choice() -> v
 	_service.add_options(hints)
 	assert_bool(_service.has_options()).is_false()
 	assert_bool(_engine.statement_service.is_paused()).is_true()
-	await assert_signal(_service).is_emitted("options_added", [hints])
+	await assert_signal(_service).is_emitted("options_added", [_filled(hints)])
 
 
 func test_add_options_with_a_hint_and_a_choosable_option_waits_for_a_choice() -> void:
@@ -79,7 +86,7 @@ func test_add_options_with_a_hint_and_a_choosable_option_waits_for_a_choice() ->
 func test_choosing_a_hint_from_a_block_of_only_hints_says_it_is_a_hint() -> void:
 	var hints: Array[WeavlyModel.Option] = [_make_hint()]
 	_service.add_options(hints)
-	_service.choose_option(hints[0])
+	_service.choose_option(_filled(hints)[0])
 	assert_logged([], ["Can't choose option 'locked' because it's a hint."])
 
 
@@ -97,7 +104,7 @@ func test_choose_option_clears_pending_options() -> void:
 
 func test_choose_option_adds_body_to_statement_service() -> void:
 	var body: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
-	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), "opt", body, false)
+	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), ["opt"], body, false)
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	_engine.statement_service.advance_statements()
@@ -121,7 +128,7 @@ func test_choose_option_calls_engine_next() -> void:
 
 func test_choose_option_ignores_an_option_that_is_not_offered() -> void:
 	var offered: WeavlyModel.Option = _make_option("offered")
-	var stale: WeavlyModel.Option = _make_option("stale")
+	var stale: WeavlyModel.Option = WeavlyTextUtils.fill_option(_make_option("stale"), _engine)
 	offered = _offer(offered)
 	monitor_signals(_service, false)
 	_service.choose_option(stale)

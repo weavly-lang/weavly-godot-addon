@@ -140,31 +140,38 @@ func _engine_with_name() -> WeavlyEngine:
 	return engine
 
 
+func _segments(text: Array) -> Array:
+	return WeavlyDeserializer.compile_text({"text": text}, "test")
+
+
 func test_fill_narration_line_copies_with_filled_text() -> void:
-	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new("Hi {$name}")
+	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(
+		_segments(["Hi ", {"variable": "name"}])
+	)
 	line.line = 4
 	var filled: WeavlyModel.NarrationLine = WeavlyTextUtils.fill_narration_line(
 		line, _engine_with_name()
 	)
 	assert_that(filled.text).is_equal("Hi Ada")
-	assert_that(filled.raw_text).is_equal("Hi {$name}")
+	assert_that(filled.segments).is_same(line.segments)
 	assert_int(filled.line).is_equal(4)
-	assert_that(line.text).is_equal("Hi {$name}")
+	assert_that(line.text).is_equal("")
 
 
 func test_fill_character_line_resolves_a_name_that_is_an_id() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", true, "{$name}!")
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
+		"name", true, _segments([{"variable": "name"}, "!"])
+	)
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
 		line, _engine_with_name()
 	)
 	assert_that(filled.name).is_equal("Ada")
 	assert_that(filled.raw_name).is_equal("name")
 	assert_that(filled.text).is_equal("Ada!")
-	assert_that(filled.raw_text).is_equal("{$name}!")
 
 
 func test_fill_character_line_keeps_a_literal_name() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", false, "Hi")
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", false, ["Hi"])
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
 		line, _engine_with_name()
 	)
@@ -172,7 +179,7 @@ func test_fill_character_line_keeps_a_literal_name() -> void:
 
 
 func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("speaker", true, "Hi")
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("speaker", true, ["Hi"])
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
 		line, _make_engine()
 	)
@@ -183,9 +190,69 @@ func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> vo
 func test_fill_option_copies_with_filled_text() -> void:
 	var body: Array[WeavlyModel.Statement] = []
 	var option: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), "Ask {$name}", body, false
+		WeavlyModel.TrueExpression.new(), _segments(["Ask ", {"variable": "name"}]), body, false
 	)
 	var filled: WeavlyModel.Option = WeavlyTextUtils.fill_option(option, _engine_with_name())
 	assert_that(filled.text).is_equal("Ask Ada")
-	assert_that(filled.raw_text).is_equal("Ask {$name}")
 	assert_that(filled.body).is_same(option.body)
+
+
+# =====================
+# fill_text
+# =====================
+
+
+func test_fill_text_joins_plain_text() -> void:
+	assert_that(WeavlyTextUtils.fill_text(["Hello."], _make_engine())).is_equal("Hello.")
+
+
+func test_fill_text_of_empty_text_is_empty() -> void:
+	assert_that(WeavlyTextUtils.fill_text([], _make_engine())).is_equal("")
+
+
+func test_fill_text_evaluates_arithmetic() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.variable_service.set_variable("price", 3.5)
+	var segments: Array = _segments(
+		["Costs ", {"op": "*", "left": {"variable": "price"}, "right": 2.0}, " gold."]
+	)
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Costs 7 gold.")
+
+
+func test_fill_text_evaluates_a_function_call() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.variable_service.set_variable("hp", -4.0)
+	var segments: Array = _segments([{"call": "max", "args": [{"variable": "hp"}, 0.0]}, " HP"])
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("0 HP")
+
+
+func test_fill_text_fills_several_interpolations() -> void:
+	var engine: WeavlyEngine = _engine_with_name()
+	engine.variable_service.set_variable("coins", 3.0)
+	var segments: Array = _segments(
+		[{"variable": "name"}, " has ", {"variable": "coins"}, {"variable": "name"}]
+	)
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Ada has 3Ada")
+
+
+func test_fill_text_formats_a_bare_number_literal() -> void:
+	assert_that(WeavlyTextUtils.fill_text(_segments([5.0]), _make_engine())).is_equal("5")
+
+
+func test_fill_text_keeps_an_escaped_interpolation_literal() -> void:
+	var text: String = WeavlyTextUtils.fill_text(["Write {$name}."], _engine_with_name())
+	assert_that(text).is_equal("Write {$name}.")
+
+
+func test_fill_text_reads_values_when_filled() -> void:
+	var engine: WeavlyEngine = _engine_with_name()
+	var segments: Array = _segments([{"variable": "name"}])
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Ada")
+	engine.variable_service.set_variable("name", "Bo")
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Bo")
+
+
+func test_fill_text_leaves_out_a_failing_interpolation_and_reports_it_once() -> void:
+	var segments: Array = _segments(["Hi ", {"variable": "missing"}, "!"])
+	assert_that(WeavlyTextUtils.fill_text(segments, _make_engine())).is_equal("Hi !")
+	assert_logged(["Variable 'missing' isn't defined."])

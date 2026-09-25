@@ -1,1 +1,1 @@
-{"nodes":[{"id":"menu","body":[{"type":"option","items":[{"condition":true,"text":"Go on","body":[{"type":"goto","id":"after"}],"hint":false},{"condition":true,"text":"Locked","body":[],"hint":true}]}]},{"id":"after","body":[{"type":"narration","text":"After"},{"type":"finish"}]}]}
+{"nodes":[{"id":"menu","body":[{"type":"option","items":[{"condition":true,"text":["Go on"],"body":[{"type":"goto","id":"after"}],"hint":false},{"condition":true,"text":["Locked"],"body":[],"hint":true}]}]},{"id":"after","body":[{"type":"narration","text":["After"]},{"type":"finish"}]}]}

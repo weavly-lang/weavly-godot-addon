@@ -1,1 +1,1 @@
-{"nodes":[{"id":"start","body":[{"type":"match","modifier":"bogus","cases":[{"condition":true,"body":[{"type":"narration","text":"unreachable"}]}]}]}]}
+{"nodes":[{"id":"start","body":[{"type":"match","modifier":"bogus","cases":[{"condition":true,"body":[{"type":"narration","text":["unreachable"]}]}]}]}]}

@@ -9,7 +9,14 @@ var _service
 
 func _make_option(text: String = "option") -> WeavlyModel.Option:
 	var body: Array[WeavlyModel.Statement] = []
-	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), text, body, false)
+	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), [text], body, false)
+
+
+func _filled(options: Array[WeavlyModel.Option]) -> Array[WeavlyModel.Option]:
+	var filled: Array[WeavlyModel.Option] = []
+	for option: WeavlyModel.Option in options:
+		filled.append(WeavlyTextUtils.fill_option(option, _engine))
+	return filled
 
 
 # Returns the copy the service offers, as a game receives it.
@@ -50,7 +57,7 @@ func test_add_options_emits_signal() -> void:
 	var opts: Array[WeavlyModel.Option] = [_make_option()]
 	monitor_signals(_service, false)
 	_service.add_options(opts)
-	await assert_signal(_service).is_emitted("options_added", [opts])
+	await assert_signal(_service).is_emitted("options_added", [_filled(opts)])
 
 
 # =====================
@@ -60,7 +67,7 @@ func test_add_options_emits_signal() -> void:
 
 func test_choose_option_adds_body_to_statement_service() -> void:
 	var body: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
-	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), "opt", body, false)
+	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), ["opt"], body, false)
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	_engine.statement_service.advance_statements()
@@ -84,7 +91,7 @@ func test_choose_option_calls_engine_next() -> void:
 
 func test_choose_option_ignores_an_option_that_is_not_offered() -> void:
 	var offered: WeavlyModel.Option = _make_option("offered")
-	var stale: WeavlyModel.Option = _make_option("stale")
+	var stale: WeavlyModel.Option = WeavlyTextUtils.fill_option(_make_option("stale"), _engine)
 	offered = _offer(offered)
 	monitor_signals(_service, false)
 	_service.choose_option(stale)
@@ -107,7 +114,7 @@ func test_choose_option_twice_chooses_it_once() -> void:
 func test_choose_option_ignores_a_hint() -> void:
 	var body: Array[WeavlyModel.Statement] = []
 	var hint: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), "locked", body, true
+		WeavlyModel.TrueExpression.new(), ["locked"], body, true
 	)
 	hint = _offer(hint)
 	monitor_signals(_service, false)

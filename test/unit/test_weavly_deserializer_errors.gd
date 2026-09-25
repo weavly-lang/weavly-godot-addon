@@ -68,6 +68,27 @@ func test_statement_missing_type_is_skipped() -> void:
 	assert_logged(["Missing required field 'type' at nodes[0].body[0]"])
 
 
+func test_narration_with_text_from_before_compiler_0_4_0_is_skipped() -> void:
+	var data = {"nodes": [_node("start", [{"type": "narration", "text": "Hi"}])]}
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_that(nodes[0].body.size()).is_equal(0)
+	assert_logged(
+		[
+			(
+				"Required field 'text' has wrong type at nodes[0].body[0], "
+				+ "expected 'Array' got 'String'"
+			)
+		]
+	)
+
+
+func test_narration_with_a_failing_interpolation_is_skipped() -> void:
+	var data = {"nodes": [_node("start", [{"type": "narration", "text": ["a", {"bogus": 1}]}])]}
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_that(nodes[0].body.size()).is_equal(0)
+	assert_logged(["Unknown expression type at nodes[0].body[0].text[1]"])
+
+
 func test_narration_missing_text_is_skipped() -> void:
 	var data = {"nodes": [_node("start", [{"type": "narration"}])]}
 	var nodes = WeavlyDeserializer.compile_nodes(data)
@@ -186,8 +207,8 @@ func test_match_with_a_failing_case_condition_is_dropped() -> void:
 
 func test_option_block_with_a_failing_condition_is_dropped() -> void:
 	var items = [
-		{"condition": {"bogus": 1}, "text": "a", "body": [], "hint": false},
-		{"condition": true, "text": "b", "body": [], "hint": false},
+		{"condition": {"bogus": 1}, "text": ["a"], "body": [], "hint": false},
+		{"condition": true, "text": ["b"], "body": [], "hint": false},
 	]
 	var body = _body_of({"type": "option", "items": items})
 	assert_that(body.size()).is_equal(1)

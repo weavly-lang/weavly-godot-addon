@@ -20,16 +20,18 @@ func before_test() -> void:
 
 
 func test_narration_line_pauses_statement_service() -> void:
-	var line := WeavlyModel.NarrationLine.new("hello")
+	var line := WeavlyModel.NarrationLine.new(["hello"])
 	_service.execute_narration_line(line)
 	assert_bool(_engine.statement_service.is_paused()).is_true()
 
 
 func test_narration_line_emits_signal() -> void:
-	var line := WeavlyModel.NarrationLine.new("hello")
+	var line := WeavlyModel.NarrationLine.new(["hello"])
 	monitor_signals(_service, false)
 	_service.execute_narration_line(line)
-	await assert_signal(_service).is_emitted("executed_narration_line", [line])
+	await assert_signal(_service).is_emitted(
+		"executed_narration_line", [WeavlyTextUtils.fill_narration_line(line, _engine)]
+	)
 
 
 # =====================
@@ -38,13 +40,15 @@ func test_narration_line_emits_signal() -> void:
 
 
 func test_character_line_pauses_statement_service() -> void:
-	var line := WeavlyModel.CharacterLine.new("Alice", false, "hi")
+	var line := WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
 	_service.execute_character_line(line)
 	assert_bool(_engine.statement_service.is_paused()).is_true()
 
 
 func test_character_line_emits_signal() -> void:
-	var line := WeavlyModel.CharacterLine.new("Alice", false, "hi")
+	var line := WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
 	monitor_signals(_service, false)
 	_service.execute_character_line(line)
-	await assert_signal(_service).is_emitted("executed_character_line", [line])
+	await assert_signal(_service).is_emitted(
+		"executed_character_line", [WeavlyTextUtils.fill_character_line(line, _engine)]
+	)

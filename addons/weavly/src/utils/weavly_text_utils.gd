@@ -40,13 +40,29 @@ static func inject_variables(
 	return out
 
 
+# A failing expression is reported by the evaluator and left out of the text.
+static func fill_text(
+	segments: Array, engine: WeavlyEngine, pipeline: Array[Callable] = default_variable_pipeline
+) -> String:
+	var out: String = ""
+	for segment: Variant in segments:
+		if segment is String:
+			out += segment
+			continue
+		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(segment, engine)
+		if WeavlyExpressionEvaluator.is_error(value):
+			continue
+		for method: Callable in pipeline:
+			value = method.call(value)
+		out += str(value)
+	return out
+
+
 static func fill_narration_line(
 	narration_line: WeavlyModel.NarrationLine, engine: WeavlyEngine
 ) -> WeavlyModel.NarrationLine:
-	var filled: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(
-		inject_variables(narration_line.text, engine)
-	)
-	filled.raw_text = narration_line.text
+	var filled: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(narration_line.segments)
+	filled.text = fill_text(narration_line.segments, engine)
 	filled.line = narration_line.line
 	return filled
 
@@ -62,19 +78,19 @@ static func fill_character_line(
 		else:
 			WeavlyExpressionEvaluator.report_undefined_variable(name, engine)
 	var filled: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
-		name, character_line.name_is_id, inject_variables(character_line.text, engine)
+		name, character_line.name_is_id, character_line.segments
 	)
 	filled.raw_name = character_line.name
-	filled.raw_text = character_line.text
+	filled.text = fill_text(character_line.segments, engine)
 	filled.line = character_line.line
 	return filled
 
 
 static func fill_option(option: WeavlyModel.Option, engine: WeavlyEngine) -> WeavlyModel.Option:
 	var filled: WeavlyModel.Option = WeavlyModel.Option.new(
-		option.condition, inject_variables(option.text, engine), option.body, option.hint
+		option.condition, option.segments, option.body, option.hint
 	)
-	filled.raw_text = option.text
+	filled.text = fill_text(option.segments, engine)
 	filled.line = option.line
 	return filled
 

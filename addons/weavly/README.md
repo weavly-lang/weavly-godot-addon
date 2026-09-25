@@ -16,7 +16,7 @@ func _ready() -> void:
 
 The engine has no UI of its own; your game listens to service signals and renders however it likes. By default it loads compiled dialogue JSON from `res://dialogue/build`. For exports, add `*.json` to *Filters to export non-resource files* in your export preset, otherwise the dialogue JSON is not packed.
 
-For the editor tooling you also need the Weavly compiler (0.3.0 or newer): `uv tool install weavly`.
+For the editor tooling you also need the Weavly compiler (0.4.0 or newer): `uv tool install weavly`.
 
 Full documentation, the language reference and the issue tracker:
 <https://github.com/weavly-lang/weavly-godot-addon>

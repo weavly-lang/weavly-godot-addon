@@ -573,7 +573,6 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 	engine.next()
 	engine.next()
 	assert_that(narration[0].text).is_equal("Hi Ada, you have 3 coins.")
-	assert_that(narration[0].raw_text).is_equal("Hi {$name}, you have {$coins} coins.")
 	assert_that(characters[0].name).is_equal("Ada")
 	assert_that(characters[0].text).is_equal("I am Ada.")
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]

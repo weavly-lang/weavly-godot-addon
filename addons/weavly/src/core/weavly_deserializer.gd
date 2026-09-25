@@ -206,19 +206,19 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 
 
 static func compile_narration_line(data: Dictionary, path: String) -> WeavlyModel.NarrationLine:
-	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
-	if text == null:
+	var segments: Variant = compile_text(data, path)
+	if segments == null:
 		return null
-	return WeavlyModel.NarrationLine.new(text)
+	return WeavlyModel.NarrationLine.new(segments)
 
 
 static func compile_character_line(data: Dictionary, path: String) -> WeavlyModel.CharacterLine:
 	var name = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var name_is_id = get_required(data, KEY_NAME_IS_ID, Variant.Type.TYPE_BOOL, path)
-	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
-	if name == null or name_is_id == null or text == null:
+	var segments: Variant = compile_text(data, path)
+	if name == null or name_is_id == null or segments == null:
 		return null
-	return WeavlyModel.CharacterLine.new(name, name_is_id, text)
+	return WeavlyModel.CharacterLine.new(name, name_is_id, segments)
 
 
 static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:
@@ -258,6 +258,26 @@ static func compile_command_statement(
 			return null
 		args.append(arg)
 	return WeavlyModel.CommandStatement.new(id, args)
+
+
+# Strings are plain text, anything else is an interpolated expression.
+static func compile_text(data: Dictionary, path: String) -> Variant:
+	var text_data: Variant = get_required(data, KEY_TEXT, Variant.Type.TYPE_ARRAY, path)
+	if text_data == null:
+		return null
+	var segments: Array = []
+	for i in range(text_data.size()):
+		var segment: Variant = text_data[i]
+		if segment is String:
+			segments.append(segment)
+			continue
+		var expression: WeavlyModel.WeavlyExpression = compile_expression(
+			segment, _path_index(_path_join(path, KEY_TEXT), i)
+		)
+		if expression == null:
+			return null
+		segments.append(expression)
+	return segments
 
 
 # =====================
@@ -334,13 +354,13 @@ static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.
 
 static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option:
 	var condition = compile_required_expression(data, KEY_CONDITION, path)
-	var text = get_required(data, KEY_TEXT, Variant.Type.TYPE_STRING, path)
+	var segments: Variant = compile_text(data, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
 	var hint = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
-	if condition == null or text == null or body_data_list == null or hint == null:
+	if condition == null or segments == null or body_data_list == null or hint == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
-	return WeavlyModel.Option.new(condition, text, body, hint)
+	return WeavlyModel.Option.new(condition, segments, body, hint)
 
 
 # =====================
