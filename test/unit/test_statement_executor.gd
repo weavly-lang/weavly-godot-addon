@@ -111,7 +111,7 @@ func before_test() -> void:
 func _body(tag: String = "") -> Array[WeavlyModel.Statement]:
 	# Use a NarrationLine as a sentinel so we can identify which body was passed.
 	var body: Array[WeavlyModel.Statement] = []
-	body.append(WeavlyModel.NarrationLine.new(tag))
+	body.append(WeavlyModel.NarrationLine.new([tag]))
 	return body
 
 
@@ -127,14 +127,14 @@ func _bool_expr(v: bool) -> WeavlyModel.WeavlyExpression:
 
 
 func test_narration_line_delegates_to_line_service() -> void:
-	var line := WeavlyModel.NarrationLine.new("hello")
+	var line := WeavlyModel.NarrationLine.new(["hello"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.narration_calls.size()).is_equal(1)
 	assert_that(_line.narration_calls[0]).is_same(line)
 
 
 func test_character_line_delegates_to_line_service() -> void:
-	var line := WeavlyModel.CharacterLine.new("Alice", false, "hi")
+	var line := WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.character_calls.size()).is_equal(1)
 	assert_that(_line.character_calls[0]).is_same(line)
@@ -312,9 +312,9 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 
 
 func test_option_block_filters_options_by_condition() -> void:
-	var keep_a := WeavlyModel.Option.new(_bool_expr(true), "a", _body("a"), false)
-	var drop := WeavlyModel.Option.new(_bool_expr(false), "b", _body("b"), false)
-	var keep_c := WeavlyModel.Option.new(_bool_expr(true), "c", _body("c"), false)
+	var keep_a := WeavlyModel.Option.new(_bool_expr(true), ["a"], _body("a"), false)
+	var drop := WeavlyModel.Option.new(_bool_expr(false), ["b"], _body("b"), false)
+	var keep_c := WeavlyModel.Option.new(_bool_expr(true), ["c"], _body("c"), false)
 	var options: Array[WeavlyModel.Option] = [keep_a, drop, keep_c]
 	var block := WeavlyModel.OptionBlock.new(options)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
@@ -327,7 +327,7 @@ func test_option_block_filters_options_by_condition() -> void:
 
 func test_option_block_with_no_passing_options_does_not_add_options() -> void:
 	var block := WeavlyModel.OptionBlock.new(
-		[WeavlyModel.Option.new(_bool_expr(false), "a", _body("a"), false)]
+		[WeavlyModel.Option.new(_bool_expr(false), ["a"], _body("a"), false)]
 	)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
 	assert_that(_option.add_options_calls).is_empty()

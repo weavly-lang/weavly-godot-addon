@@ -48,25 +48,42 @@ func test_compile_nodes_sets_id() -> void:
 
 
 func test_narration_line() -> void:
-	var stmt = _compile_single({"type": "narration", "text": "Hello world"})
+	var stmt = _compile_single({"type": "narration", "text": ["Hello world"]})
 	assert_object(stmt).is_instanceof(WeavlyModel.NarrationLine)
-	assert_that((stmt as WeavlyModel.NarrationLine).text).is_equal("Hello world")
+	assert_that((stmt as WeavlyModel.NarrationLine).segments).is_equal(["Hello world"])
+
+
+func test_narration_line_with_an_interpolation() -> void:
+	var stmt = _compile_single(
+		{"type": "narration", "text": ["Hi ", {"variable": "name"}, "!", 5.0]}
+	)
+	var segments: Array = (stmt as WeavlyModel.NarrationLine).segments
+	assert_int(segments.size()).is_equal(4)
+	assert_that(segments[0]).is_equal("Hi ")
+	assert_object(segments[1]).is_instanceof(WeavlyModel.Identifier)
+	assert_that(segments[2]).is_equal("!")
+	assert_object(segments[3]).is_instanceof(WeavlyModel.Number)
+
+
+func test_narration_line_with_empty_text() -> void:
+	var stmt = _compile_single({"type": "narration", "text": []})
+	assert_that((stmt as WeavlyModel.NarrationLine).segments).is_empty()
 
 
 func test_character_line() -> void:
 	var stmt = _compile_single(
-		{"type": "character", "name": "Alice", "name_is_id": false, "text": "Hi there"}
+		{"type": "character", "name": "Alice", "name_is_id": false, "text": ["Hi there"]}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.CharacterLine)
 	var line := stmt as WeavlyModel.CharacterLine
 	assert_that(line.name).is_equal("Alice")
 	assert_that(line.name_is_id).is_false()
-	assert_that(line.text).is_equal("Hi there")
+	assert_that(line.segments).is_equal(["Hi there"])
 
 
 func test_character_line_with_a_variable_name() -> void:
 	var stmt = _compile_single(
-		{"type": "character", "name": "speaker", "name_is_id": true, "text": "Hi there"}
+		{"type": "character", "name": "speaker", "name_is_id": true, "text": ["Hi there"]}
 	)
 	var line := stmt as WeavlyModel.CharacterLine
 	assert_that(line.name).is_equal("speaker")
@@ -275,7 +292,7 @@ func test_source_and_lines_are_read() -> void:
 				"line": 1,
 				"body":
 				[
-					{"type": "narration", "line": 2, "text": "Hi"},
+					{"type": "narration", "line": 2, "text": ["Hi"]},
 					{"type": "match", "line": 3, "modifier": "first", "cases": [case_data]},
 				]
 			}
@@ -292,7 +309,7 @@ func test_source_and_lines_are_read() -> void:
 func test_option_and_random_case_lines_are_read() -> void:
 	var option_block = {
 		"type": "option",
-		"items": [{"line": 5, "condition": true, "text": "a", "body": [], "hint": false}]
+		"items": [{"line": 5, "condition": true, "text": ["a"], "body": [], "hint": false}]
 	}
 	var random_block = {
 		"type": "random", "cases": [{"line": 7, "condition": true, "weight": 1.0, "body": []}]

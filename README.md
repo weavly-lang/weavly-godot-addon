@@ -16,7 +16,7 @@ A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-comp
 
 1. Download the latest `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project root, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.3.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
+3. For the editor tooling, install the [Weavly compiler](https://github.com/weavly-lang/weavly-compiler) (0.4.0 or newer). With [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
    ```bash
    uv tool install weavly
@@ -60,7 +60,7 @@ Declare each variable once, either in an `@env` block in a `.wvl` file or as a `
 
 A variable declared with `extern name: type` in `.wvl` gets its value from outside the script: from a resource with that name and type, or from game code calling `engine.variable_service.set_variable()`. Reading it before either has happened is an error.
 
-Line and option text can use `{$name}`. The line and option signals deliver copies with those filled in, and keep the original in `raw_text` for games that do their own substitution, for example for localization. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in variables the same way.
+Line and option text can use any expression in `{}`, such as `{$name}` or `{$price * 2}`; `\{` is a literal brace. The line and option signals deliver copies with `text` filled in when they're shown, and an expression that fails is reported and left out. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in `{$name}` variables in any string.
 
 Numbers are shown with at most two decimals and whole numbers without any, so `1 / 3` shows as `0.33` and `10` as `10`; games that need other formatting can pass their own pipeline to `inject_variables`. Numbers also compare approximately: `==`, `!=`, `<=` and `>=` treat values that differ only by floating-point rounding as equal, so `0.1 + 0.2 == 0.3` is true and `0.1 + 0.2 > 0.3` is false.
 

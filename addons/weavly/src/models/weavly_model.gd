@@ -31,21 +31,21 @@ class Statement:
 		pass
 
 
+# Segments are plain Strings and WeavlyExpressions; text is set on filled copies.
 class LineStatement:
 	extends Statement
-	var text: String
-	var raw_text: String
+	var segments: Array
+	var text: String = ""
 
-	func _init(text: String):
-		self.text = text
-		self.raw_text = text
+	func _init(segments: Array):
+		self.segments = segments
 
 
 class NarrationLine:
 	extends LineStatement
 
-	func _init(text: String):
-		super(text)
+	func _init(segments: Array):
+		super(segments)
 
 
 class CharacterLine:
@@ -54,11 +54,11 @@ class CharacterLine:
 	var raw_name: String
 	var name_is_id: bool
 
-	func _init(name: String, name_is_id: bool, text: String):
+	func _init(name: String, name_is_id: bool, segments: Array):
 		self.name = name
 		self.raw_name = name
 		self.name_is_id = name_is_id
-		super(text)
+		super(segments)
 
 
 class SetStatement:
@@ -140,16 +140,15 @@ class OptionBlock:
 class Option:
 	extends RefCounted
 	var condition: WeavlyExpression
-	var text: String
-	var raw_text: String
+	var segments: Array
+	var text: String = ""
 	var body: Array[Statement]
 	var hint: bool
 	var line: int = 0
 
-	func _init(condition: WeavlyExpression, text: String, body: Array[Statement], hint: bool):
+	func _init(condition: WeavlyExpression, segments: Array, body: Array[Statement], hint: bool):
 		self.condition = condition
-		self.text = text
-		self.raw_text = text
+		self.segments = segments
 		self.body = body
 		self.hint = hint
 
