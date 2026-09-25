@@ -338,6 +338,12 @@ func test_visited_is_true_after_a_visit() -> void:
 	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(true)
 
 
+func test_skip_count_is_a_number() -> void:
+	var engine: WeavlyEngine = _engine_with_node("shop")
+	engine.node_service.set_skip_count("shop", 2)
+	assert_that(_eval(WeavlyModel.Call.new("skip_count", "shop"), engine)).is_equal(2.0)
+
+
 func test_visit_count_is_a_number() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
 	engine.node_service.record_visit("shop")

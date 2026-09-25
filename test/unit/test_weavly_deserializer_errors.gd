@@ -299,3 +299,38 @@ func test_random_block_with_a_case_missing_its_line_is_dropped() -> void:
 	var body = _body_of({"type": "random", "cases": cases})
 	assert_that(body.size()).is_equal(1)
 	assert_logged(["Missing required field 'line' at nodes[0].body[0].cases[0]"])
+
+
+# =====================
+# Meta
+# =====================
+
+
+func _node_with_meta(meta: Variant) -> Dictionary:
+	var node_data: Dictionary = _node("bob", [])
+	node_data["meta"] = meta
+	return node_data
+
+
+func test_an_unknown_meta_key_drops_the_node() -> void:
+	var data = _build([_node_with_meta({"label": {"line": 2.0, "value": "Bob"}})])
+	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
+	assert_logged(["Unknown meta key 'label' at nodes[0].meta.label"])
+
+
+func test_a_pool_name_that_is_not_a_string_drops_the_node() -> void:
+	var data = _build([_node_with_meta({"pool": {"line": 2.0, "value": ["city", 3.0]}})])
+	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
+	assert_logged(["nodes[0].meta.pool.value[1] must be a String, got float"])
+
+
+func test_a_failing_meta_expression_drops_the_node() -> void:
+	var data = _build([_node_with_meta({"when": {"line": 2.0, "value": {"bogus": 1}}})])
+	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
+	assert_logged(["Unknown expression type at nodes[0].meta.when.value"])
+
+
+func test_env_without_pools_is_reported() -> void:
+	var names: Array[String] = WeavlyDeserializer.compile_pool_names({"declarations": []})
+	assert_array(names).is_empty()
+	assert_logged(["Missing required field 'pools' at <root>"])

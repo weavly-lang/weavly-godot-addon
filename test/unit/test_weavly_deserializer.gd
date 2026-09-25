@@ -319,3 +319,44 @@ func test_option_and_random_case_lines_are_read() -> void:
 	var body = WeavlyDeserializer.compile_nodes(data)[0].body
 	assert_int(body[0].options[0].line).is_equal(5)
 	assert_int(body[1].cases[0].line).is_equal(7)
+
+
+# =====================
+# Meta
+# =====================
+
+
+func test_meta_is_read_with_its_lines() -> void:
+	var node_data: Dictionary = _node("bob", [])
+	node_data["meta"] = {
+		"pool": {"line": 2.0, "value": ["city", "night"]},
+		"slot": {"line": 3.0, "value": ["bob"]},
+		"when": {"line": 4.0, "value": true},
+		"priority": {"line": 5.0, "value": 2.0},
+		"weight": {"line": 6.0, "value": {"variable": "w"}},
+	}
+	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
+	assert_array(meta.pools).is_equal(["city", "night"])
+	assert_array(meta.slots).is_equal(["bob"])
+	assert_object(meta.when.expression).is_instanceof(WeavlyModel.TrueExpression)
+	assert_int(meta.when.line).is_equal(4)
+	assert_that((meta.priority.expression as WeavlyModel.Number).value).is_equal(2.0)
+	assert_object(meta.weight.expression).is_instanceof(WeavlyModel.Identifier)
+	assert_int(meta.weight.line).is_equal(6)
+
+
+func test_an_empty_meta_puts_the_node_in_no_pool() -> void:
+	var node_data: Dictionary = _node("bob", [])
+	node_data["meta"] = {}
+	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
+	assert_array(meta.pools).is_empty()
+	assert_object(meta.when).is_null()
+
+
+func test_a_node_without_meta_has_none() -> void:
+	assert_object(WeavlyDeserializer.compile_nodes(_build([_node("a", [])]))[0].meta).is_null()
+
+
+func test_pool_names_are_read_from_env() -> void:
+	var data: Dictionary = {"declarations": [], "pools": ["city", "night"], "slots": ["bob"]}
+	assert_array(WeavlyDeserializer.compile_pool_names(data)).is_equal(["city", "night"])

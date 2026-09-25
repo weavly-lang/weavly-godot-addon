@@ -87,23 +87,61 @@ func test_record_visit_counts_up() -> void:
 # =====================
 
 
-func test_state_round_trips_visit_counts_as_ints() -> void:
+func test_state_round_trips_visit_and_skip_counts_as_ints() -> void:
 	_service.add_node(WeavlyModel.WeavlyNode.new("start", []))
 	_service.record_visit("start")
-	assert_that(_service.get_state()).is_equal({"start": 1})
-	_service.set_state({"start": 3.0})
+	_service.set_skip_count("start", 2)
+	assert_that(_service.get_state()).is_equal({"visits": {"start": 1}, "skips": {"start": 2}})
+	_service.set_state({"visits": {"start": 3.0}, "skips": {"start": 4.0}})
 	assert_int(_service.get_visit_count("start")).is_equal(3)
+	assert_int(_service.get_skip_count("start")).is_equal(4)
 
 
 func test_set_state_replaces_the_counts() -> void:
 	_service.add_node(WeavlyModel.WeavlyNode.new("start", []))
 	_service.add_node(WeavlyModel.WeavlyNode.new("other", []))
 	_service.record_visit("other")
-	_service.set_state({"start": 1.0})
+	_service.set_skip_count("other", 1)
+	_service.set_state({"visits": {"start": 1.0}})
 	assert_int(_service.get_visit_count("other")).is_equal(0)
+	assert_int(_service.get_skip_count("other")).is_equal(0)
 
 
 func test_set_state_skips_a_node_that_no_longer_exists() -> void:
-	_service.set_state({"gone": 2.0})
+	_service.set_state({"visits": {"gone": 2.0}, "skips": {"gone": 1.0}})
 	assert_int(_service.get_visit_count("gone")).is_equal(0)
-	assert_logged([], ["Saved visits to node 'gone' are skipped because it no longer exists."])
+	assert_int(_service.get_skip_count("gone")).is_equal(0)
+	assert_logged([], ["Saved counts of node 'gone' are skipped because it no longer exists."])
+
+
+# =====================
+# Pools and skip counts
+# =====================
+
+
+func _storylet(id: String, pools: Array[String]) -> WeavlyModel.WeavlyNode:
+	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new(id, [])
+	node.meta = WeavlyModel.NodeMeta.new()
+	node.meta.pools = pools
+	return node
+
+
+func test_nodes_are_indexed_by_pool_in_the_order_they_are_added() -> void:
+	_service.add_node(_storylet("b", ["city"]))
+	_service.add_node(_storylet("a", ["city", "night"]))
+	_service.add_node(WeavlyModel.WeavlyNode.new("plain", []))
+	assert_array(_service.get_pool_members("city")).is_equal(["b", "a"])
+	assert_array(_service.get_pool_members("night")).is_equal(["a"])
+	assert_array(_service.get_pool_members("empty")).is_empty()
+
+
+func test_add_pool_declares_a_pool() -> void:
+	_service.add_pool("city")
+	assert_bool(_service.has_pool("city")).is_true()
+	assert_bool(_service.has_pool("night")).is_false()
+
+
+func test_skip_count_is_zero_until_set() -> void:
+	assert_int(_service.get_skip_count("a")).is_equal(0)
+	_service.set_skip_count("a", 3)
+	assert_int(_service.get_skip_count("a")).is_equal(3)

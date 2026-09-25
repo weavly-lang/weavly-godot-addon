@@ -9,6 +9,7 @@ extends RefCounted
 const KEY_NODES = "nodes"
 const KEY_DECLARATIONS = "declarations"
 const KEY_SOURCE = "source"
+const KEY_POOLS = "pools"
 
 # Common keys
 const KEY_ID = "id"
@@ -30,6 +31,13 @@ const KEY_RIGHT = "right"
 const KEY_CALL = "call"
 const KEY_NODE = "node"
 const KEY_ARGS = "args"
+
+# Meta keys
+const KEY_META = "meta"
+const KEY_POOL = "pool"
+const KEY_SLOT = "slot"
+const KEY_WHEN = "when"
+const KEY_PRIORITY = "priority"
 
 # Block keys
 const KEY_CASES = "cases"
@@ -161,9 +169,70 @@ static func compile_nodes(data: Dictionary, source: String = "") -> Array[Weavly
 static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	var body: Variant = compile_body(data, path)
+	var meta: WeavlyModel.NodeMeta = null
+	if data.has(KEY_META):
+		meta = compile_meta(data[KEY_META], _path_join(path, KEY_META))
+		if meta == null:
+			return null
 	if id == null or body == null:
 		return null
-	return WeavlyModel.WeavlyNode.new(id, body)
+	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new(id, body)
+	node.meta = meta
+	return node
+
+
+# =====================
+# Meta
+# =====================
+
+
+static func compile_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
+	if data is not Dictionary:
+		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+		return null
+	var meta: WeavlyModel.NodeMeta = WeavlyModel.NodeMeta.new()
+	for key: Variant in data:
+		var entry_path: String = _path_join(path, str(key))
+		var entry: Variant = data[key]
+		if entry is not Dictionary:
+			push_error(
+				"%s must be a Dictionary, got %s" % [entry_path, type_string(typeof(entry))]
+			)
+			return null
+		if not _compile_meta_entry(meta, key, entry, entry_path):
+			return null
+	return meta
+
+
+static func _compile_meta_entry(
+	meta: WeavlyModel.NodeMeta, key: Variant, entry: Dictionary, path: String
+) -> bool:
+	var value_path: String = _path_join(path, KEY_VALUE)
+	match key:
+		KEY_POOL, KEY_SLOT:
+			var names_data: Variant = get_required(entry, KEY_VALUE, Variant.Type.TYPE_ARRAY, path)
+			var names: Array[String] = meta.pools if key == KEY_POOL else meta.slots
+			return (
+				names_data != null and _compile_list(names_data, value_path, _compile_name, names)
+			)
+		KEY_WHEN, KEY_PRIORITY, KEY_WEIGHT:
+			var line: Variant = _get_required_line(entry, path)
+			var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
+				entry, KEY_VALUE, path
+			)
+			if line == null or expression == null:
+				return false
+			meta.set(key, WeavlyModel.MetaExpression.new(expression, line))
+			return true
+	push_error("Unknown meta key '%s' at %s" % [key, path])
+	return false
+
+
+static func _compile_name(data: Variant, path: String) -> Variant:
+	if data is String:
+		return data
+	push_error("%s must be a String, got %s" % [path, type_string(typeof(data))])
+	return null
 
 
 # =====================
@@ -498,6 +567,15 @@ static func compile_variable_declarations(
 	var path: String = _path_root(source, KEY_DECLARATIONS)
 	_compile_list(declarations, path, compile_variable, variables, false)
 	return variables
+
+
+# The pool names declared in env.json.
+static func compile_pool_names(data: Dictionary, source: String = "") -> Array[String]:
+	var names: Array[String] = []
+	var names_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, source)
+	if names_data != null:
+		_compile_list(names_data, _path_root(source, KEY_POOLS), _compile_name, names, false)
+	return names
 
 
 static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Variable:

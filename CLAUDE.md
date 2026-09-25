@@ -27,6 +27,7 @@ addons/weavly/src/
     weavly_deserializer.gd          # JSON dict -> WeavlyModel.* objects (KEY_*/TYPE_* constants)
     weavly_statement_executor.gd    # dispatch Statement to the right service
     weavly_expression_evaluator.gd  # evaluate WeavlyExpression trees
+    weavly_storylet_selector.gd     # list_pool/peek_pool: pick storylet nodes from pools
   engine/
     weavly_engine.gd                # WeavlyEngine: @abstract base — signals + service refs
     default_engine.gd               # WeavlyDefaultEngine: runtime control flow, service setup
