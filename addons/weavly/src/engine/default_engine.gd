@@ -8,7 +8,7 @@ const NOT_HELD = "release() was called without a matching hold()."
 const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected version %d."
 const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
 
-const STATE_VERSION = 1
+const STATE_VERSION = 2
 const KEY_VERSION = "version"
 const KEY_NODE = "node"
 const KEY_SERVICES = "services"
@@ -92,6 +92,7 @@ func _ready() -> void:
 
 	WeavlyFileUtils.load_nodes_from_files(self, dialogue_path)
 	WeavlyFileUtils.load_variables(self, dialogue_path, variable_path)
+	WeavlyFileUtils.load_pools_from_env_files(self, dialogue_path)
 	WeavlyFileUtils.index_media_from_files(video_service, video_path)
 	WeavlyFileUtils.index_media_from_files(image_service, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)

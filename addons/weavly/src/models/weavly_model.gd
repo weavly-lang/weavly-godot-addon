@@ -12,10 +12,32 @@ class WeavlyNode:
 	var body: Array[Statement]
 	var source: String = ""
 	var line: int = 0
+	# Null for a node without an @meta block.
+	var meta: NodeMeta = null
 
 	func _init(id: String, body: Array[Statement]):
 		self.id = id
 		self.body = body
+
+
+# Storylet metadata; an entry that isn't written is null and uses its default.
+class NodeMeta:
+	extends RefCounted
+	var pools: Array[String] = []
+	var slots: Array[String] = []
+	var when: MetaExpression = null
+	var priority: MetaExpression = null
+	var weight: MetaExpression = null
+
+
+class MetaExpression:
+	extends RefCounted
+	var expression: WeavlyExpression
+	var line: int
+
+	func _init(expression: WeavlyExpression, line: int):
+		self.expression = expression
+		self.line = line
 
 
 # =====================

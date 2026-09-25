@@ -45,6 +45,16 @@ var current_line: int = 0
 @abstract func reset_state() -> void
 
 
+# Storylet node ids from the pools in selection order, each taken while its slots are free.
+func list_pool(...pools: Array) -> Array[String]:
+	return WeavlyStoryletSelector.list_pool(self, pools)
+
+
+# What list_pool would return now, without changing skip counts or the generator.
+func peek_pool(...pools: Array) -> Array[String]:
+	return WeavlyStoryletSelector.peek_pool(self, pools)
+
+
 func report_error(message: String) -> void:
 	push_error(_locate(message))
 	runtime_error.emit(message, current_source, current_line)

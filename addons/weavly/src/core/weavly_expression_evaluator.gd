@@ -33,7 +33,8 @@ const RANDOM = "random"
 
 const VISITED = "visited"
 const VISIT_COUNT = "visit_count"
-const NODE_FUNCTIONS = [VISITED, VISIT_COUNT]
+const SKIP_COUNT = "skip_count"
+const NODE_FUNCTIONS = [VISITED, VISIT_COUNT, SKIP_COUNT]
 
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
@@ -144,6 +145,8 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 	if not engine.node_service.has(call.node_id):
 		engine.report_error(UNKNOWN_NODE % [call.node_id, call.name])
 		return ERROR
+	if call.name == SKIP_COUNT:
+		return float(engine.node_service.get_skip_count(call.node_id))
 	var count: int = engine.node_service.get_visit_count(call.node_id)
 	if call.name == VISITED:
 		return count > 0

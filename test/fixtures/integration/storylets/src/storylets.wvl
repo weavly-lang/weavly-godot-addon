@@ -1,0 +1,202 @@
+@env
+gold: number = 0
+count: number = 0
+extern mood: flag
+when_test: pool
+priority_test: pool
+weight_test: pool
+slot_test: pool
+left: pool
+right: pool
+skip_test: pool
+error_test: pool
+shuffle_test: pool
+unused: pool
+a: slot
+b: slot
+c: slot
+d: slot
+x: slot
+k: slot
+@endenv
+
+@node when_yes
+@meta
+pool: when_test
+when: $gold >= 0
+@endmeta
+@endnode
+
+@node when_no
+@meta
+pool: when_test
+when: $gold > 100
+@endmeta
+@endnode
+
+@node low
+@meta
+pool: priority_test
+priority: 1
+@endmeta
+@endnode
+
+@node high
+@meta
+pool: priority_test
+priority: 5
+@endmeta
+@endnode
+
+@node mid
+@meta
+pool: priority_test
+priority: 3
+@endmeta
+@endnode
+
+@node heavy
+@meta
+pool: weight_test
+weight: 1000
+@endmeta
+@endnode
+
+@node light
+@meta
+pool: weight_test
+weight: 1
+@endmeta
+@endnode
+
+@node weightless
+@meta
+pool: weight_test
+weight: 0
+@endmeta
+@endnode
+
+@node in_abc
+@meta
+pool: slot_test
+slot: a, b, c
+priority: 3
+@endmeta
+@endnode
+
+@node in_a
+@meta
+pool: slot_test
+slot: a
+priority: 2
+@endmeta
+@endnode
+
+@node in_c
+@meta
+pool: slot_test
+slot: c
+priority: 2
+@endmeta
+@endnode
+
+@node in_d
+@meta
+pool: slot_test
+slot: d
+priority: 1
+@endmeta
+@endnode
+
+@node free
+@meta
+pool: slot_test
+@endmeta
+@endnode
+
+@node both_sides
+@meta
+pool: left, right
+priority: 3
+@endmeta
+@endnode
+
+@node left_x
+@meta
+pool: left
+slot: x
+priority: 2
+@endmeta
+@endnode
+
+@node right_x
+@meta
+pool: right
+slot: x
+priority: 1
+@endmeta
+@endnode
+
+@node first
+@meta
+pool: skip_test
+slot: k
+priority: 2.5
+@endmeta
+@endnode
+
+@node patient
+@meta
+pool: skip_test
+slot: k
+priority: skip_count()
+@endmeta
+@endnode
+
+@node never
+@meta
+pool: skip_test
+when: $gold > 100
+@endmeta
+@endnode
+
+@node moody
+@meta
+pool: error_test
+when: $mood
+@endmeta
+@endnode
+
+@node calm
+@meta
+pool: error_test
+@endmeta
+@endnode
+
+@node count_skips
+@set $count = skip_count(patient)
+@endnode
+
+@node s1
+@meta
+pool: shuffle_test
+@endmeta
+@endnode
+
+@node s2
+@meta
+pool: shuffle_test
+@endmeta
+@endnode
+
+@node s3
+@meta
+pool: shuffle_test
+@endmeta
+@endnode
+
+@node s4
+@meta
+pool: shuffle_test
+@endmeta
+@endnode

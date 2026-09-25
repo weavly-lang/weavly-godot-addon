@@ -112,9 +112,40 @@ Commands don't pause the dialogue. To wait for an effect, call `engine.hold()` i
 
 If an argument can't be evaluated, the error is reported and the command is skipped.
 
+### Storylets
+
+A node with an `@meta` block is a storylet: the game picks it from a pool instead of jumping to it by name. Pools and slots are declared in `@env` (`city: pool`, `bob: slot`), and a node joins them in its `@meta`:
+
+```
+@node bob_greets
+@meta
+pool: city
+slot: bob
+when: $gold > 2
+priority: 1
+weight: 1 + skip_count()
+once: true
+@endmeta
+Bob waves at you.
+@endnode
+```
+
+`engine.list_pool("city")` returns the ids of the nodes to offer, as an `Array[String]` in selection order:
+
+1. The members of all given pools, a node in several of them counted once.
+2. Only nodes whose `when` is true and whose `weight` is above 0. `priority` defaults to 0 and `weight` to 1.
+3. Highest `priority` first. Nodes with the same priority are shuffled by weight with `engine.rng`, so a node with weight 2 comes first about twice as often as one with weight 1.
+4. A node is left out when a node before it already took one of its slots. Slots block across all given pools, and nodes without slots are always listed.
+
+`list_pool` accepts several pools, as in `engine.list_pool("city", "city_night")`, and updates skip counts: every listed node goes back to 0, and every eligible node that wasn't listed goes up by 1. `skip_count(node)` reads that count in a script, and without an argument it means the current node, so `weight: 1 + skip_count()` makes a node likelier the longer it waits. Skip counts are saved with the state.
+
+`engine.peek_pool(...)` returns what `list_pool` would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool("city").is_empty()` asks whether anything is there. `engine.node_service.get_node_meta(id)` gives a node's pools and slots.
+
+A pool name that isn't declared is reported as a runtime error and counts as empty. A `when`, `priority` or `weight` that fails is reported at its line in the `@meta` block, and the node isn't eligible. `@goto` and `start()` ignore the metadata, so an explicit jump always works.
+
 ### Saving and loading
 
-`engine.get_state()` returns the runtime state as a Dictionary of JSON-safe values: variable values, visit counts, the random number generator, and the state of any custom service that saves its own. Weavly doesn't write files, so the game stores the state however it likes, for example inside its own save:
+`engine.get_state()` returns the runtime state as a Dictionary of JSON-safe values: variable values, visit and skip counts, the random number generator, and the state of any custom service that saves its own. Weavly doesn't write files, so the game stores the state however it likes, for example inside its own save:
 
 ```gdscript
 func save_game() -> void:

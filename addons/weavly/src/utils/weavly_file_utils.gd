@@ -110,6 +110,14 @@ static func load_variables_from_env_files(
 			_add_variable(engine, variable, file_path, sources)
 
 
+static func load_pools_from_env_files(engine: WeavlyEngine, dir: String) -> void:
+	for file_path: String in find_all_files_with_extension(dir, ".json"):
+		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
+		if data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS):
+			for pool: String in WeavlyDeserializer.compile_pool_names(data, file_path):
+				engine.node_service.add_pool(pool)
+
+
 static func load_variables_from_resources(
 	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
 ) -> void:
