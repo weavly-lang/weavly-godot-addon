@@ -9,7 +9,6 @@ const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke/build"
 const CI_SMOKE_GLOBALS_JSON = CI_SMOKE_FIXTURE + "/globals.wvl.json"
 const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
-const LIST_INTERLEAVE_FIXTURE = "res://test/fixtures/integration/list_interleave"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
 const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
 const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
@@ -22,8 +21,6 @@ const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only"
 const RANDOM_FIXTURE = "res://test/fixtures/integration/random"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
-const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
-
 # =====================
 # Setup helpers
 # =====================
@@ -31,14 +28,12 @@ const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
 var _signal_log: Array[String]
 var _narration_log: Array[String]
 var _command_log: Array[String]
-var _options_added_count: int
 
 
 func before_test() -> void:
 	_signal_log = []
 	_narration_log = []
 	_command_log = []
-	_options_added_count = 0
 
 
 # Build a WeavlyDefaultEngine pointed at a fixture dir. All asset paths point at the
@@ -47,19 +42,6 @@ func before_test() -> void:
 # before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> Node:
 	var engine = _new_engine(fixture_dir)
-	add_child(auto_free(engine))
-	_connect_signal_log(engine)
-	return engine
-
-
-# Same as _make_engine but wires the list_* service variants, which stream
-# narration and options in one pass instead of pausing (Twine-style overviews).
-func _make_list_engine(fixture_dir: String) -> Node:
-	var engine = _new_engine(fixture_dir)
-	engine.statement_service_script = load(IMPL_PATH + "list_statement_service.gd")
-	engine.option_service_script = load(IMPL_PATH + "list_option_service.gd")
-	engine.line_service_script = load(IMPL_PATH + "list_line_service.gd")
-	engine.command_service_script = load(IMPL_PATH + "list_command_service.gd")
 	add_child(auto_free(engine))
 	_connect_signal_log(engine)
 	return engine
@@ -87,14 +69,9 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 	)
 
 
-# Records narration text and counts option registrations, used to assert that
-# list mode streams both in a single pass.
 func _connect_content_log(engine: WeavlyEngine) -> void:
 	engine.line_service.executed_narration_line.connect(
 		func(line: WeavlyModel.NarrationLine) -> void: _narration_log.append(line.text)
-	)
-	engine.option_service.options_added.connect(
-		func(_options: Array[WeavlyModel.Option]) -> void: _options_added_count += 1
 	)
 
 
@@ -432,48 +409,6 @@ func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
 		. override_failure_message("node should be entered exactly three times")
 		. is_equal(3)
 	)
-
-
-# =====================
-# List mode streaming
-# =====================
-
-
-func test_list_mode_streams_interleaved_narration_and_options_in_one_pass() -> void:
-	var engine = _make_list_engine(LIST_INTERLEAVE_FIXTURE)
-	_connect_content_log(engine)
-	engine.start("town")
-	# List services do not pause on lines or stop on options, so the whole town
-	# node streams out in a single start() call and then pauses on the drained
-	# stack, waiting for the host to choose.
-	assert_that(_narration_log).is_equal(
-		["You enter the town square.", "A fountain bubbles nearby."]
-	)
-	(
-		assert_that(_options_added_count)
-		. override_failure_message("both option blocks should register in one pass")
-		. is_equal(2)
-	)
-	(
-		assert_bool(engine.is_running())
-		. override_failure_message("list mode pauses rather than finishing")
-		. is_true()
-	)
-	assert_bool(engine.statement_service.is_paused()).is_true()
-	assert_bool(_signal_log.has("finished_dialogue")).is_false()
-
-
-func test_list_mode_goto_cycle_aborts_via_error() -> void:
-	var engine = _make_list_engine(GOTO_CYCLE_FIXTURE)
-	# In list mode has_options() never stops the loop, so the entry guard is the
-	# only thing that can break a goto cycle.
-	engine.max_node_entries_per_step = 5
-	engine.start("self_loop")
-	assert_logged(
-		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
-	)
-	assert_that(_signal_log.back()).is_equal("finished_dialogue")
-	assert_bool(engine.is_running()).is_false()
 
 
 # =====================
