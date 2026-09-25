@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 @abstract class_name WeavlyEngine
 extends Node
 
@@ -26,7 +27,18 @@ var current_node_id: String = ""
 var current_source: String = ""
 var current_line: int = 0
 
+var _rendering: bool = false
+var _render_output: Array[WeavlyModel.Statement] = []
+# The options choose() and render_option() accept, with the source of their node.
+var _rendered_options: Dictionary[WeavlyModel.Option, String] = {}
+
 @abstract func start(node_id: String) -> void
+
+@abstract func render(node_id: String) -> Array[WeavlyModel.Statement]
+
+@abstract func render_option(option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]
+
+@abstract func choose(option: WeavlyModel.Option) -> void
 
 @abstract func enter_node(node_id: String) -> void
 
@@ -45,6 +57,18 @@ var current_line: int = 0
 @abstract func set_state(state: Dictionary) -> void
 
 @abstract func reset_state() -> void
+
+
+func is_rendering() -> bool:
+	return _rendering
+
+
+# While rendering, the executor collects filled lines, commands and option blocks here.
+func add_rendered(statement: WeavlyModel.Statement) -> void:
+	_render_output.append(statement)
+	if statement is WeavlyModel.OptionBlock:
+		for option: WeavlyModel.Option in statement.options:
+			_rendered_options[option] = current_source
 
 
 # Storylet node ids from the pools in selection order, each taken while its slots are free.

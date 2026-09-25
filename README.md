@@ -95,10 +95,10 @@ func _ready() -> void:
     engine.command_service.executed_command.connect(_on_command)
 
 
-func _on_command(command: WeavlyModel.CommandStatement, args: Array) -> void:
+func _on_command(command: WeavlyModel.CommandStatement) -> void:
     match command.id:
         "play_sound":
-            play_sound(args[0], args[1])
+            play_sound(command.values[0], command.values[1])
 ```
 
 Commands don't pause the dialogue. To wait for an effect, call `engine.hold()` in the handler and `engine.release()` when it's done. While the dialogue is held, `next()` does nothing, so a continue button can't cut the wait short, and holds are counted, so several commands can wait at once:
@@ -106,7 +106,7 @@ Commands don't pause the dialogue. To wait for an effect, call `engine.hold()` i
 ```gdscript
         "shake":
             engine.hold()
-            await shake_camera(args[0])
+            await shake_camera(command.values[0])
             engine.release()
 ```
 
@@ -144,6 +144,33 @@ Bob waves at you.
 `engine.peek_pool(...)` returns what `list_pool` would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool("city").is_empty()` asks whether anything is there. `engine.node_service.get_node_meta(id)` gives a node's pools and slots.
 
 A pool name that isn't declared is reported as a runtime error and counts as empty. A `when`, `priority` or `weight` that fails is reported at its line in the `@meta` block, and the node isn't eligible. `@goto` and `start()` ignore the metadata, so an explicit jump always works.
+
+### Rendering a node
+
+`engine.render(node_id)` runs a whole node at once instead of waiting for `next()` after every line, for a node shown as a UI card or a Twine-style passage. It returns filled copies of what the node produced, in order, as an `Array[WeavlyModel.Statement]`:
+
+- `NarrationLine` and `CharacterLine` with their text filled in, as the line signals deliver them;
+- `CommandStatement` with its evaluated arguments in `values`, collected instead of emitted;
+- `OptionBlock` with the options whose condition is true, hints included. `@continue` arrives as a block with one option.
+
+Conditions, `{}` expressions, `@if`, `@match`, `@random`, `@goto` and `@draw` work as in normal play, and `@finish` ends the render. It isn't a dry run: `@set`, visits and `entered_node` happen as usual, while `started_dialogue` and `finished_dialogue` don't fire. Option actions don't run during the render, and while a dialogue runs, `render()` warns and does nothing.
+
+```gdscript
+for entry: WeavlyModel.Statement in engine.render("tavern_card"):
+    if entry is WeavlyModel.CharacterLine:
+        card.add_line(entry.name, entry.text)
+    elif entry is WeavlyModel.CommandStatement:
+        match entry.id:
+            "header":
+                card.set_header(entry.values[0])
+    elif entry is WeavlyModel.OptionBlock:
+        for option: WeavlyModel.Option in entry.options:
+            card.add_button(option.text, option.hint, func() -> void: engine.choose(option))
+```
+
+When the player picks a rendered option, `engine.choose(option)` starts a dialogue that runs only that option's action; the rest of the node already ran. Without a jump the dialogue ends after the action, and a `@goto` plays on into the next node. `engine.render_option(option)` instead runs the action in one pass like `render()`, following jumps, and returns what it produced, so a game can move from card to card. Both accept only options from a render, not hints; after one of them, only the options it produced can be chosen next.
+
+After a render, `get_state()` returns the state as the last rendered node was entered, marked as rendered. `set_state()` restores it without starting a dialogue, so render the node again after `state_loaded`; with the saved generator, it renders the same.
 
 ### Saving and loading
 

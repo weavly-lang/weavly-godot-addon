@@ -7,12 +7,16 @@ const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); fini
 const NOT_HELD = "release() was called without a matching hold()."
 const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected version %d."
 const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
+const RENDER_IN_PROGRESS = "Dialogue is already in progress, can't render node '%s'."
+const CHOOSE_IN_PROGRESS = "Dialogue is already in progress, can't choose option '%s'."
+const NOT_RENDERED = "Can't choose option '%s' because it wasn't rendered."
 
 const STATE_VERSION = 2
 const KEY_VERSION = "version"
 const KEY_NODE = "node"
 const KEY_SERVICES = "services"
 const KEY_RNG = "rng"
+const KEY_RENDERED = "rendered"
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -111,6 +115,83 @@ func start(node_id: String) -> void:
 		enter_node(node_id)
 
 
+# Runs the whole node without pausing and returns filled copies of its lines, commands and
+# option blocks. State changes, visits and entered_node happen as in normal play.
+func render(node_id: String) -> Array[WeavlyModel.Statement]:
+	if not _finished:
+		push_warning(RENDER_IN_PROGRESS % node_id)
+		return []
+	_begin_render()
+	enter_node(node_id)
+	return _end_render()
+
+
+# Runs a rendered option's action like render(), following jumps into other nodes.
+func render_option(option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]:
+	var source: Variant = _take_rendered_option(option)
+	if source == null:
+		return []
+	_begin_render()
+	_run_option(option, source)
+	return _end_render()
+
+
+# Starts a dialogue that runs only a rendered option's action; the rest of its node already ran.
+func choose(option: WeavlyModel.Option) -> void:
+	var source: Variant = _take_rendered_option(option)
+	if source == null:
+		return
+	_finished = false
+	started_dialogue.emit()
+	_run_option(option, source)
+
+
+# The source of the option's node, or null when it can't be chosen.
+func _take_rendered_option(option: WeavlyModel.Option) -> Variant:
+	if not _finished:
+		push_warning(CHOOSE_IN_PROGRESS % option.text)
+		return null
+	if option.hint:
+		push_warning(WeavlyOptionService.HINT_CHOSEN % option.text)
+		return null
+	if not _rendered_options.has(option):
+		push_warning(NOT_RENDERED % option.text)
+		return null
+	var source: String = _rendered_options[option]
+	_rendered_options.clear()
+	return source
+
+
+func _run_option(option: WeavlyModel.Option, source: String) -> void:
+	current_source = source
+	current_line = option.line
+	statement_service.clear_statements()
+	statement_service.add_statements(option.body)
+	next()
+
+
+func _begin_render() -> void:
+	_rendering = true
+	_render_output = []
+	_finished = false
+	clear_location()
+
+
+# A render keeps the checkpoint of the last node it entered, marked so loading doesn't start it.
+func _end_render() -> Array[WeavlyModel.Statement]:
+	var output: Array[WeavlyModel.Statement] = _render_output
+	_rendering = false
+	_render_output = []
+	_finished = true
+	_pending_node_id = null
+	current_node_id = ""
+	clear_location()
+	statement_service.clear_statements()
+	if not _checkpoint.is_empty():
+		_checkpoint[KEY_RENDERED] = true
+	return output
+
+
 func enter_node(node_id: String) -> void:
 	_pending_node_id = node_id
 	if not _in_next:
@@ -160,6 +241,9 @@ func _enter_pending_node() -> void:
 func finish() -> void:
 	if _finished:
 		return
+	if _rendering:
+		_finished = true
+		return
 	_stop()
 	finished_dialogue.emit()
 
@@ -181,8 +265,9 @@ func is_running() -> bool:
 
 
 # While a dialogue runs, the state as its current node was entered, so loading replays that node.
+# After a render, the state as its last node was entered, marked as rendered.
 func get_state() -> Dictionary:
-	if not _finished and not _checkpoint.is_empty():
+	if not _checkpoint.is_empty():
 		return _checkpoint.duplicate(true)
 	return {
 		KEY_VERSION: STATE_VERSION,
@@ -196,6 +281,7 @@ func set_state(state: Dictionary) -> void:
 		push_error(UNKNOWN_STATE_VERSION % [state.get(KEY_VERSION), STATE_VERSION])
 		return
 	_stop()
+	_rendered_options.clear()
 	var saved: Variant = state.get(KEY_SERVICES, {})
 	var service_states: Dictionary = saved if saved is Dictionary else {}
 	var services: Dictionary = _services()
@@ -208,7 +294,7 @@ func set_state(state: Dictionary) -> void:
 	state_loaded.emit()
 
 	var node_id: Variant = state.get(KEY_NODE)
-	if node_id is not String:
+	if node_id is not String or state.get(KEY_RENDERED) == true:
 		return
 	if not node_service.has(node_id):
 		push_error(MISSING_SAVED_NODE % node_id)

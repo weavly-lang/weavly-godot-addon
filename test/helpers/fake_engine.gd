@@ -29,6 +29,18 @@ func start(_node_id: String) -> void:
 	pass
 
 
+func render(_node_id: String) -> Array[WeavlyModel.Statement]:
+	return []
+
+
+func render_option(_option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]:
+	return []
+
+
+func choose(_option: WeavlyModel.Option) -> void:
+	pass
+
+
 func enter_node(node_id: String) -> void:
 	last_entered_node = node_id
 

@@ -1,0 +1,53 @@
+@env
+gold: number = 0
+drinks: number = 0
+left: flag = false
+@endenv
+
+@node tavern
+>Innkeeper: Welcome, you have {$gold} gold.
+@header "Tavern", $gold + 1
+@increase $gold 5
+@options
+@option "Buy a drink"
+    @increase $drinks
+    The drink is cold.
+    @goto bar
+@option [ $gold > 100 ] "Rent a room" -> room
+@hint "Gamble (closed)"
+@endoptions
+The fire crackles.
+@options
+@option "Leave": @setflag $left
+@endoptions
+@continue "Look around"
+@endnode
+
+@node bar
+>Barkeep: {$drinks} drinks so far.
+@options
+@option "Another" -> bar
+@endoptions
+@endnode
+
+@node room
+Unreachable.
+@endnode
+
+@node lobby
+@goto tavern
+@endnode
+
+@node lucky
+@random
+@case 1: Heads.
+@case 1: Tails.
+@endrandom
+@set $gold = random(1, 1000000)
+@endnode
+
+@node stop
+Before.
+@finish
+After.
+@endnode

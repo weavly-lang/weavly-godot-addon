@@ -82,8 +82,8 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 	)
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
 	engine.command_service.executed_command.connect(
-		func(command: WeavlyModel.CommandStatement, args: Array) -> void:
-			_command_log.append("%s:%s" % [command.id, ",".join(args.map(str))])
+		func(command: WeavlyModel.CommandStatement) -> void:
+			_command_log.append("%s:%s" % [command.id, ",".join(command.values.map(str))])
 	)
 
 
@@ -624,7 +624,7 @@ func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
 	var engine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void:
+		func(_command: WeavlyModel.CommandStatement) -> void:
 			for i in holds:
 				engine.hold()
 	)
@@ -659,7 +659,7 @@ func test_releasing_inside_the_handler_continues_the_same_step() -> void:
 	var engine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void:
+		func(_command: WeavlyModel.CommandStatement) -> void:
 			engine.hold()
 			engine.release()
 	)
@@ -682,8 +682,7 @@ func test_finish_clears_holds() -> void:
 	var engine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement, _args: Array) -> void: engine.hold(),
-		CONNECT_ONE_SHOT
+		func(_command: WeavlyModel.CommandStatement) -> void: engine.hold(), CONNECT_ONE_SHOT
 	)
 	engine.start("start")
 	engine.finish()

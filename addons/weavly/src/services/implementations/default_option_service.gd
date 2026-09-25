@@ -8,10 +8,7 @@ func has_options() -> bool:
 
 
 func add_options(options: Array[WeavlyModel.Option]) -> void:
-	var filled: Array[WeavlyModel.Option] = []
-	for option: WeavlyModel.Option in options:
-		engine.current_line = option.line
-		filled.append(WeavlyTextUtils.fill_option(option, engine))
+	var filled: Array[WeavlyModel.Option] = WeavlyTextUtils.fill_options(options, engine)
 	if filled.any(func(option: WeavlyModel.Option) -> bool: return not option.hint):
 		pending_options = filled
 	else:
