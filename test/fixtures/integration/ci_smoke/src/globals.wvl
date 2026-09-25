@@ -5,4 +5,8 @@ has_key: flag = false
 choice_visits: number = 0
 been_to_start: flag = false
 extern reputation: number
+city: pool
+night: pool
+empty: pool
+bob: slot
 @endenv

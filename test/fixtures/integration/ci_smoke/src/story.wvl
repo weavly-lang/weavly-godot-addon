@@ -52,3 +52,37 @@ $player_name: Which path?
 @log $reputation, visit_count(choices) + 1
 @finish
 @endnode
+
+@node arrival
+You arrive with {max($score, 0) + 1} points, written as \{score}.
+@draw empty
+@draw city, night
+@endnode
+
+@node bob_greets
+@meta
+pool: city
+slot: bob
+when: $score >= 0
+priority: 2
+weight: 1 + skip_count()
+once: true
+@endmeta
+>Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times.
+@endnode
+
+@node night_market
+@meta
+pool: city, night
+slot: bob
+priority: 1
+@endmeta
+The night market is open.
+@endnode
+
+@node plaza
+@meta
+pool: night
+@endmeta
+The plaza is quiet.
+@endnode
