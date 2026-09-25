@@ -569,15 +569,3 @@ static func _compile_extern_declaration(
 			return null
 	variable.extern = true
 	return variable
-
-
-static func compile_variable_from_value(id: StringName, value: Variant) -> WeavlyModel.Variable:
-	if value is float:
-		return WeavlyModel.NumberVariable.new(id, 0, null, null)
-	if value is String:
-		return WeavlyModel.StringVariable.new(id, "")
-	if value is bool:
-		return WeavlyModel.FlagVariable.new(id, false)
-
-	push_error("Unknown variable value: %s" % type_string(typeof(value)))
-	return null
