@@ -23,7 +23,7 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 	elif is_instance_of(statement, WeavlyModel.OptionBlock):
 		execute_option_block(statement, engine)
 	elif is_instance_of(statement, WeavlyModel.RandomBlock):
-		execute_random_block(statement, engine, randf)
+		execute_random_block(statement, engine)
 	else:
 		engine.report_error(
 			"Can't execute statement of type '%s'." % type_string(typeof(statement))
@@ -49,7 +49,9 @@ static func execute_set_statement(
 	if declared == null:
 		engine.report_error(UNDEFINED_SET_TARGET % set_statement.id)
 		return
-	var value = WeavlyExpressionEvaluator.evaluate_expression(set_statement.expression, engine)
+	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		set_statement.expression, engine
+	)
 	if WeavlyExpressionEvaluator.is_error(value):
 		return
 	if typeof(value) != typeof(declared.value):
@@ -95,26 +97,16 @@ static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: Wea
 		WeavlyModel.MatchModifier.FIRST:
 			_execute_first_case(cases, engine)
 		WeavlyModel.MatchModifier.LAST:
-			_execute_last_case(cases, engine)
+			var reversed: Array[WeavlyModel.WhenCase] = cases.duplicate()
+			reversed.reverse()
+			_execute_first_case(reversed, engine)
 		WeavlyModel.MatchModifier.ALL:
 			_execute_all_cases(cases, engine)
 
 
 static func _execute_first_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
 	for case: WeavlyModel.WhenCase in cases:
-		engine.current_line = case.line
-		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
-		if condition:
-			engine.statement_service.add_statements(case.body)
-			return
-
-
-static func _execute_last_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
-	for i in range(cases.size() - 1, -1, -1):
-		var case: WeavlyModel.WhenCase = cases[i]
-		engine.current_line = case.line
-		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
-		if condition:
+		if _condition_holds(case.line, case.condition, engine):
 			engine.statement_service.add_statements(case.body)
 			return
 
@@ -122,11 +114,17 @@ static func _execute_last_case(cases: Array[WeavlyModel.WhenCase], engine: Weavl
 static func _execute_all_cases(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
 	var valid_case_bodies: Array[Array] = []
 	for case: WeavlyModel.WhenCase in cases:
-		engine.current_line = case.line
-		var condition = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
-		if condition:
+		if _condition_holds(case.line, case.condition, engine):
 			valid_case_bodies.append(case.body)
 	engine.statement_service.add_statement_groups(valid_case_bodies)
+
+
+# Errors in the condition are reported at the case's line.
+static func _condition_holds(
+	line: int, condition: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
+) -> bool:
+	engine.current_line = line
+	return WeavlyExpressionEvaluator.evaluate_condition(condition, engine)
 
 
 static func execute_option_block(
@@ -134,11 +132,7 @@ static func execute_option_block(
 ) -> void:
 	var possible_options: Array[WeavlyModel.Option] = []
 	for option: WeavlyModel.Option in option_block.options:
-		engine.current_line = option.line
-		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(
-			option.condition, engine
-		)
-		if condition:
+		if _condition_holds(option.line, option.condition, engine):
 			possible_options.append(option)
 
 	if possible_options.is_empty():
@@ -156,8 +150,7 @@ static func execute_random_block(
 	var evaluated_weights: Array[float] = []
 	var total_weight: float = 0
 	for case: WeavlyModel.RandomCase in random_block.cases:
-		engine.current_line = case.line
-		var condition: bool = WeavlyExpressionEvaluator.evaluate_condition(case.condition, engine)
+		var condition: bool = _condition_holds(case.line, case.condition, engine)
 		var weight: float = _evaluate_weight(case.weight, engine)
 		if condition and weight > 0:
 			possible_cases.append(case)
@@ -169,7 +162,7 @@ static func execute_random_block(
 
 	var random: float = rng.call() * total_weight
 	var current: float = 0.0
-	for i in possible_cases.size():
+	for i: int in possible_cases.size():
 		current += evaluated_weights[i]
 		if random <= current:
 			engine.statement_service.add_statements(possible_cases[i].body)

@@ -24,6 +24,19 @@ const DEFAULT_STATEMENT_SERVICE = preload(DEFAULTS_PATH + "default_statement_ser
 const DEFAULT_VARIABLE_SERVICE = preload(DEFAULTS_PATH + "default_variable_service.gd")
 const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd")
 
+# Slot -> [default script, base type]; each slot has a <slot>_service and <slot>_service_script.
+static var _service_types: Dictionary[String, Array] = {
+	"character": [DEFAULT_CHARACTER_SERVICE, WeavlyCharacterService],
+	"command": [DEFAULT_COMMAND_SERVICE, WeavlyCommandService],
+	"image": [DEFAULT_IMAGE_SERVICE, WeavlyImageService],
+	"line": [DEFAULT_LINE_SERVICE, WeavlyLineService],
+	"node": [DEFAULT_NODE_SERVICE, WeavlyNodeService],
+	"option": [DEFAULT_OPTION_SERVICE, WeavlyOptionService],
+	"statement": [DEFAULT_STATEMENT_SERVICE, WeavlyStatementService],
+	"variable": [DEFAULT_VARIABLE_SERVICE, WeavlyVariableService],
+	"video": [DEFAULT_VIDEO_SERVICE, WeavlyVideoService],
+}
+
 @export var dialogue_path: String = "res://dialogue/build"
 @export var video_path: String = "res://media/videos"
 @export var image_path: String = "res://media/images"
@@ -45,8 +58,8 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 @export var variable_service_script: Script
 @export var video_service_script: Script
 
-var _pending_node_id: String = ""
-var _has_pending_node: bool = false
+# Null when no node is waiting to be entered.
+var _pending_node_id: Variant = null
 var _in_next: bool = false
 
 var _finished: bool = true
@@ -59,35 +72,14 @@ var _initial_state: Dictionary = {}
 
 
 func _ready() -> void:
-	character_service = WeavlyFileUtils.create_service(
-		self, character_service_script, DEFAULT_CHARACTER_SERVICE, WeavlyCharacterService
-	)
-	command_service = WeavlyFileUtils.create_service(
-		self, command_service_script, DEFAULT_COMMAND_SERVICE, WeavlyCommandService
-	)
-	image_service = WeavlyFileUtils.create_service(
-		self, image_service_script, DEFAULT_IMAGE_SERVICE, WeavlyImageService
-	)
+	for slot: String in _service_types:
+		var user_script: Script = get(slot + "_service_script")
+		set(
+			slot + "_service",
+			create_service(self, user_script, _service_types[slot][0], _service_types[slot][1])
+		)
 	image_service.set_group_pattern(image_group_pattern)
 	image_service.set_supported_extensions(image_extensions)
-	line_service = WeavlyFileUtils.create_service(
-		self, line_service_script, DEFAULT_LINE_SERVICE, WeavlyLineService
-	)
-	node_service = WeavlyFileUtils.create_service(
-		self, node_service_script, DEFAULT_NODE_SERVICE, WeavlyNodeService
-	)
-	option_service = WeavlyFileUtils.create_service(
-		self, option_service_script, DEFAULT_OPTION_SERVICE, WeavlyOptionService
-	)
-	statement_service = WeavlyFileUtils.create_service(
-		self, statement_service_script, DEFAULT_STATEMENT_SERVICE, WeavlyStatementService
-	)
-	variable_service = WeavlyFileUtils.create_service(
-		self, variable_service_script, DEFAULT_VARIABLE_SERVICE, WeavlyVariableService
-	)
-	video_service = WeavlyFileUtils.create_service(
-		self, video_service_script, DEFAULT_VIDEO_SERVICE, WeavlyVideoService
-	)
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
@@ -111,7 +103,6 @@ func start(node_id: String) -> void:
 
 func enter_node(node_id: String) -> void:
 	_pending_node_id = node_id
-	_has_pending_node = true
 	if not _in_next:
 		next()
 
@@ -123,7 +114,7 @@ func next() -> void:
 	statement_service.resume()
 	var node_entries: int = 0
 	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
-		if _has_pending_node:
+		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
 				report_error(GOTO_CYCLE % max_node_entries_per_step)
@@ -137,8 +128,7 @@ func next() -> void:
 
 func _enter_pending_node() -> void:
 	var node_id: String = _pending_node_id
-	_has_pending_node = false
-	_pending_node_id = ""
+	_pending_node_id = null
 	if not node_service.has(node_id):
 		report_error(MISSING_NODE % node_id)
 		finish()
@@ -167,8 +157,7 @@ func _stop() -> void:
 	_finished = true
 	_holds = 0
 	_hold_interrupted_step = false
-	_has_pending_node = false
-	_pending_node_id = ""
+	_pending_node_id = null
 	_checkpoint = {}
 	current_node_id = ""
 	clear_location()
@@ -178,13 +167,6 @@ func _stop() -> void:
 
 func is_running() -> bool:
 	return not _finished
-
-
-func hold() -> void:
-	if _holds == 0:
-		_hold_interrupted_step = _in_next
-	_holds += 1
-	statement_service.pause()
 
 
 # While a dialogue runs, the state as its current node was entered, so loading replays that node.
@@ -221,17 +203,10 @@ func reset_state() -> void:
 
 
 func _services() -> Dictionary:
-	return {
-		"character": character_service,
-		"command": command_service,
-		"image": image_service,
-		"line": line_service,
-		"node": node_service,
-		"option": option_service,
-		"statement": statement_service,
-		"variable": variable_service,
-		"video": video_service,
-	}
+	var services: Dictionary = {}
+	for slot: String in _service_types:
+		services[slot] = get(slot + "_service")
+	return services
 
 
 func _collect_service_states() -> Dictionary:
@@ -242,6 +217,13 @@ func _collect_service_states() -> Dictionary:
 		if not state.is_empty():
 			states[slot] = state
 	return states
+
+
+func hold() -> void:
+	if _holds == 0:
+		_hold_interrupted_step = _in_next
+	_holds += 1
+	statement_service.pause()
 
 
 # The last release continues only a step the hold interrupted; a line on screen keeps waiting.
@@ -257,3 +239,19 @@ func release() -> void:
 		statement_service.resume()
 	else:
 		next()
+
+
+# Falls back to the default script when the user's doesn't extend the base type.
+static func create_service(
+	engine: WeavlyEngine, user_script: Script, default_script: Script, base_type: Variant
+) -> WeavlyService:
+	var script_to_use: Script = user_script if user_script != null else default_script
+	var instance: WeavlyService = script_to_use.new()
+	if is_instance_of(instance, base_type):
+		instance.initialize(engine)
+		return instance
+
+	push_warning("%s must extend %s. Falling back to default." % [script_to_use, base_type])
+	var default_instance: WeavlyService = default_script.new()
+	default_instance.initialize(engine)
+	return default_instance

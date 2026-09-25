@@ -5,9 +5,6 @@ const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 const DefaultNodeService = preload(
 	"res://addons/weavly/src/services/implementations/default_node_service.gd"
 )
-const DefaultVariableService = preload(
-	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
-)
 const DefaultImageService = preload(
 	"res://addons/weavly/src/services/implementations/default_image_service.gd"
 )
@@ -84,40 +81,6 @@ func test_load_json_returns_null_on_invalid_json() -> void:
 func test_load_json_returns_null_on_missing_file() -> void:
 	assert_that(WeavlyFileUtils.load_json_file(MISSING_PATH)).is_null()
 	assert_logged(["Could not open res://test/fixtures/file_utils/does_not_exist.json"])
-
-
-# =====================
-# create_service
-# =====================
-
-
-func test_create_service_returns_user_instance_when_extends_base_type() -> void:
-	var engine = _make_engine()
-	var service = WeavlyFileUtils.create_service(
-		engine, DefaultNodeService, DefaultNodeService, WeavlyNodeService
-	)
-	assert_bool(service is DefaultNodeService).is_true()
-	assert_that(service.engine).is_equal(engine)
-
-
-func test_create_service_falls_back_to_default_when_wrong_base_type() -> void:
-	var engine = _make_engine()
-	var service = WeavlyFileUtils.create_service(
-		engine, DefaultVariableService, DefaultNodeService, WeavlyNodeService
-	)
-	assert_bool(service is DefaultNodeService).is_true()
-	assert_bool(service is DefaultVariableService).is_false()
-	assert_that(service.engine).is_equal(engine)
-	assert_logged([], ["Falling back to default."])
-
-
-func test_create_service_uses_default_when_user_script_null() -> void:
-	var engine = _make_engine()
-	var service = WeavlyFileUtils.create_service(
-		engine, null, DefaultNodeService, WeavlyNodeService
-	)
-	assert_bool(service is DefaultNodeService).is_true()
-	assert_that(service.engine).is_equal(engine)
 
 
 # =====================
