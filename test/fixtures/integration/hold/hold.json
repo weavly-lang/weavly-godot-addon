@@ -1,1 +1,1 @@
-{"nodes":[{"id":"start","body":[{"type":"command","id":"shake","args":[]},{"type":"narration","text":["After"]},{"type":"finish"}]}]}
+{"source":"hold.wvl","nodes":[{"id":"start","line":1,"body":[{"type":"command","line":2,"id":"shake","args":[]},{"type":"narration","line":3,"text":["After"]},{"type":"finish","line":4}]}]}

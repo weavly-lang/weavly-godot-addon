@@ -74,22 +74,6 @@ static func _path_root(source: String, key: String) -> String:
 	return "%s > %s" % [source, key] if source != "" else key
 
 
-# 0 for builds from before compiler 0.3.0, which carry no lines.
-static func _optional_line(data: Dictionary) -> int:
-	var line: Variant = data.get(KEY_LINE)
-	if line is float or line is int:
-		return int(line)
-	return 0
-
-
-# Builds from before compiler 0.3.0 carry no source: story.wvl.json -> story.wvl.
-static func _source_name(data: Dictionary, source: String) -> String:
-	var name: Variant = data.get(KEY_SOURCE)
-	if name is String:
-		return name
-	return source.get_file().trim_suffix(".json")
-
-
 static func get_required(
 	data: Dictionary, key: String, expected: Variant.Type, path: String = ""
 ) -> Variant:
@@ -117,6 +101,11 @@ static func get_required(
 	return null
 
 
+static func _get_required_line(data: Dictionary, path: String) -> Variant:
+	var line: Variant = get_required(data, KEY_LINE, Variant.Type.TYPE_FLOAT, path)
+	return null if line == null else int(line)
+
+
 # =====================
 # Nodes
 # =====================
@@ -124,10 +113,10 @@ static func get_required(
 
 static func compile_nodes(data: Dictionary, source: String = "") -> Array[WeavlyModel.WeavlyNode]:
 	var nodes_arr = get_required(data, KEY_NODES, Variant.Type.TYPE_ARRAY, source)
+	var source_name: Variant = get_required(data, KEY_SOURCE, Variant.Type.TYPE_STRING, source)
 	var nodes: Array[WeavlyModel.WeavlyNode] = []
-	if nodes_arr == null:
+	if nodes_arr == null or source_name == null:
 		return nodes
-	var source_name: String = _source_name(data, source)
 	for i in range(nodes_arr.size()):
 		var node_data = nodes_arr[i]
 		var node_path = _path_index(_path_root(source, KEY_NODES), i)
@@ -143,12 +132,13 @@ static func compile_nodes(data: Dictionary, source: String = "") -> Array[Weavly
 
 static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
 	var id = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
+	var line: Variant = _get_required_line(data, path)
 	var body_arr = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	if id == null or body_arr == null:
+	if id == null or line == null or body_arr == null:
 		return null
 	var body = compile_statements(body_arr, _path_join(path, KEY_BODY))
 	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new(id, body)
-	node.line = _optional_line(data)
+	node.line = line
 	return node
 
 
@@ -169,9 +159,11 @@ static func compile_statements(data: Array, path: String) -> Array[WeavlyModel.S
 				)
 			)
 			continue
-		var compiled = compile_statement(statement, _path_index(path, i))
-		if compiled != null:
-			compiled.line = _optional_line(statement)
+		var statement_path: String = _path_index(path, i)
+		var line: Variant = _get_required_line(statement, statement_path)
+		var compiled = compile_statement(statement, statement_path)
+		if compiled != null and line != null:
+			compiled.line = line
 			statements.append(compiled)
 	return statements
 
@@ -313,19 +305,21 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 		var when_case = compile_when_case(case_data, case_path)
 		if when_case == null:
 			return null
-		when_case.line = _optional_line(case_data)
 		cases.append(when_case)
 
 	return WeavlyModel.MatchBlock.new(modifier, cases)
 
 
 static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.WhenCase:
+	var line: Variant = _get_required_line(data, path)
 	var condition = compile_required_expression(data, KEY_CONDITION, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	if condition == null or body_data_list == null:
+	if line == null or condition == null or body_data_list == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
-	return WeavlyModel.WhenCase.new(condition, body)
+	var when_case: WeavlyModel.WhenCase = WeavlyModel.WhenCase.new(condition, body)
+	when_case.line = line
+	return when_case
 
 
 # =====================
@@ -347,20 +341,28 @@ static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.
 		var option = compile_option(option_data, option_path)
 		if option == null:
 			return null
-		option.line = _optional_line(option_data)
 		options.append(option)
 	return WeavlyModel.OptionBlock.new(options)
 
 
 static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option:
+	var line: Variant = _get_required_line(data, path)
 	var condition = compile_required_expression(data, KEY_CONDITION, path)
 	var segments: Variant = compile_text(data, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
 	var hint = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
-	if condition == null or segments == null or body_data_list == null or hint == null:
+	if (
+		line == null
+		or condition == null
+		or segments == null
+		or body_data_list == null
+		or hint == null
+	):
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
-	return WeavlyModel.Option.new(condition, segments, body, hint)
+	var option: WeavlyModel.Option = WeavlyModel.Option.new(condition, segments, body, hint)
+	option.line = line
+	return option
 
 
 # =====================
@@ -382,19 +384,21 @@ static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.
 		var random_case = compile_random_case(case_data, case_path)
 		if random_case == null:
 			return null
-		random_case.line = _optional_line(case_data)
 		cases.append(random_case)
 	return WeavlyModel.RandomBlock.new(cases)
 
 
 static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.RandomCase:
+	var line: Variant = _get_required_line(data, path)
 	var condition = compile_required_expression(data, KEY_CONDITION, path)
 	var weight = compile_required_expression(data, KEY_WEIGHT, path)
 	var body_data_list = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
-	if condition == null or weight == null or body_data_list == null:
+	if line == null or condition == null or weight == null or body_data_list == null:
 		return null
 	var body = compile_statements(body_data_list, _path_join(path, KEY_BODY))
-	return WeavlyModel.RandomCase.new(condition, weight, body)
+	var random_case: WeavlyModel.RandomCase = WeavlyModel.RandomCase.new(condition, weight, body)
+	random_case.line = line
+	return random_case
 
 
 # =====================

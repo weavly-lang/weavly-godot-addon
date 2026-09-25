@@ -21,8 +21,6 @@ var current_node_id: String = ""
 var current_source: String = ""
 var current_line: int = 0
 
-var _location_node_id: String = ""
-
 @abstract func start(node_id: String) -> void
 
 @abstract func enter_node(node_id: String) -> void
@@ -52,21 +50,16 @@ func report_error(message: String) -> void:
 func set_location(node: WeavlyModel.WeavlyNode) -> void:
 	current_source = node.source
 	current_line = node.line
-	_location_node_id = node.id
 
 
 func clear_location() -> void:
 	current_source = ""
 	current_line = 0
-	_location_node_id = ""
 
 
 func _locate(message: String) -> String:
 	if current_source != "" and current_line > 0:
 		return "%s:%d: error: %s" % [current_source, current_line, message]
-	if _location_node_id != "":
-		var file: String = current_source + ", " if current_source != "" else ""
-		return "%snode '%s': error: %s" % [file, _location_node_id, message]
 	return message
 
 

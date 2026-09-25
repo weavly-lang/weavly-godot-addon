@@ -31,18 +31,6 @@ func test_report_error_prefixes_file_and_line() -> void:
 	assert_that(_reports).is_equal([["Variable 'x' isn't defined.", "story.wvl", 12]])
 
 
-func test_report_error_without_a_line_names_file_and_node() -> void:
-	_engine.set_location(_node("story.wvl", 0))
-	_engine.report_error("Variable 'x' isn't defined.")
-	assert_logged(["story.wvl, node 'choices': error: Variable 'x' isn't defined."])
-
-
-func test_report_error_without_a_source_names_the_node() -> void:
-	_engine.set_location(_node("", 0))
-	_engine.report_error("Variable 'x' isn't defined.")
-	assert_logged(["node 'choices': error: Variable 'x' isn't defined."])
-
-
 func test_report_error_without_a_location_reports_the_message() -> void:
 	_engine.set_location(_node("story.wvl", 4))
 	_engine.clear_location()

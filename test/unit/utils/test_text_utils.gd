@@ -11,27 +11,6 @@ func _make_engine() -> WeavlyEngine:
 
 
 # =====================
-# format_string_strip_quotes
-# =====================
-
-
-func test_strip_quotes_removes_surrounding_quotes() -> void:
-	assert_that(WeavlyTextUtils.format_string_strip_quotes('"hi"')).is_equal("hi")
-
-
-func test_strip_quotes_leaves_unquoted_string() -> void:
-	assert_that(WeavlyTextUtils.format_string_strip_quotes("hi")).is_equal("hi")
-
-
-func test_strip_quotes_single_char_unchanged() -> void:
-	assert_that(WeavlyTextUtils.format_string_strip_quotes('"')).is_equal('"')
-
-
-func test_strip_quotes_non_string_unchanged() -> void:
-	assert_that(WeavlyTextUtils.format_string_strip_quotes(42)).is_equal(42)
-
-
-# =====================
 # format_float_trim_zero
 # =====================
 

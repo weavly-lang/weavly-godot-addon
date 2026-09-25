@@ -9,12 +9,16 @@ extends WeavlyTestSuite
 # =====================
 
 
+func _build(nodes: Array) -> Dictionary:
+	return {"source": "story.wvl", "nodes": nodes}
+
+
 func _node(id: String, body: Array) -> Dictionary:
-	return {"id": id, "body": body}
+	return {"id": id, "line": 1.0, "body": body}
 
 
 func _compile_single(statement: Dictionary) -> WeavlyModel.Statement:
-	var data = {"nodes": [_node("start", [statement])]}
+	var data = _build([_node("start", [statement.merged({"line": 2.0})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	return nodes[0].body[0]
 
@@ -25,19 +29,13 @@ func _compile_single(statement: Dictionary) -> WeavlyModel.Statement:
 
 
 func test_compile_nodes_returns_correct_count() -> void:
-	var data = {
-		"nodes":
-		[
-			_node("a", []),
-			_node("b", []),
-		]
-	}
+	var data = _build([_node("a", []), _node("b", [])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes.size()).is_equal(2)
 
 
 func test_compile_nodes_sets_id() -> void:
-	var data = {"nodes": [_node("intro", [])]}
+	var data = _build([_node("intro", [])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].id).is_equal("intro")
 
@@ -282,18 +280,18 @@ func test_extern_declaration_of_an_unknown_type_is_skipped() -> void:
 
 
 func test_source_and_lines_are_read() -> void:
-	var case_data = {"line": 4, "condition": true, "body": []}
+	var case_data = {"line": 4.0, "condition": true, "body": []}
 	var data = {
 		"source": "chapter/story.wvl",
 		"nodes":
 		[
 			{
 				"id": "start",
-				"line": 1,
+				"line": 1.0,
 				"body":
 				[
-					{"type": "narration", "line": 2, "text": ["Hi"]},
-					{"type": "match", "line": 3, "modifier": "first", "cases": [case_data]},
+					{"type": "narration", "line": 2.0, "text": ["Hi"]},
+					{"type": "match", "line": 3.0, "modifier": "first", "cases": [case_data]},
 				]
 			}
 		]
@@ -309,20 +307,15 @@ func test_source_and_lines_are_read() -> void:
 func test_option_and_random_case_lines_are_read() -> void:
 	var option_block = {
 		"type": "option",
-		"items": [{"line": 5, "condition": true, "text": ["a"], "body": [], "hint": false}]
+		"line": 4.0,
+		"items": [{"line": 5.0, "condition": true, "text": ["a"], "body": [], "hint": false}]
 	}
 	var random_block = {
-		"type": "random", "cases": [{"line": 7, "condition": true, "weight": 1.0, "body": []}]
+		"type": "random",
+		"line": 6.0,
+		"cases": [{"line": 7.0, "condition": true, "weight": 1.0, "body": []}]
 	}
-	var data = {"nodes": [{"id": "start", "body": [option_block, random_block]}]}
+	var data = _build([_node("start", [option_block, random_block])])
 	var body = WeavlyDeserializer.compile_nodes(data)[0].body
 	assert_int(body[0].options[0].line).is_equal(5)
 	assert_int(body[1].cases[0].line).is_equal(7)
-
-
-func test_a_build_without_locations_falls_back_to_the_file_name() -> void:
-	var data = {"nodes": [{"id": "start", "body": [{"type": "finish"}]}]}
-	var node = WeavlyDeserializer.compile_nodes(data, "res://dialogue/build/intro.wvl.json")[0]
-	assert_that(node.source).is_equal("intro.wvl")
-	assert_int(node.line).is_equal(0)
-	assert_int(node.body[0].line).is_equal(0)

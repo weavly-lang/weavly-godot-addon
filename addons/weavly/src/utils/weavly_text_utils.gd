@@ -95,18 +95,6 @@ static func fill_option(option: WeavlyModel.Option, engine: WeavlyEngine) -> Wea
 	return filled
 
 
-static func format_string_strip_quotes(value: Variant) -> Variant:
-	if (
-		is_instance_of(value, Variant.Type.TYPE_STRING)
-		and value.length() >= 2
-		and value.begins_with('"')
-		and value.ends_with('"')
-	):
-		return value.substr(1, value.length() - 2)
-
-	return value
-
-
 # Rounds to at most two decimals and drops them for whole numbers.
 static func format_float_trim_zero(value: Variant) -> Variant:
 	if value is not float:

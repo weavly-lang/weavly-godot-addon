@@ -6,8 +6,16 @@ extends WeavlyTestSuite
 # gracefully, never crash the deserializer with a typed-assignment failure.
 
 
+func _build(nodes: Variant) -> Dictionary:
+	return {"source": "story.wvl", "nodes": nodes}
+
+
 func _node(id: String, body: Array) -> Dictionary:
-	return {"id": id, "body": body}
+	return {"id": id, "line": 1.0, "body": body}
+
+
+func _statement(data: Dictionary) -> Dictionary:
+	return data.merged({"line": 2.0})
 
 
 # =====================
@@ -16,13 +24,13 @@ func _node(id: String, body: Array) -> Dictionary:
 
 
 func test_nodes_missing_top_level_key_returns_empty() -> void:
-	var nodes = WeavlyDeserializer.compile_nodes({})
+	var nodes = WeavlyDeserializer.compile_nodes({"source": "story.wvl"})
 	assert_that(nodes.size()).is_equal(0)
 	assert_logged(["Missing required field 'nodes' at <root>"])
 
 
 func test_nodes_wrong_type_returns_empty() -> void:
-	var nodes = WeavlyDeserializer.compile_nodes({"nodes": "not an array"})
+	var nodes = WeavlyDeserializer.compile_nodes(_build("not an array"))
 	assert_that(nodes.size()).is_equal(0)
 	assert_logged(
 		["Required field 'nodes' has wrong type at <root>, expected 'Array' got 'String'"]
@@ -30,19 +38,31 @@ func test_nodes_wrong_type_returns_empty() -> void:
 
 
 func test_node_missing_body_is_skipped() -> void:
-	var nodes = WeavlyDeserializer.compile_nodes({"nodes": [{"id": "start"}]})
+	var nodes = WeavlyDeserializer.compile_nodes(_build([{"id": "start", "line": 1.0}]))
 	assert_that(nodes.size()).is_equal(0)
 	assert_logged(["Missing required field 'body' at nodes[0]"])
 
 
 func test_node_missing_id_is_skipped() -> void:
-	var nodes = WeavlyDeserializer.compile_nodes({"nodes": [{"body": []}]})
+	var nodes = WeavlyDeserializer.compile_nodes(_build([{"line": 1.0, "body": []}]))
 	assert_that(nodes.size()).is_equal(0)
 	assert_logged(["Missing required field 'id' at nodes[0]"])
 
 
+func test_node_missing_line_is_skipped() -> void:
+	var nodes = WeavlyDeserializer.compile_nodes(_build([{"id": "start", "body": []}]))
+	assert_that(nodes.size()).is_equal(0)
+	assert_logged(["Missing required field 'line' at nodes[0]"])
+
+
+func test_nodes_missing_source_returns_empty() -> void:
+	var nodes = WeavlyDeserializer.compile_nodes({"nodes": [_node("start", [])]})
+	assert_that(nodes.size()).is_equal(0)
+	assert_logged(["Missing required field 'source' at <root>"])
+
+
 func test_malformed_node_does_not_drop_valid_siblings() -> void:
-	var data = {"nodes": [{"id": "broken"}, _node("ok", [])]}
+	var data = _build([{"id": "broken", "line": 1.0}, _node("ok", [])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes.size()).is_equal(1)
 	assert_that(nodes[0].id).is_equal("ok")
@@ -55,21 +75,28 @@ func test_malformed_node_does_not_drop_valid_siblings() -> void:
 
 
 func test_unknown_statement_type_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"type": "bogus"}])]}
+	var data = _build([_node("start", [_statement({"type": "bogus"})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Unknown statement type 'bogus' at nodes[0].body[0]"])
 
 
 func test_statement_missing_type_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"text": "orphan"}])]}
+	var data = _build([_node("start", [_statement({"text": ["orphan"]})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Missing required field 'type' at nodes[0].body[0]"])
 
 
-func test_narration_with_text_from_before_compiler_0_4_0_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"type": "narration", "text": "Hi"}])]}
+func test_statement_missing_line_is_skipped() -> void:
+	var data = _build([_node("start", [{"type": "narration", "text": ["Hi"]}])])
+	var nodes = WeavlyDeserializer.compile_nodes(data)
+	assert_that(nodes[0].body.size()).is_equal(0)
+	assert_logged(["Missing required field 'line' at nodes[0].body[0]"])
+
+
+func test_narration_with_text_that_is_not_a_list_is_skipped() -> void:
+	var data = _build([_node("start", [_statement({"type": "narration", "text": "Hi"})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(
@@ -83,30 +110,31 @@ func test_narration_with_text_from_before_compiler_0_4_0_is_skipped() -> void:
 
 
 func test_narration_with_a_failing_interpolation_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"type": "narration", "text": ["a", {"bogus": 1}]}])]}
+	var narration = _statement({"type": "narration", "text": ["a", {"bogus": 1}]})
+	var data = _build([_node("start", [narration])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Unknown expression type at nodes[0].body[0].text[1]"])
 
 
 func test_narration_missing_text_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"type": "narration"}])]}
+	var data = _build([_node("start", [_statement({"type": "narration"})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Missing required field 'text' at nodes[0].body[0]"])
 
 
 func test_match_missing_cases_is_skipped() -> void:
-	var data = {"nodes": [_node("start", [{"type": "match", "modifier": "first"}])]}
+	var data = _build([_node("start", [_statement({"type": "match", "modifier": "first"})])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Missing required field 'cases' at nodes[0].body[0]"])
 
 
 func test_match_unknown_modifier_is_skipped() -> void:
-	var case_data = {"condition": true, "body": []}
-	var match_data = {"type": "match", "modifier": "bogus", "cases": [case_data]}
-	var data = {"nodes": [_node("start", [match_data])]}
+	var case_data = {"line": 3.0, "condition": true, "body": []}
+	var match_data = _statement({"type": "match", "modifier": "bogus", "cases": [case_data]})
+	var data = _build([_node("start", [match_data])])
 	var nodes = WeavlyDeserializer.compile_nodes(data)
 	assert_that(nodes[0].body.size()).is_equal(0)
 	assert_logged(["Unknown match modifier 'bogus' at nodes[0].body[0]"])
@@ -152,7 +180,7 @@ func test_declarations_wrong_type_returns_empty() -> void:
 
 
 func test_node_error_includes_source_file_path() -> void:
-	var data = {"nodes": [{"id": "start"}]}  # missing body
+	var data = _build([{"id": "start", "line": 1.0}])  # missing body
 	WeavlyDeserializer.compile_nodes(data, "res://dialogue/build/scene2.json")
 	assert_logged(["Missing required field 'body' at res://dialogue/build/scene2.json > nodes[0]"])
 
@@ -171,7 +199,7 @@ func test_declaration_error_includes_source_file_path() -> void:
 
 
 func _body_of(statement: Dictionary) -> Array:
-	var data = {"nodes": [_node("start", [statement, {"type": "finish"}])]}
+	var data = _build([_node("start", [_statement(statement), _statement({"type": "finish"})])])
 	return WeavlyDeserializer.compile_nodes(data)[0].body
 
 
@@ -197,8 +225,8 @@ func test_set_with_a_failing_nested_operand_is_dropped() -> void:
 
 func test_match_with_a_failing_case_condition_is_dropped() -> void:
 	var cases = [
-		{"condition": {"bogus": 1}, "body": []},
-		{"condition": true, "body": []},
+		{"line": 3.0, "condition": {"bogus": 1}, "body": []},
+		{"line": 4.0, "condition": true, "body": []},
 	]
 	var body = _body_of({"type": "match", "modifier": "first", "cases": cases})
 	assert_that(body.size()).is_equal(1)
@@ -207,8 +235,8 @@ func test_match_with_a_failing_case_condition_is_dropped() -> void:
 
 func test_option_block_with_a_failing_condition_is_dropped() -> void:
 	var items = [
-		{"condition": {"bogus": 1}, "text": ["a"], "body": [], "hint": false},
-		{"condition": true, "text": ["b"], "body": [], "hint": false},
+		{"line": 3.0, "condition": {"bogus": 1}, "text": ["a"], "body": [], "hint": false},
+		{"line": 4.0, "condition": true, "text": ["b"], "body": [], "hint": false},
 	]
 	var body = _body_of({"type": "option", "items": items})
 	assert_that(body.size()).is_equal(1)
@@ -217,8 +245,8 @@ func test_option_block_with_a_failing_condition_is_dropped() -> void:
 
 func test_random_block_with_a_failing_weight_is_dropped() -> void:
 	var cases = [
-		{"condition": true, "weight": {"bogus": 1}, "body": []},
-		{"condition": true, "weight": 1.0, "body": []},
+		{"line": 3.0, "condition": true, "weight": {"bogus": 1}, "body": []},
+		{"line": 4.0, "condition": true, "weight": 1.0, "body": []},
 	]
 	var body = _body_of({"type": "random", "cases": cases})
 	assert_that(body.size()).is_equal(1)
@@ -226,7 +254,7 @@ func test_random_block_with_a_failing_weight_is_dropped() -> void:
 
 
 func test_a_failing_statement_inside_a_case_body_keeps_the_block() -> void:
-	var cases = [{"condition": true, "body": [{"type": "bogus"}]}]
+	var cases = [{"line": 3.0, "condition": true, "body": [_statement({"type": "bogus"})]}]
 	var body = _body_of({"type": "match", "modifier": "first", "cases": cases})
 	assert_that(body.size()).is_equal(2)
 	assert_that(body[0].cases[0].body).is_empty()
@@ -243,3 +271,24 @@ func test_command_without_args_is_dropped() -> void:
 	var body = _body_of({"type": "command", "id": "shake", "text": "strong"})
 	assert_that(body.size()).is_equal(1)
 	assert_logged(["Missing required field 'args' at nodes[0].body[0]"])
+
+
+func test_match_with_a_case_missing_its_line_is_dropped() -> void:
+	var cases = [{"condition": true, "body": []}]
+	var body = _body_of({"type": "match", "modifier": "first", "cases": cases})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'line' at nodes[0].body[0].cases[0]"])
+
+
+func test_option_block_with_an_option_missing_its_line_is_dropped() -> void:
+	var items = [{"condition": true, "text": ["a"], "body": [], "hint": false}]
+	var body = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'line' at nodes[0].body[0].items[0]"])
+
+
+func test_random_block_with_a_case_missing_its_line_is_dropped() -> void:
+	var cases = [{"condition": true, "weight": 1.0, "body": []}]
+	var body = _body_of({"type": "random", "cases": cases})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'line' at nodes[0].body[0].cases[0]"])

@@ -15,7 +15,6 @@ const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
 const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
 const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
 const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
-const LOCATIONS_WITHOUT_LINES_FIXTURE = "res://test/fixtures/integration/locations_without_lines"
 const TEXT_FIXTURE = "res://test/fixtures/integration/text"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save"
@@ -536,12 +535,6 @@ func test_runtime_errors_name_the_file_and_line_of_the_statement_or_case() -> vo
 			]
 		)
 	)
-
-
-func test_runtime_errors_without_lines_name_the_file_and_node() -> void:
-	var engine = _make_engine(LOCATIONS_WITHOUT_LINES_FIXTURE)
-	engine.start("start")
-	assert_logged(["old.wvl, node 'start': error: Variable 'scroe' isn't defined."])
 
 
 func test_an_error_before_any_node_is_entered_has_no_location() -> void:
