@@ -45,12 +45,8 @@ func set_variable(id: String, value: Variant) -> void:
 		value = float(value)
 
 	if not _variables.has(id):
-		var created: WeavlyModel.Variable = WeavlyDeserializer.compile_variable_from_value(
-			id, value
-		)
-		if created == null:
-			return
-		_variables[id] = created
+		push_error(UNDECLARED % id)
+		return
 
 	if _store(id, value):
 		variable_changed.emit(id, _variable_states[id])

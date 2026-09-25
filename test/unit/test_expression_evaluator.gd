@@ -83,19 +83,19 @@ func test_string_literal() -> void:
 
 func test_identifier_number_variable() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("score", 10.0)
+	declare_variable(engine, "score", 10.0)
 	assert_that(_eval(_id(&"score"), engine)).is_equal(10.0)
 
 
 func test_identifier_string_variable() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("name", "Alice")
+	declare_variable(engine, "name", "Alice")
 	assert_that(_eval(_id(&"name"), engine)).is_equal("Alice")
 
 
 func test_identifier_flag_variable() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("active", true)
+	declare_variable(engine, "active", true)
 	assert_that(_eval(_id(&"active"), engine)).is_equal(true)
 
 

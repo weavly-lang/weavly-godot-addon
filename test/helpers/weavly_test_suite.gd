@@ -2,6 +2,18 @@ class_name WeavlyTestSuite
 extends GdUnitTestSuite
 
 
+# Declares a variable typed after its value, as @env would.
+func declare_variable(engine: WeavlyEngine, id: StringName, value: Variant) -> void:
+	var variable: WeavlyModel.Variable
+	if value is float:
+		variable = WeavlyModel.NumberVariable.new(id, value, null, null)
+	elif value is String:
+		variable = WeavlyModel.StringVariable.new(id, value)
+	else:
+		variable = WeavlyModel.FlagVariable.new(id, value)
+	engine.variable_service.add_variable(variable)
+
+
 # gdUnit4's assert_error() can only assert one error per call; this consumes several.
 func assert_logged(errors: Array[String], warnings: Array[String] = []) -> void:
 	var monitor: GodotGdErrorMonitor = (

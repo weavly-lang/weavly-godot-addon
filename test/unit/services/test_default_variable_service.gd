@@ -137,15 +137,16 @@ func test_set_variable_accepts_an_int_for_a_number() -> void:
 	assert_that(_service.get_variable("score")).is_equal(5.0)
 
 
-func test_set_variable_still_creates_an_unknown_variable() -> void:
+func test_set_variable_of_an_undeclared_variable_is_rejected() -> void:
+	var changes: Array = []
+	_service.variable_changed.connect(
+		func(id: String, _value: Variant) -> void: changes.append(id)
+	)
 	_service.set_variable("gold", 3.0)
-	assert_that(_service.get_variable("gold")).is_equal(3.0)
-
-
-func test_set_variable_with_an_unsupported_value_creates_nothing() -> void:
-	_service.set_variable("thing", Vector2.ZERO)
-	assert_bool(_service.has("thing")).is_false()
-	assert_logged(["Unknown variable value: Vector2"])
+	assert_bool(_service.has("gold")).is_false()
+	assert_object(_service.get_declaration("gold")).is_null()
+	assert_that(changes).is_empty()
+	assert_logged(["Can't set variable 'gold' because it isn't declared."])
 
 
 # =====================

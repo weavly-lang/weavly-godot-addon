@@ -35,7 +35,7 @@ func test_trim_zero_a_float_that_rounds_to_a_whole_number_returns_int() -> void:
 
 func test_trim_zero_keeps_the_decimals_of_a_large_number() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("gold", 1000000.5)
+	declare_variable(engine, "gold", 1000000.5)
 	assert_that(WeavlyTextUtils.inject_variables("{$gold}", engine)).is_equal("1000000.5")
 
 
@@ -50,19 +50,19 @@ func test_trim_zero_non_float_unchanged() -> void:
 
 func test_inject_single_variable() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("name", "Alice")
+	declare_variable(engine, "name", "Alice")
 	assert_that(WeavlyTextUtils.inject_variables("Hi {$name}", engine)).is_equal("Hi Alice")
 
 
 func test_inject_keeps_quotes_that_are_part_of_the_value() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("greeting", '"hello"')
+	declare_variable(engine, "greeting", '"hello"')
 	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal('"hello"')
 
 
 func test_inject_trims_float_zero() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("score", 10.0)
+	declare_variable(engine, "score", 10.0)
 	assert_that(WeavlyTextUtils.inject_variables("You have {$score}", engine)).is_equal(
 		"You have 10"
 	)
@@ -70,9 +70,9 @@ func test_inject_trims_float_zero() -> void:
 
 func test_inject_rounds_decimals() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("third", 1.0 / 3.0)
-	engine.variable_service.set_variable("sum", 0.1 + 0.2)
-	engine.variable_service.set_variable("half", 2.5)
+	declare_variable(engine, "third", 1.0 / 3.0)
+	declare_variable(engine, "sum", 0.1 + 0.2)
+	declare_variable(engine, "half", 2.5)
 	assert_that(WeavlyTextUtils.inject_variables("{$third} {$sum} {$half}", engine)).is_equal(
 		"0.33 0.3 2.5"
 	)
@@ -80,8 +80,8 @@ func test_inject_rounds_decimals() -> void:
 
 func test_inject_multiple_variables() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("a", 1.0)
-	engine.variable_service.set_variable("b", 2.0)
+	declare_variable(engine, "a", 1.0)
+	declare_variable(engine, "b", 2.0)
 	assert_that(WeavlyTextUtils.inject_variables("{$a} and {$b}", engine)).is_equal("1 and 2")
 
 
@@ -93,7 +93,7 @@ func test_inject_no_match_returns_verbatim() -> void:
 
 func test_inject_custom_pipeline_applied() -> void:
 	var engine = _make_engine()
-	engine.variable_service.set_variable("name", "Alice")
+	declare_variable(engine, "name", "Alice")
 	var upper_pipeline: Array[Callable] = [func(v: Variant) -> Variant: return str(v).to_upper()]
 	assert_that(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline)).is_equal(
 		"ALICE"
@@ -115,7 +115,7 @@ func test_inject_keeps_an_unknown_variable_and_reports_it_once() -> void:
 
 func _engine_with_name() -> WeavlyEngine:
 	var engine: WeavlyEngine = _make_engine()
-	engine.variable_service.set_variable("name", "Ada")
+	declare_variable(engine, "name", "Ada")
 	return engine
 
 
@@ -191,7 +191,7 @@ func test_fill_text_of_empty_text_is_empty() -> void:
 
 func test_fill_text_evaluates_arithmetic() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	engine.variable_service.set_variable("price", 3.5)
+	declare_variable(engine, "price", 3.5)
 	var segments: Array = _segments(
 		["Costs ", {"op": "*", "left": {"variable": "price"}, "right": 2.0}, " gold."]
 	)
@@ -200,14 +200,14 @@ func test_fill_text_evaluates_arithmetic() -> void:
 
 func test_fill_text_evaluates_a_function_call() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	engine.variable_service.set_variable("hp", -4.0)
+	declare_variable(engine, "hp", -4.0)
 	var segments: Array = _segments([{"call": "max", "args": [{"variable": "hp"}, 0.0]}, " HP"])
 	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("0 HP")
 
 
 func test_fill_text_fills_several_interpolations() -> void:
 	var engine: WeavlyEngine = _engine_with_name()
-	engine.variable_service.set_variable("coins", 3.0)
+	declare_variable(engine, "coins", 3.0)
 	var segments: Array = _segments(
 		[{"variable": "name"}, " has ", {"variable": "coins"}, {"variable": "name"}]
 	)
