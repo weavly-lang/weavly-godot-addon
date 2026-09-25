@@ -10,17 +10,17 @@ static var _variable_regex: RegEx = RegEx.create_from_string(VARIABLE_PATTERN)
 static func inject_variables(
 	text: String, engine: WeavlyEngine, pipeline: Array[Callable] = default_variable_pipeline
 ) -> String:
-	var out = ""
-	var last_end = 0
+	var out: String = ""
+	var last_end: int = 0
 	var reported: Array[String] = []
 
-	for m in _variable_regex.search_all(text):
-		var start = m.get_start()
-		var end = m.get_end()
+	for m: RegExMatch in _variable_regex.search_all(text):
+		var start: int = m.get_start()
+		var end: int = m.get_end()
 		out += text.substr(last_end, start - last_end)
 		last_end = end
 
-		var variable_name = m.get_string(1)
+		var variable_name: String = m.get_string(1)
 		if not engine.variable_service.has(variable_name):
 			if variable_name not in reported:
 				WeavlyExpressionEvaluator.report_undefined_variable(variable_name, engine)

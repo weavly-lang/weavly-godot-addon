@@ -73,7 +73,7 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	_paint_comment(colors, text)
 
 	var result: Dictionary = {}
-	for i in length:
+	for i: int in length:
 		if i == 0 or colors[i] != colors[i - 1]:
 			result[i] = {"color": colors[i]}
 	return result
@@ -87,8 +87,8 @@ func _paint(
 	group: int = 0,
 	end: int = -1,
 ) -> void:
-	for regex_match in regex.search_all(text, 0, end):
-		for i in range(regex_match.get_start(group), regex_match.get_end(group)):
+	for regex_match: RegExMatch in regex.search_all(text, 0, end):
+		for i: int in range(regex_match.get_start(group), regex_match.get_end(group)):
 			colors[i] = color
 
 
@@ -102,7 +102,7 @@ func _find_env_lines(editor: TextEdit) -> void:
 	_env_lines.clear()
 	_env_lines_stale = false
 	var inside: bool = false
-	for i in editor.get_line_count():
+	for i: int in editor.get_line_count():
 		var found: RegExMatch = _block_directive_regex.search(editor.get_line(i))
 		if found != null:
 			match found.get_string(1):
@@ -135,18 +135,18 @@ func _expression_end(text: String) -> int:
 
 
 func _paint_numbers(colors: PackedColorArray, text: String) -> void:
-	for regex_match in _number_regex.search_all(text):
+	for regex_match: RegExMatch in _number_regex.search_all(text):
 		var start: int = regex_match.get_start()
 		if start > 0 and text[start - 1] == "-" and _starts_negative_number(text, start - 1):
 			start -= 1
-		for i in range(start, regex_match.get_end()):
+		for i: int in range(start, regex_match.get_end()):
 			colors[i] = NUMBER_COLOR
 
 
 # A minus belongs to the number only where a value can start, not after an
 # operand, where it is subtraction.
 func _starts_negative_number(text: String, minus: int) -> bool:
-	for i in range(minus - 1, -1, -1):
+	for i: int in range(minus - 1, -1, -1):
 		var character: String = text[i]
 		if character == " " or character == "\t":
 			continue
@@ -158,7 +158,7 @@ func _paint_comment(colors: PackedColorArray, text: String) -> void:
 	var start: int = _comment_start(text)
 	if start < 0:
 		return
-	for i in range(start, text.length()):
+	for i: int in range(start, text.length()):
 		colors[i] = COMMENT_COLOR
 
 

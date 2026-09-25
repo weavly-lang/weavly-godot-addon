@@ -94,21 +94,21 @@ static func evaluate_condition(
 static func evaluate_expression(
 	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
 ) -> Variant:
-	if is_instance_of(expression, WeavlyModel.TrueExpression):
+	if expression is WeavlyModel.TrueExpression:
 		return true
-	if is_instance_of(expression, WeavlyModel.FalseExpression):
+	if expression is WeavlyModel.FalseExpression:
 		return false
-	if is_instance_of(expression, WeavlyModel.Number):
+	if expression is WeavlyModel.Number:
 		return expression.value
-	if is_instance_of(expression, WeavlyModel.StringLiteral):
+	if expression is WeavlyModel.StringLiteral:
 		return expression.value
-	if is_instance_of(expression, WeavlyModel.Identifier):
+	if expression is WeavlyModel.Identifier:
 		return evaluate_identifier(expression, engine)
-	if is_instance_of(expression, WeavlyModel.Call):
+	if expression is WeavlyModel.Call:
 		return evaluate_call(expression, engine)
-	if is_instance_of(expression, WeavlyModel.UnaryExpression):
+	if expression is WeavlyModel.UnaryExpression:
 		return evaluate_unary_expression(expression, engine)
-	if is_instance_of(expression, WeavlyModel.BinaryExpression):
+	if expression is WeavlyModel.BinaryExpression:
 		return evaluate_binary_expression(expression, engine)
 
 	engine.report_error(UNKNOWN_EXPRESSION_TYPE % _get_type(expression))
