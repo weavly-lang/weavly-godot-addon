@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 # Pool selection against the compiler-built fixture in storylets/src/storylets.wvl.
@@ -130,3 +131,89 @@ func test_goto_and_start_ignore_the_metadata() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.start("when_no")
 	assert_int(engine.node_service.get_visit_count("when_no")).is_equal(1)
+
+
+# =====================
+# draw and @draw (issue #151)
+# =====================
+
+
+func _record_entered(engine: WeavlyEngine) -> Array[String]:
+	var entered: Array[String] = []
+	engine.entered_node.connect(func(node_id: String) -> void: entered.append(node_id))
+	return entered
+
+
+func test_draw_starts_the_first_node_in_selection_order() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	assert_bool(engine.draw("priority_test")).is_true()
+	assert_array(entered).is_equal(["high"])
+
+
+func test_draw_selects_over_several_pools() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	assert_bool(engine.draw("left", "right")).is_true()
+	assert_array(entered).is_equal(["both_sides"])
+
+
+func test_draw_without_an_eligible_node_starts_nothing() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	assert_bool(engine.draw("unused")).is_false()
+	assert_array(entered).is_empty()
+	assert_bool(engine.is_running()).is_false()
+
+
+func test_draw_while_a_dialogue_runs_warns_and_does_nothing() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.start("talk")
+	var entered: Array[String] = _record_entered(engine)
+	assert_bool(engine.draw("skip_test")).is_false()
+	assert_logged([], ["Dialogue is already in progress, can't draw from skip_test."])
+	assert_array(entered).is_empty()
+	assert_that(engine.current_node_id).is_equal("talk")
+	assert_int(engine.node_service.get_skip_count("patient")).is_equal(0)
+
+
+func test_draw_with_an_undeclared_pool_is_reported() -> void:
+	assert_bool(_make_engine().draw("nope")).is_false()
+	assert_logged(["Pool 'nope' isn't declared."])
+
+
+func test_draw_resets_the_drawn_node_and_counts_the_other_eligible_ones() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.draw("skip_test")
+	assert_int(engine.node_service.get_skip_count("first")).is_equal(0)
+	assert_int(engine.node_service.get_skip_count("patient")).is_equal(1)
+	assert_int(engine.node_service.get_skip_count("never")).is_equal(0)
+
+
+func test_the_draw_statement_enters_the_drawn_node_like_a_goto() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	engine.start("draw_one")
+	assert_array(entered).is_equal(["draw_one", "when_yes"])
+	assert_int(engine.node_service.get_visit_count("draw_one")).is_equal(1)
+
+
+func test_the_draw_statement_selects_over_several_pools() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	engine.start("draw_several")
+	assert_array(entered).is_equal(["draw_several", "both_sides"])
+
+
+func test_the_draw_statement_without_an_eligible_node_continues() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entered: Array[String] = _record_entered(engine)
+	engine.start("draw_none")
+	assert_array(entered).is_equal(["draw_none"])
+	assert_that(engine.variable_service.get_variable("count")).is_equal(5.0)
+
+
+func test_the_draw_statement_counts_a_pool_listed_twice_once() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.start("draw_skips")
+	assert_int(engine.node_service.get_skip_count("patient")).is_equal(1)

@@ -360,3 +360,9 @@ func test_a_node_without_meta_has_none() -> void:
 func test_pool_names_are_read_from_env() -> void:
 	var data: Dictionary = {"declarations": [], "pools": ["city", "night"], "slots": ["bob"]}
 	assert_array(WeavlyDeserializer.compile_pool_names(data)).is_equal(["city", "night"])
+
+
+func test_draw_statement() -> void:
+	var stmt = _compile_single({"type": "draw", "pools": ["city", "night"]})
+	assert_object(stmt).is_instanceof(WeavlyModel.DrawStatement)
+	assert_array((stmt as WeavlyModel.DrawStatement).pools).is_equal(["city", "night"])

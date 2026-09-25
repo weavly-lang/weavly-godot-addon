@@ -334,3 +334,9 @@ func test_env_without_pools_is_reported() -> void:
 	var names: Array[String] = WeavlyDeserializer.compile_pool_names({"declarations": []})
 	assert_array(names).is_empty()
 	assert_logged(["Missing required field 'pools' at <root>"])
+
+
+func test_draw_without_pools_is_dropped() -> void:
+	var body = _body_of({"type": "draw"})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'pools' at nodes[0].body[0]"])

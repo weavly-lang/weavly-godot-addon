@@ -200,3 +200,24 @@ pool: shuffle_test
 pool: shuffle_test
 @endmeta
 @endnode
+
+@node draw_one
+@draw when_test
+@endnode
+
+@node draw_several
+@draw left, right
+@endnode
+
+@node draw_none
+@draw unused
+@set $count = 5
+@endnode
+
+@node draw_skips
+@draw skip_test, skip_test
+@endnode
+
+@node talk
+Hello.
+@endnode

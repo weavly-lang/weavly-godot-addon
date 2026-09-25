@@ -7,6 +7,8 @@ signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
 
+const DRAW_IN_PROGRESS = "Dialogue is already in progress, can't draw from %s."
+
 var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService
 var image_service: WeavlyImageService
@@ -53,6 +55,18 @@ func list_pool(...pools: Array) -> Array[String]:
 # What list_pool would return now, without changing skip counts or the generator.
 func peek_pool(...pools: Array) -> Array[String]:
 	return WeavlyStoryletSelector.peek_pool(self, pools)
+
+
+# Starts a dialogue with the first node in selection order; false when none is eligible.
+func draw(...pools: Array) -> bool:
+	if is_running():
+		push_warning(DRAW_IN_PROGRESS % ", ".join(PackedStringArray(pools)))
+		return false
+	var node_id: String = WeavlyStoryletSelector.draw(self, pools)
+	if node_id == "":
+		return false
+	start(node_id)
+	return true
 
 
 func report_error(message: String) -> void:

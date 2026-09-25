@@ -19,12 +19,18 @@ class Candidate:
 static func list_pool(engine: WeavlyEngine, pools: Array) -> Array[String]:
 	var candidates: Array[Candidate] = _rank(engine, pools)
 	var taken: Array[String] = _take(candidates)
-	for candidate: Candidate in candidates:
-		var skips: int = 0
-		if candidate.id not in taken:
-			skips = engine.node_service.get_skip_count(candidate.id) + 1
-		engine.node_service.set_skip_count(candidate.id, skips)
+	_count_skips(candidates, taken, engine)
 	return taken
+
+
+# The first node in selection order, or empty when none is eligible; updates skip counts.
+static func draw(engine: WeavlyEngine, pools: Array) -> String:
+	var candidates: Array[Candidate] = _rank(engine, pools)
+	if candidates.is_empty():
+		return ""
+	var drawn: Array[String] = [candidates[0].id]
+	_count_skips(candidates, drawn, engine)
+	return drawn[0]
 
 
 # What list_pool would return now, without changing skip counts or the generator.
@@ -98,6 +104,16 @@ static func _evaluate_number(
 		engine.report_error(WRONG_NUMBER_TYPE % [name, type_string(typeof(value))])
 		return null
 	return value
+
+
+static func _count_skips(
+	candidates: Array[Candidate], taken: Array[String], engine: WeavlyEngine
+) -> void:
+	for candidate: Candidate in candidates:
+		var skips: int = 0
+		if candidate.id not in taken:
+			skips = engine.node_service.get_skip_count(candidate.id) + 1
+		engine.node_service.set_skip_count(candidate.id, skips)
 
 
 static func _take(candidates: Array[Candidate]) -> Array[String]:
