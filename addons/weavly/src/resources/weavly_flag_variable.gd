@@ -1,7 +1,6 @@
 class_name WeavlyFlagVariable
-extends Resource
+extends WeavlyVariable
 
-@export var id: StringName
 @export var value: bool = false
 
 

@@ -114,9 +114,9 @@ static func load_variables_from_resources(
 	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
 ) -> void:
 	for file_path: String in find_all_files_with_extension(dir, ".tres"):
-		var res = load(file_path)
-		if res is WeavlyNumberVariable or res is WeavlyStringVariable or res is WeavlyFlagVariable:
-			var variable: WeavlyModel.Variable = res.instantiate()
+		var resource: Resource = load(file_path)
+		if resource is WeavlyVariable:
+			var variable: WeavlyModel.Variable = resource.instantiate()
 			if variable is WeavlyModel.NumberVariable:
 				_clamp_default(variable, file_path)
 			_add_variable(engine, variable, file_path, sources)
@@ -147,30 +147,15 @@ static func _add_variable(
 
 
 static func _clamp_default(variable: WeavlyModel.NumberVariable, source: String) -> void:
-	var clamped: float = variable.value
-	if variable.min != null:
-		clamped = maxf(variable.min, clamped)
-	if variable.max != null:
-		clamped = minf(variable.max, clamped)
+	var clamped: float = variable.clamp_value(variable.value)
 	if clamped != variable.value:
 		push_error(DEFAULT_OUT_OF_RANGE % [variable.id, source, variable.value, clamped])
 		variable.value = clamped
 
 
-static func index_videos_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var extensions: PackedStringArray = engine.video_service.supported_extensions
-	var file_paths = find_all_files_with_extensions(dir, extensions)
-
-	for file_path in file_paths:
-		engine.video_service.add_video(media_id(dir, file_path), file_path)
-
-
-static func index_images_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var extensions: PackedStringArray = engine.image_service.supported_extensions
-	var file_paths = find_all_files_with_extensions(dir, extensions)
-
-	for file_path in file_paths:
-		engine.image_service.add_image(media_id(dir, file_path), file_path)
+static func index_media_from_files(service: WeavlyMediaService, dir: String) -> void:
+	for file_path: String in find_all_files_with_extensions(dir, service.supported_extensions):
+		service.add_media(media_id(dir, file_path), file_path)
 
 
 # The path relative to dir without extension, so dir/alice/icon.png is alice/icon.

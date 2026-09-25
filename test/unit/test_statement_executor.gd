@@ -155,12 +155,12 @@ func test_command_statement_delegates_to_command_service() -> void:
 
 func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 	_engine.variable_service.add_variable(
-		WeavlyModel.NumberVariable.new(&"volume", 0.8, null, null)
+		WeavlyModel.NumberVariable.new("volume", 0.8, null, null)
 	)
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"),
 		WeavlyModel.BinaryExpression.new(
-			"*", WeavlyModel.Identifier.new(&"volume"), WeavlyModel.Number.new(0.5)
+			"*", WeavlyModel.Identifier.new("volume"), WeavlyModel.Number.new(0.5)
 		),
 		WeavlyModel.Call.new(
 			"max", "", [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
@@ -175,7 +175,7 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 
 
 func test_command_with_a_failing_argument_is_skipped() -> void:
-	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new(&"missing")]
+	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
 	var command := WeavlyModel.CommandStatement.new("play_sound", args)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
@@ -445,7 +445,7 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 
 func _add_score() -> void:
 	_engine.variable_service.add_variable(
-		WeavlyModel.NumberVariable.new(&"score", 10.0, 0.0, 100.0)
+		WeavlyModel.NumberVariable.new("score", 10.0, 0.0, 100.0)
 	)
 
 
@@ -458,7 +458,7 @@ func _run_set(id: String, expression: WeavlyModel.WeavlyExpression) -> void:
 func test_set_with_an_undefined_variable_in_the_expression_keeps_the_value() -> void:
 	_add_score()
 	var expression = WeavlyModel.BinaryExpression.new(
-		"+", WeavlyModel.Identifier.new(&"scroe"), WeavlyModel.Number.new(5.0)
+		"+", WeavlyModel.Identifier.new("scroe"), WeavlyModel.Number.new(5.0)
 	)
 	_run_set("score", expression)
 	assert_logged(["Variable 'scroe' isn't defined."])
@@ -484,7 +484,7 @@ func test_set_of_an_undefined_variable_creates_nothing() -> void:
 
 func test_random_weight_that_fails_counts_as_zero() -> void:
 	var picked: Array[WeavlyModel.Statement] = _body("picked")
-	var missing: WeavlyModel.Identifier = WeavlyModel.Identifier.new(&"missing")
+	var missing: WeavlyModel.Identifier = WeavlyModel.Identifier.new("missing")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(true), missing, _body()),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
@@ -511,7 +511,7 @@ func test_random_weight_that_is_not_a_number_counts_as_zero() -> void:
 func test_case_condition_that_fails_counts_as_false() -> void:
 	var picked: Array[WeavlyModel.Statement] = _body("picked")
 	var cases: Array[WeavlyModel.WhenCase] = [
-		WeavlyModel.WhenCase.new(WeavlyModel.Identifier.new(&"missing"), _body("skipped")),
+		WeavlyModel.WhenCase.new(WeavlyModel.Identifier.new("missing"), _body("skipped")),
 		WeavlyModel.WhenCase.new(_bool_expr(true), picked),
 	]
 	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
@@ -542,7 +542,7 @@ func test_finish_records_a_visit_to_the_current_node() -> void:
 
 func test_set_defines_an_undefined_extern() -> void:
 	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
-		&"reputation", 0.0, null, null
+		"reputation", 0.0, null, null
 	)
 	variable.extern = true
 	_engine.variable_service.add_variable(variable)

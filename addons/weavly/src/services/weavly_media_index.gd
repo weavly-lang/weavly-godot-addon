@@ -58,3 +58,16 @@ func pick(id: String) -> String:
 	if not paths.has(id):
 		return ""
 	return paths[id].pick_random()
+
+
+# Loads a picked path with loader, which returns null on failure; both failures return default.
+func load_media(id: String, default: Variant, loader: Callable) -> Variant:
+	var path: String = pick(id)
+	if path == "":
+		push_error(WeavlyService.MISSING_ID % [_type, id, default])
+		return default
+	var media: Variant = loader.call(path)
+	if media == null:
+		push_error(WeavlyService.FAILED_LOADING % [_type, path, id, default])
+		return default
+	return media

@@ -19,11 +19,10 @@ extends WeavlyService
 class Frame:
 	extends RefCounted
 	var _statements: Array[WeavlyModel.Statement]
-	var _counter: int
+	var _counter: int = 0
 
-	func _init(statements: Array[WeavlyModel.Statement], counter: int):
+	func _init(statements: Array[WeavlyModel.Statement]):
 		self._statements = statements
-		self._counter = counter
 
 	func has_next() -> bool:
 		return _counter < _statements.size()

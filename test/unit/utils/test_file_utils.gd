@@ -252,7 +252,7 @@ func test_an_extern_without_a_resource_is_not_an_error() -> void:
 
 
 # =====================
-# index_images_from_files
+# index_media_from_files
 # =====================
 
 
@@ -261,7 +261,7 @@ func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
 	engine.image_service = DefaultImageService.new()
 	engine.image_service.initialize(engine)
 	engine.image_service.set_group_pattern(group_pattern)
-	WeavlyFileUtils.index_images_from_files(engine, dir)
+	WeavlyFileUtils.index_media_from_files(engine.image_service, dir)
 	return engine
 
 

@@ -2,7 +2,7 @@
 extends Node
 
 signal started_dialogue
-signal entered_node(node_id: StringName)
+signal entered_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded

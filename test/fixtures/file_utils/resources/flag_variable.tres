@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1_flag")
-id = &"door_open"
+id = "door_open"
 value = true

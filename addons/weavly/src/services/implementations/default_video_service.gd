@@ -9,22 +9,12 @@ func set_group_pattern(pattern: String) -> void:
 	video_index.set_group_pattern(pattern)
 
 
-func add_video(id: String, path: String) -> void:
+func add_media(id: String, path: String) -> void:
 	video_index.add(id, path)
 
 
 func get_video(id: String, default: VideoStream = null) -> VideoStream:
-	var video_path: String = video_index.pick(id)
-	if video_path == "":
-		push_error(MISSING_ID % [TYPE, id, default])
-		return default
-
-	var video_stream: VideoStream = _load_video(video_path)
-	if video_stream == null:
-		push_error(FAILED_LOADING % [TYPE, video_path, id, default])
-		return default
-
-	return video_stream
+	return video_index.load_media(id, default, _load_video)
 
 
 # Paths outside res:// are not in the resource system, so the stream reads the

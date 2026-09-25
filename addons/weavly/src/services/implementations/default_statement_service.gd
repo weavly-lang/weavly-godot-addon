@@ -21,7 +21,7 @@ func clear_statements() -> void:
 
 
 func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
-	var frame = Frame.new(statements, 0)
+	var frame: Frame = Frame.new(statements)
 	_stack.push_back(frame)
 
 

@@ -7,6 +7,10 @@ const ERROR_LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: error: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
 const MINIMUM_VERSION = "0.4.0"
 
+static var _ansi_escape_regex: RegEx = RegEx.create_from_string(ANSI_ESCAPE_PATTERN)
+static var _error_location_regex: RegEx = RegEx.create_from_string(ERROR_LOCATION_PATTERN)
+static var _version_regex: RegEx = RegEx.create_from_string(VERSION_PATTERN)
+
 
 class CompileError:
 	extends RefCounted
@@ -27,15 +31,7 @@ class CompileResult:
 
 
 static func build_version_command(executable_path: String) -> Dictionary:
-	if OS.get_name() == "Windows":
-		return {
-			"program": "cmd",
-			"arguments": PackedStringArray(["/c", '"%s" --version' % executable_path])
-		}
-
-	return {
-		"program": "sh", "arguments": PackedStringArray(["-c", '"%s" --version' % executable_path])
-	}
+	return _shell_command('"%s" --version' % executable_path)
 
 
 # Empty when the executable is missing or --version fails.
@@ -49,9 +45,7 @@ static func get_version(executable_path: String) -> String:
 
 
 static func parse_version(output: String) -> String:
-	var regex: RegEx = RegEx.new()
-	regex.compile(VERSION_PATTERN)
-	var found: RegExMatch = regex.search(output)
+	var found: RegExMatch = _version_regex.search(output)
 	if found == null:
 		return ""
 	return "%s.%s.%s" % [found.get_string(1), found.get_string(2), found.get_string(3)]
@@ -62,7 +56,7 @@ static func is_version_supported(version: String) -> bool:
 		return false
 	var parts: PackedStringArray = version.split(".")
 	var minimum: PackedStringArray = MINIMUM_VERSION.split(".")
-	for i in minimum.size():
+	for i: int in minimum.size():
 		var part: int = parts[i].to_int() if i < parts.size() else 0
 		var required: int = minimum[i].to_int()
 		if part != required:
@@ -71,12 +65,14 @@ static func is_version_supported(version: String) -> bool:
 
 
 static func build_command(executable_path: String, working_dir: String) -> Dictionary:
-	if OS.get_name() == "Windows":
-		var command_line: String = 'cd /d "%s" && "%s" build' % [working_dir, executable_path]
-		return {"program": "cmd", "arguments": PackedStringArray(["/c", command_line])}
+	var change_dir: String = "cd /d" if OS.get_name() == "Windows" else "cd"
+	return _shell_command('%s "%s" && "%s" build' % [change_dir, working_dir, executable_path])
 
-	var script: String = 'cd "%s" && "%s" build' % [working_dir, executable_path]
-	return {"program": "sh", "arguments": PackedStringArray(["-c", script])}
+
+static func _shell_command(command_line: String) -> Dictionary:
+	if OS.get_name() == "Windows":
+		return {"program": "cmd", "arguments": PackedStringArray(["/c", command_line])}
+	return {"program": "sh", "arguments": PackedStringArray(["-c", command_line])}
 
 
 static func compile(executable_path: String, working_dir: String) -> CompileResult:
@@ -99,16 +95,12 @@ static func build_result(
 
 
 static func strip_ansi(text: String) -> String:
-	var regex: RegEx = RegEx.new()
-	regex.compile(ANSI_ESCAPE_PATTERN)
-	return regex.sub(text, "", true)
+	return _ansi_escape_regex.sub(text, "", true)
 
 
 static func parse_errors(output: String, working_dir: String = "") -> Array[CompileError]:
-	var regex: RegEx = RegEx.new()
-	regex.compile(ERROR_LOCATION_PATTERN)
 	var errors: Array[CompileError] = []
-	for found: RegExMatch in regex.search_all(output):
+	for found: RegExMatch in _error_location_regex.search_all(output):
 		var error: CompileError = CompileError.new()
 		error.file = _resolve_path(found.get_string(1), working_dir)
 		error.line = found.get_string(2).to_int()

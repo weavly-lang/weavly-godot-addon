@@ -51,7 +51,7 @@ func _check_discovery(engine: WeavlyEngine) -> void:
 	_expect(engine.variable_service.has("score"), "variable 'score' not found in env.json")
 	_expect(engine.variable_service.has("lives"), "variable 'lives' not found in variables/*.tres")
 	_expect(
-		engine.character_service.get_character(&"guide") != null,
+		engine.character_service.get_character("guide") != null,
 		"character 'guide' not found in characters/*.tres"
 	)
 
@@ -68,7 +68,7 @@ func _check_external_media(engine: WeavlyEngine, external_base: String) -> void:
 		await _check_video_decodes(stream)
 
 	var banner_path: String = external_base.path_join("images/banner.png")
-	engine.image_service.add_image("banner", banner_path)
+	engine.image_service.add_media("banner", banner_path)
 	var banner: Texture2D = engine.image_service.get_image("banner")
 	_expect(banner != null, "external image did not load from %s" % banner_path)
 

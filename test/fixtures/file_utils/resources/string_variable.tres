@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1_str")
-id = &"player_name"
+id = "player_name"
 value = "Ada"

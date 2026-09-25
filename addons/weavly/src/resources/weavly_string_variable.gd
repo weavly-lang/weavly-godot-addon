@@ -1,7 +1,6 @@
 class_name WeavlyStringVariable
-extends Resource
+extends WeavlyVariable
 
-@export var id: StringName
 @export var value: String = ""
 
 

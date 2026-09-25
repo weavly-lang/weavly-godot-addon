@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_num")
-id = &"lives"
+id = "lives"
 value = 3.0
 has_min = false
 min = 0.0
