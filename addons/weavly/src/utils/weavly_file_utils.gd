@@ -185,18 +185,3 @@ static func index_characters_from_resources(engine: WeavlyEngine, dir: String) -
 		var res = load(file_path)
 		if res is WeavlyCharacter:
 			engine.character_service.add_character(res)
-
-
-static func create_service(
-	engine: WeavlyEngine, user_script: Script, default_script: Script, base_type: Variant
-) -> Variant:
-	var script_to_use = user_script if user_script != null else default_script
-	var instance: WeavlyService = script_to_use.new()
-	if is_instance_of(instance, base_type):
-		instance.initialize(engine)
-		return instance
-
-	push_warning("%s must extend %s. Falling back to default." % [script_to_use, base_type])
-	var default_instance: WeavlyService = default_script.new()
-	default_instance.initialize(engine)
-	return default_instance

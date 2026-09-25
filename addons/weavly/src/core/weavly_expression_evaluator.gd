@@ -81,7 +81,7 @@ static func argument_count_error(name: String, count: int) -> String:
 static func evaluate_condition(
 	expression: WeavlyModel.WeavlyExpression, engine: WeavlyEngine
 ) -> bool:
-	var value = evaluate_expression(expression, engine)
+	var value: Variant = evaluate_expression(expression, engine)
 	if is_error(value):
 		return DEFAULT_CONDITION_RETURN
 	if value is not bool:
@@ -182,42 +182,34 @@ static func _clamp(values: Array[float]) -> float:
 static func evaluate_unary_expression(
 	unary_expression: WeavlyModel.UnaryExpression, engine: WeavlyEngine
 ) -> Variant:
-	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(
-		unary_expression.expression, engine
-	)
+	var value: Variant = evaluate_expression(unary_expression.expression, engine)
 	if is_error(value):
 		return ERROR
-	if unary_expression.op == NOT:
-		if value is bool:
-			return not value
-
-		engine.report_error(WRONG_VALUE_TYPE % [unary_expression.op, _get_type(value)])
+	if unary_expression.op != NOT:
+		engine.report_error(UNKNOWN_OPERATOR % unary_expression.op)
 		return ERROR
-
-	engine.report_error(UNKNOWN_OPERATOR % [unary_expression.op])
-	return ERROR
+	if not _is_flag_operand(value, unary_expression.op, engine):
+		return ERROR
+	return not value
 
 
 static func evaluate_binary_expression(
 	binary_expression: WeavlyModel.BinaryExpression, engine: WeavlyEngine
 ) -> Variant:
-	var op = binary_expression.op
+	var op: String = binary_expression.op
 	if op in [AND, OR]:
 		return evaluate_logic_expression(binary_expression, engine)
 
-	var left: Variant = WeavlyExpressionEvaluator.evaluate_expression(
-		binary_expression.left, engine
-	)
-	var right: Variant = WeavlyExpressionEvaluator.evaluate_expression(
-		binary_expression.right, engine
-	)
+	var left: Variant = evaluate_expression(binary_expression.left, engine)
+	var right: Variant = evaluate_expression(binary_expression.right, engine)
 	if is_error(left) or is_error(right):
 		return ERROR
 
-	if op in [ADD, SUB, MUL, DIV]:
-		return evaluate_math_expression(op, left, right, engine)
-	if op in [EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ]:
-		return evaluate_compare_expression(op, left, right, engine)
+	match op:
+		ADD, SUB, MUL, DIV:
+			return evaluate_math_expression(op, left, right, engine)
+		EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ:
+			return evaluate_compare_expression(op, left, right, engine)
 
 	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
@@ -229,21 +221,25 @@ static func evaluate_logic_expression(
 ) -> Variant:
 	var op: String = binary_expression.op
 	var left: Variant = evaluate_expression(binary_expression.left, engine)
-	if is_error(left):
-		return ERROR
-	if left is not bool:
-		engine.report_error(WRONG_VALUE_TYPE % [op, _get_type(left)])
+	if not _is_flag_operand(left, op, engine):
 		return ERROR
 	if (op == AND and not left) or (op == OR and left):
 		return left
 
 	var right: Variant = evaluate_expression(binary_expression.right, engine)
-	if is_error(right):
-		return ERROR
-	if right is not bool:
-		engine.report_error(WRONG_VALUE_TYPE % [op, _get_type(right)])
+	if not _is_flag_operand(right, op, engine):
 		return ERROR
 	return right
+
+
+# False for an error or a value that isn't a flag; a wrong type is reported.
+static func _is_flag_operand(value: Variant, op: String, engine: WeavlyEngine) -> bool:
+	if is_error(value):
+		return false
+	if value is not bool:
+		engine.report_error(WRONG_VALUE_TYPE % [op, _get_type(value)])
+		return false
+	return true
 
 
 static func evaluate_math_expression(
@@ -253,18 +249,18 @@ static func evaluate_math_expression(
 		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
-	if op == ADD:
-		return left + right
-	if op == SUB:
-		return left - right
-	if op == MUL:
-		return left * right
-	if op == DIV:
-		if right == 0:
-			engine.report_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
-			return DEFAULT_DIVISION_BY_ZERO_RETURN
-
-		return left / right
+	match op:
+		ADD:
+			return left + right
+		SUB:
+			return left - right
+		MUL:
+			return left * right
+		DIV:
+			if right == 0:
+				engine.report_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
+				return DEFAULT_DIVISION_BY_ZERO_RETURN
+			return left / right
 
 	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
@@ -277,20 +273,21 @@ static func evaluate_compare_expression(
 		engine.report_error(WRONG_VALUE_TYPES % [op, _get_type(left), _get_type(right)])
 		return ERROR
 
-	if left is float:
-		return _compare_numbers(op, left, right, engine)
-	if op == EQ:
-		return left == right
-	if op == NEQ:
-		return left != right
-	if op == LESS:
-		return left < right
-	if op == LESS_EQ:
-		return left <= right
-	if op == GREATER:
-		return left > right
-	if op == GREATER_EQ:
-		return left >= right
+	# Approximately equal numbers count as equal, so 0.1 + 0.2 == 0.3.
+	var equal: bool = approximately_equal(left, right) if left is float else left == right
+	match op:
+		EQ:
+			return equal
+		NEQ:
+			return not equal
+		LESS:
+			return left < right and not equal
+		LESS_EQ:
+			return left < right or equal
+		GREATER:
+			return left > right and not equal
+		GREATER_EQ:
+			return left > right or equal
 
 	engine.report_error(UNKNOWN_OPERATOR % op)
 	return ERROR
@@ -299,28 +296,6 @@ static func evaluate_compare_expression(
 # Tighter than is_equal_approx, which treats 1000000 and 1000001 as equal.
 static func approximately_equal(a: float, b: float) -> bool:
 	return absf(a - b) <= NUMBER_TOLERANCE * maxf(1.0, maxf(absf(a), absf(b)))
-
-
-# Approximately equal numbers count as equal, so 0.1 + 0.2 == 0.3.
-static func _compare_numbers(
-	op: String, left: float, right: float, engine: WeavlyEngine
-) -> Variant:
-	var equal: bool = approximately_equal(left, right)
-	if op == EQ:
-		return equal
-	if op == NEQ:
-		return not equal
-	if op == LESS:
-		return left < right and not equal
-	if op == LESS_EQ:
-		return left < right or equal
-	if op == GREATER:
-		return left > right and not equal
-	if op == GREATER_EQ:
-		return left > right or equal
-
-	engine.report_error(UNKNOWN_OPERATOR % op)
-	return ERROR
 
 
 static func _get_type(value: Variant) -> String:
