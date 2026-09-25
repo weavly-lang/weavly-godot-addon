@@ -38,7 +38,7 @@ static func build_version_command(executable_path: String) -> Dictionary:
 	}
 
 
-# Empty when the executable is missing or too old to know --version (before 0.1.0).
+# Empty when the executable is missing or --version fails.
 static func get_version(executable_path: String) -> String:
 	var command: Dictionary = build_version_command(executable_path)
 	var raw_output: Array = []

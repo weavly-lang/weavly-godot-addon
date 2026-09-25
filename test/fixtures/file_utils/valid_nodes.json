@@ -1,5 +1,10 @@
 {
+  "source": "valid_nodes.wvl",
   "nodes": [
-    {"id": "start", "body": []}
+    {
+      "id": "start",
+      "line": 1,
+      "body": []
+    }
   ]
 }
