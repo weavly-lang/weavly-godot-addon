@@ -6,23 +6,23 @@ const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead.
 
 static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
 	engine.current_line = statement.line
-	if is_instance_of(statement, WeavlyModel.NarrationLine):
+	if statement is WeavlyModel.NarrationLine:
 		execute_narration_line(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.CharacterLine):
+	elif statement is WeavlyModel.CharacterLine:
 		execute_character_line(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.SetStatement):
+	elif statement is WeavlyModel.SetStatement:
 		execute_set_statement(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.GotoStatement):
+	elif statement is WeavlyModel.GotoStatement:
 		execute_goto_statement(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.FinishStatement):
+	elif statement is WeavlyModel.FinishStatement:
 		execute_finish_statement(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.CommandStatement):
+	elif statement is WeavlyModel.CommandStatement:
 		execute_command_statement(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.MatchBlock):
+	elif statement is WeavlyModel.MatchBlock:
 		execute_match_block(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.OptionBlock):
+	elif statement is WeavlyModel.OptionBlock:
 		execute_option_block(statement, engine)
-	elif is_instance_of(statement, WeavlyModel.RandomBlock):
+	elif statement is WeavlyModel.RandomBlock:
 		execute_random_block(statement, engine)
 	else:
 		engine.report_error(

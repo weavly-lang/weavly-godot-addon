@@ -56,16 +56,16 @@ static func _list_directory(dir_path: String) -> PackedStringArray:
 
 
 static func load_json_file(path: String) -> Variant:
-	var file = FileAccess.open(path, FileAccess.READ)
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		push_error("Could not open " + path)
 		return null
 
-	var text = file.get_as_text()
+	var text: String = file.get_as_text()
 	file.close()
 
-	var json = JSON.new()
-	var err = json.parse(text)
+	var json: JSON = JSON.new()
+	var err: Error = json.parse(text)
 
 	if err != OK:
 		push_error("JSON parse error in %s at line %d" % [path, json.get_error_line()])
@@ -75,15 +75,15 @@ static func load_json_file(path: String) -> Variant:
 
 
 static func load_nodes_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths = find_all_files_with_extension(dir, ".json")
+	var file_paths: PackedStringArray = find_all_files_with_extension(dir, ".json")
 
 	var nodes: Array[WeavlyModel.WeavlyNode]
-	for file_path in file_paths:
+	for file_path: String in file_paths:
 		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
 		if data is Dictionary and data.has(WeavlyDeserializer.KEY_NODES):
 			nodes.append_array(WeavlyDeserializer.compile_nodes(data, file_path))
 
-	for node in nodes:
+	for node: WeavlyModel.WeavlyNode in nodes:
 		engine.node_service.add_node(node)
 
 
@@ -165,8 +165,8 @@ static func media_id(dir: String, file_path: String) -> String:
 
 
 static func index_characters_from_resources(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths = find_all_files_with_extension(dir, ".tres")
-	for file_path in file_paths:
-		var res = load(file_path)
-		if res is WeavlyCharacter:
-			engine.character_service.add_character(res)
+	var file_paths: PackedStringArray = find_all_files_with_extension(dir, ".tres")
+	for file_path: String in file_paths:
+		var resource: Resource = load(file_path)
+		if resource is WeavlyCharacter:
+			engine.character_service.add_character(resource)

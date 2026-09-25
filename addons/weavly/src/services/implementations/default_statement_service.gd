@@ -1,7 +1,7 @@
 extends WeavlyStatementService
 
 var _stack: Array[Frame] = []
-var _paused = false
+var _paused: bool = false
 
 
 func pause() -> void:
@@ -28,7 +28,7 @@ func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 func add_statement_groups(groups: Array[Array]) -> void:
 	# Last group first, so the first group ends up on top of the stack. Iterating
 	# backwards leaves the caller's array untouched.
-	for i in range(groups.size() - 1, -1, -1):
+	for i: int in range(groups.size() - 1, -1, -1):
 		add_statements(groups[i])
 
 
