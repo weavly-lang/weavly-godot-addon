@@ -70,6 +70,8 @@ Numbers are shown with at most two decimals and whole numbers without any, so `1
 
 An `@options` block whose options all have a false condition is skipped, and so is a `@random` block without an eligible case, since conditions that can all be false are a normal pattern.
 
+`@random` and `random()` roll with the engine's own `RandomNumberGenerator`, `engine.rng`, so the rest of the game doesn't shift Weavly's rolls. Set `random_seed` on the engine to a value other than 0 to get the same rolls on every run, for tests or to reproduce a bug report.
+
 A hint is shown but can't be chosen. When every available option in a block is a hint, `options_added` still delivers them, but the dialogue waits for `next()` as it does after a line and then continues after the block, so show a continue button instead of choices:
 
 ```gdscript
@@ -112,7 +114,7 @@ If an argument can't be evaluated, the error is reported and the command is skip
 
 ### Saving and loading
 
-`engine.get_state()` returns the runtime state as a Dictionary of JSON-safe values: variable values, visit counts, and the state of any custom service that saves its own. Weavly doesn't write files, so the game stores the state however it likes, for example inside its own save:
+`engine.get_state()` returns the runtime state as a Dictionary of JSON-safe values: variable values, visit counts, the random number generator, and the state of any custom service that saves its own. Weavly doesn't write files, so the game stores the state however it likes, for example inside its own save:
 
 ```gdscript
 func save_game() -> void:
@@ -125,7 +127,7 @@ func load_game() -> void:
     engine.set_state(JSON.parse_string(text))
 ```
 
-During a dialogue, the state is the one taken when the current node was entered, and `set_state()` replays that node from its first statement. A save therefore loses progress inside the current node, so keep nodes short if the player can save at any time. `set_state()` emits `state_loaded` once, and `reset_state()` goes back to the state after loading, for a new game. What the game did in response to Weavly, like media shown or music started by a command, isn't part of the state.
+During a dialogue, the state is the one taken when the current node was entered, and `set_state()` replays that node from its first statement, with the same `@random` and `random()` rolls. A save therefore loses progress inside the current node, so keep nodes short if the player can save at any time. `set_state()` emits `state_loaded` once, and `reset_state()` goes back to the state after loading, for a new game. With a `random_seed`, that includes the generator, so the new game rolls like the first one; without it, the generator keeps rolling on. What the game did in response to Weavly, like media shown or music started by a command, isn't part of the state.
 
 ### Runtime errors
 

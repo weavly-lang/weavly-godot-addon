@@ -19,6 +19,7 @@ const TEXT_FIXTURE = "res://test/fixtures/integration/text"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save"
 const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only"
+const RANDOM_FIXTURE = "res://test/fixtures/integration/random"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
 const IMPL_PATH = "res://addons/weavly/src/services/implementations/"
@@ -783,3 +784,72 @@ func test_a_block_without_an_available_option_is_skipped() -> void:
 	_connect_content_log(engine)
 	engine.start("none")
 	assert_that(_narration_log).is_equal(["Nothing to choose"])
+
+
+# =====================
+# Random number generator (issue #149)
+# =====================
+
+
+# start: roll = random(1, 1000000), then @random picks one of the lines A to D.
+func _roll(engine: WeavlyEngine) -> Array:
+	return [engine.variable_service.get_variable("roll"), _narration_log.back()]
+
+
+func _seeded_engine(random_seed: int) -> WeavlyEngine:
+	var engine: WeavlyDefaultEngine = _new_engine(RANDOM_FIXTURE)
+	engine.random_seed = random_seed
+	add_child(auto_free(engine))
+	_connect_content_log(engine)
+	return engine
+
+
+func _play_rounds(engine: WeavlyEngine, rounds: int) -> Array:
+	var rolls: Array = []
+	for i: int in rounds:
+		engine.start("start")
+		rolls.append(_roll(engine))
+		engine.next()
+	return rolls
+
+
+func test_the_same_seed_rolls_the_same_values_and_branches() -> void:
+	var first: Array = _play_rounds(_seeded_engine(1234), 5)
+	var second: Array = _play_rounds(_seeded_engine(1234), 5)
+	assert_array(first).is_equal(second)
+
+
+func test_a_loaded_save_replays_the_same_rolls() -> void:
+	var engine: WeavlyEngine = _make_engine(RANDOM_FIXTURE)
+	_connect_content_log(engine)
+	engine.start("start")
+	var state: Dictionary = _through_json(engine.get_state())
+	var rolled: Array = _roll(engine)
+	engine.next()
+	engine.set_state(state)
+	assert_array(_roll(engine)).is_equal(rolled)
+
+
+func test_a_state_without_the_generator_keeps_the_current_one() -> void:
+	var engine: WeavlyEngine = _make_engine(RANDOM_FIXTURE)
+	var state: Dictionary = engine.get_state()
+	state.erase("rng")
+	engine.rng.randf()
+	var current: int = engine.rng.state
+	engine.set_state(state)
+	assert_int(engine.rng.state).is_equal(current)
+
+
+func test_reset_state_with_a_seed_replays_the_first_game() -> void:
+	var engine: WeavlyEngine = _seeded_engine(1234)
+	var first: Array = _play_rounds(engine, 3)
+	engine.reset_state()
+	assert_array(_play_rounds(engine, 3)).is_equal(first)
+
+
+func test_reset_state_without_a_seed_keeps_rolling_on() -> void:
+	var engine: WeavlyEngine = _make_engine(RANDOM_FIXTURE)
+	engine.rng.randf()
+	var current: int = engine.rng.state
+	engine.reset_state()
+	assert_int(engine.rng.state).is_equal(current)
