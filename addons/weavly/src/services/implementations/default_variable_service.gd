@@ -4,7 +4,7 @@ const TYPE = "Variable"
 const EXTERN_TYPE_MISMATCH = "Variable '%s' is a %s, but it's declared extern as a %s."
 const UNKNOWN_SAVED_VARIABLE = "Saved variable '%s' no longer exists, skipping it."
 
-var _variables: Dictionary[StringName, WeavlyModel.Variable]
+var _variables: Dictionary[String, WeavlyModel.Variable]
 var _variable_states: Dictionary[String, Variant] = {}
 
 
@@ -41,9 +41,6 @@ func get_variable(id: String, default: Variant = null) -> Variant:
 
 
 func set_variable(id: String, value: Variant) -> void:
-	if value is int:
-		value = float(value)
-
 	if not _variables.has(id):
 		push_error(UNDECLARED % id)
 		return
@@ -70,23 +67,20 @@ func set_state(state: Dictionary) -> void:
 		if not _variables.has(id):
 			push_warning(UNKNOWN_SAVED_VARIABLE % id)
 			continue
-		var value: Variant = state[id]
-		_store(id, float(value) if value is int else value)
+		_store(id, state[id])
 
 
 # Type-checks and clamps against the declaration; false when the value was rejected.
 func _store(id: String, value: Variant) -> bool:
+	if value is int:
+		value = float(value)
 	var variable: WeavlyModel.Variable = _variables.get(id)
 	if typeof(value) != typeof(variable.value):
 		push_error(WRONG_TYPE % [id, type_string(typeof(value)), variable.get_type_name()])
 		return false
 
-	if is_instance_of(variable, WeavlyModel.NumberVariable):
-		var number_variable: WeavlyModel.NumberVariable = variable
-		if number_variable.min != null:
-			value = max(number_variable.min, value)
-		if number_variable.max != null:
-			value = min(number_variable.max, value)
+	if variable is WeavlyModel.NumberVariable:
+		value = variable.clamp_value(value)
 
 	_variable_states[id] = value
 	return true

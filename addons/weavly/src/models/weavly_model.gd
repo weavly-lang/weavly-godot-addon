@@ -27,9 +27,6 @@ class Statement:
 	extends RefCounted
 	var line: int = 0
 
-	func _init():
-		pass
-
 
 # Segments are plain Strings and WeavlyExpressions; text is set on filled copies.
 class LineStatement:
@@ -43,9 +40,6 @@ class LineStatement:
 
 class NarrationLine:
 	extends LineStatement
-
-	func _init(segments: Array):
-		super(segments)
 
 
 class CharacterLine:
@@ -82,9 +76,6 @@ class GotoStatement:
 class FinishStatement:
 	extends Statement
 
-	func _init():
-		pass
-
 
 class CommandStatement:
 	extends Statement
@@ -97,7 +88,7 @@ class CommandStatement:
 
 
 # =====================
-# If Block
+# Match Block
 # =====================
 
 enum MatchModifier { FIRST, LAST, ALL }
@@ -191,9 +182,6 @@ class RandomCase:
 class WeavlyExpression:
 	extends RefCounted
 
-	func _init():
-		pass
-
 
 class UnaryExpression:
 	extends WeavlyExpression
@@ -220,15 +208,9 @@ class BinaryExpression:
 class TrueExpression:
 	extends WeavlyExpression
 
-	func _init():
-		pass
-
 
 class FalseExpression:
 	extends WeavlyExpression
-
-	func _init():
-		pass
 
 
 class Number:
@@ -261,9 +243,9 @@ class Call:
 
 class Identifier:
 	extends WeavlyExpression
-	var value: StringName
+	var value: String
 
-	func _init(value: StringName):
+	func _init(value: String):
 		self.value = value
 
 
@@ -274,10 +256,10 @@ class Identifier:
 
 class Variable:
 	extends RefCounted
-	var id: StringName
+	var id: String
 	var extern: bool = false
 
-	func _init(id: StringName):
+	func _init(id: String):
 		self.id = id
 
 	func get_type_name() -> String:
@@ -290,7 +272,7 @@ class NumberVariable:
 	var min: Variant
 	var max: Variant
 
-	func _init(id: StringName, value: float, min: Variant, max: Variant):
+	func _init(id: String, value: float, min: Variant, max: Variant):
 		super._init(id)
 		self.value = value
 		self.min = min
@@ -299,12 +281,19 @@ class NumberVariable:
 	func get_type_name() -> String:
 		return "number"
 
+	func clamp_value(number: float) -> float:
+		if min != null:
+			number = maxf(min, number)
+		if max != null:
+			number = minf(max, number)
+		return number
+
 
 class StringVariable:
 	extends Variable
 	var value: String
 
-	func _init(id: StringName, value: String):
+	func _init(id: String, value: String):
 		super._init(id)
 		self.value = value
 
@@ -316,7 +305,7 @@ class FlagVariable:
 	extends Variable
 	var value: bool
 
-	func _init(id: StringName, value: bool):
+	func _init(id: String, value: bool):
 		super._init(id)
 		self.value = value
 

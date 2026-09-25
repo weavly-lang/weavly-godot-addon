@@ -24,26 +24,26 @@ func before_test() -> void:
 
 func test_frame_has_next_false_when_empty() -> void:
 	var stmts: Array[WeavlyModel.Statement] = []
-	var frame := WeavlyStatementService.Frame.new(stmts, 0)
+	var frame := WeavlyStatementService.Frame.new(stmts)
 	assert_bool(frame.has_next()).is_false()
 
 
 func test_frame_has_next_true_when_statements_remain() -> void:
 	var stmts: Array[WeavlyModel.Statement] = [WeavlyModel.Statement.new()]
-	var frame := WeavlyStatementService.Frame.new(stmts, 0)
+	var frame := WeavlyStatementService.Frame.new(stmts)
 	assert_bool(frame.has_next()).is_true()
 
 
 func test_frame_get_current_statement() -> void:
 	var stmt := WeavlyModel.Statement.new()
 	var stmts: Array[WeavlyModel.Statement] = [stmt]
-	var frame := WeavlyStatementService.Frame.new(stmts, 0)
+	var frame := WeavlyStatementService.Frame.new(stmts)
 	assert_that(frame.get_current_statement()).is_equal(stmt)
 
 
 func test_frame_increase_counter_advances_past_end() -> void:
 	var stmts: Array[WeavlyModel.Statement] = [WeavlyModel.Statement.new()]
-	var frame := WeavlyStatementService.Frame.new(stmts, 0)
+	var frame := WeavlyStatementService.Frame.new(stmts)
 	frame.increase_counter()
 	assert_bool(frame.has_next()).is_false()
 

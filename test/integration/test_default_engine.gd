@@ -77,7 +77,7 @@ func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 func _connect_signal_log(engine: WeavlyEngine) -> void:
 	engine.started_dialogue.connect(func() -> void: _signal_log.append("started_dialogue"))
 	engine.entered_node.connect(
-		func(node_id: StringName) -> void: _signal_log.append("entered_node:%s" % node_id)
+		func(node_id: String) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
 	engine.command_service.executed_command.connect(

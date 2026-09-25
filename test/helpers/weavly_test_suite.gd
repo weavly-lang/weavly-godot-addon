@@ -3,7 +3,7 @@ extends GdUnitTestSuite
 
 
 # Declares a variable typed after its value, as @env would.
-func declare_variable(engine: WeavlyEngine, id: StringName, value: Variant) -> void:
+func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 	var variable: WeavlyModel.Variable
 	if value is float:
 		variable = WeavlyModel.NumberVariable.new(id, value, null, null)

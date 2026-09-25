@@ -153,7 +153,7 @@ func test_expression_false() -> void:
 func test_expression_identifier() -> void:
 	var expr = WeavlyDeserializer.compile_expression({"variable": "score"}, "test")
 	assert_object(expr).is_instanceof(WeavlyModel.Identifier)
-	assert_that((expr as WeavlyModel.Identifier).value).is_equal(&"score")
+	assert_that((expr as WeavlyModel.Identifier).value).is_equal("score")
 
 
 func test_expression_binary() -> void:
@@ -203,7 +203,7 @@ func test_number_variable_fields() -> void:
 	}
 	var vars = WeavlyDeserializer.compile_variable_declarations(data)
 	var v := vars[0] as WeavlyModel.NumberVariable
-	assert_that(v.id).is_equal(&"hp")
+	assert_that(v.id).is_equal("hp")
 	assert_that(v.value).is_equal(100.0)
 	assert_that(v.min).is_equal(0.0)
 	assert_that(v.max).is_equal(100.0)
@@ -264,7 +264,7 @@ func test_extern_declaration() -> void:
 	var data = {"declarations": [{"type": "string", "name": "title", "extern": true}]}
 	var variables = WeavlyDeserializer.compile_variable_declarations(data)
 	assert_object(variables[0]).is_instanceof(WeavlyModel.StringVariable)
-	assert_that(variables[0].id).is_equal(&"title")
+	assert_that(variables[0].id).is_equal("title")
 	assert_bool(variables[0].extern).is_true()
 
 

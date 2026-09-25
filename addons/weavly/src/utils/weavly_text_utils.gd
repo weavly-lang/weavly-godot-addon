@@ -2,22 +2,19 @@ class_name WeavlyTextUtils
 
 const VARIABLE_PATTERN = r"\{\$([A-Za-z_][A-Za-z0-9_]*)\}"
 
-static var _cached_variable_regex: RegEx = null
+static var default_variable_pipeline: Array[Callable] = [format_float_trim_zero]
 
-static var default_variable_pipeline: Array[Callable] = [
-	func(value): return WeavlyTextUtils.format_float_trim_zero(value)
-]
+static var _variable_regex: RegEx = RegEx.create_from_string(VARIABLE_PATTERN)
 
 
 static func inject_variables(
 	text: String, engine: WeavlyEngine, pipeline: Array[Callable] = default_variable_pipeline
 ) -> String:
-	var regex = _get_variable_regex()
 	var out = ""
 	var last_end = 0
 	var reported: Array[String] = []
 
-	for m in regex.search_all(text):
+	for m in _variable_regex.search_all(text):
 		var start = m.get_start()
 		var end = m.get_end()
 		out += text.substr(last_end, start - last_end)
@@ -103,10 +100,3 @@ static func format_float_trim_zero(value: Variant) -> Variant:
 	if WeavlyExpressionEvaluator.approximately_equal(rounded, round(rounded)):
 		return int(round(rounded))
 	return rounded
-
-
-static func _get_variable_regex() -> RegEx:
-	if _cached_variable_regex == null:
-		_cached_variable_regex = RegEx.new()
-		_cached_variable_regex.compile(VARIABLE_PATTERN)
-	return _cached_variable_regex

@@ -39,7 +39,7 @@ func _bool(v: bool) -> WeavlyModel.WeavlyExpression:
 	return WeavlyModel.FalseExpression.new()
 
 
-func _id(v: StringName) -> WeavlyModel.Identifier:
+func _id(v: String) -> WeavlyModel.Identifier:
 	return WeavlyModel.Identifier.new(v)
 
 
@@ -84,23 +84,23 @@ func test_string_literal() -> void:
 func test_identifier_number_variable() -> void:
 	var engine = _make_engine()
 	declare_variable(engine, "score", 10.0)
-	assert_that(_eval(_id(&"score"), engine)).is_equal(10.0)
+	assert_that(_eval(_id("score"), engine)).is_equal(10.0)
 
 
 func test_identifier_string_variable() -> void:
 	var engine = _make_engine()
 	declare_variable(engine, "name", "Alice")
-	assert_that(_eval(_id(&"name"), engine)).is_equal("Alice")
+	assert_that(_eval(_id("name"), engine)).is_equal("Alice")
 
 
 func test_identifier_flag_variable() -> void:
 	var engine = _make_engine()
 	declare_variable(engine, "active", true)
-	assert_that(_eval(_id(&"active"), engine)).is_equal(true)
+	assert_that(_eval(_id("active"), engine)).is_equal(true)
 
 
 func test_identifier_missing_returns_error() -> void:
-	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id(&"missing")))).is_true()
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id("missing")))).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
@@ -301,13 +301,13 @@ func test_nested_expression() -> void:
 
 
 func test_error_passes_through_operators_without_further_reports() -> void:
-	var expr = _unary("not", _bin("==", _bin("+", _id(&"missing"), _num(1.0)), _num(2.0)))
+	var expr = _unary("not", _bin("==", _bin("+", _id("missing"), _num(1.0)), _num(2.0)))
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(expr))).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
 func test_condition_on_an_error_is_false_without_a_type_report() -> void:
-	assert_bool(_cond(_id(&"missing"))).is_false()
+	assert_bool(_cond(_id("missing"))).is_false()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
@@ -423,7 +423,7 @@ func test_function_with_a_non_number_argument_returns_error() -> void:
 
 
 func test_function_with_a_failing_argument_reports_once() -> void:
-	var result: Variant = _call("min", [_id(&"missing"), 1.0])
+	var result: Variant = _call("min", [_id("missing"), 1.0])
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
@@ -436,10 +436,10 @@ func test_function_with_the_wrong_argument_count_returns_error() -> void:
 
 func test_reading_an_undefined_extern_names_it_extern() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new(&"brave", false)
+	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new("brave", false)
 	variable.extern = true
 	engine.variable_service.add_variable(variable)
-	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id(&"brave"), engine))).is_true()
+	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id("brave"), engine))).is_true()
 	assert_logged(["Variable 'brave' is declared extern but was never defined."])
 
 
@@ -449,26 +449,26 @@ func test_reading_an_undefined_extern_names_it_extern() -> void:
 
 
 func test_false_and_skips_the_right_side() -> void:
-	assert_that(_eval(_bin("and", _bool(false), _id(&"missing")))).is_equal(false)
+	assert_that(_eval(_bin("and", _bool(false), _id("missing")))).is_equal(false)
 
 
 func test_true_or_skips_the_right_side() -> void:
-	assert_that(_eval(_bin("or", _bool(true), _id(&"missing")))).is_equal(true)
+	assert_that(_eval(_bin("or", _bool(true), _id("missing")))).is_equal(true)
 
 
 func test_true_and_evaluates_the_right_side() -> void:
-	var result: Variant = _eval(_bin("and", _bool(true), _id(&"missing")))
+	var result: Variant = _eval(_bin("and", _bool(true), _id("missing")))
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
 func test_false_or_evaluates_the_right_side() -> void:
-	var result: Variant = _eval(_bin("or", _bool(false), _id(&"missing")))
+	var result: Variant = _eval(_bin("or", _bool(false), _id("missing")))
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
 func test_a_left_side_that_is_not_a_flag_is_reported_before_the_right_side_runs() -> void:
-	var result: Variant = _eval(_bin("or", _num(1.0), _id(&"missing")))
+	var result: Variant = _eval(_bin("or", _num(1.0), _id("missing")))
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Can't use operator 'or' on value of type 'float'."])
