@@ -320,6 +320,31 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
 
 
+# arrival: a narration with {} and an escaped brace, @draw from the empty pool falls
+# through, then @draw city, night plays bob_greets (priority 2, once).
+func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
+	var engine = _make_engine(CI_SMOKE_FIXTURE)
+	_connect_content_log(engine)
+	var character_lines: Array[String] = []
+	engine.line_service.executed_character_line.connect(
+		func(line: WeavlyModel.CharacterLine) -> void: character_lines.append(line.text)
+	)
+	engine.start("arrival")
+	assert_that(_narration_log.back()).is_equal("You arrive with 1 points, written as {score}.")
+	engine.next()
+	assert_that(character_lines.back()).is_equal("Welcome back, Hero. The market waited 1 times.")
+	engine.next()
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+	assert_bool(_signal_log.has("entered_node:night_market")).is_false()
+	assert_int(engine.node_service.get_skip_count("plaza")).is_equal(1)
+
+	var peeked: Array[String] = engine.peek_pool("city", "night")
+	assert_array(peeked).is_equal(["night_market", "plaza"])
+	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(1)
+	assert_array(engine.list_pool("city", "night")).is_equal(peeked)
+	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(0)
+
+
 # The node-less build artifact is the only trace of the split sources, so it is what
 # this asserts: node ids and declarations look identical either way.
 func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> void:
@@ -342,7 +367,22 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
 		ids.append(node.id)
 	ids.sort()
-	assert_that(ids).is_equal(["choices", "end", "match_node", "random_node", "start"])
+	(
+		assert_that(ids)
+		. is_equal(
+			[
+				"arrival",
+				"bob_greets",
+				"choices",
+				"end",
+				"match_node",
+				"night_market",
+				"plaza",
+				"random_node",
+				"start",
+			]
+		)
+	)
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_bool(engine.variable_service.has("player_name")).is_true()
 	assert_bool(engine.variable_service.has("has_key")).is_true()
