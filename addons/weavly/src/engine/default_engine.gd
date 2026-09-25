@@ -12,6 +12,7 @@ const STATE_VERSION = 1
 const KEY_VERSION = "version"
 const KEY_NODE = "node"
 const KEY_SERVICES = "services"
+const KEY_RNG = "rng"
 
 const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -47,6 +48,8 @@ static var _service_types: Dictionary[String, Array] = {
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
 @export var video_extensions: PackedStringArray = [".ogv"]
 @export var max_node_entries_per_step: int = 10000
+## 0 picks a new seed on every run.
+@export var random_seed: int = 0
 
 @export var character_service_script: Script
 @export var command_service_script: Script
@@ -72,6 +75,10 @@ var _initial_state: Dictionary = {}
 
 
 func _ready() -> void:
+	if random_seed != 0:
+		rng.seed = random_seed
+	else:
+		rng.randomize()
 	for slot: String in _service_types:
 		var user_script: Script = get(slot + "_service_script")
 		set(
@@ -89,6 +96,8 @@ func _ready() -> void:
 	WeavlyFileUtils.index_media_from_files(image_service, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)
 	_initial_state = get_state()
+	if random_seed == 0:
+		_initial_state.erase(KEY_RNG)
 
 
 func start(node_id: String) -> void:
@@ -138,6 +147,7 @@ func _enter_pending_node() -> void:
 		KEY_VERSION: STATE_VERSION,
 		KEY_NODE: node_id,
 		KEY_SERVICES: _collect_service_states(),
+		KEY_RNG: str(rng.state),
 	}
 	current_node_id = node_id
 	set_location(node)
@@ -173,7 +183,11 @@ func is_running() -> bool:
 func get_state() -> Dictionary:
 	if not _finished and not _checkpoint.is_empty():
 		return _checkpoint.duplicate(true)
-	return {KEY_VERSION: STATE_VERSION, KEY_SERVICES: _collect_service_states()}
+	return {
+		KEY_VERSION: STATE_VERSION,
+		KEY_SERVICES: _collect_service_states(),
+		KEY_RNG: str(rng.state),
+	}
 
 
 func set_state(state: Dictionary) -> void:
@@ -187,6 +201,9 @@ func set_state(state: Dictionary) -> void:
 	for slot: String in services:
 		var service_state: Variant = service_states.get(slot, {})
 		services[slot].set_state(service_state if service_state is Dictionary else {})
+	var rng_state: Variant = state.get(KEY_RNG)
+	if rng_state is String:
+		rng.state = rng_state.to_int()
 	state_loaded.emit()
 
 	var node_id: Variant = state.get(KEY_NODE)

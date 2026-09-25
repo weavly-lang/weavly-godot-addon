@@ -23,7 +23,7 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 	elif statement is WeavlyModel.OptionBlock:
 		execute_option_block(statement, engine)
 	elif statement is WeavlyModel.RandomBlock:
-		execute_random_block(statement, engine)
+		execute_random_block(statement, engine, engine.rng.randf)
 	else:
 		engine.report_error(
 			"Can't execute statement of type '%s'." % type_string(typeof(statement))
@@ -144,7 +144,7 @@ static func execute_option_block(
 static func execute_random_block(
 	random_block: WeavlyModel.RandomBlock,
 	engine: WeavlyEngine,
-	rng: Callable = randf,
+	rng: Callable,
 ) -> void:
 	var possible_cases: Array[WeavlyModel.RandomCase] = []
 	var evaluated_weights: Array[float] = []

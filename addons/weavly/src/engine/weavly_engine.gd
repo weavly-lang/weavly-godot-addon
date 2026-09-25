@@ -17,6 +17,9 @@ var statement_service: WeavlyStatementService
 var variable_service: WeavlyVariableService
 var video_service: WeavlyVideoService
 
+# @random and random() roll with this, so a seed and a saved state reproduce them.
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
 var current_node_id: String = ""
 var current_source: String = ""
 var current_line: int = 0

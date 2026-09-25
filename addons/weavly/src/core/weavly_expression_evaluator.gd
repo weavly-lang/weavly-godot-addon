@@ -29,6 +29,8 @@ const LESS_EQ = "<="
 const GREATER = ">"
 const GREATER_EQ = ">="
 
+const RANDOM = "random"
+
 const VISITED = "visited"
 const VISIT_COUNT = "visit_count"
 const NODE_FUNCTIONS = [VISITED, VISIT_COUNT]
@@ -48,7 +50,7 @@ class EvaluationError:
 
 # name -> [minimum argument count, maximum or -1 for no limit, implementation]
 static var _number_functions: Dictionary = {
-	"random": [2, 2, _random],
+	RANDOM: [2, 2, _random],
 	"min": [2, -1, func(values: Array[float]) -> float: return values.min()],
 	"max": [2, -1, func(values: Array[float]) -> float: return values.max()],
 	"clamp": [3, 3, _clamp],
@@ -163,16 +165,18 @@ static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) 
 			return ERROR
 		values.append(value)
 	var implementation: Callable = _number_functions[call.name][2]
+	if call.name == RANDOM:
+		implementation = implementation.bind(engine.rng)
 	return implementation.call(values)
 
 
 # A whole number between the two bounds, in either order, both included.
-static func _random(values: Array[float]) -> float:
+static func _random(values: Array[float], rng: RandomNumberGenerator) -> float:
 	var low: int = ceili(minf(values[0], values[1]))
 	var high: int = floori(maxf(values[0], values[1]))
 	if low > high:
 		return float(roundi(values[0]))
-	return float(randi_range(low, high))
+	return float(rng.randi_range(low, high))
 
 
 static func _clamp(values: Array[float]) -> float:
