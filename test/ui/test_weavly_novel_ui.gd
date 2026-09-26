@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
 # The visual novel UI against the compiler-built fixture in novel/src/novel.wvl.
@@ -27,7 +28,7 @@ func _nameplate() -> Label:
 	return _ui.get_node("%Nameplate")
 
 
-func _text() -> Label:
+func _text() -> RichTextLabel:
 	return _ui.get_node("%Text")
 
 
@@ -45,9 +46,9 @@ func _click() -> void:
 	_ui._gui_input(event)
 
 
-func _press_advance_action() -> void:
+func _press(action: StringName) -> void:
 	var event: InputEventAction = InputEventAction.new()
-	event.action = &"ui_accept"
+	event.action = action
 	event.pressed = true
 	_ui._unhandled_input(event)
 
@@ -119,7 +120,7 @@ func test_click_and_input_action_advance() -> void:
 	_engine.start("start")
 	_click()
 	assert_str(_text().text).is_equal("The wind picks up.")
-	_press_advance_action()
+	_press(&"ui_accept")
 	assert_str(_text().text).is_equal("Welcome.")
 
 
@@ -150,6 +151,27 @@ func test_choosing_an_option_continues() -> void:
 	assert_str(_text().text).is_equal("You wave.")
 
 
+func test_options_open_without_focus() -> void:
+	_engine.start("start")
+	_advance(4)
+	assert_bool(_choices().any(func(button: Button) -> bool: return button.has_focus())).is_false()
+
+
+func test_navigating_focuses_the_first_choosable_option() -> void:
+	_engine.start("start")
+	_advance(4)
+	_press(&"ui_down")
+	assert_bool(_choices()[0].has_focus()).is_true()
+
+
+func test_advance_action_focuses_instead_of_choosing() -> void:
+	_engine.start("start")
+	_advance(4)
+	_press(&"ui_accept")
+	assert_bool(_choices()[0].has_focus()).is_true()
+	assert_int(_choices().size()).is_equal(2)
+
+
 func test_only_hints_wait_for_advance() -> void:
 	_engine.start("hints")
 	(
@@ -159,6 +181,22 @@ func test_only_hints_wait_for_advance() -> void:
 	_ui.advance()
 	assert_array(_choices()).is_empty()
 	assert_str(_text().text).is_equal("You walk on.")
+
+
+func test_bbcode_is_shown_literally_by_default() -> void:
+	_engine.start("formatted")
+	assert_str(_text().get_parsed_text()).is_equal("Hello [b]world[/b].")
+
+
+func test_bbcode_enabled_renders_it_and_reveals_only_visible_characters() -> void:
+	_ui.bbcode_enabled = true
+	_ui.characters_per_second = 4.0
+	_engine.start("formatted")
+	assert_str(_text().get_parsed_text()).is_equal("Hello world.")
+	_ui._process(2.5)
+	assert_bool(_ui.is_revealing()).is_true()
+	_ui._process(0.5)
+	assert_bool(_ui.is_revealing()).is_false()
 
 
 func test_hidden_after_the_dialogue_finishes() -> void:

@@ -1,10 +1,16 @@
 class_name WeavlyNovelUI
 extends WeavlyUI
 
+const NAVIGATION_ACTIONS: Array[StringName] = [
+	&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"
+]
+
 ## Characters revealed per second; 0 shows each line at once.
 @export var characters_per_second: float = 40.0
 ## Advances like a click does.
 @export var advance_action: StringName = &"ui_accept"
+## Renders BBCode in lines; injected values like {$name} are parsed too.
+@export var bbcode_enabled: bool = false
 
 var _revealing: bool = false
 var _revealed: float = 0.0
@@ -12,7 +18,7 @@ var _awaiting_choice: bool = false
 
 @onready var _textbox: Control = %Textbox
 @onready var _nameplate: Label = %Nameplate
-@onready var _text: Label = %Text
+@onready var _text: RichTextLabel = %Text
 @onready var _choices: Container = %Choices
 
 
@@ -23,7 +29,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_revealed += delta * characters_per_second
-	if _revealed >= _text.text.length():
+	if _revealed >= _text.get_total_character_count():
 		_complete_reveal()
 	else:
 		_text.visible_characters = int(_revealed)
@@ -36,10 +42,19 @@ func _gui_input(event: InputEvent) -> void:
 		advance()
 
 
+# Menus open unfocused, so only keyboard and gamepad input shows the focus outline.
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or not InputMap.has_action(advance_action):
+	if not is_visible_in_tree():
 		return
-	if event.is_action_pressed(advance_action):
+	var advancing: bool = (
+		InputMap.has_action(advance_action) and event.is_action_pressed(advance_action)
+	)
+	var navigating: bool = NAVIGATION_ACTIONS.any(
+		func(action: StringName) -> bool: return event.is_action_pressed(action)
+	)
+	if _awaiting_choice and (advancing or navigating) and _focus_first_choice():
+		get_viewport().set_input_as_handled()
+	elif advancing:
 		get_viewport().set_input_as_handled()
 		advance()
 
@@ -107,10 +122,14 @@ func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 		button.pressed.connect(_choose.bind(option))
 		_choices.add_child(button)
 	visible = true
+
+
+func _focus_first_choice() -> bool:
 	for button: Button in _choices.get_children():
 		if not button.disabled:
 			button.grab_focus()
-			break
+			return true
+	return false
 
 
 func _choose(option: WeavlyModel.Option) -> void:
@@ -122,6 +141,7 @@ func _choose(option: WeavlyModel.Option) -> void:
 func _show_text(text: String) -> void:
 	_clear_choices()
 	_awaiting_choice = false
+	_text.bbcode_enabled = bbcode_enabled
 	_text.text = text
 	_textbox.visible = true
 	visible = true

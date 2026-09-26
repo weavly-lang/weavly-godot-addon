@@ -69,6 +69,7 @@ Button/styles/hover = SubResource("StyleBoxFlat_choice_hover")
 Button/styles/normal = SubResource("StyleBoxFlat_choice")
 Button/styles/pressed = SubResource("StyleBoxFlat_choice_hover")
 Label/colors/font_color = Color(0.95, 0.95, 0.95, 1)
+RichTextLabel/colors/default_color = Color(0.95, 0.95, 0.95, 1)
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_textbox")
 VBoxContainer/constants/separation = 10
 WeavlyNovelNameplate/base_type = &"Label"

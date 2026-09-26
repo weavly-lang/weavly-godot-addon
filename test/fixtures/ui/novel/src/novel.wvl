@@ -19,3 +19,7 @@ You wave.
 @endoptions
 You walk on.
 @endnode
+
+@node formatted
+Hello [b]world[/b].
+@endnode

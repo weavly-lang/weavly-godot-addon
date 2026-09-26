@@ -52,8 +52,10 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"WeavlyNovelNameplate"
 
-[node name="Text" type="Label" parent="Textbox/Content"]
+[node name="Text" type="RichTextLabel" parent="Textbox/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-autowrap_mode = 3
+mouse_filter = 2
+fit_content = true
+scroll_active = false

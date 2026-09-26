@@ -235,7 +235,9 @@ The UIs don't interpret commands, so handle `executed_command` in your game as u
 
 ### Visual novel
 
-`addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. The UI hides itself while no dialogue runs.
+`addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. The menu opens without focus, so the first arrow key or `advance_action` press focuses an option and mouse players never see the focus outline. The UI hides itself while no dialogue runs.
+
+Lines show as written. With `bbcode_enabled`, the textbox renders BBCode in lines instead, including in values filled in from `{}`, so a player-entered name containing `[` is parsed too.
 
 The nameplate shows the character's `display_name`, or the name as written when there's no character with that id. For a nameplate color, create the character as a `WeavlyNovelCharacter` and set `name_color`; a plain `WeavlyCharacter` uses the theme's color. The look lives in `weavly_novel_theme.tres`, with the nameplate as the `WeavlyNovelNameplate` type variation.
 
