@@ -1,0 +1,21 @@
+@node start
+>guide: Hello there.
+The wind picks up.
+>innkeeper: Welcome.
+>stranger: Who are you?
+@options
+@option "Wave" -> waved
+@hint "Fight (too tired)"
+@endoptions
+@endnode
+
+@node waved
+You wave.
+@endnode
+
+@node hints
+@options
+@hint "Locked door"
+@endoptions
+You walk on.
+@endnode

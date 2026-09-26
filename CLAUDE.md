@@ -5,6 +5,7 @@
 Godot addon that runs Weavly programs at runtime by consuming JSON emitted by the Weavly compiler, plus editor tooling to edit and compile `.wvl` files inside Godot. The runtime does not parse `.wvl` source. The dev project targets Forward+; CI tests 4.5, 4.6 and 4.7.
 
 - Addon code: `addons/weavly/src/`
+- Starter UIs: `addons/weavly/ui/`, optional scenes on top of the runtime that use only its public API. Showcase projects live in the separate godot-demos repo, not here.
 - Engine scene: `addons/weavly/src/weavly_engine.tscn` — the instantiable `WeavlyEngine` node, scripted with `WeavlyDefaultEngine`.
 - `dialogue/` is a gitignored scratch project for trying the editor tooling by hand, so it is absent from a fresh clone. Create one with `weavly init dialogue`; that path is what `weavly/dialogue_project_dir` defaults to.
 
@@ -43,7 +44,11 @@ addons/weavly/src/
   resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable
   utils/                            # weavly_file_utils, weavly_text_utils
 
-test/                               # gdUnit4 tests: unit/ mirrors src/, integration/, fixtures/, helpers/
+addons/weavly/ui/
+  weavly_ui.gd                      # WeavlyUI: @abstract base, connects an engine by export or autoload name
+  renpy/                            # one folder per style: scene, script, own Theme, character subclass
+
+test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ covers addons/weavly/ui/, integration/, fixtures/, helpers/
                                     # fixtures/integration/ci_smoke/ is compiler-built, see above
 ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
                                     # external_media/ is copied next to the exported binary

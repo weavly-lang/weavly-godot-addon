@@ -35,6 +35,14 @@ func test_get_missing_returns_provided_default() -> void:
 	assert_logged(["Character with id 'missing' doesn't exist"])
 
 
+func test_has() -> void:
+	var character: WeavlyCharacter = WeavlyCharacter.new()
+	character.id = "hero"
+	_service.add_character(character)
+	assert_bool(_service.has("hero")).is_true()
+	assert_bool(_service.has("missing")).is_false()
+
+
 # =====================
 # duplicate id
 # =====================
