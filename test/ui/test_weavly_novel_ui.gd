@@ -168,6 +168,22 @@ func test_hidden_after_the_dialogue_finishes() -> void:
 	assert_bool(_ui.visible).is_false()
 
 
+func test_loading_a_state_clears_the_ui() -> void:
+	_engine.start("start")
+	_engine.reset_state()
+	assert_bool(_ui.visible).is_false()
+	assert_str(_text().text).is_empty()
+
+
+func test_loading_a_state_mid_dialogue_shows_the_replayed_node() -> void:
+	_engine.start("start")
+	var state: Dictionary = _engine.get_state()
+	_advance(4)
+	_engine.set_state(state)
+	assert_array(_choices()).is_empty()
+	assert_str(_text().text).is_equal("Hello there.")
+
+
 func test_disconnecting_the_engine_hides_and_stops_listening() -> void:
 	_engine.start("start")
 	_ui.engine = null

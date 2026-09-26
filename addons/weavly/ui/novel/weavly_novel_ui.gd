@@ -61,6 +61,7 @@ func is_revealing() -> bool:
 func _connect_engine() -> void:
 	engine.started_dialogue.connect(_clear)
 	engine.finished_dialogue.connect(_clear)
+	engine.state_loaded.connect(_clear)
 	engine.line_service.executed_narration_line.connect(_on_narration_line)
 	engine.line_service.executed_character_line.connect(_on_character_line)
 	engine.option_service.options_added.connect(_on_options_added)
@@ -69,6 +70,7 @@ func _connect_engine() -> void:
 func _disconnect_engine() -> void:
 	engine.started_dialogue.disconnect(_clear)
 	engine.finished_dialogue.disconnect(_clear)
+	engine.state_loaded.disconnect(_clear)
 	engine.line_service.executed_narration_line.disconnect(_on_narration_line)
 	engine.line_service.executed_character_line.disconnect(_on_character_line)
 	engine.option_service.options_added.disconnect(_on_options_added)
