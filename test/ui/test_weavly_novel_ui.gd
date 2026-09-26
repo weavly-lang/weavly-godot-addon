@@ -53,6 +53,16 @@ func _press(action: StringName) -> void:
 	_ui._unhandled_input(event)
 
 
+# Through the viewport, so focused buttons get the key before the UI does.
+func _press_key(key: Key) -> void:
+	for pressed: bool in [true, false]:
+		var event: InputEventKey = InputEventKey.new()
+		event.keycode = key
+		event.physical_keycode = key
+		event.pressed = pressed
+		get_viewport().push_input(event)
+
+
 func _advance(times: int) -> void:
 	for i: int in times:
 		_ui.advance()
@@ -170,6 +180,16 @@ func test_advance_action_focuses_instead_of_choosing() -> void:
 	_press(&"ui_accept")
 	assert_bool(_choices()[0].has_focus()).is_true()
 	assert_int(_choices().size()).is_equal(2)
+
+
+func test_keys_choose_the_focused_option() -> void:
+	_engine.start("crossroads")
+	await get_tree().process_frame
+	_press_key(KEY_DOWN)
+	_press_key(KEY_DOWN)
+	assert_bool(_choices()[1].has_focus()).is_true()
+	_press_key(KEY_ENTER)
+	assert_str(_text().text).is_equal("You go right.")
 
 
 func test_only_hints_wait_for_advance() -> void:

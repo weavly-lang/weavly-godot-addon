@@ -23,3 +23,18 @@ You walk on.
 @node formatted
 Hello [b]world[/b].
 @endnode
+
+@node crossroads
+@options
+@option "Left" -> left
+@option "Right" -> right
+@endoptions
+@endnode
+
+@node left
+You go left.
+@endnode
+
+@node right
+You go right.
+@endnode

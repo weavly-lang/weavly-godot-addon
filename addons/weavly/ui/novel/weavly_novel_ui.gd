@@ -124,7 +124,10 @@ func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 	visible = true
 
 
+# False when an option already has focus, so its button handles the key itself.
 func _focus_first_choice() -> bool:
+	if _choices.get_children().any(func(button: Button) -> bool: return button.has_focus()):
+		return false
 	for button: Button in _choices.get_children():
 		if not button.disabled:
 			button.grab_focus()
