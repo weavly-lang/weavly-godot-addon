@@ -84,13 +84,6 @@ func _button(card: WeavlyCard, text: String) -> Button:
 	return null
 
 
-func _click(card: WeavlyCard) -> void:
-	var event: InputEventMouseButton = InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = true
-	card._gui_input(event)
-
-
 func _press_key(key: Key) -> void:
 	for pressed: bool in [true, false]:
 		var event: InputEventKey = InputEventKey.new()
@@ -150,65 +143,68 @@ func test_commands_are_emitted() -> void:
 	assert_array(_events).is_equal(['command:header ["Market"]'])
 
 
-func test_a_card_with_one_option_is_chosen_by_a_click() -> void:
+func test_every_card_is_chosen_through_its_option_buttons() -> void:
 	_ui.deal(["city"])
-	var inn: WeavlyCard = _cards()[0]
-	assert_int(inn.focus_mode).is_equal(Control.FOCUS_ALL)
-	assert_int(_button(inn, "Join them").focus_mode).is_equal(Control.FOCUS_NONE)
-	_click(inn)
+	for card: WeavlyCard in _cards():
+		assert_int(card.focus_mode).is_equal(Control.FOCUS_NONE)
+	var join: Button = _button(_cards()[0], "Join them")
+	assert_int(join.focus_mode).is_equal(Control.FOCUS_ALL)
+	join.pressed.emit()
 	assert_array(_outcome()).is_equal(["You win 5 gold at cards."])
 	assert_float(_engine.variable_service.get_variable("gold")).is_equal(5.0)
 	assert_bool(_ui.get_node("%Continue").visible).is_true()
 	assert_array(_cards()).is_empty()
 
 
-func test_a_card_with_several_options_is_chosen_through_its_buttons() -> void:
-	_ui.deal(["city"])
-	var market: WeavlyCard = _cards()[1]
-	assert_int(market.focus_mode).is_equal(Control.FOCUS_NONE)
-	_click(market)
-	assert_int(_cards().size()).is_equal(3)
-	_button(market, "Chase").pressed.emit()
-	assert_array(_outcome()).is_equal(["You catch the thief.", ["Keep running"]])
-	assert_bool(_ui.get_node("%Continue").visible).is_false()
-
-
-func test_an_outcome_with_one_option_is_clicked_on() -> void:
+func test_an_outcome_with_options_hides_continue() -> void:
 	_ui.deal(["city"])
 	_button(_cards()[1], "Chase").pressed.emit()
-	_click(_cards("%Outcome")[0])
+	assert_array(_outcome()).is_equal(["You catch the thief.", ["Keep running"]])
+	assert_bool(_ui.get_node("%Continue").visible).is_false()
+	_button(_cards("%Outcome")[0], "Keep running").pressed.emit()
 	assert_array(_outcome()).is_equal(["You're out of breath."])
 	assert_bool(_ui.get_node("%Continue").visible).is_true()
 
 
 func test_a_card_of_only_hints_cant_be_chosen() -> void:
 	_ui.deal(["city"])
-	var bridge: WeavlyCard = _cards()[2]
-	assert_int(bridge.focus_mode).is_equal(Control.FOCUS_NONE)
-	_click(bridge)
-	assert_int(_cards().size()).is_equal(3)
+	var hint: Button = _button(_cards()[2], "Pass (no gold)")
+	assert_bool(hint.disabled).is_true()
+	assert_int(hint.focus_mode).is_equal(Control.FOCUS_NONE)
 
 
 func test_continue_deals_again_from_the_same_pools() -> void:
 	_ui.deal(["city"])
-	_click(_cards()[0])
+	_button(_cards()[0], "Join them").pressed.emit()
 	_ui.get_node("%Continue").pressed.emit()
 	assert_int(_cards().size()).is_equal(3)
 	assert_bool(_ui.get_node("%Outcome").visible).is_false()
 
 
-func test_hovering_selects_a_card() -> void:
+func test_hovering_selects_an_option_until_the_mouse_leaves() -> void:
 	_ui.deal(["city"])
-	_cards()[0].mouse_entered.emit()
-	assert_bool(_cards()[0].has_focus()).is_true()
-	assert_that(_cards()[0].theme_type_variation).is_equal(&"WeavlyCardSelected")
+	var join: Button = _button(_cards()[0], "Join them")
+	join.mouse_entered.emit()
+	assert_bool(join.has_focus()).is_true()
+	join.mouse_exited.emit()
+	assert_bool(join.has_focus()).is_false()
 
 
-func test_keys_select_and_choose_a_card() -> void:
+func test_hovering_continue_selects_it_until_the_mouse_leaves() -> void:
+	_ui.deal(["city"])
+	_button(_cards()[0], "Join them").pressed.emit()
+	var next: Button = _ui.get_node("%Continue")
+	next.mouse_entered.emit()
+	assert_bool(next.has_focus()).is_true()
+	next.mouse_exited.emit()
+	assert_bool(next.has_focus()).is_false()
+
+
+func test_keys_select_and_choose_an_option() -> void:
 	_ui.deal(["city"])
 	await get_tree().process_frame
 	_press_key(KEY_RIGHT)
-	assert_bool(_cards()[0].has_focus()).is_true()
+	assert_bool(_button(_cards()[0], "Join them").has_focus()).is_true()
 	_press_key(KEY_ENTER)
 	assert_array(_outcome()).is_equal(["You win 5 gold at cards."])
 

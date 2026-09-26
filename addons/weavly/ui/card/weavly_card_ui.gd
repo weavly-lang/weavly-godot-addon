@@ -27,7 +27,7 @@ var _pools: Array = []
 
 func _ready() -> void:
 	_continue.pressed.connect(_on_continue_pressed)
-	_continue.mouse_entered.connect(_continue.grab_focus)
+	WeavlyChoiceList.follow_mouse(_continue)
 	clear()
 	super()
 

@@ -81,6 +81,22 @@ func test_focus_first_without_choosable_options() -> void:
 	assert_bool(_list.focus_first()).is_false()
 
 
+func test_hovering_selects_an_option_until_the_mouse_leaves() -> void:
+	_show([false, false])
+	var button: Button = _list.get_child(0)
+	button.mouse_entered.emit()
+	assert_bool(button.has_focus()).is_true()
+	button.mouse_exited.emit()
+	assert_bool(button.has_focus()).is_false()
+
+
+func test_leaving_an_option_keeps_a_selection_elsewhere() -> void:
+	_show([false, false])
+	_list.get_child(1).grab_focus()
+	_list.get_child(0).mouse_exited.emit()
+	assert_bool(_list.get_child(1).has_focus()).is_true()
+
+
 func test_clear_removes_every_option() -> void:
 	_show([false, false])
 	_list.clear()
