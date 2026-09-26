@@ -42,7 +42,7 @@ func _gui_input(event: InputEvent) -> void:
 		advance()
 
 
-# Menus open unfocused, so only keyboard and gamepad input shows the focus outline.
+# Menus open with nothing selected; hovering or the first key press selects an option.
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
@@ -119,6 +119,10 @@ func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 		var button: Button = Button.new()
 		button.text = option.text
 		button.disabled = option.hint
+		if option.hint:
+			button.focus_mode = Control.FOCUS_NONE
+		else:
+			button.mouse_entered.connect(button.grab_focus)
 		button.pressed.connect(_choose.bind(option))
 		_choices.add_child(button)
 	visible = true
@@ -129,7 +133,7 @@ func _focus_first_choice() -> bool:
 	if _choices.get_children().any(func(button: Button) -> bool: return button.has_focus()):
 		return false
 	for button: Button in _choices.get_children():
-		if not button.disabled:
+		if button.focus_mode != Control.FOCUS_NONE:
 			button.grab_focus()
 			return true
 	return false

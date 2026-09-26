@@ -192,6 +192,28 @@ func test_keys_choose_the_focused_option() -> void:
 	assert_str(_text().text).is_equal("You go right.")
 
 
+func test_hovering_selects_an_option() -> void:
+	_engine.start("crossroads")
+	_choices()[1].mouse_entered.emit()
+	assert_bool(_choices()[1].has_focus()).is_true()
+
+
+func test_keys_choose_the_hovered_option() -> void:
+	_engine.start("crossroads")
+	_choices()[1].mouse_entered.emit()
+	_press_key(KEY_ENTER)
+	assert_str(_text().text).is_equal("You go right.")
+
+
+func test_hints_cant_be_selected() -> void:
+	_engine.start("start")
+	_advance(4)
+	var hint: Button = _choices()[1]
+	assert_int(hint.focus_mode).is_equal(Control.FOCUS_NONE)
+	hint.mouse_entered.emit()
+	assert_bool(hint.has_focus()).is_false()
+
+
 func test_only_hints_wait_for_advance() -> void:
 	_engine.start("hints")
 	(

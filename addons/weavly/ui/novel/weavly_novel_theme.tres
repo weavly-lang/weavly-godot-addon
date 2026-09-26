@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=6 format=3]
+[gd_resource type="Theme" load_steps=5 format=3]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_textbox"]
 content_margin_left = 28.0
@@ -22,7 +22,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_hover"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_selected"]
 content_margin_left = 24.0
 content_margin_top = 10.0
 content_margin_right = 24.0
@@ -44,30 +44,18 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
-draw_center = false
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.85, 0.5, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [resource]
 default_font_size = 22
 Button/colors/font_color = Color(0.95, 0.95, 0.95, 1)
 Button/colors/font_disabled_color = Color(0.95, 0.95, 0.95, 0.4)
 Button/colors/font_focus_color = Color(1, 1, 1, 1)
-Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_color = Color(0.95, 0.95, 0.95, 1)
 Button/colors/font_pressed_color = Color(1, 0.85, 0.5, 1)
 Button/styles/disabled = SubResource("StyleBoxFlat_choice_disabled")
-Button/styles/focus = SubResource("StyleBoxFlat_choice_focus")
-Button/styles/hover = SubResource("StyleBoxFlat_choice_hover")
+Button/styles/focus = SubResource("StyleBoxFlat_choice_selected")
+Button/styles/hover = SubResource("StyleBoxFlat_choice")
 Button/styles/normal = SubResource("StyleBoxFlat_choice")
-Button/styles/pressed = SubResource("StyleBoxFlat_choice_hover")
+Button/styles/pressed = SubResource("StyleBoxFlat_choice_selected")
 Label/colors/font_color = Color(0.95, 0.95, 0.95, 1)
 RichTextLabel/colors/default_color = Color(0.95, 0.95, 0.95, 1)
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_textbox")
