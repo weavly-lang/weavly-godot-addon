@@ -241,6 +241,14 @@ Lines show as written. With `bbcode_enabled`, the textbox renders BBCode in line
 
 The nameplate shows the character's `display_name`, or the name as written when there's no character with that id. For a nameplate color, create the character as a `WeavlyNovelCharacter` and set `name_color`; a plain `WeavlyCharacter` uses the theme's color. The look lives in `weavly_novel_theme.tres`, with the nameplate as the `WeavlyNovelNameplate` type variation.
 
+### Passage
+
+`addons/weavly/ui/passage/weavly_passage_ui.tscn` is a hypertext UI in the style of Twine, built on [rendering](#rendering-a-node) instead of stepping. `show_passage("tavern")` renders the node and shows it as one passage: every line as a paragraph, character lines with the speaker's name in bold, and each options block as links in place, with hints muted. Clicking a link calls `render_option()`, which runs the option and follows its jump, and the result becomes the next passage. With `append` on, earlier passages stay above the new one, with the chosen link in place of their links. Links share one selection between mouse and keys, like the visual novel menu, and the page scrolls to follow it.
+
+A passage with nothing to choose is an ending: the UI emits `finished`, and the game decides what comes next, for example `clear()` and a new `show_passage()`. Rendered commands aren't interpreted; the UI emits each one with `command_rendered(command)`, in order. `bbcode_enabled` works like in the visual novel UI. The look lives in `weavly_passage_theme.tres`.
+
+Both UIs build their options with `WeavlyChoiceList`, which you can reuse in your own UI.
+
 ## Writing dialogues in the editor
 
 Right-click a folder in the FileSystem dock and choose **WeavlyFile...** to create a `.wvl` file, or double-click an existing one to open it in the Weavly main screen. The panel saves with `Ctrl+S` and can compile the dialogue project on demand or on every save.

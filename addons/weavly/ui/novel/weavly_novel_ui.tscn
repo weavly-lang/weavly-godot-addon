@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://addons/weavly/ui/novel/weavly_novel_ui.gd" id="1_script"]
 [ext_resource type="Theme" path="res://addons/weavly/ui/novel/weavly_novel_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/weavly/ui/weavly_choice_list.gd" id="3_choices"]
 
 [node name="WeavlyNovelUI" type="Control"]
 layout_mode = 3
@@ -27,6 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 alignment = 1
+script = ExtResource("3_choices")
 
 [node name="Textbox" type="PanelContainer" parent="."]
 unique_name_in_owner = true

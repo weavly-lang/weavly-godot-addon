@@ -19,10 +19,11 @@ var _awaiting_choice: bool = false
 @onready var _textbox: Control = %Textbox
 @onready var _nameplate: Label = %Nameplate
 @onready var _text: RichTextLabel = %Text
-@onready var _choices: Container = %Choices
+@onready var _choices: WeavlyChoiceList = %Choices
 
 
 func _ready() -> void:
+	_choices.chosen.connect(_choose)
 	_clear()
 	super()
 
@@ -42,7 +43,7 @@ func _gui_input(event: InputEvent) -> void:
 		advance()
 
 
-# Menus open with nothing selected; hovering or the first key press selects an option.
+# Menus open with nothing selected; the first key press selects an option.
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
@@ -52,7 +53,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var navigating: bool = NAVIGATION_ACTIONS.any(
 		func(action: StringName) -> bool: return event.is_action_pressed(action)
 	)
-	if _awaiting_choice and (advancing or navigating) and _focus_first_choice():
+	if _awaiting_choice and (advancing or navigating) and _choices.focus_first():
 		get_viewport().set_input_as_handled()
 	elif advancing:
 		get_viewport().set_input_as_handled()
@@ -111,42 +112,19 @@ func _on_character_line(line: WeavlyModel.CharacterLine) -> void:
 
 
 func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
-	_clear_choices()
-	_awaiting_choice = options.any(
-		func(option: WeavlyModel.Option) -> bool: return not option.hint
-	)
-	for option: WeavlyModel.Option in options:
-		var button: Button = Button.new()
-		button.text = option.text
-		button.disabled = option.hint
-		if option.hint:
-			button.focus_mode = Control.FOCUS_NONE
-		else:
-			button.mouse_entered.connect(button.grab_focus)
-		button.pressed.connect(_choose.bind(option))
-		_choices.add_child(button)
+	_choices.show_options(options)
+	_awaiting_choice = _choices.has_choosable()
 	visible = true
 
 
-# False when an option already has focus, so its button handles the key itself.
-func _focus_first_choice() -> bool:
-	if _choices.get_children().any(func(button: Button) -> bool: return button.has_focus()):
-		return false
-	for button: Button in _choices.get_children():
-		if button.focus_mode != Control.FOCUS_NONE:
-			button.grab_focus()
-			return true
-	return false
-
-
 func _choose(option: WeavlyModel.Option) -> void:
-	_clear_choices()
+	_choices.clear()
 	_awaiting_choice = false
 	engine.option_service.choose_option(option)
 
 
 func _show_text(text: String) -> void:
-	_clear_choices()
+	_choices.clear()
 	_awaiting_choice = false
 	_text.bbcode_enabled = bbcode_enabled
 	_text.text = text
@@ -167,16 +145,10 @@ func _complete_reveal() -> void:
 	set_process(false)
 
 
-func _clear_choices() -> void:
-	for child: Node in _choices.get_children():
-		_choices.remove_child(child)
-		child.queue_free()
-
-
 func _clear() -> void:
 	visible = false
 	_textbox.visible = false
 	_text.text = ""
 	_awaiting_choice = false
 	_complete_reveal()
-	_clear_choices()
+	_choices.clear()

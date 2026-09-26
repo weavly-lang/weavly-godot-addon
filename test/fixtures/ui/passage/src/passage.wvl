@@ -1,0 +1,42 @@
+@env
+gold: number = 0
+@endenv
+
+@node tavern
+>guide: Welcome, you have {$gold} gold.
+@header "Tavern"
+@options
+@option "Buy a drink"
+    @increase $gold 1
+    The drink is cold.
+    @goto bar
+@option "Leave" -> street
+@hint "Gamble (closed)"
+@endoptions
+>Stranger: Mind the fire.
+@options
+@option "Warm up" -> fire
+@endoptions
+@endnode
+
+@node bar
+The barkeep nods.
+@options
+@option "Back" -> tavern
+@endoptions
+@endnode
+
+@node street
+The street is empty.
+@endnode
+
+@node fire
+You warm up.
+@options
+@hint "Stay (too hot)"
+@endoptions
+@endnode
+
+@node formatted
+Hello [b]world[/b].
+@endnode
