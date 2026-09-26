@@ -61,7 +61,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Completes a line that's still revealing, otherwise continues the dialogue.
 func advance() -> void:
-	if not _attached or not visible or _awaiting_choice:
+	if not visible or _awaiting_choice:
 		return
 	if _revealing:
 		_complete_reveal()
