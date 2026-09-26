@@ -1,0 +1,114 @@
+[gd_resource type="Theme" load_steps=8 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_phone"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.06, 0.06, 0.08, 0.97)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_incoming"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.22, 0.22, 0.27, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outgoing"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2, 0.44, 0.82, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reply"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.12, 0.12, 0.16, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.44, 0.82, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reply_selected"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2, 0.44, 0.82, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.44, 0.82, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reply_disabled"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.12, 0.12, 0.16, 0.5)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.36, 0.6)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_none"]
+
+[resource]
+default_font_size = 17
+Button/colors/font_color = Color(0.95, 0.95, 0.95, 1)
+Button/colors/font_disabled_color = Color(0.95, 0.95, 0.95, 0.4)
+Button/colors/font_focus_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_color = Color(0.95, 0.95, 0.95, 1)
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
+Button/styles/disabled = SubResource("StyleBoxFlat_reply_disabled")
+Button/styles/focus = SubResource("StyleBoxFlat_reply_selected")
+Button/styles/hover = SubResource("StyleBoxFlat_reply")
+Button/styles/normal = SubResource("StyleBoxFlat_reply")
+Button/styles/pressed = SubResource("StyleBoxFlat_reply_selected")
+Label/colors/font_color = Color(0.95, 0.95, 0.95, 1)
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_phone")
+RichTextLabel/colors/default_color = Color(0.95, 0.95, 0.95, 1)
+ScrollContainer/styles/panel = SubResource("StyleBoxEmpty_none")
+VBoxContainer/constants/separation = 10
+WeavlyChatColumn/base_type = &"VBoxContainer"
+WeavlyChatColumn/constants/separation = 2
+WeavlyChatIncoming/base_type = &"PanelContainer"
+WeavlyChatIncoming/styles/panel = SubResource("StyleBoxFlat_incoming")
+WeavlyChatName/base_type = &"Label"
+WeavlyChatName/colors/font_color = Color(0.62, 0.62, 0.68, 1)
+WeavlyChatName/font_sizes/font_size = 13
+WeavlyChatNarration/base_type = &"RichTextLabel"
+WeavlyChatNarration/colors/default_color = Color(0.6, 0.6, 0.66, 1)
+WeavlyChatNarration/font_sizes/normal_font_size = 14
+WeavlyChatOutgoing/base_type = &"PanelContainer"
+WeavlyChatOutgoing/styles/panel = SubResource("StyleBoxFlat_outgoing")

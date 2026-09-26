@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WeavlyChatCharacter" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/weavly/ui/chat/weavly_chat_character.gd" id="1_chr"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_avatar"]
+size = Vector2(32, 32)
+
+[resource]
+script = ExtResource("1_chr")
+avatar = SubResource("PlaceholderTexture2D_avatar")
+bubble_color = Color(0.5, 0.2, 0.4, 1)
+id = "mara"
+display_name = "Mara"
