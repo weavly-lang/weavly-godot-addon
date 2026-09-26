@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="WeavlyCharacter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/weavly/src/resources/weavly_character.gd" id="1_chr"]
+
+[resource]
+script = ExtResource("1_chr")
+id = "guide"
+display_name = "Guide"
