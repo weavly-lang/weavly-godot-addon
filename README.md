@@ -131,18 +131,18 @@ Bob waves at you.
 @endnode
 ```
 
-`engine.list_pool("city")` returns the ids of the nodes to offer, as an `Array[String]` in selection order:
+`engine.list_pool(["city"])` returns the ids of the nodes to offer, as an `Array[String]` in selection order:
 
 1. The members of all given pools, a node in several of them counted once.
 2. Only nodes whose `when` is true and whose `weight` is above 0. `priority` defaults to 0 and `weight` to 1.
 3. Highest `priority` first. Nodes with the same priority are shuffled by weight with `engine.rng`, so a node with weight 2 comes first about twice as often as one with weight 1.
 4. A node is left out when a node before it already took one of its slots. Slots block across all given pools, and nodes without slots are always listed.
 
-`list_pool` accepts several pools, as in `engine.list_pool("city", "city_night")`, and updates skip counts: every listed node goes back to 0, and every eligible node that wasn't listed goes up by 1. `skip_count(node)` reads that count in a script, and without an argument it means the current node, so `weight: 1 + skip_count()` makes a node likelier the longer it waits. Skip counts are saved with the state.
+`list_pool` accepts several pools, as in `engine.list_pool(["city", "city_night"])`, and an optional limit: `engine.list_pool(["city"], 3)` stops once it has taken three nodes, so a game that shows three cards only pulls three. Without a limit, or with `-1`, it takes every node it can. It updates skip counts: every listed node goes back to 0, and every eligible node that wasn't listed goes up by 1, including those past the limit. `skip_count(node)` reads that count in a script, and without an argument it means the current node, so `weight: 1 + skip_count()` makes a node likelier the longer it waits. Skip counts are saved with the state.
 
-`engine.draw("city")` starts a dialogue with the first node in selection order, the first entry `list_pool` would return, and returns `true`, or returns `false` and starts nothing when no node is eligible. It takes several pools like `list_pool`, and while a dialogue runs it warns and does nothing, like `start()`. In a script, `@draw city, city_night` leaves the current node and enters the drawn one like `@goto`; when no node is eligible, it does nothing and the node continues with the next line. Both update skip counts: the drawn node goes back to 0 and every other eligible node goes up by 1.
+`engine.draw(["city"])` starts a dialogue with the first node in selection order, the first entry `list_pool` would return, and returns `true`, or returns `false` and starts nothing when no node is eligible. It takes several pools like `list_pool`, and while a dialogue runs it warns and does nothing, like `start()`. In a script, `@draw city, city_night` leaves the current node and enters the drawn one like `@goto`; when no node is eligible, it does nothing and the node continues with the next line. Both update skip counts: the drawn node goes back to 0 and every other eligible node goes up by 1.
 
-`engine.peek_pool(...)` returns what `list_pool` would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool("city").is_empty()` asks whether anything is there. `engine.node_service.get_node_meta(id)` gives a node's pools and slots.
+`engine.peek_pool(["city"], 3)` returns what `list_pool` with the same pools and limit would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool(["city"]).is_empty()` asks whether anything is there. `engine.node_service.get_node_meta(id)` gives a node's pools and slots.
 
 A pool name that isn't declared is reported as a runtime error and counts as empty. A `when`, `priority` or `weight` that fails is reported at its line in the `@meta` block, and the node isn't eligible. `@goto` and `start()` ignore the metadata, so an explicit jump always works.
 

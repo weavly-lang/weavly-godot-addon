@@ -71,18 +71,18 @@ func add_rendered(statement: WeavlyModel.Statement) -> void:
 			_rendered_options[option] = current_source
 
 
-# Storylet node ids from the pools in selection order, each taken while its slots are free.
-func list_pool(...pools: Array) -> Array[String]:
-	return WeavlyStoryletSelector.list_pool(self, pools)
+# Up to limit storylet ids in selection order, each taken while its slots are free; -1 takes all.
+func list_pool(pools: Array, limit: int = -1) -> Array[String]:
+	return WeavlyStoryletSelector.list_pool(self, pools, limit)
 
 
 # What list_pool would return now, without changing skip counts or the generator.
-func peek_pool(...pools: Array) -> Array[String]:
-	return WeavlyStoryletSelector.peek_pool(self, pools)
+func peek_pool(pools: Array, limit: int = -1) -> Array[String]:
+	return WeavlyStoryletSelector.peek_pool(self, pools, limit)
 
 
 # Starts a dialogue with the first node in selection order; false when none is eligible.
-func draw(...pools: Array) -> bool:
+func draw(pools: Array) -> bool:
 	if is_running():
 		push_warning(DRAW_IN_PROGRESS % ", ".join(PackedStringArray(pools)))
 		return false

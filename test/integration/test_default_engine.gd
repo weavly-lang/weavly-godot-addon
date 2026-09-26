@@ -315,10 +315,10 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	assert_bool(_signal_log.has("entered_node:night_market")).is_false()
 	assert_int(engine.node_service.get_skip_count("plaza")).is_equal(1)
 
-	var peeked: Array[String] = engine.peek_pool("city", "night")
+	var peeked: Array[String] = engine.peek_pool(["city", "night"])
 	assert_array(peeked).is_equal(["night_market", "plaza"])
 	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(1)
-	assert_array(engine.list_pool("city", "night")).is_equal(peeked)
+	assert_array(engine.list_pool(["city", "night"])).is_equal(peeked)
 	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(0)
 
 
