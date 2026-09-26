@@ -5,6 +5,10 @@ const TYPE = "Character"
 var _character_index: Dictionary[String, WeavlyCharacter] = {}
 
 
+func has(id: String) -> bool:
+	return _character_index.has(id)
+
+
 func add_character(character: WeavlyCharacter) -> void:
 	if _character_index.has(character.id):
 		push_warning(EXISTING_ID % [TYPE, character.id])

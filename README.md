@@ -8,6 +8,7 @@ A Godot 4.5+ addon that runs [Weavly](https://github.com/weavly-lang/weavly-comp
 
 - **Runtime engine** — an instantiable `WeavlyEngine` node that loads compiled dialogues and drives them statement by statement: narration and character lines, options, `match`/`random` blocks, variables, gotos, and custom commands.
 - **Signal-based UI contract** — the engine has no UI of its own. Your game listens to service signals (`executed_narration_line`, `options_added`, `executed_command`, `variable_changed`, ...) and renders however it likes.
+- **Starter UIs** — ready-made dialogue UIs to drop into a scene, restyle through their theme, or copy as a starting point.
 - **Swappable services** — every concern (lines, options, variables, nodes, characters, images, videos, commands, statement flow) sits behind an abstract service. Override any of them via the engine's `*_service_script` exports in the inspector.
 - **Asset indexing** — images, videos, character resources, and variable resources are discovered from configurable folders at startup, with optional regex grouping for random variant selection.
 - **Editor tooling** — a main-screen `.wvl` editor with syntax highlighting, a create-file context menu, and one-click (or on-save) compilation via the Weavly CLI.
@@ -216,6 +217,29 @@ func _ready() -> void:
 The `editor` check is needed because `OS.get_executable_path()` points at the Godot binary when running from the editor. External media is not part of the export, so your build step has to copy that folder next to the executable.
 
 Character and variable `.tres` resources stay `res://` only, since they reference their script by resource uid. Dialogue and variable JSON works with either kind of path.
+
+## Starter UIs
+
+`addons/weavly/ui/` has ready-made dialogue UIs built on the same signals your own UI would use. Drop one into a scene, restyle it through its theme, or copy it as a starting point. Each one extends `WeavlyUI` and connects to an engine in one of two ways:
+
+- `engine`: an engine node in the same scene, picked in the inspector.
+- `engine_autoload`: the name of an autoloaded engine, such as `Dialogue`, looked up when the UI is ready. When both are set, `engine` wins.
+
+Assigning `engine` in code works too, and assigning another engine later reconnects the UI:
+
+```gdscript
+$WeavlyNovelUI.engine = Dialogue
+```
+
+The UIs don't interpret commands, so handle `executed_command` in your game as usual.
+
+### Visual novel
+
+`addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. Mouse and keys share one selection, as in most game menus: the menu opens with nothing selected, hovering an option or the first arrow key or `advance_action` press selects one, and a click or `advance_action` chooses it. Hints can't be selected. The UI hides itself while no dialogue runs.
+
+Lines show as written. With `bbcode_enabled`, the textbox renders BBCode in lines instead, including in values filled in from `{}`, so a player-entered name containing `[` is parsed too.
+
+The nameplate shows the character's `display_name`, or the name as written when there's no character with that id. For a nameplate color, create the character as a `WeavlyNovelCharacter` and set `name_color`; a plain `WeavlyCharacter` uses the theme's color. The look lives in `weavly_novel_theme.tres`, with the nameplate as the `WeavlyNovelNameplate` type variation.
 
 ## Writing dialogues in the editor
 
