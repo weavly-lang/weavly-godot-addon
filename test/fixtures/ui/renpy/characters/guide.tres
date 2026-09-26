@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="WeavlyRenpyCharacter" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://addons/weavly/ui/renpy/weavly_renpy_character.gd" id="1_chr"]
-
-[resource]
-script = ExtResource("1_chr")
-name_color = Color(0.4, 0.8, 1, 1)
-id = "guide"
-display_name = "Guide"

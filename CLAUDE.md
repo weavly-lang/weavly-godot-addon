@@ -46,7 +46,7 @@ addons/weavly/src/
 
 addons/weavly/ui/
   weavly_ui.gd                      # WeavlyUI: @abstract base, connects an engine by export or autoload name
-  renpy/                            # one folder per style: scene, script, own Theme, character subclass
+  novel/                            # one folder per style: scene, script, own Theme, character subclass
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ covers addons/weavly/ui/, integration/, fixtures/, helpers/
                                     # fixtures/integration/ci_smoke/ is compiler-built, see above

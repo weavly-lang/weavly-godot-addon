@@ -1,4 +1,4 @@
-class_name WeavlyRenpyUI
+class_name WeavlyNovelUI
 extends WeavlyUI
 
 ## Characters revealed per second; 0 shows each line at once.
@@ -85,7 +85,7 @@ func _on_character_line(line: WeavlyModel.CharacterLine) -> void:
 	if engine.character_service.has(line.name):
 		character = engine.character_service.get_character(line.name)
 	_nameplate.text = character.display_name if character != null else line.name
-	if character is WeavlyRenpyCharacter:
+	if character is WeavlyNovelCharacter:
 		_nameplate.add_theme_color_override(&"font_color", character.name_color)
 	else:
 		_nameplate.remove_theme_color_override(&"font_color")

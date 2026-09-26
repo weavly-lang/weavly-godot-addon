@@ -1,12 +1,12 @@
 extends WeavlyTestSuite
 
-# The Ren'Py-style UI against the compiler-built fixture in renpy/src/renpy.wvl.
+# The visual novel UI against the compiler-built fixture in novel/src/novel.wvl.
 
-const FIXTURE = "res://test/fixtures/ui/renpy"
-const SCENE = preload("res://addons/weavly/ui/renpy/weavly_renpy_ui.tscn")
+const FIXTURE = "res://test/fixtures/ui/novel"
+const SCENE = preload("res://addons/weavly/ui/novel/weavly_novel_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
-var _ui: WeavlyRenpyUI
+var _ui: WeavlyNovelUI
 
 
 func before_test() -> void:
@@ -63,7 +63,7 @@ func test_hidden_until_a_line_shows() -> void:
 	assert_bool(_ui.visible).is_true()
 
 
-func test_renpy_character_uses_its_name_and_color() -> void:
+func test_novel_character_uses_its_name_and_color() -> void:
 	_engine.start("start")
 	assert_str(_text().text).is_equal("Hello there.")
 	assert_bool(_nameplate().visible).is_true()
