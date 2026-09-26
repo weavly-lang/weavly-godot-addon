@@ -235,7 +235,7 @@ The UIs don't interpret commands, so handle `executed_command` in your game as u
 
 ### Visual novel
 
-`addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. Mouse and keys share one selection, as in most game menus: the menu opens with nothing selected, hovering an option or the first arrow key or `advance_action` press selects one, and a click or `advance_action` chooses it. Hints can't be selected. The UI hides itself while no dialogue runs.
+`addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. Mouse and keys share one selection, as in most game menus: the menu opens with nothing selected, hovering an option selects it until the mouse leaves it, the first arrow key or `advance_action` press selects one, and a click or `advance_action` chooses it. Hints can't be selected. The UI hides itself while no dialogue runs.
 
 Lines show as written. With `bbcode_enabled`, the textbox renders BBCode in lines instead, including in values filled in from `{}`, so a player-entered name containing `[` is parsed too.
 
@@ -247,7 +247,33 @@ The nameplate shows the character's `display_name`, or the name as written when 
 
 A passage with nothing to choose is an ending: the UI emits `finished`, and the game decides what comes next, for example `clear()` and a new `show_passage()`. Rendered commands aren't interpreted; the UI emits each one with `command_rendered(command)`, in order. `bbcode_enabled` works like in the visual novel UI. The look lives in `weavly_passage_theme.tres`.
 
-Both UIs build their options with `WeavlyChoiceList`, which you can reuse in your own UI.
+### Card
+
+`addons/weavly/ui/card/weavly_card_ui.tscn` deals [storylets](#storylets) as a hand of cards. `deal(["city"])` asks `list_pool` for up to `hand_size` storylets (3 by default) and renders each one as a card: its lines are the face, and its options are buttons on the card, with hints disabled. Picking an option calls `render_option()`, and what it produced replaces the hand as an outcome card, which can have options of its own. When the outcome has nothing left to choose, *Continue* deals a new hand from the same pools. A deal without any eligible storylet emits `hand_empty` and hides the UI. Options share one selection between mouse and keys, like the other starter UIs. Rendered commands are emitted with `command_rendered(command)`, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_card_theme.tres`.
+
+Keep a card's node to what the card shows, and let its option jump to an effect node that holds the state changes:
+
+```
+@node inn_stranger
+@meta
+pool: city
+when: not visited(inn_stranger_effect)
+@endmeta
+A stranger at the inn waves you over.
+@options
+@option "Join them" -> inn_stranger_effect
+@endoptions
+@endnode
+
+@node inn_stranger_effect
+@increase $gold 5
+You win 5 gold at cards.
+@endnode
+```
+
+Showing a card renders its node, and rendering counts a visit, so `once: true` and `visited()` on the card itself mean "was shown". Put them on the effect node to mean "was picked", as the `when` above does.
+
+All three UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold; both can be reused in your own UI.
 
 ## Writing dialogues in the editor
 

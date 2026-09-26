@@ -100,7 +100,7 @@ func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
 	var choosable: bool = false
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.LineStatement:
-			_add_line(entry)
+			_current.add_child(create_line_label(entry, engine, bbcode_enabled))
 		elif entry is WeavlyModel.CommandStatement:
 			command_rendered.emit(entry)
 		elif entry is WeavlyModel.OptionBlock:
@@ -114,28 +114,6 @@ func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
 	_scroll_to_current()
 	if not choosable:
 		finished.emit()
-
-
-func _add_line(line: WeavlyModel.LineStatement) -> void:
-	var text: RichTextLabel = RichTextLabel.new()
-	text.fit_content = true
-	text.scroll_active = false
-	text.bbcode_enabled = bbcode_enabled
-	_current.add_child(text)
-	if line is WeavlyModel.CharacterLine:
-		text.push_bold()
-		text.add_text(_speaker_name(line) + ": ")
-		text.pop()
-	if bbcode_enabled:
-		text.append_text(line.text)
-	else:
-		text.add_text(line.text)
-
-
-func _speaker_name(line: WeavlyModel.CharacterLine) -> String:
-	if engine.character_service.has(line.name):
-		return engine.character_service.get_character(line.name).display_name
-	return line.name
 
 
 func _choice_lists(passage: Node) -> Array[WeavlyChoiceList]:

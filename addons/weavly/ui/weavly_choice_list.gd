@@ -7,7 +7,10 @@ signal chosen(option: WeavlyModel.Option)
 @export var links: bool = false
 
 
-# Hovering selects an option like the keys do, so mouse and keys share one selection.
+func _init() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
 func show_options(options: Array[WeavlyModel.Option]) -> void:
 	clear()
 	for option: WeavlyModel.Option in options:
@@ -17,7 +20,7 @@ func show_options(options: Array[WeavlyModel.Option]) -> void:
 			button.focus_mode = Control.FOCUS_NONE
 		else:
 			button.focus_mode = Control.FOCUS_ALL
-			button.mouse_entered.connect(button.grab_focus)
+			follow_mouse(button)
 		button.pressed.connect(func() -> void: chosen.emit(option))
 		add_child(button)
 
@@ -49,10 +52,21 @@ func focus_first() -> bool:
 	return false
 
 
+# Mouse and keys share one selection: hovering selects a control and leaving it deselects it.
+static func follow_mouse(control: Control) -> void:
+	control.mouse_entered.connect(control.grab_focus)
+	control.mouse_exited.connect(
+		func() -> void:
+			if control.has_focus():
+				control.release_focus()
+	)
+
+
 func _create_button(option: WeavlyModel.Option) -> BaseButton:
 	if not links:
 		var button: Button = Button.new()
 		button.text = option.text
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		return button
 	var link: LinkButton = LinkButton.new()
 	link.text = option.text

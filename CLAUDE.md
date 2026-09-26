@@ -47,7 +47,7 @@ addons/weavly/src/
 addons/weavly/ui/
   weavly_ui.gd                      # WeavlyUI: @abstract base, connects an engine by export or autoload name
   weavly_choice_list.gd             # WeavlyChoiceList: options as buttons or links, one selection for mouse and keys
-  novel/, passage/                  # one folder per style: scene, script, own Theme, optional character subclass
+  novel/, passage/, card/           # one folder per style: scene, script, own Theme, optional extra classes
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ covers addons/weavly/ui/, integration/, fixtures/, helpers/
                                     # fixtures/integration/ci_smoke/ is compiler-built, see above

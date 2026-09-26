@@ -1,0 +1,79 @@
+@env
+gold: number = 0
+city: pool
+night: pool
+empty: pool
+@endenv
+
+@node inn
+@meta
+pool: city
+priority: 3
+@endmeta
+>guide: A stranger waves you over.
+@options
+@option "Join them" -> inn_effect
+@endoptions
+@endnode
+
+@node market
+@meta
+pool: city
+priority: 2
+@endmeta
+Someone grabs your purse.
+@header "Market"
+@options
+@option "Chase" -> chase
+@option "Let go" -> let_go
+@hint "Call the guard (none around)"
+@endoptions
+@endnode
+
+@node bridge
+@meta
+pool: city
+priority: 1
+@endmeta
+A troll blocks the way.
+@options
+@hint "Pass (no gold)"
+@endoptions
+@endnode
+
+@node well
+@meta
+pool: city
+@endmeta
+The well is dry.
+@endnode
+
+@node owl
+@meta
+pool: night
+@endmeta
+An owl watches you.
+@options
+@option "Watch back" -> let_go
+@endoptions
+@endnode
+
+@node inn_effect
+@increase $gold 5
+You win 5 gold at cards.
+@endnode
+
+@node chase
+You catch the thief.
+@options
+@option "Keep running" -> keep_running
+@endoptions
+@endnode
+
+@node keep_running
+You're out of breath.
+@endnode
+
+@node let_go
+The thief escapes.
+@endnode
