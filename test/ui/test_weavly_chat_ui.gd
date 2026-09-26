@@ -207,16 +207,22 @@ func test_the_chosen_reply_becomes_a_player_bubble() -> void:
 	assert_str(_describe()[-1]).is_equal("left Mara: you won't believe it")
 
 
-func test_a_reply_bar_of_only_hints_goes_on_by_itself() -> void:
+func test_a_reply_bar_of_only_hints_waits_for_continue() -> void:
 	_engine.start("hints")
 	_wait_out()
 	(
 		assert_array(_replies().map(func(button: Button) -> bool: return button.disabled))
 		. is_equal([true])
 	)
-	assert_bool(_ui.is_waiting()).is_true()
+	var next: Button = _ui.get_node("%Continue")
+	assert_bool(next.visible).is_true()
+	assert_bool(_ui.is_waiting()).is_false()
+	_click()
 	_wait_out()
+	assert_int(_replies().size()).is_equal(1)
+	next.pressed.emit()
 	assert_array(_replies()).is_empty()
+	assert_bool(next.visible).is_false()
 	_wait_out()
 	assert_str(_describe()[-1]).is_equal("left: nvm")
 
@@ -249,6 +255,22 @@ func test_keys_select_a_reply() -> void:
 	event.pressed = true
 	_ui._unhandled_input(event)
 	assert_bool(_replies()[0].has_focus()).is_true()
+
+
+func test_keys_and_hover_select_continue() -> void:
+	_engine.start("hints")
+	_wait_out()
+	var next: Button = _ui.get_node("%Continue")
+	var event: InputEventAction = InputEventAction.new()
+	event.action = &"ui_accept"
+	event.pressed = true
+	_ui._unhandled_input(event)
+	assert_bool(next.has_focus()).is_true()
+	assert_int(_replies().size()).is_equal(1)
+	next.mouse_exited.emit()
+	assert_bool(next.has_focus()).is_false()
+	next.mouse_entered.emit()
+	assert_bool(next.has_focus()).is_true()
 
 
 func test_clear_hides_and_empties_the_conversation() -> void:

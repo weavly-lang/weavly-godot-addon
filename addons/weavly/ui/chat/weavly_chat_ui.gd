@@ -12,7 +12,7 @@ const DOT_INTERVAL: float = 0.4
 @export var typing_speed: float = 25.0
 @export var min_wait: float = 0.6
 @export var max_wait: float = 3.0
-## Pause before the player's own lines, narration and a reply bar of only hints.
+## Pause before the player's own lines and narration.
 @export var short_wait: float = 0.4
 ## Shows a waiting message at once, like a click does.
 @export var advance_action: StringName = &"ui_accept"
@@ -21,7 +21,6 @@ const DOT_INTERVAL: float = 0.4
 ## Renders BBCode in lines; injected values like {$name} are parsed too.
 @export var bbcode_enabled: bool = false
 
-# The line the UI waits to show, or null while the wait is for a reply bar of only hints.
 var _pending: WeavlyModel.LineStatement = null
 var _waiting: bool = false
 var _wait_left: float = 0.0
@@ -35,10 +34,13 @@ var _last_speaker: String = ""
 @onready var _typing: Control = %Typing
 @onready var _typing_dots: Label = %TypingDots
 @onready var _replies: WeavlyChoiceList = %Replies
+@onready var _continue: Button = %Continue
 
 
 func _ready() -> void:
 	_replies.chosen.connect(_choose)
+	_continue.pressed.connect(_on_continue_pressed)
+	WeavlyChoiceList.follow_mouse(_continue)
 	_phone.gui_input.connect(_on_phone_input)
 	_scroll.get_v_scroll_bar().changed.connect(_follow_newest)
 	clear()
@@ -46,6 +48,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _waiting:
+		return
 	_typing_time += delta
 	_typing_dots.text = "•".repeat(int(_typing_time / DOT_INTERVAL) % 3 + 1)
 	_wait_left -= delta
@@ -63,7 +67,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var navigating: bool = NAVIGATION_ACTIONS.any(
 		func(action: StringName) -> bool: return event.is_action_pressed(action)
 	)
-	if _replies.has_choosable() and (advancing or navigating) and _replies.focus_first():
+	if (advancing or navigating) and _focus_first():
 		get_viewport().set_input_as_handled()
 	elif advancing and _waiting:
 		get_viewport().set_input_as_handled()
@@ -87,6 +91,7 @@ func clear() -> void:
 	_pending = null
 	_last_speaker = ""
 	_replies.clear()
+	_continue.visible = false
 	for row: Node in _messages.get_children():
 		if row != _typing:
 			_messages.remove_child(row)
@@ -118,8 +123,7 @@ func _receive(line: WeavlyModel.LineStatement) -> void:
 func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 	visible = true
 	_replies.show_options(options)
-	if not _replies.has_choosable():
-		_start_wait(short_wait, false)
+	_continue.visible = not _replies.has_choosable()
 
 
 func _choose(option: WeavlyModel.Option) -> void:
@@ -143,16 +147,29 @@ func _stop_waiting() -> void:
 	set_process(false)
 
 
-# Shows the waiting line, or drops a reply bar of only hints, then lets the dialogue go on.
 func _end_wait() -> void:
 	_stop_waiting()
-	if _pending != null:
-		var line: WeavlyModel.LineStatement = _pending
-		_pending = null
-		_add_line(line)
-	else:
-		_replies.clear()
+	var line: WeavlyModel.LineStatement = _pending
+	_pending = null
+	_add_line(line)
 	engine.next()
+
+
+# A reply bar of only hints stays until the player has read it and continues.
+func _on_continue_pressed() -> void:
+	_continue.visible = false
+	_replies.clear()
+	engine.next()
+
+
+# Nothing is selected until the first key press, like the other starter UIs.
+func _focus_first() -> bool:
+	if _replies.has_choosable():
+		return _replies.focus_first()
+	if _continue.visible and not _continue.has_focus():
+		_continue.grab_focus()
+		return true
+	return false
 
 
 func _typing_wait(text: String) -> float:
