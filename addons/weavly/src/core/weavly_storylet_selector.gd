@@ -15,10 +15,10 @@ class Candidate:
 	var order: float
 
 
-# Takes nodes in selection order while their slots are free; updates skip counts.
-static func list_pool(engine: WeavlyEngine, pools: Array) -> Array[String]:
+# Takes up to limit nodes in selection order while their slots are free; updates skip counts.
+static func list_pool(engine: WeavlyEngine, pools: Array, limit: int = -1) -> Array[String]:
 	var candidates: Array[Candidate] = _rank(engine, pools)
-	var taken: Array[String] = _take(candidates)
+	var taken: Array[String] = _take(candidates, limit)
 	_count_skips(candidates, taken, engine)
 	return taken
 
@@ -34,9 +34,9 @@ static func draw(engine: WeavlyEngine, pools: Array) -> String:
 
 
 # What list_pool would return now, without changing skip counts or the generator.
-static func peek_pool(engine: WeavlyEngine, pools: Array) -> Array[String]:
+static func peek_pool(engine: WeavlyEngine, pools: Array, limit: int = -1) -> Array[String]:
 	var rng_state: int = engine.rng.state
-	var taken: Array[String] = _take(_rank(engine, pools))
+	var taken: Array[String] = _take(_rank(engine, pools), limit)
 	engine.rng.state = rng_state
 	return taken
 
@@ -116,10 +116,12 @@ static func _count_skips(
 		engine.node_service.set_skip_count(candidate.id, skips)
 
 
-static func _take(candidates: Array[Candidate]) -> Array[String]:
+static func _take(candidates: Array[Candidate], limit: int) -> Array[String]:
 	var taken: Array[String] = []
 	var taken_slots: Dictionary[String, bool] = {}
 	for candidate: Candidate in candidates:
+		if taken.size() == limit:
+			break
 		if candidate.slots.any(func(slot: String) -> bool: return taken_slots.has(slot)):
 			continue
 		taken.append(candidate.id)
