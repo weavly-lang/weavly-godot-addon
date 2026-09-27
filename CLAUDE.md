@@ -54,7 +54,7 @@ test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ cov
                                     # fixtures with a src/ folder are compiler-built, see above
 ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
                                     # external_media/ is copied next to the exported binary
-tools/mutation/                     # mutate.py: mutation testing, see CONTRIBUTING
+tools/mutation/                     # mutate.py: mutation testing, see its docstring
 ```
 
 ### Conventions
@@ -73,6 +73,12 @@ Cross-cuts both repos. Update `weavly-compiler` first (grammar + `WvlTransformer
 3. Add the model class in [weavly_model.gd](addons/weavly/src/models/weavly_model.gd), extending `Statement` (or `LineStatement` for line-type statements).
 4. Add `execute_<type>` in [weavly_statement_executor.gd](addons/weavly/src/core/weavly_statement_executor.gd), wire into the `is_instance_of` chain.
 5. New side effects: add to the relevant service interface + every implementation.
+
+## Documentation
+
+- User docs live in the separate docs repo, published at <https://weavly-lang.github.io/weavly-docs/>. This repo has no docs folder.
+- README.md and CONTRIBUTING.md stay short: what a newcomer needs, nothing more. Never add reference sections to them.
+- Working notes go in `NOTES.md` at the repo root, which is gitignored.
 
 ## Workflow
 
