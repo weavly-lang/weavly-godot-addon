@@ -273,7 +273,15 @@ You win 5 gold at cards.
 
 Showing a card renders its node, and rendering counts a visit, so `once: true` and `visited()` on the card itself mean "was shown". Put them on the effect node to mean "was picked", as the `when` above does.
 
-All three UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold; both can be reused in your own UI.
+### Chat
+
+`addons/weavly/ui/chat/weavly_chat_ui.tscn` plays a dialogue as a messenger conversation, on the step mode like the visual novel UI. Set `player_character` to the id of the player's character: its lines are bubbles on the right, lines from everyone else are bubbles on the left with the speaker's name and, for a `WeavlyChatCharacter`, its avatar, both shown once per run of messages. Narration is a centered system message. Bubbles are as wide as their text, up to `max_bubble_width`.
+
+Before another character's message, a typing indicator shows for as long as typing it takes at `typing_speed` characters per second, between `min_wait` and `max_wait`; the player's own lines and narration wait `short_wait`. Then the bubble appears and the UI calls `next()` itself. A click or `advance_action` shows a waiting message at once. Options are reply buttons at the bottom, with hints disabled, and the chosen reply is added as the player's bubble. A reply bar of only hints gets a *Continue* button, so the player has time to read the hints; the dialogue goes on when they press it.
+
+The conversation follows the newest message and stays after the dialogue finishes, like a message history, so `clear()` it when a new conversation should start; loading a state clears it too. For an avatar and a bubble color, create the character as a `WeavlyChatCharacter`; a plain `WeavlyCharacter` uses the theme's bubble. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_chat_theme.tres`.
+
+All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold; both can be reused in your own UI.
 
 ## Writing dialogues in the editor
 

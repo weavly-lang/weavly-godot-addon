@@ -1,0 +1,38 @@
+@node start
+>mara: are you still up?
+>me: yeah why
+It's 21:04.
+>stranger: hello?
+@options
+@option "what happened?" -> happened
+@option "going to sleep" -> sleep
+@hint "call her (no signal)"
+@endoptions
+@endnode
+
+@node happened
+>mara: you won't believe it
+@endnode
+
+@node sleep
+>mara: ok good night
+@endnode
+
+@node hints
+>mara: can you call?
+@options
+@hint "call (no signal)"
+@endoptions
+>mara: nvm
+@endnode
+
+@node long
+>mara: this message is long on purpose so that its bubble reaches the maximum width and wraps onto several lines
+@endnode
+
+@node burst
+>mara: one
+>mara: two
+It's late.
+>mara: three
+@endnode
