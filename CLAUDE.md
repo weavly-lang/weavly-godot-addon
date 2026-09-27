@@ -15,7 +15,7 @@ Sibling repo at `../weavly-compiler` (Python) turns `.wvl` into JSON; this addon
 
 Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLAUDE.md — this import only resolves when that repo is checked out beside this one; without it, read the compiler's own docs instead.
 
-CI guards that shape: `test/fixtures/integration/ci_smoke/` is a real Weavly project (`src/` sources, committed `build/` JSON) that a pinned compiler rebuilds on every PR, plus a weekly run against the newest release. Edit the `.wvl` sources and rebuild with `weavly build`; never hand-edit `build/`.
+CI guards that shape: every fixture folder with a `src/` folder is a real Weavly project (`.wvl` sources, committed `build/` JSON) that a pinned compiler rebuilds on every PR, plus a weekly run against the newest release. `test/fixtures/integration/ci_smoke/` covers every statement type. Edit the `.wvl` sources and rebuild with `weavly build`; never hand-edit `build/`.
 
 **Naming notes:** "the compiler" = the Python project. `WeavlyDeserializer` ([core/weavly_deserializer.gd](addons/weavly/src/core/weavly_deserializer.gd)) = the GDScript JSON-to-model reader (its `compile_*` methods deserialize, they don't compile `.wvl`). `WeavlyCompilerRunner` ([editor/weavly_compiler_runner.gd](addons/weavly/src/editor/weavly_compiler_runner.gd)) = editor-side wrapper that shells out to the actual Python compiler.
 
@@ -50,7 +50,7 @@ addons/weavly/ui/
   novel/, passage/, card/, chat/    # one folder per style: scene, script, own Theme, optional extra classes
 
 test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ covers addons/weavly/ui/, integration/, fixtures/, helpers/
-                                    # fixtures/integration/ci_smoke/ is compiler-built, see above
+                                    # fixtures with a src/ folder are compiler-built, see above
 ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
                                     # external_media/ is copied next to the exported binary
 ```
