@@ -23,23 +23,19 @@ func _ready() -> void:
 	_attach()
 
 
-# A paragraph for a rendered or executed line, with the speaker's name in bold.
+# A paragraph for a line as written, with the speaker's name in bold.
 static func create_line_label(
-	line: WeavlyModel.LineStatement, engine: WeavlyEngine, bbcode_enabled: bool
+	line: WeavlyModel.LineStatement, engine: WeavlyEngine
 ) -> RichTextLabel:
 	var text: RichTextLabel = RichTextLabel.new()
 	text.fit_content = true
 	text.scroll_active = false
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	text.bbcode_enabled = bbcode_enabled
 	if line is WeavlyModel.CharacterLine:
 		text.push_bold()
 		text.add_text(speaker_name(line, engine) + ": ")
 		text.pop()
-	if bbcode_enabled:
-		text.append_text(line.text)
-	else:
-		text.add_text(line.text)
+	text.add_text(line.text)
 	return text
 
 

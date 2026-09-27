@@ -233,11 +233,11 @@ $WeavlyNovelUI.engine = Dialogue
 
 The UIs don't interpret commands, so handle `executed_command` in your game as usual.
 
+The UIs show lines and options as written, so BBCode tags in a `.wvl` file appear as text. The compiler and the engine pass BBCode through untouched, and whether to use it is up to your game: rendering it takes your own UI, with a `RichTextLabel` for lines and buttons that can render it for options. Values filled in from `{}` are part of that text, so a player-entered name containing `[` is parsed too unless you escape it, for example as `[lb]`. Note that BBCode ties your scripts to Godot.
+
 ### Visual novel
 
 `addons/weavly/ui/novel/weavly_novel_ui.tscn` is a visual novel UI in the style of Ren'Py. It shows lines in a textbox at the bottom, with a nameplate for character lines, and reveals the text at `characters_per_second` (`0` shows it at once). A click or `advance_action` (`ui_accept` by default) completes a line that's still revealing, the next one continues. Options appear as a menu in the middle of the screen, with hints disabled. Mouse and keys share one selection, as in most game menus: the menu opens with nothing selected, hovering an option selects it until the mouse leaves it, the first arrow key or `advance_action` press selects one, and a click or `advance_action` chooses it. Hints can't be selected. The UI hides itself while no dialogue runs.
-
-Lines show as written. With `bbcode_enabled`, the textbox renders BBCode in lines instead, including in values filled in from `{}`, so a player-entered name containing `[` is parsed too.
 
 The nameplate shows the character's `display_name`, or the name as written when there's no character with that id. For a nameplate color, create the character as a `WeavlyNovelCharacter` and set `name_color`; a plain `WeavlyCharacter` uses the theme's color. The look lives in `weavly_novel_theme.tres`, with the nameplate as the `WeavlyNovelNameplate` type variation.
 
@@ -245,11 +245,11 @@ The nameplate shows the character's `display_name`, or the name as written when 
 
 `addons/weavly/ui/passage/weavly_passage_ui.tscn` is a hypertext UI in the style of Twine, built on [rendering](#rendering-a-node) instead of stepping. `show_passage("tavern")` renders the node and shows it as one passage: every line as a paragraph, character lines with the speaker's name in bold, and each options block as links in place, with hints muted. Clicking a link calls `render_option()`, which runs the option and follows its jump, and the result becomes the next passage. With `append` on, earlier passages stay above the new one, with the chosen link in place of their links. Links share one selection between mouse and keys, like the visual novel menu, and the page scrolls to follow it.
 
-A passage with nothing to choose is an ending: the UI emits `finished`, and the game decides what comes next, for example `clear()` and a new `show_passage()`. Rendered commands aren't interpreted; the UI emits each one with `command_rendered(command)`, in order. `bbcode_enabled` works like in the visual novel UI. The look lives in `weavly_passage_theme.tres`.
+A passage with nothing to choose is an ending: the UI emits `finished`, and the game decides what comes next, for example `clear()` and a new `show_passage()`. Rendered commands aren't interpreted; the UI emits each one with `command_rendered(command)`, in order. The look lives in `weavly_passage_theme.tres`.
 
 ### Card
 
-`addons/weavly/ui/card/weavly_card_ui.tscn` deals [storylets](#storylets) as a hand of cards. `deal(["city"])` asks `list_pool` for up to `hand_size` storylets (3 by default) and renders each one as a card: its lines are the face, and its options are buttons on the card, with hints disabled. Picking an option calls `render_option()`, and what it produced replaces the hand as an outcome card, which can have options of its own. When the outcome has nothing left to choose, *Continue* deals a new hand from the same pools. A deal without any eligible storylet emits `hand_empty` and hides the UI. Options share one selection between mouse and keys, like the other starter UIs. Rendered commands are emitted with `command_rendered(command)`, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_card_theme.tres`.
+`addons/weavly/ui/card/weavly_card_ui.tscn` deals [storylets](#storylets) as a hand of cards. `deal(["city"])` asks `list_pool` for up to `hand_size` storylets (3 by default) and renders each one as a card: its lines are the face, and its options are buttons on the card, with hints disabled. Picking an option calls `render_option()`, and what it produced replaces the hand as an outcome card, which can have options of its own. When the outcome has nothing left to choose, *Continue* deals a new hand from the same pools. A deal without any eligible storylet emits `hand_empty` and hides the UI. Options share one selection between mouse and keys, like the other starter UIs. Rendered commands are emitted with `command_rendered(command)`, and the look lives in `weavly_card_theme.tres`.
 
 Keep a card's node to what the card shows, and let its option jump to an effect node that holds the state changes:
 
@@ -279,7 +279,7 @@ Showing a card renders its node, and rendering counts a visit, so `once: true` a
 
 Before another character's message, a typing indicator shows for as long as typing it takes at `typing_speed` characters per second, between `min_wait` and `max_wait`; the player's own lines and narration wait `short_wait`. Then the bubble appears and the UI calls `next()` itself. A click or `advance_action` shows a waiting message at once. Options are reply buttons at the bottom, with hints disabled, and the chosen reply is added as the player's bubble. A reply bar of only hints gets a *Continue* button, so the player has time to read the hints; the dialogue goes on when they press it.
 
-The conversation follows the newest message and stays after the dialogue finishes, like a message history, so `clear()` it when a new conversation should start; loading a state clears it too. For an avatar and a bubble color, create the character as a `WeavlyChatCharacter`; a plain `WeavlyCharacter` uses the theme's bubble. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_chat_theme.tres`.
+The conversation follows the newest message and stays after the dialogue finishes, like a message history, so `clear()` it when a new conversation should start; loading a state clears it too. For an avatar and a bubble color, create the character as a `WeavlyChatCharacter`; a plain `WeavlyCharacter` uses the theme's bubble. Commands aren't interpreted, and the look lives in `weavly_chat_theme.tres`.
 
 ### Speech bubbles
 
@@ -287,7 +287,7 @@ The conversation follows the newest message and stays after the dialogue finishe
 
 Narration, and character lines without a speaker in the scene, show in a bar at the bottom of the screen, with the speaker's name for character lines. A line whose speaker leaves the scene moves to the bar. Options show in the same bar, with hints disabled and selected with mouse and keys like in the other starter UIs; a bar of only hints waits for the player to advance. A click on the bubble or the bar, or `advance_action` (`ui_accept` by default), continues the dialogue. Clicks elsewhere reach your game. For barks, set `auto_advance` to the seconds a line stays before the dialogue continues on its own; it's off by default and never picks an option.
 
-Bubbles are as wide as their text, up to `max_bubble_width`, with a tail of `tail_size`. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_bubble_theme.tres`, with the bubble as the `WeavlyBubble` type variation and its text as `WeavlyBubbleText`.
+Bubbles are as wide as their text, up to `max_bubble_width`, with a tail of `tail_size`. Commands aren't interpreted, and the look lives in `weavly_bubble_theme.tres`, with the bubble as the `WeavlyBubble` type variation and its text as `WeavlyBubbleText`.
 
 ### Debug overlay
 
@@ -302,7 +302,7 @@ The top line shows whether a dialogue runs, the current node and the `source:lin
 
 The other tabs refresh every `refresh_interval` seconds while the overlay shows. The look lives in `weavly_debug_theme.tres`.
 
-All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold, and `WeavlyUI.fit_text_width()` sizes a text to its content up to a width; all three can be reused in your own UI.
+All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph as written with the speaker's name in bold, and `WeavlyUI.fit_text_width()` sizes a text to its content up to a width; all three can be reused in your own UI.
 
 ## Writing dialogues in the editor
 

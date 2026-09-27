@@ -18,8 +18,6 @@ const DOT_INTERVAL: float = 0.4
 @export var advance_action: StringName = &"ui_accept"
 @export var max_bubble_width: float = 280.0
 @export var avatar_size: Vector2 = Vector2(36, 36)
-## Renders BBCode in lines; injected values like {$name} are parsed too.
-@export var bbcode_enabled: bool = false
 
 var _pending: WeavlyModel.LineStatement = null
 var _waiting: bool = false
@@ -252,12 +250,8 @@ func _add_text(parent: Control, content: String) -> RichTextLabel:
 	text.fit_content = true
 	text.scroll_active = false
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	text.bbcode_enabled = bbcode_enabled
 	parent.add_child(text)
-	if bbcode_enabled:
-		text.append_text(content)
-	else:
-		text.add_text(content)
+	text.add_text(content)
 	return text
 
 

@@ -296,3 +296,10 @@ func test_disconnecting_the_engine_clears_and_stops_listening() -> void:
 	assert_bool(_ui.is_waiting()).is_false()
 	_engine.next()
 	assert_array(_describe()).is_empty()
+
+
+func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
+	_engine.start("formatted")
+	_wait_out()
+	assert_array(_describe()).is_equal(["left Mara: Hello [b]world[/b]."])
+	assert_str(_replies()[0].text).is_equal("[i]Wave[/i]")

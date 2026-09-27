@@ -13,8 +13,6 @@ const NAVIGATION_ACTIONS: Array[StringName] = [
 
 ## Keeps earlier passages above the new one instead of replacing them.
 @export var append: bool = false
-## Renders BBCode in lines; injected values like {$name} are parsed too.
-@export var bbcode_enabled: bool = false
 
 var _current: VBoxContainer = null
 
@@ -100,7 +98,7 @@ func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
 	var choosable: bool = false
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.LineStatement:
-			_current.add_child(create_line_label(entry, engine, bbcode_enabled))
+			_current.add_child(create_line_label(entry, engine))
 		elif entry is WeavlyModel.CommandStatement:
 			command_rendered.emit(entry)
 		elif entry is WeavlyModel.OptionBlock:

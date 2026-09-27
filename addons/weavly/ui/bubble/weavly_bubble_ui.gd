@@ -14,8 +14,6 @@ const NAVIGATION_ACTIONS: Array[StringName] = [
 @export var tail_size: Vector2 = Vector2(18, 14)
 ## Space a bubble keeps from the edges of the UI.
 @export var screen_margin: float = 8.0
-## Renders BBCode in lines; injected values like {$name} are parsed too.
-@export var bbcode_enabled: bool = false
 
 var _line: WeavlyModel.LineStatement = null
 var _speaker: WeavlySpeaker = null
@@ -202,11 +200,7 @@ func _find_speaker(character: String) -> WeavlySpeaker:
 
 func _set_text(label: RichTextLabel, content: String) -> void:
 	label.clear()
-	label.bbcode_enabled = bbcode_enabled
-	if bbcode_enabled:
-		label.append_text(content)
-	else:
-		label.add_text(content)
+	label.add_text(content)
 
 
 func _on_click(event: InputEvent) -> void:

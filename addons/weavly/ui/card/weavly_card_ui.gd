@@ -15,8 +15,6 @@ const NAVIGATION_ACTIONS: Array[StringName] = [
 @export var hand_size: int = 3
 @export var card_size: Vector2 = Vector2(240, 320)
 @export var outcome_width: float = 520.0
-## Renders BBCode in lines; injected values like {$name} are parsed too.
-@export var bbcode_enabled: bool = false
 
 var _pools: Array = []
 
@@ -104,7 +102,7 @@ func _make_card(entries: Array[WeavlyModel.Statement]) -> WeavlyCard:
 		if entry is WeavlyModel.CommandStatement:
 			command_rendered.emit(entry)
 	var card: WeavlyCard = WeavlyCard.new()
-	card.show_entries(entries, engine, bbcode_enabled)
+	card.show_entries(entries, engine)
 	card.chosen.connect(_choose)
 	return card
 

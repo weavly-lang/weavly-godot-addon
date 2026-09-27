@@ -22,6 +22,9 @@ You walk on.
 
 @node formatted
 Hello [b]world[/b].
+@options
+@option "[i]Wave[/i]" -> waved
+@endoptions
 @endnode
 
 @node crossroads

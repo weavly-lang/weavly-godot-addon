@@ -298,15 +298,11 @@ func test_auto_advance_waits_for_a_choice() -> void:
 	assert_int(_choices().size()).is_equal(2)
 
 
-func test_bbcode_is_shown_literally_by_default() -> void:
+func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
 	_engine.start("formatted")
 	assert_str(_bubble_text()).is_equal("Hello [b]world[/b].")
-
-
-func test_bbcode_enabled_renders_it() -> void:
-	_ui.bbcode_enabled = true
-	_engine.start("formatted")
-	assert_str(_bubble_text()).is_equal("Hello world.")
+	_ui.advance()
+	assert_str(_choices()[0].text).is_equal("[i]Wave[/i]")
 
 
 func test_hidden_after_the_dialogue_finishes() -> void:

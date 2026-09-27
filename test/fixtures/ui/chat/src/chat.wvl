@@ -36,3 +36,10 @@ It's 21:04.
 It's late.
 >mara: three
 @endnode
+
+@node formatted
+>mara: Hello [b]world[/b].
+@options
+@option "[i]Wave[/i]" -> sleep
+@endoptions
+@endnode

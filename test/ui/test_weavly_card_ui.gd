@@ -124,6 +124,11 @@ func test_fewer_eligible_storylets_than_the_hand_size() -> void:
 	assert_int(_cards().size()).is_equal(4)
 
 
+func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
+	_ui.deal(["styled"])
+	assert_array(_hand()).is_equal([["Guide: Hello [b]world[/b].", ["[i]Wave[/i]"]]])
+
+
 func test_a_hand_from_several_pools() -> void:
 	_ui.hand_size = 5
 	_ui.deal(["city", "night"])
