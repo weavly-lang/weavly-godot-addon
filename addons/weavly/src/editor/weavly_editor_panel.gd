@@ -24,12 +24,9 @@ const _VERSION_TOO_OLD = (
 const _COLOR_ERROR = Color(0.94, 0.42, 0.42)
 const _COLOR_SUCCESS = Color(0.50, 0.84, 0.52)
 const _COLOR_INFO = Color(0.66, 0.74, 0.88)
-const _NODE_STRIP_COLORS: Array[Color] = [Color(0.35, 0.56, 0.88), Color(0.88, 0.67, 0.35)]
-const _NODE_STRIP_WIDTH = 4
-const _NODE_STRIP_GAP = 6
 
 var _path_label: Label
-var _node_picker: OptionButton
+var _node_outline: WeavlyNodeOutline
 var _status_label: Label
 var _code_edit: CodeEdit
 var _compile_on_save: CheckButton
@@ -42,12 +39,6 @@ var _dirty: bool = false
 var _compiling: bool = false
 var _compile_thread: Thread
 var _checked_executable: String = ""
-var _node_start_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*@node[ \\t]+([A-Za-z_][A-Za-z0-9_]*)"
-)
-var _node_end_regex: RegEx = RegEx.create_from_string("^[ \\t]*@endnode\\b")
-var _node_lines: PackedInt32Array = []
-var _line_nodes: PackedInt32Array = []
 
 
 func _ready() -> void:
@@ -72,7 +63,7 @@ func open_file(path: String) -> void:
 	_code_edit.text = file.get_as_text()
 	file.close()
 	_dirty = false
-	_update_nodes()
+	_node_outline.refresh()
 	if _find_bar.visible:
 		_find_bar.update_count()
 	_set_status("", _COLOR_INFO)
@@ -91,6 +82,13 @@ func _build_ui() -> void:
 	var root: VBoxContainer = VBoxContainer.new()
 	margin.add_child(root)
 
+	_code_edit = CodeEdit.new()
+	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_code_edit.gutters_draw_line_numbers = true
+	_code_edit.syntax_highlighter = WvlSyntaxHighlighter.new()
+	_code_edit.text_changed.connect(_on_text_changed)
+
 	var toolbar: HBoxContainer = HBoxContainer.new()
 	root.add_child(toolbar)
 
@@ -99,10 +97,8 @@ func _build_ui() -> void:
 	_path_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	toolbar.add_child(_path_label)
 
-	_node_picker = OptionButton.new()
-	_node_picker.tooltip_text = "Go to node"
-	_node_picker.item_selected.connect(_on_node_selected)
-	toolbar.add_child(_node_picker)
+	_node_outline = WeavlyNodeOutline.new(_code_edit)
+	toolbar.add_child(_node_outline)
 
 	_status_label = Label.new()
 	toolbar.add_child(_status_label)
@@ -116,7 +112,7 @@ func _build_ui() -> void:
 	_compile_on_save.text = "Compile on save"
 	_compile_on_save.toggled.connect(_on_compile_on_save_toggled)
 	toolbar.add_child(_compile_on_save)
-	_load_compile_on_save()
+	_compile_on_save.button_pressed = _get_editor_setting(SETTING_COMPILE_ON_SAVE, false)
 
 	_line_wrap = CheckButton.new()
 	_line_wrap.text = "Wrap lines"
@@ -127,23 +123,10 @@ func _build_ui() -> void:
 	_compile_button.pressed.connect(_on_compile_pressed)
 	toolbar.add_child(_compile_button)
 
-	_code_edit = CodeEdit.new()
-	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_code_edit.gutters_draw_line_numbers = true
-	_code_edit.syntax_highlighter = WvlSyntaxHighlighter.new()
-	_code_edit.text_changed.connect(_on_text_changed)
-	_code_edit.caret_changed.connect(_sync_node_picker)
 	root.add_child(_code_edit)
 
-	var gutter: int = _code_edit.get_gutter_count()
-	_code_edit.add_gutter(gutter)
-	_code_edit.set_gutter_type(gutter, TextEdit.GUTTER_TYPE_CUSTOM)
-	_code_edit.set_gutter_width(gutter, _NODE_STRIP_WIDTH + _NODE_STRIP_GAP)
-	_code_edit.set_gutter_custom_draw(gutter, _draw_node_gutter)
-
 	_line_wrap.toggled.connect(_on_line_wrap_toggled)
-	_line_wrap.button_pressed = _load_line_wrap()
+	_line_wrap.button_pressed = _get_editor_setting(SETTING_LINE_WRAP, true)
 
 	_find_bar = WeavlyFindBar.new(_code_edit)
 	_find_bar.replaced_all.connect(_on_replaced_all)
@@ -176,67 +159,11 @@ func _shortcut_input(event: InputEvent) -> void:
 
 
 func _on_text_changed() -> void:
-	_update_nodes()
 	if _find_bar.visible:
 		_find_bar.update_count()
 	if not _dirty:
 		_dirty = true
 		_refresh_controls()
-
-
-func _update_nodes() -> void:
-	_node_lines.clear()
-	_node_picker.clear()
-	_line_nodes.resize(_code_edit.get_line_count())
-	var node: int = -1
-	for line: int in _code_edit.get_line_count():
-		var text: String = _code_edit.get_line(line)
-		var start: RegExMatch = _node_start_regex.search(text)
-		if start != null:
-			node = _node_lines.size()
-			_node_lines.append(line)
-			_node_picker.add_item(start.get_string(1))
-		_line_nodes[line] = node
-		if _node_end_regex.search(text) != null:
-			node = -1
-	_node_picker.disabled = _node_lines.is_empty()
-	_sync_node_picker()
-	_code_edit.queue_redraw()
-
-
-func _sync_node_picker() -> void:
-	var line: int = _code_edit.get_caret_line()
-	_node_picker.select(_line_nodes[line] if line < _line_nodes.size() else -1)
-
-
-func _on_node_selected(index: int) -> void:
-	_code_edit.deselect()
-	_code_edit.set_caret_line(_node_lines[index])
-	_code_edit.set_caret_column(0)
-	_code_edit.center_viewport_to_caret()
-	_code_edit.grab_focus()
-
-
-func _draw_node_gutter(line: int, _gutter: int, area: Rect2) -> void:
-	if line >= _line_nodes.size() or _line_nodes[line] == -1:
-		return
-	var strip: Rect2 = _node_strip_rect(line, area)
-	if strip.has_area():
-		var color: Color = _NODE_STRIP_COLORS[_line_nodes[line] % _NODE_STRIP_COLORS.size()]
-		_code_edit.draw_rect(strip, color)
-
-
-# The gutter is drawn once per line on its first row, so the strip spans the wrapped rows too.
-# CodeEdit doesn't clip, so the strip is cut to the text area.
-func _node_strip_rect(line: int, area: Rect2) -> Rect2:
-	var rows: int = _code_edit.get_line_wrap_count(line) + 1
-	var strip: Rect2 = Rect2(area.position, Vector2(_NODE_STRIP_WIDTH, area.size.y * rows))
-	var style: StyleBox = _code_edit.get_theme_stylebox(&"normal")
-	var top: float = style.get_margin(SIDE_TOP)
-	var text_area: Rect2 = Rect2(
-		0.0, top, _code_edit.size.x, _code_edit.size.y - top - style.get_margin(SIDE_BOTTOM)
-	)
-	return strip.intersection(text_area)
 
 
 func _on_replaced_all(count: int) -> void:
@@ -372,19 +299,26 @@ func _resolve_working_dir() -> String:
 
 
 func _resolve_executable() -> String:
+	return _get_editor_setting(SETTING_EXECUTABLE, DEFAULT_EXECUTABLE)
+
+
+# The default outside the editor, where there are no editor settings.
+func _get_editor_setting(setting: String, default: Variant) -> Variant:
 	if not Engine.is_editor_hint():
-		return DEFAULT_EXECUTABLE
+		return default
 	var settings: EditorSettings = EditorInterface.get_editor_settings()
-	if settings.has_setting(SETTING_EXECUTABLE):
-		return settings.get_setting(SETTING_EXECUTABLE)
-	return DEFAULT_EXECUTABLE
+	return settings.get_setting(setting) if settings.has_setting(setting) else default
+
+
+func _set_editor_setting(setting: String, value: Variant) -> void:
+	if Engine.is_editor_hint():
+		EditorInterface.get_editor_settings().set_setting(setting, value)
 
 
 func _refresh_controls() -> void:
 	var has_file: bool = _current_path != ""
 	_save_button.disabled = not has_file or _compiling
-	if _compile_button != null:
-		_compile_button.disabled = _compiling
+	_compile_button.disabled = _compiling
 	if not has_file:
 		_path_label.text = _NO_FILE_TEXT
 		return
@@ -392,35 +326,15 @@ func _refresh_controls() -> void:
 	_path_label.text = "%s%s" % [_current_path, marker]
 
 
-func _load_compile_on_save() -> void:
-	if not Engine.is_editor_hint():
-		return
-	var settings: EditorSettings = EditorInterface.get_editor_settings()
-	if settings.has_setting(SETTING_COMPILE_ON_SAVE):
-		_compile_on_save.button_pressed = settings.get_setting(SETTING_COMPILE_ON_SAVE)
-
-
 func _on_compile_on_save_toggled(pressed: bool) -> void:
-	if not Engine.is_editor_hint():
-		return
-	EditorInterface.get_editor_settings().set_setting(SETTING_COMPILE_ON_SAVE, pressed)
-
-
-func _load_line_wrap() -> bool:
-	if not Engine.is_editor_hint():
-		return true
-	var settings: EditorSettings = EditorInterface.get_editor_settings()
-	if settings.has_setting(SETTING_LINE_WRAP):
-		return settings.get_setting(SETTING_LINE_WRAP)
-	return true
+	_set_editor_setting(SETTING_COMPILE_ON_SAVE, pressed)
 
 
 func _on_line_wrap_toggled(pressed: bool) -> void:
 	_code_edit.wrap_mode = (
 		TextEdit.LINE_WRAPPING_BOUNDARY if pressed else TextEdit.LINE_WRAPPING_NONE
 	)
-	if Engine.is_editor_hint():
-		EditorInterface.get_editor_settings().set_setting(SETTING_LINE_WRAP, pressed)
+	_set_editor_setting(SETTING_LINE_WRAP, pressed)
 
 
 func _join_compile_thread() -> void:
