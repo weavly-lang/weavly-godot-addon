@@ -1,7 +1,6 @@
 extends WeavlyVariableService
 
 const TYPE = "Variable"
-const EXTERN_TYPE_MISMATCH = "Variable '%s' is a %s, but it's declared extern as a %s."
 const UNKNOWN_SAVED_VARIABLE = "Saved variable '%s' no longer exists, skipping it."
 
 var _variables: Dictionary[String, WeavlyModel.Variable]
@@ -13,18 +12,6 @@ func has(id: String) -> bool:
 
 
 func add_variable(variable: WeavlyModel.Variable) -> void:
-	var declared: WeavlyModel.Variable = _variables.get(variable.id)
-	if declared != null and not (declared.extern and not variable.extern):
-		push_warning(EXISTING_ID % [TYPE, variable.id])
-		return
-	if declared != null and declared.get_type_name() != variable.get_type_name():
-		push_error(
-			(
-				EXTERN_TYPE_MISMATCH
-				% [variable.id, variable.get_type_name(), declared.get_type_name()]
-			)
-		)
-		return
 	_variables[variable.id] = variable
 	if not variable.extern:
 		_variable_states[variable.id] = variable.value

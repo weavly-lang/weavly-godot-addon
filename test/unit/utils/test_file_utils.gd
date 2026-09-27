@@ -2,9 +2,6 @@
 extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
-const DefaultNodeService = preload(
-	"res://addons/weavly/src/services/implementations/default_node_service.gd"
-)
 const DefaultImageService = preload(
 	"res://addons/weavly/src/services/implementations/default_image_service.gd"
 )
@@ -120,32 +117,24 @@ func test_load_variables_from_resources_loads_flag_variable() -> void:
 
 
 # =====================
-# load_nodes_from_files / load_variables_from_env_files — malformed input (issue #38)
+# load_dialogue: malformed input (issue #38)
 # =====================
 
 
-func _make_engine_with_node_service() -> WeavlyEngine:
-	var engine: WeavlyEngine = _make_engine()
-	engine.node_service = DefaultNodeService.new()
-	engine.node_service.initialize(engine)
-	return engine
-
-
-func test_load_nodes_skips_malformed_files_without_crashing() -> void:
+func test_load_dialogue_skips_malformed_files_without_crashing() -> void:
 	# FIXTURE_DIR mixes an unparseable file, an array-root file, and dictionaries
-	# without a "nodes" key alongside valid_nodes.json. A single bad file must
-	# not crash startup — the valid node should still load.
-	var engine: WeavlyEngine = _make_engine_with_node_service()
-	WeavlyFileUtils.load_nodes_from_files(engine, FIXTURE_DIR)
-	assert_bool(engine.node_service.has("start")).is_true()
-	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
-
-
-func test_load_variables_from_env_skips_malformed_files_without_crashing() -> void:
+	# without a "nodes" key alongside valid nodes and declarations. A single bad
+	# file must not crash startup.
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_env_files(engine, FIXTURE_DIR)
-	assert_bool(engine.variable_service.has("score")).is_true()
-	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
+	WeavlyFileUtils.load_dialogue(engine, FIXTURE_DIR, RESOURCES_DIR)
+	assert_bool(engine.node_service.has("start")).is_true()
+	assert_that(engine.variable_service.get_variable("score")).is_equal(0.0)
+	assert_logged(
+		[
+			"JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0",
+			"Variable 'score' is declared in both ",
+		]
+	)
 
 
 # =====================
@@ -178,13 +167,13 @@ func test_find_returns_empty_for_a_missing_external_directory() -> void:
 
 
 # =====================
-# load_variables: declared more than once
+# load_dialogue: variables declared more than once
 # =====================
 
 
 func test_wvl_declaration_wins_over_a_resource_with_the_same_name() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables(
+	WeavlyFileUtils.load_dialogue(
 		engine, VARIABLES_DIR + "/dialogue", VARIABLES_DIR + "/resources"
 	)
 	assert_that(engine.variable_service.get_variable("score")).is_equal(1.0)
@@ -222,13 +211,13 @@ func test_resource_default_outside_its_range_is_clamped() -> void:
 
 
 # =====================
-# load_variables: extern declarations
+# load_dialogue: extern declarations
 # =====================
 
 
 func test_a_resource_defines_an_extern_variable() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables(
+	WeavlyFileUtils.load_dialogue(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_resources"
 	)
 	assert_that(engine.variable_service.get_variable("reputation")).is_equal(5.0)
@@ -237,7 +226,7 @@ func test_a_resource_defines_an_extern_variable() -> void:
 
 func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables(
+	WeavlyFileUtils.load_dialogue(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_wrong"
 	)
 	assert_logged(
@@ -253,7 +242,7 @@ func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
 
 func test_an_extern_without_a_resource_is_not_an_error() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables(
+	WeavlyFileUtils.load_dialogue(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/range_does_not_exist"
 	)
 	assert_logged(["Failed to open directory: " + VARIABLES_DIR + "/range_does_not_exist"])
@@ -271,6 +260,7 @@ func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
 	engine.image_service = DefaultImageService.new()
 	engine.image_service.initialize(engine)
 	engine.image_service.set_group_pattern(group_pattern)
+	engine.image_service.set_supported_extensions([".png", ".jpg"])
 	WeavlyFileUtils.index_media_from_files(engine.image_service, dir)
 	return engine
 

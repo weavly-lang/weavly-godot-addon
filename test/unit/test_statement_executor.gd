@@ -119,6 +119,15 @@ func _bool_expr(v: bool) -> WeavlyModel.WeavlyExpression:
 	return WeavlyModel.FalseExpression.new()
 
 
+class _UnknownStatement:
+	extends WeavlyModel.Statement
+
+
+func test_an_unknown_statement_is_reported() -> void:
+	WeavlyStatementExecutor.execute_statement(_UnknownStatement.new(), _engine)
+	assert_logged(["Can't execute an unknown statement."])
+
+
 # =====================
 # Delegation: narration / character
 # =====================

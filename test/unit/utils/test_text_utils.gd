@@ -36,7 +36,8 @@ func test_trim_zero_a_float_that_rounds_to_a_whole_number_returns_int() -> void:
 func test_trim_zero_keeps_the_decimals_of_a_large_number() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "gold", 1000000.5)
-	assert_that(WeavlyTextUtils.inject_variables("{$gold}", engine)).is_equal("1000000.5")
+	var text: String = WeavlyTextUtils.fill_text(_segments([{"variable": "gold"}]), engine)
+	assert_that(text).is_equal("1000000.5")
 
 
 func test_trim_zero_non_float_unchanged() -> void:
@@ -44,68 +45,43 @@ func test_trim_zero_non_float_unchanged() -> void:
 
 
 # =====================
-# inject_variables
+# fill_text: formatting values
 # =====================
 
 
-func test_inject_single_variable() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	declare_variable(engine, "name", "Alice")
-	assert_that(WeavlyTextUtils.inject_variables("Hi {$name}", engine)).is_equal("Hi Alice")
-
-
-func test_inject_keeps_quotes_that_are_part_of_the_value() -> void:
+func test_fill_text_keeps_quotes_that_are_part_of_the_value() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "greeting", '"hello"')
-	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal('"hello"')
+	var text: String = WeavlyTextUtils.fill_text(_segments([{"variable": "greeting"}]), engine)
+	assert_that(text).is_equal('"hello"')
 
 
-func test_inject_trims_float_zero() -> void:
+func test_fill_text_trims_and_rounds_numbers() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "score", 10.0)
-	assert_that(WeavlyTextUtils.inject_variables("You have {$score}", engine)).is_equal(
-		"You have 10"
-	)
-
-
-func test_inject_rounds_decimals() -> void:
-	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "third", 1.0 / 3.0)
 	declare_variable(engine, "sum", 0.1 + 0.2)
 	declare_variable(engine, "half", 2.5)
-	assert_that(WeavlyTextUtils.inject_variables("{$third} {$sum} {$half}", engine)).is_equal(
-		"0.33 0.3 2.5"
+	var segments: Array = _segments(
+		[
+			{"variable": "score"},
+			" ",
+			{"variable": "third"},
+			" ",
+			{"variable": "sum"},
+			" ",
+			{"variable": "half"},
+		]
 	)
+	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("10 0.33 0.3 2.5")
 
 
-func test_inject_multiple_variables() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	declare_variable(engine, "a", 1.0)
-	declare_variable(engine, "b", 2.0)
-	assert_that(WeavlyTextUtils.inject_variables("{$a} and {$b}", engine)).is_equal("1 and 2")
-
-
-func test_inject_no_match_returns_verbatim() -> void:
-	assert_that(WeavlyTextUtils.inject_variables("no vars here", _make_engine())).is_equal(
-		"no vars here"
-	)
-
-
-func test_inject_custom_pipeline_applied() -> void:
+func test_fill_text_applies_a_custom_pipeline() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "name", "Alice")
 	var upper_pipeline: Array[Callable] = [func(v: Variant) -> Variant: return str(v).to_upper()]
-	assert_that(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline)).is_equal(
-		"ALICE"
-	)
-
-
-func test_inject_keeps_an_unknown_variable_and_reports_it_once() -> void:
-	var text: String = WeavlyTextUtils.inject_variables(
-		"{$missing} and {$missing}", _make_engine()
-	)
-	assert_that(text).is_equal("{$missing} and {$missing}")
-	assert_logged(["Variable 'missing' isn't defined."])
+	var segments: Array = _segments(["Hi ", {"variable": "name"}])
+	assert_that(WeavlyTextUtils.fill_text(segments, engine, upper_pipeline)).is_equal("Hi ALICE")
 
 
 # =====================

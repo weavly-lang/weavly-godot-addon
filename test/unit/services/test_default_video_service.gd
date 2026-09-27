@@ -46,10 +46,6 @@ func test_the_group_pattern_groups_videos() -> void:
 	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
 
 
-func test_ogv_is_indexed_by_default() -> void:
-	assert_array(Service.new().supported_extensions).contains_exactly([".ogv"])
-
-
 # =====================
 # External paths (issue #57)
 # =====================

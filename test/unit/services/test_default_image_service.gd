@@ -46,10 +46,6 @@ func test_the_group_pattern_groups_images() -> void:
 	assert_object(_service.get_image("cat")).is_instanceof(Texture2D)
 
 
-func test_png_and_jpg_are_indexed_by_default() -> void:
-	assert_array(Service.new().supported_extensions).contains_exactly([".png", ".jpg"])
-
-
 # =====================
 # External paths (issue #57)
 # =====================

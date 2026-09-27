@@ -74,48 +74,27 @@ static func load_json_file(path: String) -> Variant:
 	return json.data
 
 
-static func load_nodes_from_files(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths: PackedStringArray = find_all_files_with_extension(dir, ".json")
-
-	var nodes: Array[WeavlyModel.WeavlyNode]
-	for file_path: String in file_paths:
-		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
-		if data is Dictionary and data.has(WeavlyDeserializer.KEY_NODES):
-			nodes.append_array(WeavlyDeserializer.compile_nodes(data, file_path))
-
-	for node: WeavlyModel.WeavlyNode in nodes:
-		engine.node_service.add_node(node)
-
-
-# .wvl declarations load first, so they win over a resource with the same name.
-static func load_variables(
+# Reads each JSON file once; .wvl declarations load before resources, so they win.
+static func load_dialogue(
 	engine: WeavlyEngine, dialogue_dir: String, variable_dir: String
 ) -> void:
 	var sources: Dictionary[String, String] = {}
-	load_variables_from_env_files(engine, dialogue_dir, sources)
-	load_variables_from_resources(engine, variable_dir, sources)
-
-
-static func load_variables_from_env_files(
-	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
-) -> void:
-	for file_path: String in find_all_files_with_extension(dir, ".json"):
-		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
-		if not (data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS)):
+	for file_path: String in find_all_files_with_extension(dialogue_dir, ".json"):
+		var data: Variant = load_json_file(file_path)
+		if data is not Dictionary:
 			continue
-		var variables: Array[WeavlyModel.Variable] = (
-			WeavlyDeserializer.compile_variable_declarations(data, file_path)
-		)
-		for variable: WeavlyModel.Variable in variables:
-			_add_variable(engine, variable, file_path, sources)
-
-
-static func load_pools_from_env_files(engine: WeavlyEngine, dir: String) -> void:
-	for file_path: String in find_all_files_with_extension(dir, ".json"):
-		var data: Variant = WeavlyFileUtils.load_json_file(file_path)
-		if data is Dictionary and data.has(WeavlyDeserializer.KEY_DECLARATIONS):
+		if data.has(WeavlyDeserializer.KEY_NODES):
+			for node: WeavlyModel.WeavlyNode in WeavlyDeserializer.compile_nodes(data, file_path):
+				engine.node_service.add_node(node)
+		if data.has(WeavlyDeserializer.KEY_DECLARATIONS):
+			var variables: Array[WeavlyModel.Variable] = (
+				WeavlyDeserializer.compile_variable_declarations(data, file_path)
+			)
+			for variable: WeavlyModel.Variable in variables:
+				_add_variable(engine, variable, file_path, sources)
 			for pool: String in WeavlyDeserializer.compile_pool_names(data, file_path):
 				engine.node_service.add_pool(pool)
+	load_variables_from_resources(engine, variable_dir, sources)
 
 
 static func load_variables_from_resources(
@@ -137,8 +116,11 @@ static func _add_variable(
 	sources: Dictionary[String, String],
 ) -> void:
 	var id: String = variable.id
-	var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
-	if sources.has(id) and declared != null and declared.extern and not variable.extern:
+	if sources.has(id):
+		var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
+		if not declared.extern or variable.extern:
+			push_error(DUPLICATE_VARIABLE % [id, sources[id], source, sources[id]])
+			return
 		if variable.get_type_name() != declared.get_type_name():
 			push_error(
 				(
@@ -147,9 +129,6 @@ static func _add_variable(
 				)
 			)
 			return
-	elif sources.has(id):
-		push_error(DUPLICATE_VARIABLE % [id, sources[id], source, sources[id]])
-		return
 	sources[id] = source
 	engine.variable_service.add_variable(variable)
 

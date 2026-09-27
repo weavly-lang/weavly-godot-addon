@@ -106,17 +106,10 @@ func test_number_within_range_is_unchanged() -> void:
 # =====================
 
 
-func test_add_duplicate_is_ignored() -> void:
-	var first: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
-		"score", 1.0, null, null
-	)
-	var second: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
-		"score", 2.0, null, null
-	)
-	_service.add_variable(first)
-	_service.add_variable(second)
-	assert_logged([], ["Variable with id 'score' already exists."])
-	assert_that(_service.get_variable("score")).is_equal(1.0)
+func test_add_replaces_an_existing_declaration() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new("score", 1.0, null, null))
+	_service.add_variable(WeavlyModel.NumberVariable.new("score", 2.0, null, null))
+	assert_that(_service.get_variable("score")).is_equal(2.0)
 
 
 # =====================
@@ -200,13 +193,6 @@ func test_adding_a_variable_defines_a_matching_extern() -> void:
 	_service.add_variable(WeavlyModel.NumberVariable.new("reputation", 4.0, 0.0, 10.0))
 	assert_that(_service.get_variable("reputation")).is_equal(4.0)
 	assert_bool(_service.get_declaration("reputation").extern).is_false()
-
-
-func test_adding_a_variable_of_another_type_for_an_extern_is_rejected() -> void:
-	_add_extern("reputation")
-	_service.add_variable(WeavlyModel.StringVariable.new("reputation", "high"))
-	assert_logged(["Variable 'reputation' is a string, but it's declared extern as a number."])
-	assert_bool(_service.has("reputation")).is_false()
 
 
 func test_get_declaration_of_an_unknown_name_is_null() -> void:

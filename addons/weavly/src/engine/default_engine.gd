@@ -94,9 +94,7 @@ func _ready() -> void:
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
-	WeavlyFileUtils.load_nodes_from_files(self, dialogue_path)
-	WeavlyFileUtils.load_variables(self, dialogue_path, variable_path)
-	WeavlyFileUtils.load_pools_from_env_files(self, dialogue_path)
+	WeavlyFileUtils.load_dialogue(self, dialogue_path, variable_path)
 	WeavlyFileUtils.index_media_from_files(video_service, video_path)
 	WeavlyFileUtils.index_media_from_files(image_service, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)

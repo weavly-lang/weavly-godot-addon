@@ -1,5 +1,6 @@
 class_name WeavlyStatementExecutor
 
+const UNKNOWN_STATEMENT = "Can't execute an unknown statement."
 const UNDEFINED_SET_TARGET = "Can't set variable '%s' because it isn't defined."
 const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead."
 
@@ -27,9 +28,7 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 	elif statement is WeavlyModel.DrawStatement:
 		execute_draw_statement(statement, engine)
 	else:
-		engine.report_error(
-			"Can't execute statement of type '%s'." % type_string(typeof(statement))
-		)
+		engine.report_error(UNKNOWN_STATEMENT)
 
 
 static func execute_narration_line(

@@ -1,40 +1,6 @@
 class_name WeavlyTextUtils
 
-const VARIABLE_PATTERN = r"\{\$([A-Za-z_][A-Za-z0-9_]*)\}"
-
 static var default_variable_pipeline: Array[Callable] = [format_float_trim_zero]
-
-static var _variable_regex: RegEx = RegEx.create_from_string(VARIABLE_PATTERN)
-
-
-static func inject_variables(
-	text: String, engine: WeavlyEngine, pipeline: Array[Callable] = default_variable_pipeline
-) -> String:
-	var out: String = ""
-	var last_end: int = 0
-	var reported: Array[String] = []
-
-	for m: RegExMatch in _variable_regex.search_all(text):
-		var start: int = m.get_start()
-		var end: int = m.get_end()
-		out += text.substr(last_end, start - last_end)
-		last_end = end
-
-		var variable_name: String = m.get_string(1)
-		if not engine.variable_service.has(variable_name):
-			if variable_name not in reported:
-				WeavlyExpressionEvaluator.report_undefined_variable(variable_name, engine)
-				reported.append(variable_name)
-			out += m.get_string()
-			continue
-
-		var value: Variant = engine.variable_service.get_variable(variable_name)
-		for method: Callable in pipeline:
-			value = method.call(value)
-		out += str(value)
-
-	out += text.substr(last_end)
-	return out
 
 
 # A failing expression is reported by the evaluator and left out of the text.

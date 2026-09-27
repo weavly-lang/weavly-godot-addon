@@ -8,6 +8,7 @@ const UNDECLARED = "Can't set variable '%s' because it isn't declared."
 
 @abstract func has(id: String) -> bool
 
+# Replaces an existing declaration; the loader reports conflicting ones.
 @abstract func add_variable(variable: WeavlyModel.Variable) -> void
 
 # Null when the name isn't declared; an extern declaration has no value until defined.
