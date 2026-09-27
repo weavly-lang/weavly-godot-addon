@@ -1,5 +1,7 @@
 extends WeavlyTestSuite
 
+# Only what the video service adds to WeavlyMediaIndex; grouping and duplicates are tested there.
+
 const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_video_service.gd"
 )
@@ -15,44 +17,15 @@ func before_test() -> void:
 	_service.initialize(null)
 
 
-# =====================
-# add / get (no pattern)
-# =====================
-
-
 func test_add_and_get_video() -> void:
 	_service.add_media("intro", _FIXTURE_PATH)
 	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
-
-
-func test_get_missing_id_returns_default() -> void:
-	assert_that(_service.get_video("missing")).is_null()
-	assert_logged(["Video with id 'missing' doesn't exist"])
 
 
 func test_get_missing_id_returns_provided_default() -> void:
 	var fallback: VideoStreamTheora = VideoStreamTheora.new()
 	assert_that(_service.get_video("missing", fallback)).is_equal(fallback)
 	assert_logged(["Video with id 'missing' doesn't exist"])
-
-
-# =====================
-# duplicate id (no pattern)
-# =====================
-
-
-func test_add_duplicate_keeps_the_first_and_reports_both() -> void:
-	_service.add_media("intro", _FIXTURE_PATH)
-	_service.add_media("intro", "res://test/fixtures/other.tres")
-	assert_logged(
-		["Video id 'intro' is used by both %s and res://test/fixtures/other.tres" % _FIXTURE_PATH]
-	)
-	assert_that(_service.get_video("intro")).is_not_null()
-
-
-# =====================
-# failed load
-# =====================
 
 
 func test_failed_load_returns_default() -> void:
@@ -66,75 +39,15 @@ func test_failed_load_returns_default() -> void:
 	)
 
 
-# =====================
-# grouping (pattern set)
-# =====================
-
-
-func test_grouping_strips_suffix() -> void:
+func test_the_group_pattern_groups_videos() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_media("intro_1", _FIXTURE_PATH)
 	_service.add_media("intro_2", _FIXTURE_PATH)
 	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
 
 
-func test_grouping_strips_mid_string_match() -> void:
-	_service.set_group_pattern("_v\\d+")
-	_service.add_media("intro_v1_wide", _FIXTURE_PATH)
-	_service.add_media("intro_v2_wide", _FIXTURE_PATH)
-	assert_object(_service.get_video("intro_wide")).is_instanceof(VideoStream)
-
-
-func test_unmatched_id_is_singleton_with_pattern_set() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("title", _FIXTURE_PATH)
-	assert_object(_service.get_video("title")).is_instanceof(VideoStream)
-
-
-func test_grouped_and_ungrouped_coexist() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("intro_1", _FIXTURE_PATH)
-	_service.add_media("title", _FIXTURE_PATH)
-	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
-	assert_object(_service.get_video("title")).is_instanceof(VideoStream)
-
-
-func test_duplicate_is_reported_when_pattern_set() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("intro_1", _FIXTURE_PATH)
-	_service.add_media("intro_1", _FIXTURE_PATH)
-	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
-	assert_logged(["Video id 'intro_1' is used by both"])
-
-
-# =====================
-# invalid pattern
-# =====================
-
-
-func test_invalid_pattern_falls_back_to_no_grouping() -> void:
-	_service.set_group_pattern("[")
-	assert_logged(
-		[
-			"1: missing terminating ] for character class",
-			"Failed to compile video group_pattern '[', falling back to no grouping."
-		]
-	)
-	_service.add_media("intro", _FIXTURE_PATH)
-	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
-
-
-func test_invalid_pattern_duplicate_is_still_reported() -> void:
-	_service.set_group_pattern("[")
-	assert_logged(
-		[
-			"1: missing terminating ] for character class",
-			"Failed to compile video group_pattern '[', falling back to no grouping."
-		]
-	)
-	_service.add_media("intro", _FIXTURE_PATH)
-	_service.add_media("intro", "res://test/fixtures/other.tres")
-	assert_logged(["Video id 'intro' is used by both"])
+func test_ogv_is_indexed_by_default() -> void:
+	assert_array(Service.new().supported_extensions).contains_exactly([".ogv"])
 
 
 # =====================

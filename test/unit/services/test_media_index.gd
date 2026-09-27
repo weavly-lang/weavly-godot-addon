@@ -48,6 +48,13 @@ func test_group_pattern_collapses_ids_into_one_group() -> void:
 	assert_array(_index.paths["idle"]).contains_exactly(["res://idle_1.png", "res://idle_2.png"])
 
 
+func test_group_pattern_can_match_inside_an_id() -> void:
+	_index.set_group_pattern("_v\\d+")
+	_index.add("hero_v1_idle", "res://hero_v1_idle.png")
+	_index.add("hero_v2_idle", "res://hero_v2_idle.png")
+	assert_array(_index.paths.keys()).contains_exactly(["hero_idle"])
+
+
 func test_group_pattern_keeps_unmatched_ids_as_single_entries() -> void:
 	_index.set_group_pattern("_\\d+$")
 	_index.add("splash", "res://splash.png")
@@ -98,3 +105,27 @@ func test_invalid_group_pattern_falls_back_to_no_grouping() -> void:
 	assert_logged(
 		["missing terminating ]", "Failed to compile image group_pattern '[', falling back"]
 	)
+
+
+# =====================
+# load_media
+# =====================
+
+
+func test_load_media_returns_what_the_loader_loads() -> void:
+	_index.add("splash", "res://splash.png")
+	var loader: Callable = func(path: String) -> Variant: return "loaded " + path
+	assert_that(_index.load_media("splash", null, loader)).is_equal("loaded res://splash.png")
+
+
+func test_load_media_of_an_unknown_id_returns_the_default() -> void:
+	var loader: Callable = func(_path: String) -> Variant: return "loaded"
+	assert_that(_index.load_media("missing", "fallback", loader)).is_equal("fallback")
+	assert_logged(["Image with id 'missing' doesn't exist, returning default 'fallback'."])
+
+
+func test_load_media_that_fails_to_load_returns_the_default() -> void:
+	_index.add("broken", "res://broken.png")
+	var loader: Callable = func(_path: String) -> Variant: return null
+	assert_that(_index.load_media("broken", "fallback", loader)).is_equal("fallback")
+	assert_logged(["Failed to load Image at path 'res://broken.png' for id 'broken'"])
