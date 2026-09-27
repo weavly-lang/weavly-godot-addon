@@ -63,9 +63,9 @@ A variable declared with `extern name: type` in `.wvl` gets its value from outsi
 
 Game code can only set declared variables; `set_variable()` on an undeclared name reports an error and changes nothing. Declare variables your game owns as `extern`.
 
-Line and option text can use any expression in `{}`, such as `{$name}` or `{$price * 2}`; `\{` is a literal brace. The line and option signals deliver copies with `text` filled in when they're shown, and an expression that fails is reported and left out. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`. For text outside dialogue, `WeavlyTextUtils.inject_variables(text, engine)` fills in `{$name}` variables in any string.
+Line and option text can use any expression in `{}`, such as `{$name}` or `{$price * 2}`; `\{` is a literal brace. The line and option signals deliver copies with `text` filled in when they're shown, and an expression that fails is reported and left out. A character line written `$name: ...` arrives with the variable's value as `name` and the variable's id in `raw_name`.
 
-Numbers are shown with at most two decimals and whole numbers without any, so `1 / 3` shows as `0.33` and `10` as `10`; games that need other formatting can pass their own pipeline to `inject_variables`. Numbers also compare approximately: `==`, `!=`, `<=` and `>=` treat values that differ only by floating-point rounding as equal, so `0.1 + 0.2 == 0.3` is true and `0.1 + 0.2 > 0.3` is false.
+Numbers are shown with at most two decimals and whole numbers without any, so `1 / 3` shows as `0.33` and `10` as `10`; games that need other formatting can replace `WeavlyTextUtils.default_variable_pipeline`. Numbers also compare approximately: `==`, `!=`, `<=` and `>=` treat values that differ only by floating-point rounding as equal, so `0.1 + 0.2 == 0.3` is true and `0.1 + 0.2 > 0.3` is false.
 
 ### Options, match and random
 
@@ -142,7 +142,7 @@ Bob waves at you.
 
 `engine.draw(["city"])` starts a dialogue with the first node in selection order, the first entry `list_pool` would return, and returns `true`, or returns `false` and starts nothing when no node is eligible. It takes several pools like `list_pool`, and while a dialogue runs it warns and does nothing, like `start()`. In a script, `@draw city, city_night` leaves the current node and enters the drawn one like `@goto`; when no node is eligible, it does nothing and the node continues with the next line. Both update skip counts: the drawn node goes back to 0 and every other eligible node goes up by 1.
 
-`engine.peek_pool(["city"], 3)` returns what `list_pool` with the same pools and limit would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool(["city"]).is_empty()` asks whether anything is there. `engine.node_service.get_node_meta(id)` gives a node's pools and slots.
+`engine.peek_pool(["city"], 3)` returns what `list_pool` with the same pools and limit would return at that moment without changing anything: skip counts stay as they are and the generator is restored, so a following `list_pool` makes the same picks. `not engine.peek_pool(["city"]).is_empty()` asks whether anything is there. `engine.node_service.get_node(id).meta` gives a node's pools and slots.
 
 A pool name that isn't declared is reported as a runtime error and counts as empty. A `when`, `priority` or `weight` that fails is reported at its line in the `@meta` block, and the node isn't eligible. `@goto` and `start()` ignore the metadata, so an explicit jump always works.
 

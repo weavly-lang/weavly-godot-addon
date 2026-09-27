@@ -14,9 +14,6 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 
 @abstract func get_visit_count(id: String) -> int
 
-# Null when the node has no @meta block.
-@abstract func get_node_meta(id: String) -> WeavlyModel.NodeMeta
-
 @abstract func add_pool(pool: String) -> void
 
 @abstract func has_pool(pool: String) -> bool

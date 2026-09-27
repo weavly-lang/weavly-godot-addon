@@ -158,12 +158,12 @@ func test_skip_counts_are_saved_and_loaded() -> void:
 	assert_int(engine.node_service.get_skip_count("patient")).is_equal(2)
 
 
-func test_get_node_meta_exposes_pools_and_slots() -> void:
+func test_node_meta_exposes_pools_and_slots() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	var meta: WeavlyModel.NodeMeta = engine.node_service.get_node_meta("in_abc")
+	var meta: WeavlyModel.NodeMeta = engine.node_service.get_node("in_abc").meta
 	assert_array(meta.pools).is_equal(["slot_test"])
 	assert_array(meta.slots).is_equal(["a", "b", "c"])
-	assert_object(engine.node_service.get_node_meta("count_skips")).is_null()
+	assert_object(engine.node_service.get_node("count_skips").meta).is_null()
 
 
 func test_goto_and_start_ignore_the_metadata() -> void:

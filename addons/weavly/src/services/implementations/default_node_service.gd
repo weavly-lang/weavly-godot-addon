@@ -46,11 +46,6 @@ func get_visit_count(id: String) -> int:
 	return _visits.get(id, 0)
 
 
-func get_node_meta(id: String) -> WeavlyModel.NodeMeta:
-	var node: WeavlyModel.WeavlyNode = get_node(id)
-	return node.meta if node != null else null
-
-
 func add_pool(pool: String) -> void:
 	_pools[pool] = true
 
