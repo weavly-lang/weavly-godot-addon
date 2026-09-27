@@ -281,7 +281,15 @@ Before another character's message, a typing indicator shows for as long as typi
 
 The conversation follows the newest message and stays after the dialogue finishes, like a message history, so `clear()` it when a new conversation should start; loading a state clears it too. For an avatar and a bubble color, create the character as a `WeavlyChatCharacter`; a plain `WeavlyCharacter` uses the theme's bubble. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_chat_theme.tres`.
 
-All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold; both can be reused in your own UI.
+### Speech bubbles
+
+`addons/weavly/ui/bubble/weavly_bubble_ui.tscn` shows character lines in speech bubbles above the characters in your game world, for conversations and barks, on the step mode. Add a `WeavlySpeaker` as a child of a character's `Node2D` or `Node3D` and set `character` to the character's id; the UI finds the speaker by that id. The bubble points at the parent's position plus `offset_2d` or `offset_3d`, follows it every frame, stays inside the screen near an edge, and hides while the parent is hidden or behind the 3D camera. The speaker and the UI need to be in the same viewport.
+
+Narration, and character lines without a speaker in the scene, show in a bar at the bottom of the screen, with the speaker's name for character lines. A line whose speaker leaves the scene moves to the bar. Options show in the same bar, with hints disabled and selected with mouse and keys like in the other starter UIs; a bar of only hints waits for the player to advance. A click on the bubble or the bar, or `advance_action` (`ui_accept` by default), continues the dialogue. Clicks elsewhere reach your game. For barks, set `auto_advance` to the seconds a line stays before the dialogue continues on its own; it's off by default and never picks an option.
+
+Bubbles are as wide as their text, up to `max_bubble_width`, with a tail of `tail_size`. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_bubble_theme.tres`, with the bubble as the `WeavlyBubble` type variation and its text as `WeavlyBubbleText`.
+
+All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold, and `WeavlyUI.fit_text_width()` sizes a text to its content up to a width; all three can be reused in your own UI.
 
 ## Writing dialogues in the editor
 

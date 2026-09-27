@@ -193,7 +193,7 @@ func _add_line(line: WeavlyModel.LineStatement) -> void:
 	var row: HBoxContainer = _add_row(BoxContainer.ALIGNMENT_CENTER)
 	var text: RichTextLabel = _add_text(row, line.text)
 	text.theme_type_variation = &"WeavlyChatNarration"
-	_fit_width(text)
+	fit_text_width(text, max_bubble_width)
 
 
 func _add_bubble(
@@ -235,7 +235,7 @@ func _add_bubble(
 		if style != null:
 			style.bg_color = chat_character.bubble_color
 			bubble.add_theme_stylebox_override(&"panel", style)
-	_fit_width(_add_text(bubble, text))
+	fit_text_width(_add_text(bubble, text), max_bubble_width)
 
 
 func _add_row(alignment: BoxContainer.AlignmentMode) -> HBoxContainer:
@@ -259,16 +259,6 @@ func _add_text(parent: Control, content: String) -> RichTextLabel:
 	else:
 		text.add_text(content)
 	return text
-
-
-# A bubble is as wide as its text, up to max_bubble_width, where it wraps.
-func _fit_width(text: RichTextLabel) -> void:
-	var font: Font = text.get_theme_font(&"normal_font")
-	var font_size: int = text.get_theme_font_size(&"normal_font_size")
-	var width: float = (
-		font.get_string_size(text.get_parsed_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	)
-	text.custom_minimum_size.x = minf(ceilf(width) + 1.0, max_bubble_width)
 
 
 func _on_phone_input(event: InputEvent) -> void:
