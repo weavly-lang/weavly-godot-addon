@@ -185,6 +185,12 @@ func test_keys_select_and_choose_a_link() -> void:
 	assert_str(_describe()[0][0]).is_equal("Guide: Welcome, you have 0 gold.")
 
 
+func test_the_key_that_selects_a_link_doesnt_reach_the_game() -> void:
+	_ui.show_passage("bar")
+	await get_tree().process_frame
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_down"))).is_true()
+
+
 func test_keys_move_between_option_blocks_and_choose_the_focused_link() -> void:
 	_ui.show_passage("tavern")
 	await get_tree().process_frame

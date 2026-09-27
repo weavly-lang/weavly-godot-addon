@@ -1,4 +1,5 @@
-extends GdUnitTestSuite
+# gdlint:ignore = max-public-methods
+extends WeavlyTestSuite
 
 const _FIND_TEXT = "alpha beta\nbeta gamma\nBETA\n"
 
@@ -14,12 +15,27 @@ func before_test() -> void:
 	add_child(_find_bar)
 
 
-func _key(keycode: Key, shift: bool = false) -> InputEventKey:
+func _key(keycode: Key, shift: bool = false, pressed: bool = true) -> InputEventKey:
 	var event: InputEventKey = InputEventKey.new()
 	event.keycode = keycode
-	event.pressed = true
+	event.pressed = pressed
 	event.shift_pressed = shift
 	return event
+
+
+func _type_in_find(event: InputEvent) -> void:
+	_find_bar._find_field.gui_input.emit(event)
+
+
+func _type_in_replace(event: InputEvent) -> void:
+	_find_bar._replace_field.gui_input.emit(event)
+
+
+func _button(text: String) -> Button:
+	for button: Node in _find_bar.find_children("*", "Button", true, false):
+		if (button as Button).text == text:
+			return button
+	return null
 
 
 func _selection() -> Vector2i:
@@ -28,7 +44,7 @@ func _selection() -> Vector2i:
 
 func _search_for(text: String) -> void:
 	_find_bar._find_field.text = text
-	_find_bar._on_find_text_changed(text)
+	_find_bar._find_field.text_changed.emit(text)
 
 
 # =====================
@@ -57,6 +73,24 @@ func test_typing_selects_the_first_match_and_counts() -> void:
 	assert_str(_find_bar._find_count.text).is_equal("1 of 3")
 
 
+func test_open_focuses_the_find_field_with_its_text_selected() -> void:
+	_code_edit.select(1, 5, 1, 10)
+	_find_bar.open(false)
+	assert_bool(_find_bar._find_field.has_focus()).is_true()
+	assert_str(_find_bar._find_field.get_selected_text()).is_equal("gamma")
+	assert_str(_find_bar._find_count.text).is_equal("1 of 1")
+
+
+func test_count_without_a_selected_match_and_without_text() -> void:
+	_find_bar.open(false)
+	_search_for("beta")
+	_code_edit.deselect()
+	_find_bar.update_count()
+	assert_str(_find_bar._find_count.text).is_equal("3 matches")
+	_search_for("")
+	assert_str(_find_bar._find_count.text).is_empty()
+
+
 func test_find_reports_no_matches() -> void:
 	_find_bar.open(false)
 	_search_for("delta")
@@ -67,31 +101,70 @@ func test_find_reports_no_matches() -> void:
 func test_enter_and_find_next_go_to_the_next_match_and_wrap() -> void:
 	_find_bar.open(false)
 	_search_for("beta")
-	_find_bar._on_find_field_input(_key(KEY_ENTER))
+	_type_in_find(_key(KEY_ENTER))
 	assert_that(_selection()).is_equal(Vector2i(0, 1))
 	_find_bar.find_next()
 	assert_that(_selection()).is_equal(Vector2i(0, 2))
 	assert_str(_find_bar._find_count.text).is_equal("3 of 3")
-	_find_bar._on_find_field_input(_key(KEY_ENTER))
+	_type_in_find(_key(KEY_ENTER))
 	assert_that(_selection()).is_equal(Vector2i(6, 0))
 
 
 func test_shift_and_find_previous_go_to_the_previous_match_and_wrap() -> void:
 	_find_bar.open(false)
 	_search_for("beta")
-	_find_bar._on_find_field_input(_key(KEY_ENTER, true))
+	_type_in_find(_key(KEY_ENTER, true))
 	assert_that(_selection()).is_equal(Vector2i(0, 2))
 	_find_bar.find_previous()
 	assert_that(_selection()).is_equal(Vector2i(0, 1))
-	_find_bar._on_find_field_input(_key(KEY_ENTER, true))
+	_type_in_find(_key(KEY_ENTER, true))
 	assert_that(_selection()).is_equal(Vector2i(6, 0))
 
 
 func test_escape_closes_the_bar() -> void:
 	_find_bar.open(false)
 	_search_for("beta")
-	_find_bar._on_find_field_input(_key(KEY_ESCAPE))
+	_type_in_find(_key(KEY_ESCAPE))
 	assert_bool(_find_bar.visible).is_false()
+	assert_bool(_code_edit.has_focus()).is_true()
+
+
+func test_escape_in_the_replace_field_closes_the_bar() -> void:
+	_find_bar.open(true)
+	_type_in_replace(_key(KEY_ESCAPE))
+	assert_bool(_find_bar.visible).is_false()
+
+
+func test_the_buttons_find_and_close() -> void:
+	_find_bar.open(false)
+	_search_for("beta")
+	_button("Next").pressed.emit()
+	assert_that(_selection()).is_equal(Vector2i(0, 1))
+	_button("Previous").pressed.emit()
+	assert_that(_selection()).is_equal(Vector2i(6, 0))
+	_button("Close").pressed.emit()
+	assert_bool(_find_bar.visible).is_false()
+
+
+func test_released_keys_and_other_keys_do_nothing() -> void:
+	_find_bar.open(true)
+	_search_for("beta")
+	_type_in_find(_key(KEY_ENTER, false, false))
+	_type_in_find(_key(KEY_A))
+	_type_in_replace(_key(KEY_ESCAPE, false, false))
+	assert_that(_selection()).is_equal(Vector2i(6, 0))
+	assert_bool(_find_bar.visible).is_true()
+
+
+func test_the_keys_the_bar_uses_dont_reach_the_editor() -> void:
+	_find_bar.open(true)
+	_search_for("beta")
+	assert_bool(handles_input(_type_in_find, _key(KEY_ENTER))).is_true()
+	assert_bool(handles_input(_type_in_find, _key(KEY_ENTER, true))).is_true()
+	assert_bool(handles_input(_type_in_replace, _key(KEY_ENTER))).is_true()
+	assert_bool(handles_input(_type_in_replace, _key(KEY_ESCAPE))).is_true()
+	_find_bar.open(false)
+	assert_bool(handles_input(_type_in_find, _key(KEY_ESCAPE))).is_true()
 
 
 # =====================
@@ -110,10 +183,22 @@ func test_replace_swaps_the_selected_match_and_moves_on() -> void:
 	_find_bar.open(true)
 	_search_for("beta")
 	_find_bar._replace_field.text = "delta"
-	_find_bar._on_replace_field_input(_key(KEY_ENTER))
+	_type_in_replace(_key(KEY_ENTER))
 	assert_str(_code_edit.get_line(0)).is_equal("alpha delta")
 	assert_that(_selection()).is_equal(Vector2i(0, 1))
 	assert_str(_find_bar._find_count.text).is_equal("1 of 2")
+
+
+func test_keypad_enter_and_the_buttons_replace() -> void:
+	_find_bar.open(true)
+	_search_for("beta")
+	_find_bar._replace_field.text = "delta"
+	_type_in_replace(_key(KEY_KP_ENTER))
+	assert_str(_code_edit.get_line(0)).is_equal("alpha delta")
+	_button("Replace").pressed.emit()
+	assert_str(_code_edit.get_line(1)).is_equal("delta gamma")
+	_button("Replace All").pressed.emit()
+	assert_str(_code_edit.get_line(2)).is_equal("delta")
 
 
 func test_replace_without_a_selected_match_only_moves() -> void:

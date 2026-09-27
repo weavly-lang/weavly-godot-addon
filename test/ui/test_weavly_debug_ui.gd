@@ -119,6 +119,20 @@ func test_the_toggle_action_shows_and_hides_the_overlay() -> void:
 	assert_bool(_ui.visible).is_true()
 
 
+func test_only_the_toggle_action_toggles_and_it_doesnt_reach_the_game() -> void:
+	_press(&"ui_accept")
+	assert_bool(_ui.visible).is_true()
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(TOGGLE))).is_true()
+	assert_bool(_ui.visible).is_false()
+
+
+func test_showing_the_overlay_refreshes_it() -> void:
+	_ui.visible = false
+	_engine.variable_service.set_variable("gold", 9.0)
+	_ui.visible = true
+	assert_str((_variable_editor("gold") as LineEdit).text).is_equal("9")
+
+
 func test_status_shows_idle_and_the_current_node_and_line() -> void:
 	assert_str(_status()).is_equal("idle")
 	_engine.start("start")
@@ -164,6 +178,15 @@ func test_editing_a_number_sets_it() -> void:
 	edit.focus_exited.emit()
 	assert_float(_engine.variable_service.get_variable("gold")).is_equal(7.5)
 	assert_str(edit.text).is_equal("7.5")
+
+
+func test_submitting_an_edit_sets_it() -> void:
+	var edit: LineEdit = _variable_editor("gold")
+	edit.grab_focus()
+	edit.text = "8"
+	edit.text_submitted.emit(edit.text)
+	assert_bool(edit.has_focus()).is_false()
+	assert_float(_engine.variable_service.get_variable("gold")).is_equal(8.0)
 
 
 func test_editing_a_number_with_text_keeps_the_value() -> void:
@@ -275,7 +298,7 @@ func test_errors_beyond_the_limit_drop_the_oldest() -> void:
 
 func test_clearing_errors() -> void:
 	_engine.runtime_error.emit("one", "", 0)
-	_ui.clear_errors()
+	(_ui.get_node("%ClearErrors") as Button).pressed.emit()
 	assert_array(_errors()).is_empty()
 	assert_str(_errors_title()).is_equal("Errors")
 

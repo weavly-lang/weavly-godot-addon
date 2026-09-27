@@ -79,11 +79,8 @@ func _wait_out() -> void:
 	_ui._process(10.0)
 
 
-func _click() -> void:
-	var event: InputEventMouseButton = InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = true
-	_ui._on_phone_input(event)
+func _click(event: InputEventMouseButton = mouse_button(MOUSE_BUTTON_LEFT)) -> void:
+	(_ui.get_node("%Phone") as Control).gui_input.emit(event)
 
 
 func test_hidden_until_the_first_message() -> void:
@@ -126,6 +123,21 @@ func test_the_advance_action_skips_the_wait() -> void:
 	event.pressed = true
 	_ui._unhandled_input(event)
 	assert_array(_describe()).is_equal(["left Mara: are you still up?"])
+
+
+func test_only_pressing_the_left_button_skips_the_wait() -> void:
+	_engine.start("start")
+	_click(mouse_button(MOUSE_BUTTON_RIGHT))
+	_click(mouse_button(MOUSE_BUTTON_LEFT, false))
+	assert_bool(_ui.is_waiting()).is_true()
+
+
+func test_keys_the_ui_uses_dont_reach_the_game() -> void:
+	_engine.start("start")
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_accept"))).is_true()
+	for i: int in 3:
+		_wait_out()
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_down"))).is_true()
 
 
 func test_player_lines_and_narration_wait_briefly_without_the_indicator() -> void:

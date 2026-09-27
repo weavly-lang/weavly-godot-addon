@@ -107,11 +107,13 @@ func test_reveal_completes_then_advances() -> void:
 	_ui.characters_per_second = 4.0
 	_engine.start("start")
 	assert_bool(_ui.is_revealing()).is_true()
+	assert_bool(_ui.is_processing()).is_true()
 	assert_int(_text().visible_characters).is_equal(0)
 	_ui._process(0.5)
 	assert_int(_text().visible_characters).is_equal(2)
 	_ui.advance()
 	assert_bool(_ui.is_revealing()).is_false()
+	assert_bool(_ui.is_processing()).is_false()
 	assert_int(_text().visible_characters).is_equal(-1)
 	assert_str(_text().text).is_equal("Hello there.")
 	_ui.advance()
@@ -132,6 +134,21 @@ func test_click_and_input_action_advance() -> void:
 	assert_str(_text().text).is_equal("The wind picks up.")
 	_press(&"ui_accept")
 	assert_str(_text().text).is_equal("Welcome.")
+
+
+func test_clicks_and_keys_the_ui_uses_dont_reach_the_game() -> void:
+	_engine.start("start")
+	assert_bool(handles_input(_ui._gui_input, mouse_button(MOUSE_BUTTON_LEFT))).is_true()
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_accept"))).is_true()
+	_advance(2)
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_down"))).is_true()
+
+
+func test_only_pressing_the_left_button_advances() -> void:
+	_engine.start("start")
+	_ui._gui_input(mouse_button(MOUSE_BUTTON_RIGHT))
+	_ui._gui_input(mouse_button(MOUSE_BUTTON_LEFT, false))
+	assert_str(_text().text).is_equal("Hello there.")
 
 
 func test_options_show_hints_disabled() -> void:
@@ -244,6 +261,14 @@ func test_loading_a_state_clears_the_ui() -> void:
 	_engine.reset_state()
 	assert_bool(_ui.visible).is_false()
 	assert_str(_text().text).is_empty()
+
+
+func test_loading_a_state_stops_a_reveal() -> void:
+	_ui.characters_per_second = 4.0
+	_engine.start("start")
+	_engine.reset_state()
+	assert_bool(_ui.is_revealing()).is_false()
+	assert_bool(_ui.is_processing()).is_false()
 
 
 func test_loading_a_state_mid_dialogue_shows_the_replayed_node() -> void:

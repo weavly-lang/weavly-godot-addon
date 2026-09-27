@@ -14,6 +14,29 @@ func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 	engine.variable_service.add_variable(variable)
 
 
+func mouse_button(button: MouseButton, pressed: bool = true) -> InputEventMouseButton:
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = button
+	event.pressed = pressed
+	return event
+
+
+func action_pressed(action: StringName) -> InputEventAction:
+	var event: InputEventAction = InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	return event
+
+
+# Whether handler marks event as handled in viewport, so it doesn't reach the game.
+func handles_input(handler: Callable, event: InputEvent, viewport: Viewport = null) -> bool:
+	if viewport == null:
+		viewport = get_viewport()
+	viewport.push_input(InputEventAction.new())
+	handler.call(event)
+	return viewport.is_input_handled()
+
+
 # gdUnit4's assert_error() can only assert one error per call; this consumes several.
 func assert_logged(errors: Array[String], warnings: Array[String] = []) -> void:
 	var monitor: GodotGdErrorMonitor = (
