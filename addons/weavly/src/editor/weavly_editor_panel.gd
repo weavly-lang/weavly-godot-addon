@@ -220,9 +220,23 @@ func _on_node_selected(index: int) -> void:
 func _draw_node_gutter(line: int, _gutter: int, area: Rect2) -> void:
 	if line >= _line_nodes.size() or _line_nodes[line] == -1:
 		return
-	var color: Color = _NODE_STRIP_COLORS[_line_nodes[line] % _NODE_STRIP_COLORS.size()]
-	var strip: Rect2 = Rect2(area.position, Vector2(_NODE_STRIP_WIDTH, area.size.y))
-	_code_edit.draw_rect(strip, color)
+	var strip: Rect2 = _node_strip_rect(line, area)
+	if strip.has_area():
+		var color: Color = _NODE_STRIP_COLORS[_line_nodes[line] % _NODE_STRIP_COLORS.size()]
+		_code_edit.draw_rect(strip, color)
+
+
+# The gutter is drawn once per line on its first row, so the strip spans the wrapped rows too.
+# CodeEdit doesn't clip, so the strip is cut to the text area.
+func _node_strip_rect(line: int, area: Rect2) -> Rect2:
+	var rows: int = _code_edit.get_line_wrap_count(line) + 1
+	var strip: Rect2 = Rect2(area.position, Vector2(_NODE_STRIP_WIDTH, area.size.y * rows))
+	var style: StyleBox = _code_edit.get_theme_stylebox(&"normal")
+	var top: float = style.get_margin(SIDE_TOP)
+	var text_area: Rect2 = Rect2(
+		0.0, top, _code_edit.size.x, _code_edit.size.y - top - style.get_margin(SIDE_BOTTOM)
+	)
+	return strip.intersection(text_area)
 
 
 func _on_replaced_all(count: int) -> void:
