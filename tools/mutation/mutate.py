@@ -1,7 +1,20 @@
 """Mutation testing for the Weavly addon.
 
-Mutates one line of an addon script at a time, runs the gdUnit4 suite in a copy of the
-project and records which tests fail. See CONTRIBUTING.md, "Mutation testing".
+Mutates one line of an addon script at a time (flips a comparison, deletes a statement,
+negates a condition, swaps and/or, shifts a number, changes a string constant), runs the
+gdUnit4 suite in a copy of the project and records which tests fail. A mutant no test
+catches points at behaviour nothing checks.
+
+Pass the scripts or folders a change touched; without any, it mutates all of
+addons/weavly/src and addons/weavly/ui, which takes about two hours on 8 workers. The copies
+live in --out under the system temp folder, never in the working copy, and report.md there
+lists the score per script, every surviving mutant and, after a full run, the tests that
+caught nothing. Results are kept per state of the repository, so a rerun after an
+interruption only runs what is left. --clean deletes that folder and the copies' user data.
+
+Not every survivor is a gap: some mutants can't change behaviour, and drawing code is
+rarely worth asserting. A test that catches nothing isn't necessarily redundant either,
+since only .gd lines are mutated, not scenes, themes or fixtures.
 """
 
 import argparse

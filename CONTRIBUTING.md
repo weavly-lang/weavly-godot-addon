@@ -2,146 +2,41 @@
 
 ## Workflow
 
-All work happens on issue branches and lands on `main` via squash-merged PRs.
+Work happens on issue branches and lands on `main` as squash-merged PRs.
 
-### 1. Create the branch from the issue
+1. `gh issue develop <number> --checkout` creates a branch linked to the issue.
+2. Commit freely; commits are squashed on merge. Rebase on `origin/main` when it moves ahead.
+3. Open the PR with a sentence as title (usually the issue title) and `Closes #<number>` in the body.
+4. **Squash and merge** once CI passes. The title becomes the commit on `main`.
 
-```bash
-gh issue develop <number> --checkout
-```
+## Checks
 
-Creates `<number>-<slugified-issue-title>`, links it to the issue, and checks it out.
-
-### 2. Commit freely while working
-
-Intermediate commits are squashed on merge, so they need no convention.
-
-### 3. Rebase before opening, and whenever main moves ahead
-
-```bash
-git fetch origin
-git rebase origin/main
-git push --force-with-lease
-```
-
-GitHub blocks the merge button while a branch is behind `main`.
-
-### 4. Open the PR
-
-```bash
-gh pr create --title "<human-readable sentence>" --body "Closes #<number>"
-```
-
-- **Title** is a real sentence, usually the issue title. It becomes the squash commit on `main`.
-- **Body** must include `Closes #<number>`.
-
-### 5. Squash merge
-
-Use **Squash and merge**. The commit on `main` reads `Add runtime control flow (#12)`, with the `(#12)` appended by GitHub.
-
-`main` takes squash merges only, keeps a linear history, and requires every CI job to pass.
-
-## Local checks
-
-CI (`.github/workflows/ci.yml`) runs four jobs on every push and PR:
-
-- **`lint`** — `gdlint` and `gdformat --check`.
-- **`test`** — the gdUnit4 suite on Godot 4.5, 4.6 and 4.7, pinned to the latest patch of each. A failure on one version does not stop the others.
-- **`export`** — exports `ci/export_smoke/` on the oldest and newest version and runs the binary, which covers what only breaks once `res://` is a PCK.
-- **`fixtures`** — rebuilds every compiler-built fixture and checks it still matches what is committed.
-
-When a new minor version of Godot is released, add it to the `test` and `export` matrices, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range.
-
-### Linting and formatting
+CI runs lint, the test suite on Godot 4.5, 4.6 and 4.7, an export smoke test (`ci/export_smoke/`), and a rebuild of the compiler-built fixtures. To run them locally:
 
 ```bash
 pip install gdtoolkit
-```
-
-From the repo root:
-
-```bash
-gdlint .            # report lint violations
-gdformat --check .  # report files that need reformatting
-gdformat .          # reformat in place
-```
-
-Config lives in `gdlintrc` and `gdformatrc` (no leading dot, a gdtoolkit convention); both exclude `.git/` and the vendored `gdUnit4/`. `gdformatrc` pins `line_length: 99` to work around an upstream `@abstract` bug, so leave it until that is fixed.
-
-### Running tests
-
-Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4) (v6.2.1), vendored under `addons/gdUnit4/` and enabled as an editor plugin. Suites live under `test/` (`unit`, `integration`, `fixtures`, `helpers`) and extend `GdUnitTestSuite`.
-
-Unexpected `push_error`, `push_warning` and engine errors fail a test (`gdunit4/report/godot/push_error` in `project.godot`). Tests that expect them extend `WeavlyTestSuite` ([test/helpers/weavly_test_suite.gd](test/helpers/weavly_test_suite.gd)) and call `assert_logged(errors, warnings)` after the code that logs them. Each expected string must be contained in one logged message:
-
-```gdscript
-_service.set_group_pattern("[")
-assert_logged(["missing terminating ]", "Failed to compile image group_pattern"])
-```
-
-Prefer it over gdUnit4's `assert_error()`, which asserts only one error per call.
-
-**In the editor**: right-click a test file or folder in the FileSystem dock and choose **Run Tests**, or use the **GdUnit** dock.
-
-**Headless**, from the repo root:
-
-```bash
+gdlint .
+gdformat --check .
 godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://test --ignoreHeadlessMode -c
 ```
 
-`-c` continues a suite after a failure. Reports land in `reports/` (gitignored). `godot` must be on your PATH; on Windows, create a `godot.bat` shim pointing at the executable.
+Tests use [gdUnit4](https://github.com/godot-gdunit-labs/gdUnit4), vendored in `addons/gdUnit4/`. An unexpected `push_error` or `push_warning` fails a test; tests that expect one extend `WeavlyTestSuite` and call `assert_logged(errors, warnings)`.
 
-### Mutation testing
+After opening the project with a Godot version other than the newest supported one, discard what it rewrote with `git checkout -- project.godot addons/gdUnit4`.
 
-`tools/mutation/mutate.py` checks whether the tests would notice a bug. It changes one line of an addon script at a time (flips a comparison, deletes a statement, negates a condition, swaps `and`/`or`, shifts a number, changes a string constant), runs the whole suite and records which tests fail. A mutant no test catches points at behaviour nothing checks.
+## Fixtures
 
-```bash
-python tools/mutation/mutate.py addons/weavly/src/core/weavly_storylet_selector.gd --godot <path to the Godot console executable>
-```
+Every folder under `test/fixtures/` with a `src/` folder is a Weavly project. Edit its `.wvl` sources, never `build/`, and rebuild from that folder with `weavly build`. CI fails when a committed `build/` doesn't match what the pinned compiler produces; a weekly run does the same against the newest compiler release.
 
-Pass the scripts or folders a change touched; with none it mutates all of `addons/weavly/src` and `addons/weavly/ui`, which takes about two hours on 8 workers. It runs in copies of the project under the system temp folder, never in the working copy, and writes `report.md` there: the score per script, every surviving mutant, and, after a full run, the tests that caught nothing. Results are kept per state of the repository, so rerunning after an interruption only runs what is left. `--clean` deletes that folder and the copies' Godot user data once you are done.
+## Mutation testing
 
-Not every survivor is a gap. Some mutants can't change behaviour, like storing `false` in a dictionary that is only checked with `has()`, and drawing code is rarely worth asserting. A test that catches no mutant isn't necessarily redundant either: the tool only mutates `.gd` lines, not scenes, themes or fixtures.
-
-### Compiler-built fixtures
-
-Every folder under `test/fixtures/` with a `src/` folder is a Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the tests load. `test/fixtures/integration/ci_smoke/` covers every statement type, so it is where a change in the compiler's output shape shows up.
-
-Edit the sources, never `build/`, and rebuild from the fixture folder, then commit both together:
-
-```bash
-cd test/fixtures/integration/ci_smoke && weavly build
-```
-
-Keep the `ci_smoke` sources split, with `globals.wvl` declaring the variables and `story.wvl` holding the nodes, so the build still covers the compiler's cross-file declaration merge. An integration test enforces this.
-
-The `fixtures` job rebuilds every such folder with a pinned `weavly` from PyPI and fails when a `build/` differs from what is committed; `.github/workflows/compiler-latest.yml` does the same weekly against the newest release. When that weekly run fails, decide whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild and adjust the addon to match; if not, it is an upstream bug.
-
-### Check project.godot after importing
-
-`config/features` in `project.godot` pins the newest supported Godot version, the one the dev project is edited with. Opening the project or running `--import` with any other version rewrites the pin to that version, older ones included. The pin doesn't set the addon's minimum version: only `addons/weavly/` ships, and CI runs the suite on every supported version regardless.
-
-After importing with another version, discard what it rewrote:
-
-```bash
-git diff project.godot
-git checkout -- project.godot addons/gdUnit4
-```
+`tools/mutation/mutate.py` checks whether the tests notice small bugs in the addon scripts. Its docstring explains how to run it and read the report.
 
 ## Releasing
 
-Bump `version` in `addons/weavly/plugin.cfg`, merge it, then tag the commit on `main`:
+1. Bump `version` in `addons/weavly/plugin.cfg` and merge it.
+2. Tag that commit on `main`: `git tag v<version> && git push origin v<version>`.
 
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-```
+The release workflow checks the tag against `plugin.cfg`, runs the tests and publishes `weavly-<tag>.zip`. Tags can't be moved or deleted, so check the bump landed first.
 
-`.github/workflows/release.yml` checks the tag against `plugin.cfg`, runs the suite, packages `addons/weavly/` into `weavly-<tag>.zip` and creates the release with generated notes.
-
-`v*` tags cannot be moved or deleted, so confirm the version bump landed before tagging.
-
-### What ends up in the archive
-
-The Asset Library installs the repository archive into the user's project, so it holds the addon and nothing else. The `export-ignore` rules in `.gitattributes` strip the rest, `project.godot` included; add a rule when you add a top-level file or directory.
-
-This affects `git archive` only, leaving clones and raw file URLs untouched. Because the root `LICENSE` and `README.md` are stripped, `addons/weavly/` keeps its own copies — keep the licence in step with the root one.
+Only `addons/weavly/` ships: `.gitattributes` strips everything else from the archive, so add an `export-ignore` rule for any new top-level file or folder. `addons/weavly/` keeps its own `README.md` and `LICENSE` for that reason.
