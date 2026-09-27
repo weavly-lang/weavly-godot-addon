@@ -125,10 +125,13 @@ func test_set_variable_with_the_wrong_type_keeps_the_value() -> void:
 
 func test_set_variable_with_the_wrong_type_emits_nothing() -> void:
 	_service.add_variable(WeavlyModel.FlagVariable.new("has_key", false))
-	monitor_signals(_service, false)
+	var changed: Array[String] = []
+	_service.variable_changed.connect(
+		func(id: String, _value: Variant) -> void: changed.append(id)
+	)
 	_service.set_variable("has_key", 1.0)
 	assert_logged(["Can't set variable 'has_key' to a value of type 'float' because it's a flag."])
-	await assert_signal(_service).is_not_emitted("variable_changed")
+	assert_array(changed).is_empty()
 
 
 func test_set_variable_accepts_an_int_for_a_number() -> void:
@@ -213,10 +216,13 @@ func test_get_state_holds_values_only() -> void:
 
 func test_set_state_restores_values_without_emitting() -> void:
 	_service.add_variable(WeavlyModel.NumberVariable.new("score", 3.0, null, null))
-	monitor_signals(_service, false)
+	var changed: Array[String] = []
+	_service.variable_changed.connect(
+		func(id: String, _value: Variant) -> void: changed.append(id)
+	)
 	_service.set_state({"score": 8.0})
 	assert_that(_service.get_variable("score")).is_equal(8.0)
-	await assert_signal(_service).is_not_emitted("variable_changed")
+	assert_array(changed).is_empty()
 
 
 func test_set_state_gives_variables_missing_from_it_their_default() -> void:
