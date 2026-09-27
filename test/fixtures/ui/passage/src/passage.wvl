@@ -39,4 +39,7 @@ You warm up.
 
 @node formatted
 Hello [b]world[/b].
+@options
+@option "[i]Wave[/i]" -> tavern
+@endoptions
 @endnode

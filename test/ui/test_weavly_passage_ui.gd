@@ -196,15 +196,9 @@ func test_keys_move_between_option_blocks_and_choose_the_focused_link() -> void:
 	assert_str(_describe()[0][0]).is_equal("You warm up.")
 
 
-func test_bbcode_is_shown_literally_by_default() -> void:
+func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
 	_ui.show_passage("formatted")
-	assert_array(_describe()).is_equal([["Hello [b]world[/b]."]])
-
-
-func test_bbcode_enabled_renders_it() -> void:
-	_ui.bbcode_enabled = true
-	_ui.show_passage("formatted")
-	assert_array(_describe()).is_equal([["Hello world."]])
+	assert_array(_describe()).is_equal([["Hello [b]world[/b].", ["[i]Wave[/i]"]]])
 
 
 func test_loading_a_state_clears_the_ui() -> void:

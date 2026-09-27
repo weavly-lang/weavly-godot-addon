@@ -27,4 +27,7 @@ You walk on.
 
 @node formatted
 >guard: Hello [b]world[/b].
+@options
+@option "[i]Wave[/i]" -> answered
+@endoptions
 @endnode

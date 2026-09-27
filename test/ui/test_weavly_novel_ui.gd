@@ -225,20 +225,11 @@ func test_only_hints_wait_for_advance() -> void:
 	assert_str(_text().text).is_equal("You walk on.")
 
 
-func test_bbcode_is_shown_literally_by_default() -> void:
+func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
 	_engine.start("formatted")
 	assert_str(_text().get_parsed_text()).is_equal("Hello [b]world[/b].")
-
-
-func test_bbcode_enabled_renders_it_and_reveals_only_visible_characters() -> void:
-	_ui.bbcode_enabled = true
-	_ui.characters_per_second = 4.0
-	_engine.start("formatted")
-	assert_str(_text().get_parsed_text()).is_equal("Hello world.")
-	_ui._process(2.5)
-	assert_bool(_ui.is_revealing()).is_true()
-	_ui._process(0.5)
-	assert_bool(_ui.is_revealing()).is_false()
+	_ui.advance()
+	assert_str(_choices()[0].text).is_equal("[i]Wave[/i]")
 
 
 func test_hidden_after_the_dialogue_finishes() -> void:

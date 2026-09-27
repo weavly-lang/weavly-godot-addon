@@ -3,6 +3,7 @@ gold: number = 0
 city: pool
 night: pool
 empty: pool
+styled: pool
 @endenv
 
 @node inn
@@ -76,4 +77,14 @@ You're out of breath.
 
 @node let_go
 The thief escapes.
+@endnode
+
+@node formatted
+@meta
+pool: styled
+@endmeta
+>guide: Hello [b]world[/b].
+@options
+@option "[i]Wave[/i]" -> let_go
+@endoptions
 @endnode

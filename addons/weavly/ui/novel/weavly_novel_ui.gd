@@ -9,8 +9,6 @@ const NAVIGATION_ACTIONS: Array[StringName] = [
 @export var characters_per_second: float = 40.0
 ## Advances like a click does.
 @export var advance_action: StringName = &"ui_accept"
-## Renders BBCode in lines; injected values like {$name} are parsed too.
-@export var bbcode_enabled: bool = false
 
 var _revealing: bool = false
 var _revealed: float = 0.0
@@ -126,7 +124,6 @@ func _choose(option: WeavlyModel.Option) -> void:
 func _show_text(text: String) -> void:
 	_choices.clear()
 	_awaiting_choice = false
-	_text.bbcode_enabled = bbcode_enabled
 	_text.text = text
 	_textbox.visible = true
 	visible = true
