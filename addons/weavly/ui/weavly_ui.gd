@@ -50,6 +50,16 @@ static func speaker_name(line: WeavlyModel.CharacterLine, engine: WeavlyEngine) 
 	return line.name
 
 
+# A text as wide as its content, up to max_width, where it wraps.
+static func fit_text_width(text: RichTextLabel, max_width: float) -> void:
+	var font: Font = text.get_theme_font(&"normal_font")
+	var font_size: int = text.get_theme_font_size(&"normal_font_size")
+	var width: float = (
+		font.get_string_size(text.get_parsed_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	)
+	text.custom_minimum_size.x = minf(ceilf(width) + 1.0, max_width)
+
+
 func set_engine(value: WeavlyEngine) -> void:
 	if value == engine:
 		return

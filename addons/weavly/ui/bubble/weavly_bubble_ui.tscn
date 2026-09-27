@@ -1,0 +1,68 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://addons/weavly/ui/bubble/weavly_bubble_ui.gd" id="1_script"]
+[ext_resource type="Theme" path="res://addons/weavly/ui/bubble/weavly_bubble_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/weavly/ui/weavly_choice_list.gd" id="3_choices"]
+
+[node name="WeavlyBubbleUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Bubble" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+theme_type_variation = &"WeavlyBubble"
+
+[node name="BubbleText" type="RichTextLabel" parent="Bubble"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"WeavlyBubbleText"
+fit_content = true
+scroll_active = false
+
+[node name="Bar" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = -24.0
+offset_right = 360.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Content" type="VBoxContainer" parent="Bar"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Nameplate" type="Label" parent="Bar/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"WeavlyBubbleNameplate"
+
+[node name="BarText" type="RichTextLabel" parent="Bar/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+fit_content = true
+scroll_active = false
+
+[node name="Choices" type="VBoxContainer" parent="Bar/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_choices")

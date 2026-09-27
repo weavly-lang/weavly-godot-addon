@@ -1,0 +1,30 @@
+@node start
+>guard: Halt! Who goes there?
+The gate creaks.
+>merchant: Fresh bread!
+>stranger: Psst.
+@options
+@option "Answer" -> answered
+@hint "Bribe (no gold)"
+@endoptions
+@endnode
+
+@node answered
+>guard: Pass, then.
+@endnode
+
+@node hints
+@options
+@hint "Locked door"
+@endoptions
+You walk on.
+@endnode
+
+@node bark
+>guard: Move along.
+>guard: I said move along.
+@endnode
+
+@node formatted
+>guard: Hello [b]world[/b].
+@endnode
