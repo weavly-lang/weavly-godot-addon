@@ -26,4 +26,5 @@
 /icon.svg.import export-ignore
 /project.godot export-ignore
 /test export-ignore
+/tools export-ignore
 /addons/gdUnit4 export-ignore
