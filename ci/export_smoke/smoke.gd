@@ -4,7 +4,7 @@ extends Node
 # exported binary: res:// paths live in a PCK, imported assets are renamed, and
 # the working directory is wherever the executable was started from.
 
-const ENGINE_SCENE = "res://addons/weavly/src/weavly_engine.tscn"
+const ENGINE_SCENE = "res://addons/weavly/runtime/weavly_engine.tscn"
 const EXTERNAL_DIR = "external_media"
 const MAX_STEPS = 20
 const VIDEO_SIZE = Vector2i(128, 96)

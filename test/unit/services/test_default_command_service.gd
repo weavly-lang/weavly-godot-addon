@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
 const Service = preload(
-	"res://addons/weavly/src/services/implementations/default_command_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_command_service.gd"
 )
 
 var _service: Service

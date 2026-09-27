@@ -1,6 +1,8 @@
 extends GdUnitTestSuite
 
-const Service = preload("res://addons/weavly/src/services/implementations/default_line_service.gd")
+const Service = preload(
+	"res://addons/weavly/runtime/services/implementations/default_line_service.gd"
+)
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _engine: WeavlyEngine

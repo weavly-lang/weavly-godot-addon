@@ -2,10 +2,10 @@ extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 const DefaultNodeService = preload(
-	"res://addons/weavly/src/services/implementations/default_node_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_node_service.gd"
 )
 const DefaultVariableService = preload(
-	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_variable_service.gd"
 )
 
 

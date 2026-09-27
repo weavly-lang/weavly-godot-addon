@@ -3,7 +3,7 @@ extends WeavlyTestSuite
 # Only what the video service adds to WeavlyMediaIndex; grouping and duplicates are tested there.
 
 const Service = preload(
-	"res://addons/weavly/src/services/implementations/default_video_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_video_service.gd"
 )
 
 # Saved as a .tres (native resource) so no import step is needed in headless/CI runs.

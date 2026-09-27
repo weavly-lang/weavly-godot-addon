@@ -26,7 +26,7 @@ A Godot 4.5+ addon that plays [Weavly](https://github.com/weavly-lang/weavly-com
 
 ## Quick start
 
-Instance `addons/weavly/src/weavly_engine.tscn` in your scene, connect to its signals and start a node:
+Instance `addons/weavly/runtime/weavly_engine.tscn` in your scene, connect to its signals and start a node:
 
 ```gdscript
 @onready var engine: WeavlyEngine = $WeavlyEngine

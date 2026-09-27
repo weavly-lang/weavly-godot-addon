@@ -3,7 +3,7 @@ extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 const DefaultImageService = preload(
-	"res://addons/weavly/src/services/implementations/default_image_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_image_service.gd"
 )
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"

@@ -5,8 +5,8 @@ negates a condition, swaps and/or, shifts a number, changes a string constant), 
 gdUnit4 suite in a copy of the project and records which tests fail. A mutant no test
 catches points at behaviour nothing checks.
 
-Pass the scripts or folders a change touched; without any, it mutates all of
-addons/weavly/src and addons/weavly/ui, which takes about two hours on 8 workers. The copies
+Pass the scripts or folders a change touched; without any, it mutates every addon script,
+which takes about two hours on 8 workers. The copies
 live in --out under the system temp folder, never in the working copy, and report.md there
 lists the score per script, every surviving mutant and, after a full run, the tests that
 caught nothing. Results are kept per state of the repository, so a rerun after an
@@ -36,7 +36,7 @@ from pathlib import Path
 from queue import Empty, Queue
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_PATHS = ["addons/weavly/src", "addons/weavly/ui"]
+DEFAULT_PATHS = ["addons/weavly/runtime", "addons/weavly/editor", "addons/weavly/ui"]
 TEST_TIMEOUT_SECONDS = 10
 MAX_RESUMES = 8
 PROJECT_NAME = "Weavly mutation"

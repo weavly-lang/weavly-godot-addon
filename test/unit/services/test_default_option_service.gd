@@ -1,7 +1,7 @@
 extends WeavlyTestSuite
 
 const Service = preload(
-	"res://addons/weavly/src/services/implementations/default_option_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_option_service.gd"
 )
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
