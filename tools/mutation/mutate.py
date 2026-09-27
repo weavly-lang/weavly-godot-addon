@@ -26,6 +26,8 @@ REPO = Path(__file__).resolve().parents[2]
 DEFAULT_PATHS = ["addons/weavly/src", "addons/weavly/ui"]
 TEST_TIMEOUT_SECONDS = 10
 MAX_RESUMES = 8
+PROJECT_NAME = "Weavly mutation"
+NO_FILE_LOGGING = "file_logging/enable_file_logging=false\nfile_logging/enable_file_logging.pc=false\n"
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 RESULT_LINE = re.compile(r"(res://test/\S+\.gd) > (\S+) (PASSED|FAILED|ERROR|ABORTED|FLAKY|SKIPPED)")
@@ -157,7 +159,27 @@ def configure_project(root, name):
     setting = f"settings/test/test_timeout_seconds={TEST_TIMEOUT_SECONDS}"
     if setting not in text:
         text = text.replace("[gdunit4]\n", f"[gdunit4]\n\n{setting}\n", 1)
+    if NO_FILE_LOGGING not in text:
+        text += f"\n[debug]\n\n{NO_FILE_LOGGING}"
     path.write_text(text, encoding="utf-8")
+
+
+def user_data_root():
+    if os.name == "nt":
+        return Path(os.environ["APPDATA"]) / "Godot" / "app_userdata"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Godot" / "app_userdata"
+    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "godot" / "app_userdata"
+
+
+def clean(out_dir):
+    removed = [out_dir] if out_dir.exists() else []
+    removed += sorted(user_data_root().glob(f"{PROJECT_NAME} *"))
+    for path in removed:
+        shutil.rmtree(path)
+        print(f"Removed {path}")
+    if not removed:
+        print("Nothing to clean")
 
 
 def kill_tree(proc):
@@ -249,7 +271,7 @@ def prepare(args, files):
     base = args.out / "base"
     base.mkdir(parents=True, exist_ok=True)
     sync(files, REPO, base)
-    configure_project(base, "Weavly mutation base")
+    configure_project(base, f"{PROJECT_NAME} base")
     print("Importing the project copy...", flush=True)
     run_godot(args.godot, base, ["--import"], 600)
     print("Running the unmutated suite...", flush=True)
@@ -290,7 +312,7 @@ def run(args):
             shutil.rmtree(root, ignore_errors=True)
             shutil.copytree(base, root, ignore=shutil.ignore_patterns("mutation_reports"))
         sync(files, base, root)
-        configure_project(root, f"Weavly mutation w{index}")
+        configure_project(root, f"{PROJECT_NAME} w{index}")
         while True:
             try:
                 m = queue.get_nowait()
@@ -383,7 +405,11 @@ def main():
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     parser.add_argument("--timeout", type=int, default=120, help="seconds per suite run")
     parser.add_argument("--out", type=Path, default=Path(tempfile.gettempdir()) / "weavly-mutation")
+    parser.add_argument("--clean", action="store_true", help="delete the output folder and the copies' user data")
     args = parser.parse_args()
+    if args.clean:
+        clean(args.out)
+        return
     args.paths = [p.replace("\\", "/") for p in args.paths]
     run(args)
 

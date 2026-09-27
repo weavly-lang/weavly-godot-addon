@@ -99,7 +99,7 @@ godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res
 python tools/mutation/mutate.py addons/weavly/src/core/weavly_storylet_selector.gd --godot <path to the Godot console executable>
 ```
 
-Pass the scripts or folders a change touched; with none it mutates all of `addons/weavly/src` and `addons/weavly/ui`, which takes about two hours on 8 workers. It runs in copies of the project under the system temp folder, never in the working copy, and writes `report.md` there: the score per script, every surviving mutant, and, after a full run, the tests that caught nothing. Results are kept per state of the repository, so rerunning after an interruption only runs what is left.
+Pass the scripts or folders a change touched; with none it mutates all of `addons/weavly/src` and `addons/weavly/ui`, which takes about two hours on 8 workers. It runs in copies of the project under the system temp folder, never in the working copy, and writes `report.md` there: the score per script, every surviving mutant, and, after a full run, the tests that caught nothing. Results are kept per state of the repository, so rerunning after an interruption only runs what is left. `--clean` deletes that folder and the copies' Godot user data once you are done.
 
 Not every survivor is a gap. Some mutants can't change behaviour, like storing `false` in a dictionary that is only checked with `has()`, and drawing code is rarely worth asserting. A test that catches no mutant isn't necessarily redundant either: the tool only mutates `.gd` lines, not scenes, themes or fixtures.
 
