@@ -29,29 +29,37 @@ func _make_engine() -> WeavlyEngine:
 
 
 func test_find_returns_files_with_matching_extension() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".json")
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".json"
+	)
 	assert_array(results).is_not_empty()
 	for path: String in results:
 		assert_str(path).ends_with(".json")
 
 
 func test_find_ignores_non_matching_extension() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".json")
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".json"
+	)
 	assert_array(results).not_contains([FIXTURE_DIR + "/not_json.txt"])
 
 
 func test_find_recurses_into_subdirectories() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".json")
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".json"
+	)
 	assert_array(results).contains([FIXTURE_DIR + "/sub/nested.json"])
 
 
 func test_find_skips_dot_files() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".json")
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".json"
+	)
 	assert_array(results).not_contains([FIXTURE_DIR + "/.hidden.json"])
 
 
 func test_find_returns_empty_for_missing_directory() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
 		"res://test/fixtures/does_not_exist", ".json"
 	)
 	assert_array(results).is_empty()
@@ -59,7 +67,9 @@ func test_find_returns_empty_for_missing_directory() -> void:
 
 
 func test_find_returns_empty_when_no_matching_extension() -> void:
-	var results = WeavlyFileUtils.find_all_files_with_extension(FIXTURE_DIR, ".xyz")
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".xyz"
+	)
 	assert_array(results).is_empty()
 
 
@@ -69,7 +79,7 @@ func test_find_returns_empty_when_no_matching_extension() -> void:
 
 
 func test_load_json_returns_parsed_dictionary() -> void:
-	var data = WeavlyFileUtils.load_json_file(PLAIN_PATH)
+	var data: Variant = WeavlyFileUtils.load_json_file(PLAIN_PATH)
 	assert_that(data).is_equal({"hello": "world", "count": 3.0})
 
 
@@ -89,21 +99,21 @@ func test_load_json_returns_null_on_missing_file() -> void:
 
 
 func test_load_variables_from_resources_loads_number_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_that(engine.variable_service.get_variable("score")).is_equal(7.0)
 
 
 func test_load_variables_from_resources_loads_string_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
 	assert_bool(engine.variable_service.has("player_name")).is_true()
 	assert_that(engine.variable_service.get_variable("player_name")).is_equal("Ada")
 
 
 func test_load_variables_from_resources_loads_flag_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
 	assert_bool(engine.variable_service.has("door_open")).is_true()
 	assert_that(engine.variable_service.get_variable("door_open")).is_equal(true)
@@ -115,7 +125,7 @@ func test_load_variables_from_resources_loads_flag_variable() -> void:
 
 
 func _make_engine_with_node_service() -> WeavlyEngine:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	engine.node_service = DefaultNodeService.new()
 	engine.node_service.initialize(engine)
 	return engine
@@ -125,14 +135,14 @@ func test_load_nodes_skips_malformed_files_without_crashing() -> void:
 	# FIXTURE_DIR mixes an unparseable file, an array-root file, and dictionaries
 	# without a "nodes" key alongside valid_nodes.json. A single bad file must
 	# not crash startup — the valid node should still load.
-	var engine = _make_engine_with_node_service()
+	var engine: WeavlyEngine = _make_engine_with_node_service()
 	WeavlyFileUtils.load_nodes_from_files(engine, FIXTURE_DIR)
 	assert_bool(engine.node_service.has("start")).is_true()
 	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
 
 
 func test_load_variables_from_env_skips_malformed_files_without_crashing() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_env_files(engine, FIXTURE_DIR)
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
@@ -173,7 +183,7 @@ func test_find_returns_empty_for_a_missing_external_directory() -> void:
 
 
 func test_wvl_declaration_wins_over_a_resource_with_the_same_name() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables(
 		engine, VARIABLES_DIR + "/dialogue", VARIABLES_DIR + "/resources"
 	)
@@ -191,14 +201,14 @@ func test_wvl_declaration_wins_over_a_resource_with_the_same_name() -> void:
 
 
 func test_two_resources_with_the_same_name_report_once() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/twice")
 	assert_logged(["Variable 'gold' is declared in both "])
 	assert_bool(engine.variable_service.get_variable("gold") in [1.0, 2.0]).is_true()
 
 
 func test_resource_default_outside_its_range_is_clamped() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/range")
 	assert_that(engine.variable_service.get_variable("health")).is_equal(100.0)
 	assert_logged(
@@ -217,7 +227,7 @@ func test_resource_default_outside_its_range_is_clamped() -> void:
 
 
 func test_a_resource_defines_an_extern_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_resources"
 	)
@@ -226,7 +236,7 @@ func test_a_resource_defines_an_extern_variable() -> void:
 
 
 func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_wrong"
 	)
@@ -242,7 +252,7 @@ func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
 
 
 func test_an_extern_without_a_resource_is_not_an_error() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_variables(
 		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/range_does_not_exist"
 	)
@@ -257,7 +267,7 @@ func test_an_extern_without_a_resource_is_not_an_error() -> void:
 
 
 func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	engine.image_service = DefaultImageService.new()
 	engine.image_service.initialize(engine)
 	engine.image_service.set_group_pattern(group_pattern)
@@ -279,7 +289,7 @@ func _image_ids(engine: WeavlyEngine) -> Array:
 func test_an_image_id_is_its_path_relative_to_the_folder() -> void:
 	var dir: String = create_temp_dir("index_ids")
 	_save_images(dir, ["splash.png", "backgrounds/bob.png", "characters/bob.png"])
-	var engine = _index_images(dir, "")
+	var engine: WeavlyEngine = _index_images(dir, "")
 	assert_array(_image_ids(engine)).contains_exactly_in_any_order(
 		["splash", "backgrounds/bob", "characters/bob"]
 	)
@@ -288,7 +298,7 @@ func test_an_image_id_is_its_path_relative_to_the_folder() -> void:
 func test_a_trailing_slash_on_the_folder_gives_the_same_ids() -> void:
 	var dir: String = create_temp_dir("index_trailing_slash")
 	_save_images(dir, ["alice/icon.png"])
-	var engine = _index_images(dir + "/", "")
+	var engine: WeavlyEngine = _index_images(dir + "/", "")
 	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon"])
 
 
@@ -306,6 +316,6 @@ func test_files_that_differ_only_in_extension_report_both_paths() -> void:
 func test_a_group_pattern_groups_numbered_files_per_folder() -> void:
 	var dir: String = create_temp_dir("index_grouped")
 	_save_images(dir, ["alice/icon_1.png", "alice/icon_2.png", "bob/icon_3.png"])
-	var engine = _index_images(dir, "_\\d+$")
+	var engine: WeavlyEngine = _index_images(dir, "_\\d+$")
 	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon", "bob/icon"])
 	assert_array(engine.image_service.image_index.paths["alice/icon"]).has_size(2)

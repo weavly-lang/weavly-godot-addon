@@ -34,7 +34,7 @@ func test_trim_zero_a_float_that_rounds_to_a_whole_number_returns_int() -> void:
 
 
 func test_trim_zero_keeps_the_decimals_of_a_large_number() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "gold", 1000000.5)
 	assert_that(WeavlyTextUtils.inject_variables("{$gold}", engine)).is_equal("1000000.5")
 
@@ -49,19 +49,19 @@ func test_trim_zero_non_float_unchanged() -> void:
 
 
 func test_inject_single_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "name", "Alice")
 	assert_that(WeavlyTextUtils.inject_variables("Hi {$name}", engine)).is_equal("Hi Alice")
 
 
 func test_inject_keeps_quotes_that_are_part_of_the_value() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "greeting", '"hello"')
 	assert_that(WeavlyTextUtils.inject_variables("{$greeting}", engine)).is_equal('"hello"')
 
 
 func test_inject_trims_float_zero() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "score", 10.0)
 	assert_that(WeavlyTextUtils.inject_variables("You have {$score}", engine)).is_equal(
 		"You have 10"
@@ -69,7 +69,7 @@ func test_inject_trims_float_zero() -> void:
 
 
 func test_inject_rounds_decimals() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "third", 1.0 / 3.0)
 	declare_variable(engine, "sum", 0.1 + 0.2)
 	declare_variable(engine, "half", 2.5)
@@ -79,7 +79,7 @@ func test_inject_rounds_decimals() -> void:
 
 
 func test_inject_multiple_variables() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "a", 1.0)
 	declare_variable(engine, "b", 2.0)
 	assert_that(WeavlyTextUtils.inject_variables("{$a} and {$b}", engine)).is_equal("1 and 2")
@@ -92,7 +92,7 @@ func test_inject_no_match_returns_verbatim() -> void:
 
 
 func test_inject_custom_pipeline_applied() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "name", "Alice")
 	var upper_pipeline: Array[Callable] = [func(v: Variant) -> Variant: return str(v).to_upper()]
 	assert_that(WeavlyTextUtils.inject_variables("{$name}", engine, upper_pipeline)).is_equal(

@@ -28,7 +28,7 @@ func _spans_at(text: String, line_index: int, color: Color) -> Array[String]:
 	var spans: Array[String] = []
 	var current: Color = Color()
 	var span: String = ""
-	for i in line.length():
+	for i: int in line.length():
 		if mapping.has(i):
 			if span != "":
 				spans.append(span)
@@ -155,11 +155,11 @@ func test_narration_before_any_env_block_is_text() -> void:
 
 func test_editing_the_env_line_updates_the_lines_below() -> void:
 	_edit.text = "@env\nextern reputation: number\n@endenv"
-	var before: Dictionary = _highlighter.get_line_syntax_highlighting(1)
-	assert_that(before[0]["color"]).is_equal(KEYWORD)
+	var before_edit: Dictionary = _highlighter.get_line_syntax_highlighting(1)
+	assert_that(before_edit[0]["color"]).is_equal(KEYWORD)
 	_edit.set_line(0, "")
-	var after: Dictionary = _highlighter.get_line_syntax_highlighting(1)
-	assert_that(after[0]["color"]).is_equal(WvlSyntaxHighlighter.TEXT_COLOR)
+	var after_edit: Dictionary = _highlighter.get_line_syntax_highlighting(1)
+	assert_that(after_edit[0]["color"]).is_equal(WvlSyntaxHighlighter.TEXT_COLOR)
 
 
 # =====================

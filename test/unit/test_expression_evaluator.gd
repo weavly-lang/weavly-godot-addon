@@ -82,19 +82,19 @@ func test_string_literal() -> void:
 
 
 func test_identifier_number_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "score", 10.0)
 	assert_that(_eval(_id("score"), engine)).is_equal(10.0)
 
 
 func test_identifier_string_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "name", "Alice")
 	assert_that(_eval(_id("name"), engine)).is_equal("Alice")
 
 
 func test_identifier_flag_variable() -> void:
-	var engine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "active", true)
 	assert_that(_eval(_id("active"), engine)).is_equal(true)
 
@@ -291,7 +291,9 @@ func test_condition_non_bool_returns_default() -> void:
 
 func test_nested_expression() -> void:
 	# (1 + 2) * 3 == 9
-	var expr = _bin("==", _bin("*", _bin("+", _num(1.0), _num(2.0)), _num(3.0)), _num(9.0))
+	var expr: WeavlyModel.BinaryExpression = _bin(
+		"==", _bin("*", _bin("+", _num(1.0), _num(2.0)), _num(3.0)), _num(9.0)
+	)
 	assert_that(_eval(expr)).is_equal(true)
 
 
@@ -301,7 +303,9 @@ func test_nested_expression() -> void:
 
 
 func test_error_passes_through_operators_without_further_reports() -> void:
-	var expr = _unary("not", _bin("==", _bin("+", _id("missing"), _num(1.0)), _num(2.0)))
+	var expr: WeavlyModel.UnaryExpression = _unary(
+		"not", _bin("==", _bin("+", _id("missing"), _num(1.0)), _num(2.0))
+	)
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(expr))).is_true()
 	assert_logged(["Variable 'missing' isn't defined."])
 
@@ -369,11 +373,11 @@ func test_call_of_an_unknown_function_returns_error() -> void:
 # =====================
 
 
-func _call(name: String, values: Array) -> Variant:
+func _call(function_name: String, values: Array) -> Variant:
 	var args: Array[WeavlyModel.WeavlyExpression] = []
 	for value: Variant in values:
 		args.append(_num(value) if value is float else value)
-	return _eval(WeavlyModel.Call.new(name, "", args))
+	return _eval(WeavlyModel.Call.new(function_name, "", args))
 
 
 func test_min_and_max_take_two_or_more_numbers() -> void:
@@ -403,7 +407,7 @@ func test_rounding_functions() -> void:
 
 func test_random_stays_within_its_bounds_and_is_whole() -> void:
 	var seen: Dictionary = {}
-	for i in 200:
+	for i: int in 200:
 		var value: float = _call("random", [1.0, 3.0])
 		assert_that(value).is_equal(roundf(value))
 		assert_bool(value >= 1.0 and value <= 3.0).is_true()
@@ -412,7 +416,7 @@ func test_random_stays_within_its_bounds_and_is_whole() -> void:
 
 
 func test_random_accepts_bounds_in_either_order() -> void:
-	for i in 50:
+	for i: int in 50:
 		var value: float = _call("random", [6.0, 4.0])
 		assert_bool(value >= 4.0 and value <= 6.0).is_true()
 

@@ -4,7 +4,7 @@ const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_command_service.gd"
 )
 
-var _service
+var _service: Service
 
 
 func before_test() -> void:
@@ -13,8 +13,11 @@ func before_test() -> void:
 
 
 func test_execute_command_emits_signal() -> void:
-	var cmd := WeavlyModel.CommandStatement.new("play_sound")
+	var cmd: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("play_sound")
 	cmd.values = ["explosion"]
-	monitor_signals(_service, false)
+	var executed: Array[WeavlyModel.CommandStatement] = []
+	_service.executed_command.connect(
+		func(c: WeavlyModel.CommandStatement) -> void: executed.append(c)
+	)
 	_service.execute_command(cmd)
-	await assert_signal(_service).is_emitted("executed_command", [cmd])
+	assert_array(executed).is_equal([cmd])

@@ -4,7 +4,7 @@ const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_character_service.gd"
 )
 
-var _service
+var _service: Service
 
 
 func before_test() -> void:
@@ -18,7 +18,7 @@ func before_test() -> void:
 
 
 func test_add_and_get() -> void:
-	var character := WeavlyCharacter.new()
+	var character: WeavlyCharacter = WeavlyCharacter.new()
 	character.id = "hero"
 	_service.add_character(character)
 	assert_that(_service.get_character("hero")).is_equal(character)
@@ -30,7 +30,7 @@ func test_get_missing_returns_default() -> void:
 
 
 func test_get_missing_returns_provided_default() -> void:
-	var fallback := WeavlyCharacter.new()
+	var fallback: WeavlyCharacter = WeavlyCharacter.new()
 	assert_that(_service.get_character("missing", fallback)).is_equal(fallback)
 	assert_logged(["Character with id 'missing' doesn't exist"])
 
@@ -49,9 +49,9 @@ func test_has() -> void:
 
 
 func test_add_duplicate_is_ignored() -> void:
-	var first := WeavlyCharacter.new()
+	var first: WeavlyCharacter = WeavlyCharacter.new()
 	first.id = "hero"
-	var second := WeavlyCharacter.new()
+	var second: WeavlyCharacter = WeavlyCharacter.new()
 	second.id = "hero"
 	_service.add_character(first)
 	_service.add_character(second)

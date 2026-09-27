@@ -151,7 +151,9 @@ func test_a_run_of_messages_shows_the_name_and_avatar_once() -> void:
 	var avatars: Array = _rows().map(
 		func(row: HBoxContainer) -> Variant:
 			var avatar: TextureRect = _find(row, "TextureRect")
-			return null if avatar == null else avatar.texture != null
+			if avatar == null:
+				return null
+			return avatar.texture != null
 	)
 	assert_array(avatars).is_equal([true, false, null, true])
 
