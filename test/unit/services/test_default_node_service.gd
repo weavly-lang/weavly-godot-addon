@@ -1,6 +1,8 @@
 extends WeavlyTestSuite
 
-const Service = preload("res://addons/weavly/src/services/implementations/default_node_service.gd")
+const Service = preload(
+	"res://addons/weavly/runtime/services/implementations/default_node_service.gd"
+)
 
 var _service: Service
 

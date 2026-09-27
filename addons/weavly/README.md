@@ -2,7 +2,7 @@
 
 Plays [Weavly](https://github.com/weavly-lang/weavly-compiler) branching dialogues at runtime, plus editor tooling for writing and compiling `.wvl` files inside Godot.
 
-Enable **Weavly** under *Project Settings → Plugins*, then instance `addons/weavly/src/weavly_engine.tscn` in your scene:
+Enable **Weavly** under *Project Settings → Plugins*, then instance `addons/weavly/runtime/weavly_engine.tscn` in your scene:
 
 ```gdscript
 @onready var engine: WeavlyEngine = $WeavlyEngine

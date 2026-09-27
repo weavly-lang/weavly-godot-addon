@@ -1,7 +1,7 @@
 extends WeavlyTestSuite
 
 const Service = preload(
-	"res://addons/weavly/src/services/implementations/default_character_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_character_service.gd"
 )
 
 var _service: Service

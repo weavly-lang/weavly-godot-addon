@@ -18,7 +18,7 @@ const KEY_SERVICES = "services"
 const KEY_RNG = "rng"
 const KEY_RENDERED = "rendered"
 
-const DEFAULTS_PATH = "res://addons/weavly/src/services/implementations/"
+const DEFAULTS_PATH = "res://addons/weavly/runtime/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
 const DEFAULT_COMMAND_SERVICE = preload(DEFAULTS_PATH + "default_command_service.gd")
 const DEFAULT_IMAGE_SERVICE = preload(DEFAULTS_PATH + "default_image_service.gd")

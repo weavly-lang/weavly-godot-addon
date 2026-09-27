@@ -1,13 +1,13 @@
 extends WeavlyEngine
 
 const DefaultVariableService = preload(
-	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_variable_service.gd"
 )
 const DefaultStatementService = preload(
-	"res://addons/weavly/src/services/implementations/default_statement_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_statement_service.gd"
 )
 const DefaultNodeService = preload(
-	"res://addons/weavly/src/services/implementations/default_node_service.gd"
+	"res://addons/weavly/runtime/services/implementations/default_node_service.gd"
 )
 
 var did_finish: bool = false
