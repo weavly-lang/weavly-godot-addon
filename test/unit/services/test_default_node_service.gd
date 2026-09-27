@@ -2,7 +2,7 @@ extends WeavlyTestSuite
 
 const Service = preload("res://addons/weavly/src/services/implementations/default_node_service.gd")
 
-var _service
+var _service: Service
 
 
 func before_test() -> void:
@@ -16,7 +16,7 @@ func before_test() -> void:
 
 
 func test_add_and_get() -> void:
-	var node := WeavlyModel.WeavlyNode.new("start", [])
+	var node: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("start", [])
 	_service.add_node(node)
 	assert_that(_service.get_node("start")).is_equal(node)
 
@@ -27,7 +27,7 @@ func test_get_missing_returns_default() -> void:
 
 
 func test_get_missing_returns_provided_default() -> void:
-	var fallback := WeavlyModel.WeavlyNode.new("fallback", [])
+	var fallback: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("fallback", [])
 	assert_that(_service.get_node("missing", fallback)).is_equal(fallback)
 	assert_logged(["Node with id 'missing' doesn't exist"])
 
@@ -38,8 +38,8 @@ func test_get_missing_returns_provided_default() -> void:
 
 
 func test_add_duplicate_is_ignored() -> void:
-	var first := WeavlyModel.WeavlyNode.new("start", [])
-	var second := WeavlyModel.WeavlyNode.new("start", [])
+	var first: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("start", [])
+	var second: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("start", [])
 	_service.add_node(first)
 	_service.add_node(second)
 	assert_logged([], ["Node with id 'start' already exists."])
@@ -56,11 +56,11 @@ func test_get_all_nodes_empty() -> void:
 
 
 func test_get_all_nodes() -> void:
-	var a := WeavlyModel.WeavlyNode.new("a", [])
-	var b := WeavlyModel.WeavlyNode.new("b", [])
+	var a: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("a", [])
+	var b: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("b", [])
 	_service.add_node(a)
 	_service.add_node(b)
-	var all_nodes = _service.get_all_nodes()
+	var all_nodes: Array[WeavlyModel.WeavlyNode] = _service.get_all_nodes()
 	assert_that(all_nodes.size()).is_equal(2)
 	assert_bool(all_nodes.has(a)).is_true()
 	assert_bool(all_nodes.has(b)).is_true()

@@ -6,7 +6,7 @@ const Service = preload(
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _engine: WeavlyEngine
-var _service
+var _service: Service
 
 
 func _make_option(text: String = "option") -> WeavlyModel.Option:
@@ -57,9 +57,10 @@ func test_add_options_stores_options() -> void:
 
 func test_add_options_emits_signal() -> void:
 	var opts: Array[WeavlyModel.Option] = [_make_option()]
-	monitor_signals(_service, false)
+	var added: Array[Array] = []
+	_service.options_added.connect(func(o: Array[WeavlyModel.Option]) -> void: added.append(o))
 	_service.add_options(opts)
-	await assert_signal(_service).is_emitted("options_added", [_filled(opts)])
+	assert_array(added).is_equal([_filled(opts)])
 
 
 func _make_hint(text: String = "locked") -> WeavlyModel.Option:
@@ -69,11 +70,12 @@ func _make_hint(text: String = "locked") -> WeavlyModel.Option:
 
 func test_add_options_with_only_hints_pauses_without_waiting_for_a_choice() -> void:
 	var hints: Array[WeavlyModel.Option] = [_make_hint("a"), _make_hint("b")]
-	monitor_signals(_service, false)
+	var added: Array[Array] = []
+	_service.options_added.connect(func(o: Array[WeavlyModel.Option]) -> void: added.append(o))
 	_service.add_options(hints)
 	assert_bool(_service.has_options()).is_false()
 	assert_bool(_engine.statement_service.is_paused()).is_true()
-	await assert_signal(_service).is_emitted("options_added", [_filled(hints)])
+	assert_array(added).is_equal([_filled(hints)])
 
 
 func test_add_options_with_a_hint_and_a_choosable_option_waits_for_a_choice() -> void:
@@ -96,7 +98,7 @@ func test_choosing_a_hint_from_a_block_of_only_hints_says_it_is_a_hint() -> void
 
 
 func test_choose_option_clears_pending_options() -> void:
-	var opt := _make_option()
+	var opt: WeavlyModel.Option = _make_option()
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	assert_bool(_service.has_options()).is_false()
@@ -104,7 +106,9 @@ func test_choose_option_clears_pending_options() -> void:
 
 func test_choose_option_adds_body_to_statement_service() -> void:
 	var body: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
-	var opt := WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), ["opt"], body, false)
+	var opt: WeavlyModel.Option = WeavlyModel.Option.new(
+		WeavlyModel.TrueExpression.new(), ["opt"], body, false
+	)
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	_engine.statement_service.advance_statements()
@@ -112,15 +116,16 @@ func test_choose_option_adds_body_to_statement_service() -> void:
 
 
 func test_choose_option_emits_signal() -> void:
-	var opt := _make_option()
+	var opt: WeavlyModel.Option = _make_option()
 	opt = _offer(opt)
-	monitor_signals(_service, false)
+	var chosen: Array[WeavlyModel.Option] = []
+	_service.option_chosen.connect(func(o: WeavlyModel.Option) -> void: chosen.append(o))
 	_service.choose_option(opt)
-	await assert_signal(_service).is_emitted("option_chosen", [opt])
+	assert_array(chosen).is_equal([opt])
 
 
 func test_choose_option_calls_engine_next() -> void:
-	var opt := _make_option()
+	var opt: WeavlyModel.Option = _make_option()
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	assert_bool(_engine.did_next).is_true()

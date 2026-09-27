@@ -125,14 +125,14 @@ func _bool_expr(v: bool) -> WeavlyModel.WeavlyExpression:
 
 
 func test_narration_line_delegates_to_line_service() -> void:
-	var line := WeavlyModel.NarrationLine.new(["hello"])
+	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(["hello"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.narration_calls.size()).is_equal(1)
 	assert_that(_line.narration_calls[0]).is_same(line)
 
 
 func test_character_line_delegates_to_line_service() -> void:
-	var line := WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_line.character_calls.size()).is_equal(1)
 	assert_that(_line.character_calls[0]).is_same(line)
@@ -144,7 +144,7 @@ func test_character_line_delegates_to_line_service() -> void:
 
 
 func test_command_statement_delegates_a_filled_copy_to_command_service() -> void:
-	var command := WeavlyModel.CommandStatement.new("cmd")
+	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("cmd")
 	command.line = 4
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_that(_command.command_calls.size()).is_equal(1)
@@ -167,7 +167,9 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 			"max", "", [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
 		),
 	]
-	var command := WeavlyModel.CommandStatement.new("play_sound", args)
+	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
+		"play_sound", args
+	)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	_engine.variable_service.set_variable("volume", 0.2)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
@@ -178,7 +180,9 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 
 func test_command_with_a_failing_argument_is_skipped() -> void:
 	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
-	var command := WeavlyModel.CommandStatement.new("play_sound", args)
+	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
+		"play_sound", args
+	)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
 	assert_that(_command.command_calls).is_empty()
@@ -190,7 +194,7 @@ func test_command_with_a_failing_argument_is_skipped() -> void:
 
 
 func test_goto_statement_delegates_to_engine_enter_node() -> void:
-	var goto := WeavlyModel.GotoStatement.new("target_node")
+	var goto: WeavlyModel.GotoStatement = WeavlyModel.GotoStatement.new("target_node")
 	WeavlyStatementExecutor.execute_statement(goto, _engine)
 	assert_that(_engine.last_entered_node).is_equal("target_node")
 
@@ -201,7 +205,7 @@ func test_goto_statement_delegates_to_engine_enter_node() -> void:
 
 
 func test_finish_statement_delegates_to_engine_finish() -> void:
-	var finish := WeavlyModel.FinishStatement.new()
+	var finish: WeavlyModel.FinishStatement = WeavlyModel.FinishStatement.new()
 	WeavlyStatementExecutor.execute_statement(finish, _engine)
 	assert_bool(_engine.did_finish).is_true()
 
@@ -212,14 +216,16 @@ func test_finish_statement_delegates_to_engine_finish() -> void:
 
 
 func test_match_first_picks_first_matching_case() -> void:
-	var first := _body("first")
-	var second := _body("second")
+	var first: Array[WeavlyModel.Statement] = _body("first")
+	var second: Array[WeavlyModel.Statement] = _body("second")
 	var cases: Array[WeavlyModel.WhenCase] = [
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("skip")),
 		WeavlyModel.WhenCase.new(_bool_expr(true), first),
 		WeavlyModel.WhenCase.new(_bool_expr(true), second),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.FIRST, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.FIRST, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(first)
@@ -230,7 +236,9 @@ func test_match_first_no_match_does_nothing() -> void:
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("a")),
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("b")),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.FIRST, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.FIRST, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(0)
 
@@ -241,24 +249,28 @@ func test_match_first_no_match_does_nothing() -> void:
 
 
 func test_match_last_picks_last_matching_case() -> void:
-	var first := _body("first")
-	var last := _body("last")
+	var first: Array[WeavlyModel.Statement] = _body("first")
+	var last: Array[WeavlyModel.Statement] = _body("last")
 	var cases: Array[WeavlyModel.WhenCase] = [
 		WeavlyModel.WhenCase.new(_bool_expr(true), first),
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("skip")),
 		WeavlyModel.WhenCase.new(_bool_expr(true), last),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.LAST, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.LAST, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(last)
 
 
 func test_match_last_does_not_reorder_the_blocks_cases() -> void:
-	var first := WeavlyModel.WhenCase.new(_bool_expr(true), _body("first"))
-	var last := WeavlyModel.WhenCase.new(_bool_expr(true), _body("last"))
+	var first: WeavlyModel.WhenCase = WeavlyModel.WhenCase.new(_bool_expr(true), _body("first"))
+	var last: WeavlyModel.WhenCase = WeavlyModel.WhenCase.new(_bool_expr(true), _body("last"))
 	var cases: Array[WeavlyModel.WhenCase] = [first, last]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.LAST, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.LAST, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(block.cases[0]).is_same(first)
 	assert_that(block.cases[1]).is_same(last)
@@ -269,7 +281,9 @@ func test_match_block_can_run_twice_with_the_same_result() -> void:
 		WeavlyModel.WhenCase.new(_bool_expr(true), _body("first")),
 		WeavlyModel.WhenCase.new(_bool_expr(true), _body("last")),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.LAST, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.LAST, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statements_calls[0]).is_same(_statement.add_statements_calls[1])
@@ -281,14 +295,16 @@ func test_match_block_can_run_twice_with_the_same_result() -> void:
 
 
 func test_match_all_collects_matching_cases_as_groups() -> void:
-	var a := _body("a")
-	var b := _body("b")
+	var a: Array[WeavlyModel.Statement] = _body("a")
+	var b: Array[WeavlyModel.Statement] = _body("b")
 	var cases: Array[WeavlyModel.WhenCase] = [
 		WeavlyModel.WhenCase.new(_bool_expr(true), a),
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("skip")),
 		WeavlyModel.WhenCase.new(_bool_expr(true), b),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.ALL, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.ALL, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statement_groups_calls.size()).is_equal(1)
 	var groups: Array = _statement.add_statement_groups_calls[0]
@@ -302,7 +318,9 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("a")),
 		WeavlyModel.WhenCase.new(_bool_expr(false), _body("b")),
 	]
-	var block := WeavlyModel.MatchBlock.new(WeavlyModel.MatchModifier.ALL, cases)
+	var block: WeavlyModel.MatchBlock = WeavlyModel.MatchBlock.new(
+		WeavlyModel.MatchModifier.ALL, cases
+	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_that(_statement.add_statement_groups_calls.size()).is_equal(1)
 	assert_that((_statement.add_statement_groups_calls[0] as Array).size()).is_equal(0)
@@ -314,11 +332,17 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 
 
 func test_option_block_filters_options_by_condition() -> void:
-	var keep_a := WeavlyModel.Option.new(_bool_expr(true), ["a"], _body("a"), false)
-	var drop := WeavlyModel.Option.new(_bool_expr(false), ["b"], _body("b"), false)
-	var keep_c := WeavlyModel.Option.new(_bool_expr(true), ["c"], _body("c"), false)
+	var keep_a: WeavlyModel.Option = WeavlyModel.Option.new(
+		_bool_expr(true), ["a"], _body("a"), false
+	)
+	var drop: WeavlyModel.Option = WeavlyModel.Option.new(
+		_bool_expr(false), ["b"], _body("b"), false
+	)
+	var keep_c: WeavlyModel.Option = WeavlyModel.Option.new(
+		_bool_expr(true), ["c"], _body("c"), false
+	)
 	var options: Array[WeavlyModel.Option] = [keep_a, drop, keep_c]
-	var block := WeavlyModel.OptionBlock.new(options)
+	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(options)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
 	assert_that(_option.add_options_calls.size()).is_equal(1)
 	var passed: Array = _option.add_options_calls[0]
@@ -328,7 +352,7 @@ func test_option_block_filters_options_by_condition() -> void:
 
 
 func test_option_block_with_no_passing_options_does_not_add_options() -> void:
-	var block := WeavlyModel.OptionBlock.new(
+	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(
 		[WeavlyModel.Option.new(_bool_expr(false), ["a"], _body("a"), false)]
 	)
 	WeavlyStatementExecutor.execute_option_block(block, _engine)
@@ -351,21 +375,21 @@ func _weight(v: float) -> WeavlyModel.Number:
 
 
 func _const_rng(value: float) -> Callable:
-	return func(): return value
+	return func() -> float: return value
 
 
 func test_random_block_picks_case_based_on_rng() -> void:
 	# Weights: a=10, b=30, c=60. Total=100.
 	# rng=0.05 -> random=5 -> falls in a's bucket (0, 10].
-	var a := _body("a")
-	var b := _body("b")
-	var c := _body("c")
+	var a: Array[WeavlyModel.Statement] = _body("a")
+	var b: Array[WeavlyModel.Statement] = _body("b")
+	var c: Array[WeavlyModel.Statement] = _body("c")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), a),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(30.0), b),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.05))
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(a)
@@ -373,15 +397,15 @@ func test_random_block_picks_case_based_on_rng() -> void:
 
 func test_random_block_rng_in_middle_bucket() -> void:
 	# rng=0.15 -> random=15 -> falls in b's bucket (10, 40].
-	var a := _body("a")
-	var b := _body("b")
-	var c := _body("c")
+	var a: Array[WeavlyModel.Statement] = _body("a")
+	var b: Array[WeavlyModel.Statement] = _body("b")
+	var c: Array[WeavlyModel.Statement] = _body("c")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), a),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(30.0), b),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.15))
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(b)
@@ -389,15 +413,15 @@ func test_random_block_rng_in_middle_bucket() -> void:
 
 func test_random_block_rng_in_last_bucket() -> void:
 	# rng=0.85 -> random=85 -> falls in c's bucket (40, 100].
-	var a := _body("a")
-	var b := _body("b")
-	var c := _body("c")
+	var a: Array[WeavlyModel.Statement] = _body("a")
+	var b: Array[WeavlyModel.Statement] = _body("b")
+	var c: Array[WeavlyModel.Statement] = _body("c")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), a),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(30.0), b),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.85))
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(c)
@@ -405,26 +429,26 @@ func test_random_block_rng_in_last_bucket() -> void:
 
 func test_random_block_filters_out_false_conditions() -> void:
 	# The false-conditioned case must never be selected, regardless of rng.
-	var skipped := _body("skipped")
-	var picked := _body("picked")
+	var skipped: Array[WeavlyModel.Statement] = _body("skipped")
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(false), _weight(10.0), skipped),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), picked),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
 
 
 func test_random_block_excludes_zero_weight_cases() -> void:
-	var zero := _body("zero")
-	var picked := _body("picked")
+	var zero: Array[WeavlyModel.Statement] = _body("zero")
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
 	var cases: Array[WeavlyModel.RandomCase] = [
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(0.0), zero),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), picked),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
@@ -435,7 +459,7 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(false), _weight(10.0), _body("a")),
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(0.0), _body("b")),
 	]
-	var block := WeavlyModel.RandomBlock.new(cases)
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.5))
 	assert_that(_statement.add_statements_calls.size()).is_equal(0)
 
@@ -459,7 +483,7 @@ func _run_set(id: String, expression: WeavlyModel.WeavlyExpression) -> void:
 
 func test_set_with_an_undefined_variable_in_the_expression_keeps_the_value() -> void:
 	_add_score()
-	var expression = WeavlyModel.BinaryExpression.new(
+	var expression: WeavlyModel.BinaryExpression = WeavlyModel.BinaryExpression.new(
 		"+", WeavlyModel.Identifier.new("scroe"), WeavlyModel.Number.new(5.0)
 	)
 	_run_set("score", expression)

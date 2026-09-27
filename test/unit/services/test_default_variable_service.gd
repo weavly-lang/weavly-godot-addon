@@ -5,7 +5,7 @@ const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_variable_service.gd"
 )
 
-var _service
+var _service: Service
 
 
 func before_test() -> void:
@@ -19,19 +19,19 @@ func before_test() -> void:
 
 
 func test_add_and_get_number_variable() -> void:
-	var v := WeavlyModel.NumberVariable.new("score", 5.0, null, null)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("score", 5.0, null, null)
 	_service.add_variable(v)
 	assert_that(_service.get_variable("score")).is_equal(5.0)
 
 
 func test_add_and_get_string_variable() -> void:
-	var v := WeavlyModel.StringVariable.new("name", "Alice")
+	var v: WeavlyModel.StringVariable = WeavlyModel.StringVariable.new("name", "Alice")
 	_service.add_variable(v)
 	assert_that(_service.get_variable("name")).is_equal("Alice")
 
 
 func test_add_and_get_flag_variable() -> void:
-	var v := WeavlyModel.FlagVariable.new("active", false)
+	var v: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new("active", false)
 	_service.add_variable(v)
 	assert_that(_service.get_variable("active")).is_equal(false)
 
@@ -47,18 +47,21 @@ func test_get_missing_returns_default() -> void:
 
 
 func test_set_variable_updates_value() -> void:
-	var v := WeavlyModel.NumberVariable.new("score", 0.0, null, null)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("score", 0.0, null, null)
 	_service.add_variable(v)
 	_service.set_variable("score", 42.0)
 	assert_that(_service.get_variable("score")).is_equal(42.0)
 
 
 func test_set_variable_emits_signal() -> void:
-	var v := WeavlyModel.NumberVariable.new("score", 0.0, null, null)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("score", 0.0, null, null)
 	_service.add_variable(v)
-	monitor_signals(_service, false)
+	var changed: Array[Array] = []
+	_service.variable_changed.connect(
+		func(id: String, value: Variant) -> void: changed.append([id, value])
+	)
 	_service.set_variable("score", 10.0)
-	await assert_signal(_service).is_emitted("variable_changed", ["score", 10.0])
+	assert_array(changed).is_equal([["score", 10.0]])
 
 
 # =====================
@@ -67,29 +70,32 @@ func test_set_variable_emits_signal() -> void:
 
 
 func test_number_min_clamp() -> void:
-	var v := WeavlyModel.NumberVariable.new("health", 50.0, 0.0, null)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("health", 50.0, 0.0, null)
 	_service.add_variable(v)
 	_service.set_variable("health", -10.0)
 	assert_that(_service.get_variable("health")).is_equal(0.0)
 
 
 func test_number_max_clamp() -> void:
-	var v := WeavlyModel.NumberVariable.new("health", 50.0, null, 100.0)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("health", 50.0, null, 100.0)
 	_service.add_variable(v)
 	_service.set_variable("health", 150.0)
 	assert_that(_service.get_variable("health")).is_equal(100.0)
 
 
 func test_number_min_clamp_emits_clamped_value() -> void:
-	var v := WeavlyModel.NumberVariable.new("health", 50.0, 0.0, null)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("health", 50.0, 0.0, null)
 	_service.add_variable(v)
-	monitor_signals(_service, false)
+	var changed: Array[Array] = []
+	_service.variable_changed.connect(
+		func(id: String, value: Variant) -> void: changed.append([id, value])
+	)
 	_service.set_variable("health", -5.0)
-	await assert_signal(_service).is_emitted("variable_changed", ["health", 0.0])
+	assert_array(changed).is_equal([["health", 0.0]])
 
 
 func test_number_within_range_is_unchanged() -> void:
-	var v := WeavlyModel.NumberVariable.new("health", 50.0, 0.0, 100.0)
+	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("health", 50.0, 0.0, 100.0)
 	_service.add_variable(v)
 	_service.set_variable("health", 75.0)
 	assert_that(_service.get_variable("health")).is_equal(75.0)
@@ -101,8 +107,12 @@ func test_number_within_range_is_unchanged() -> void:
 
 
 func test_add_duplicate_is_ignored() -> void:
-	var first := WeavlyModel.NumberVariable.new("score", 1.0, null, null)
-	var second := WeavlyModel.NumberVariable.new("score", 2.0, null, null)
+	var first: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
+		"score", 1.0, null, null
+	)
+	var second: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
+		"score", 2.0, null, null
+	)
 	_service.add_variable(first)
 	_service.add_variable(second)
 	assert_logged([], ["Variable with id 'score' already exists."])
