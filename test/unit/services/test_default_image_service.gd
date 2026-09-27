@@ -1,5 +1,7 @@
 extends WeavlyTestSuite
 
+# Only what the image service adds to WeavlyMediaIndex; grouping and duplicates are tested there.
+
 const Service = preload(
 	"res://addons/weavly/src/services/implementations/default_image_service.gd"
 )
@@ -15,44 +17,15 @@ func before_test() -> void:
 	_service.initialize(null)
 
 
-# =====================
-# add / get (no pattern)
-# =====================
-
-
 func test_add_and_get_image() -> void:
 	_service.add_media("splash", _FIXTURE_PATH)
 	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
-
-
-func test_get_missing_id_returns_default() -> void:
-	assert_that(_service.get_image("missing")).is_null()
-	assert_logged(["Image with id 'missing' doesn't exist"])
 
 
 func test_get_missing_id_returns_provided_default() -> void:
 	var fallback: ImageTexture = ImageTexture.new()
 	assert_that(_service.get_image("missing", fallback)).is_equal(fallback)
 	assert_logged(["Image with id 'missing' doesn't exist"])
-
-
-# =====================
-# duplicate id (no pattern)
-# =====================
-
-
-func test_add_duplicate_keeps_the_first_and_reports_both() -> void:
-	_service.add_media("splash", _FIXTURE_PATH)
-	_service.add_media("splash", "res://test/fixtures/other.tres")
-	assert_logged(
-		["Image id 'splash' is used by both %s and res://test/fixtures/other.tres" % _FIXTURE_PATH]
-	)
-	assert_that(_service.get_image("splash")).is_not_null()
-
-
-# =====================
-# failed load
-# =====================
 
 
 func test_failed_load_returns_default() -> void:
@@ -66,75 +39,15 @@ func test_failed_load_returns_default() -> void:
 	)
 
 
-# =====================
-# grouping (pattern set)
-# =====================
-
-
-func test_grouping_strips_suffix() -> void:
+func test_the_group_pattern_groups_images() -> void:
 	_service.set_group_pattern("_\\d+$")
 	_service.add_media("cat_1", _FIXTURE_PATH)
 	_service.add_media("cat_2", _FIXTURE_PATH)
 	assert_object(_service.get_image("cat")).is_instanceof(Texture2D)
 
 
-func test_grouping_strips_mid_string_match() -> void:
-	_service.set_group_pattern("_v\\d+")
-	_service.add_media("hero_v1_idle", _FIXTURE_PATH)
-	_service.add_media("hero_v2_idle", _FIXTURE_PATH)
-	assert_object(_service.get_image("hero_idle")).is_instanceof(Texture2D)
-
-
-func test_unmatched_id_is_singleton_with_pattern_set() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("logo", _FIXTURE_PATH)
-	assert_object(_service.get_image("logo")).is_instanceof(Texture2D)
-
-
-func test_grouped_and_ungrouped_coexist() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("cat_1", _FIXTURE_PATH)
-	_service.add_media("logo", _FIXTURE_PATH)
-	assert_object(_service.get_image("cat")).is_instanceof(Texture2D)
-	assert_object(_service.get_image("logo")).is_instanceof(Texture2D)
-
-
-func test_duplicate_is_reported_when_pattern_set() -> void:
-	_service.set_group_pattern("_\\d+$")
-	_service.add_media("cat_1", _FIXTURE_PATH)
-	_service.add_media("cat_1", _FIXTURE_PATH)
-	assert_object(_service.get_image("cat")).is_instanceof(Texture2D)
-	assert_logged(["Image id 'cat_1' is used by both"])
-
-
-# =====================
-# invalid pattern
-# =====================
-
-
-func test_invalid_pattern_falls_back_to_no_grouping() -> void:
-	_service.set_group_pattern("[")
-	assert_logged(
-		[
-			"1: missing terminating ] for character class",
-			"Failed to compile image group_pattern '[', falling back to no grouping."
-		]
-	)
-	_service.add_media("splash", _FIXTURE_PATH)
-	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
-
-
-func test_invalid_pattern_duplicate_is_still_reported() -> void:
-	_service.set_group_pattern("[")
-	assert_logged(
-		[
-			"1: missing terminating ] for character class",
-			"Failed to compile image group_pattern '[', falling back to no grouping."
-		]
-	)
-	_service.add_media("splash", _FIXTURE_PATH)
-	_service.add_media("splash", "res://test/fixtures/other.tres")
-	assert_logged(["Image id 'splash' is used by both"])
+func test_png_and_jpg_are_indexed_by_default() -> void:
+	assert_array(Service.new().supported_extensions).contains_exactly([".png", ".jpg"])
 
 
 # =====================
