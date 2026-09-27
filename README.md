@@ -289,6 +289,19 @@ Narration, and character lines without a speaker in the scene, show in a bar at 
 
 Bubbles are as wide as their text, up to `max_bubble_width`, with a tail of `tail_size`. Commands aren't interpreted, `bbcode_enabled` works like in the other UIs, and the look lives in `weavly_bubble_theme.tres`, with the bubble as the `WeavlyBubble` type variation and its text as `WeavlyBubbleText`.
 
+### Debug overlay
+
+`addons/weavly/ui/debug/weavly_debug_ui.tscn` shows what the engine is doing, on top of any UI, starter or your own. Add it to the scene, connect it to the engine like the other starter UIs, and press `toggle_action` to show or hide it. The action is `weavly_toggle_debug`, and the overlay adds it on F3 when your project doesn't define it. It starts hidden, and with `debug_builds_only` on, the default, it stays out of release builds.
+
+The top line shows whether a dialogue runs, the current node and the `source:line` being executed. Below it are four tabs:
+
+- **Variables**: every variable with its type and value. Values can be edited: flags with a checkbox, numbers and strings by typing and pressing Enter. Text that isn't a number leaves a number variable unchanged. Extern variables show once they have a value.
+- **Nodes**: every node with its `source:line`, visit count and skip count, the current one highlighted, and a filter. *Start* ends the running dialogue and starts that node.
+- **Pools**: for each pool, the storylets `peek_pool` returns, in selection order. Peeking evaluates the pools' conditions, so errors in them are reported as when the game lists the pool; the tab refreshes when a node is entered, a variable changes or the dialogue starts or ends, not every frame.
+- **Errors**: every `runtime_error` with its `source:line`, the count in the tab title, up to `max_errors`.
+
+The other tabs refresh every `refresh_interval` seconds while the overlay shows. The look lives in `weavly_debug_theme.tres`.
+
 All the starter UIs build their options with `WeavlyChoiceList`, and `WeavlyUI.create_line_label()` turns a line into a paragraph with the speaker's name in bold, and `WeavlyUI.fit_text_width()` sizes a text to its content up to a width; all three can be reused in your own UI.
 
 ## Writing dialogues in the editor
