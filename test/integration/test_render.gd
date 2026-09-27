@@ -117,6 +117,19 @@ func test_finish_ends_the_render() -> void:
 	assert_array(_describe(_make_engine().render("stop"))).is_equal(["Before."])
 
 
+func test_render_leaves_the_engine_idle() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine()
+	engine.render("tavern")
+	assert_bool(engine.is_running()).is_false()
+	assert_that(engine.current_node_id).is_empty()
+	assert_that(engine.current_source).is_empty()
+
+
+func test_a_rendered_option_block_keeps_its_line() -> void:
+	var entries: Array[WeavlyModel.Statement] = _make_engine().render("faulty")
+	assert_int(entries[0].line).is_equal(56)
+
+
 func test_render_of_a_missing_node_is_reported() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	assert_array(engine.render("nowhere")).is_empty()
@@ -180,6 +193,17 @@ func test_choose_rejects_a_hint_and_an_option_that_was_not_rendered() -> void:
 # =====================
 # render_option
 # =====================
+
+
+func test_an_error_in_a_chosen_option_names_its_file_and_line() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine()
+	var reports: Array[Array] = []
+	engine.runtime_error.connect(
+		func(_message: String, source: String, line: int) -> void: reports.append([source, line])
+	)
+	engine.choose(_option(engine.render("faulty"), "Divide"))
+	assert_that(reports).is_equal([["render.wvl", 57]])
+	assert_logged(["render.wvl:57: error: Division by zero detected"])
 
 
 func test_render_option_follows_a_jump_into_the_next_node() -> void:

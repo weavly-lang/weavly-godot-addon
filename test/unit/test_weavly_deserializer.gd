@@ -292,10 +292,40 @@ func test_extern_declaration() -> void:
 	assert_bool(variables[0].extern).is_true()
 
 
+func test_extern_declarations_start_at_the_default_of_their_type() -> void:
+	var data: Dictionary = {
+		"declarations":
+		[
+			{"type": "number", "name": "gold", "extern": true},
+			{"type": "string", "name": "title", "extern": true},
+			{"type": "flag", "name": "brave", "extern": true},
+		]
+	}
+	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(
+		data
+	)
+	var values: Array = variables.map(func(v: WeavlyModel.Variable) -> Variant: return v.value)
+	assert_array(values).is_equal([0.0, "", false])
+
+
 func test_extern_declaration_of_an_unknown_type_is_skipped() -> void:
 	var data: Dictionary = {"declarations": [{"type": "list", "name": "items", "extern": true}]}
 	assert_that(WeavlyDeserializer.compile_variable_declarations(data)).is_empty()
 	assert_logged(["Unknown variable type at declarations[0]"])
+
+
+func test_match_modifiers() -> void:
+	var expected: Dictionary[String, WeavlyModel.MatchModifier] = {
+		"first": WeavlyModel.MatchModifier.FIRST,
+		"last": WeavlyModel.MatchModifier.LAST,
+		"all": WeavlyModel.MatchModifier.ALL,
+	}
+	var case_data: Dictionary = {"line": 3.0, "condition": true, "body": []}
+	for modifier: String in expected:
+		var stmt: WeavlyModel.Statement = _compile_single(
+			{"type": "match", "modifier": modifier, "cases": [case_data]}
+		)
+		assert_that((stmt as WeavlyModel.MatchBlock).modifier).is_equal(expected[modifier])
 
 
 # =====================

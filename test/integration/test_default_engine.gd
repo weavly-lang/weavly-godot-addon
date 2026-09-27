@@ -322,6 +322,17 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(0)
 
 
+# modifiers: @match last plays only its last true case, @match all plays every true case.
+func test_ci_smoke_fixture_match_last_and_all() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	_connect_content_log(engine)
+	engine.start("modifiers")
+	for i: int in 3:
+		engine.next()
+	assert_that(_narration_log).is_equal(["Last match.", "One of all.", "Two of all."])
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
 # The node-less build artifact is the only trace of the split sources, so it is what
 # this asserts: node ids and declarations look identical either way.
 func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> void:
@@ -353,6 +364,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 				"choices",
 				"end",
 				"match_node",
+				"modifiers",
 				"night_market",
 				"plaza",
 				"random_node",
@@ -380,6 +392,7 @@ func test_self_referencing_goto_aborts_via_error_not_crash() -> void:
 	assert_logged(
 		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
 	)
+	assert_int(_signal_log.count("entered_node:self_loop")).is_equal(5)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
@@ -400,7 +413,9 @@ func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(BOUNDED_LOOP_FIXTURE)
 	# countdown decrements i from 3 and gotos itself while i > 0, re-entering the
 	# same node three times before finishing. The counter guard allows this; a
-	# naive "node revisited" detector would wrongly abort it.
+	# naive "node revisited" detector would wrongly abort it. A limit of exactly
+	# three entries still lets it finish.
+	engine.max_node_entries_per_step = 3
 	engine.start("countdown")
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_that(engine.variable_service.get_variable("i")).is_equal(0.0)
@@ -423,6 +438,34 @@ func test_engine_indexes_and_loads_images_from_an_external_directory() -> void:
 	engine.image_path = media_dir
 	add_child(auto_free(engine))
 	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
+
+
+func test_engine_applies_its_group_patterns_and_extensions() -> void:
+	var media_dir: String = create_temp_dir("engine_media_settings")
+	var image: Image = Image.create(2, 2, false, Image.FORMAT_RGB8)
+	image.save_jpg(media_dir.path_join("splash_1.jpg"))
+	image.save_jpg(media_dir.path_join("splash_2.jpg"))
+	image.save_png(media_dir.path_join("logo.png"))
+	for file_name: String in ["intro_1.webm", "intro_2.webm", "outro.ogv"]:
+		FileAccess.open(media_dir.path_join(file_name), FileAccess.WRITE).store_string("x")
+	var engine: WeavlyDefaultEngine = _new_engine(LINEAR_FIXTURE)
+	engine.image_path = media_dir
+	engine.video_path = media_dir
+	engine.image_group_pattern = "_\\d+$"
+	engine.video_group_pattern = "_\\d+$"
+	engine.image_extensions = [".jpg"]
+	engine.video_extensions = [".webm"]
+	add_child(auto_free(engine))
+	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
+	assert_object(engine.video_service.get_video("intro")).is_instanceof(VideoStream)
+	assert_object(engine.image_service.get_image("logo")).is_null()
+	assert_object(engine.video_service.get_video("outro")).is_null()
+	assert_logged(
+		[
+			"Image with id 'logo' doesn't exist",
+			"Video with id 'outro' doesn't exist",
+		]
+	)
 
 
 # =====================
@@ -674,6 +717,17 @@ func test_get_state_outside_a_dialogue_has_no_node() -> void:
 	var state: Dictionary = engine.get_state()
 	assert_bool(state.has("node")).is_false()
 	assert_that(state["services"]["variable"]["gold"]).is_equal(0.0)
+
+
+func test_get_state_after_the_dialogue_finishes_has_no_node() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	engine.start("start")
+	engine.next()
+	engine.next()
+	assert_bool(engine.is_running()).is_false()
+	assert_bool(engine.get_state().has("node")).is_false()
+	assert_that(engine.current_node_id).is_empty()
+	assert_that(engine.current_source).is_empty()
 
 
 func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -> void:

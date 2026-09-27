@@ -427,6 +427,19 @@ func test_random_block_rng_in_last_bucket() -> void:
 	assert_that(_statement.add_statements_calls[0]).is_same(c)
 
 
+func test_random_block_roll_on_a_bucket_boundary_picks_the_earlier_case() -> void:
+	# rng=0.5 -> random=1, the end of a's bucket (0, 1].
+	var a: Array[WeavlyModel.Statement] = _body("a")
+	var b: Array[WeavlyModel.Statement] = _body("b")
+	var cases: Array[WeavlyModel.RandomCase] = [
+		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), a),
+		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), b),
+	]
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
+	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.5))
+	assert_that(_statement.add_statements_calls[0]).is_same(a)
+
+
 func test_random_block_filters_out_false_conditions() -> void:
 	# The false-conditioned case must never be selected, regardless of rng.
 	var skipped: Array[WeavlyModel.Statement] = _body("skipped")
