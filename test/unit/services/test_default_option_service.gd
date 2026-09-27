@@ -130,10 +130,11 @@ func test_choose_option_ignores_an_option_that_is_not_offered() -> void:
 	var offered: WeavlyModel.Option = _make_option("offered")
 	var stale: WeavlyModel.Option = WeavlyTextUtils.fill_option(_make_option("stale"), _engine)
 	offered = _offer(offered)
-	monitor_signals(_service, false)
+	var chosen: Array[WeavlyModel.Option] = []
+	_service.option_chosen.connect(func(o: WeavlyModel.Option) -> void: chosen.append(o))
 	_service.choose_option(stale)
 	assert_logged([], ["Can't choose option 'stale' because it isn't offered right now."])
-	await assert_signal(_service).is_not_emitted("option_chosen")
+	assert_array(chosen).is_empty()
 	assert_bool(_engine.did_next).is_false()
 
 
@@ -152,10 +153,11 @@ func test_choose_option_ignores_a_hint() -> void:
 	var options: Array[WeavlyModel.Option] = [_make_option(), _make_hint()]
 	_service.add_options(options)
 	var hint: WeavlyModel.Option = _service.pending_options[1]
-	monitor_signals(_service, false)
+	var chosen: Array[WeavlyModel.Option] = []
+	_service.option_chosen.connect(func(o: WeavlyModel.Option) -> void: chosen.append(o))
 	_service.choose_option(hint)
 	assert_logged([], ["Can't choose option 'locked' because it's a hint."])
-	await assert_signal(_service).is_not_emitted("option_chosen")
+	assert_array(chosen).is_empty()
 	assert_bool(_service.pending_options.has(hint)).is_true()
 
 
