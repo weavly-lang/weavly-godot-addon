@@ -141,12 +141,14 @@ func test_fill_character_line_resolves_a_name_that_is_an_id() -> void:
 	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
 		"name", true, _segments([{"variable": "name"}, "!"])
 	)
+	line.line = 5
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
 		line, _engine_with_name()
 	)
 	assert_that(filled.name).is_equal("Ada")
 	assert_that(filled.raw_name).is_equal("name")
 	assert_that(filled.text).is_equal("Ada!")
+	assert_int(filled.line).is_equal(5)
 
 
 func test_fill_character_line_keeps_a_literal_name() -> void:
@@ -171,9 +173,28 @@ func test_fill_option_copies_with_filled_text() -> void:
 	var option: WeavlyModel.Option = WeavlyModel.Option.new(
 		WeavlyModel.TrueExpression.new(), _segments(["Ask ", {"variable": "name"}]), body, false
 	)
+	option.line = 6
 	var filled: WeavlyModel.Option = WeavlyTextUtils.fill_option(option, _engine_with_name())
 	assert_that(filled.text).is_equal("Ask Ada")
 	assert_that(filled.body).is_same(option.body)
+	assert_int(filled.line).is_equal(6)
+
+
+func test_fill_options_reports_a_failing_interpolation_at_the_option_line() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var lines: Array[int] = []
+	engine.runtime_error.connect(
+		func(_message: String, _source: String, line: int) -> void: lines.append(line)
+	)
+	var body: Array[WeavlyModel.Statement] = []
+	var option: WeavlyModel.Option = WeavlyModel.Option.new(
+		WeavlyModel.TrueExpression.new(), _segments([{"variable": "missing"}]), body, false
+	)
+	option.line = 9
+	var options: Array[WeavlyModel.Option] = [option]
+	WeavlyTextUtils.fill_options(options, engine)
+	assert_that(lines).is_equal([9])
+	assert_logged(["Variable 'missing' isn't defined."])
 
 
 func test_fill_option_block_copies_with_filled_options() -> void:

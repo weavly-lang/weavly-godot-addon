@@ -138,6 +138,15 @@ func test_narration_with_a_failing_interpolation_is_skipped() -> void:
 	assert_logged(["Unknown expression type at nodes[0].body[0].text[1]"])
 
 
+func test_narration_with_null_text_is_skipped() -> void:
+	var data: Dictionary = _build(
+		[_node("start", [_statement({"type": "narration", "text": null})])]
+	)
+	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.compile_nodes(data)
+	assert_that(nodes[0].body.size()).is_equal(0)
+	assert_logged(["Required field 'text' is null at nodes[0].body[0]"])
+
+
 func test_narration_missing_text_is_skipped() -> void:
 	var data: Dictionary = _build([_node("start", [_statement({"type": "narration"})])])
 	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.compile_nodes(data)

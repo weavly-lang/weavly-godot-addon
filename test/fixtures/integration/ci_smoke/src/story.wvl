@@ -86,3 +86,18 @@ pool: night
 @endmeta
 The plaza is quiet.
 @endnode
+
+@node modifiers
+@match last
+    @when true
+        First match.
+    @when $score >= 0
+        Last match.
+@endmatch
+@match all
+    @when true
+        One of all.
+    @when not $has_key
+        Two of all.
+@endmatch
+@endnode

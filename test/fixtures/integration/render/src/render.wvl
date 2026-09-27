@@ -51,3 +51,9 @@ Before.
 @finish
 After.
 @endnode
+
+@node faulty
+@options
+@option "Divide": @set $gold = $gold / $drinks
+@endoptions
+@endnode

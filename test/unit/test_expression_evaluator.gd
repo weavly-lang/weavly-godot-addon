@@ -416,9 +416,22 @@ func test_random_stays_within_its_bounds_and_is_whole() -> void:
 
 
 func test_random_accepts_bounds_in_either_order() -> void:
-	for i: int in 50:
+	var seen: Dictionary = {}
+	for i: int in 200:
 		var value: float = _call("random", [6.0, 4.0])
 		assert_bool(value >= 4.0 and value <= 6.0).is_true()
+		seen[value] = true
+	assert_that(seen.size()).is_equal(3)
+
+
+func test_random_with_one_whole_number_between_its_bounds_returns_it() -> void:
+	assert_that(_call("random", [2.2, 3.0])).is_equal(3.0)
+	assert_that(_call("random", [3.0, 2.2])).is_equal(3.0)
+
+
+func test_random_without_a_whole_number_between_its_bounds_rounds_the_first() -> void:
+	assert_that(_call("random", [3.2, 3.8])).is_equal(3.0)
+	assert_that(_call("random", [3.8, 3.2])).is_equal(4.0)
 
 
 func test_function_arguments_are_expressions() -> void:
@@ -442,6 +455,22 @@ func test_function_with_the_wrong_argument_count_returns_error() -> void:
 	var result: Variant = _call("clamp", [1.0, 2.0])
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["clamp() takes 3 arguments, got 2."])
+
+
+func test_functions_with_a_fixed_argument_count_reject_one_more_or_less() -> void:
+	var counts: Dictionary[String, int] = {
+		"random": 2, "clamp": 3, "round": 1, "floor": 1, "ceil": 1, "abs": 1
+	}
+	for function_name: String in counts:
+		var expected: int = counts[function_name]
+		var noun: String = "argument" if expected == 1 else "arguments"
+		for count: int in [expected - 1, expected + 1]:
+			var values: Array = []
+			values.resize(count)
+			values.fill(1.0)
+			var result: Variant = _call(function_name, values)
+			assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
+			assert_logged(["%s() takes %d %s, got %d." % [function_name, expected, noun, count]])
 
 
 func test_reading_an_undefined_extern_names_it_extern() -> void:
