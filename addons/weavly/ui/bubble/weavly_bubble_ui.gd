@@ -1,10 +1,6 @@
 class_name WeavlyBubbleUI
 extends WeavlyUI
 
-const NAVIGATION_ACTIONS: Array[StringName] = [
-	&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"
-]
-
 ## Advances like a click on the bubble or the bar does.
 @export var advance_action: StringName = &"ui_accept"
 ## Seconds a line stays before the dialogue advances on its own, for barks; 0 waits for the player.
@@ -69,12 +65,8 @@ func _draw() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
-	var advancing: bool = (
-		InputMap.has_action(advance_action) and event.is_action_pressed(advance_action)
-	)
-	var navigating: bool = NAVIGATION_ACTIONS.any(
-		func(action: StringName) -> bool: return event.is_action_pressed(action)
-	)
+	var advancing: bool = is_pressed(event, advance_action)
+	var navigating: bool = is_navigation(event)
 	if _awaiting_choice and (advancing or navigating) and _choices.focus_first():
 		get_viewport().set_input_as_handled()
 	elif advancing:
@@ -90,22 +82,18 @@ func advance() -> void:
 	engine.next()
 
 
-func _connect_engine() -> void:
-	engine.started_dialogue.connect(_clear)
-	engine.finished_dialogue.connect(_clear)
-	engine.state_loaded.connect(_clear)
-	engine.line_service.executed_narration_line.connect(_on_line)
-	engine.line_service.executed_character_line.connect(_on_line)
-	engine.option_service.options_added.connect(_on_options_added)
+func _engine_signals() -> Array[Array]:
+	return [
+		[engine.started_dialogue, _clear],
+		[engine.finished_dialogue, _clear],
+		[engine.state_loaded, _clear],
+		[engine.line_service.executed_narration_line, _on_line],
+		[engine.line_service.executed_character_line, _on_line],
+		[engine.option_service.options_added, _on_options_added],
+	]
 
 
-func _disconnect_engine() -> void:
-	engine.started_dialogue.disconnect(_clear)
-	engine.finished_dialogue.disconnect(_clear)
-	engine.state_loaded.disconnect(_clear)
-	engine.line_service.executed_narration_line.disconnect(_on_line)
-	engine.line_service.executed_character_line.disconnect(_on_line)
-	engine.option_service.options_added.disconnect(_on_options_added)
+func _on_engine_detached() -> void:
 	_clear()
 
 
@@ -204,8 +192,7 @@ func _set_text(label: RichTextLabel, content: String) -> void:
 
 
 func _on_click(event: InputEvent) -> void:
-	var mouse: InputEventMouseButton = event as InputEventMouseButton
-	if mouse != null and mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
+	if is_left_click(event):
 		get_viewport().set_input_as_handled()
 		advance()
 

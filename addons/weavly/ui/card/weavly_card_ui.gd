@@ -7,9 +7,6 @@ signal command_rendered(command: WeavlyModel.CommandStatement)
 signal hand_empty
 
 const DIALOGUE_RUNNING = "Can't deal cards while a dialogue runs."
-const NAVIGATION_ACTIONS: Array[StringName] = [
-	&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev", &"ui_accept"
-]
 
 ## The most cards a deal shows.
 @export var hand_size: int = 3
@@ -34,9 +31,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
-	if not NAVIGATION_ACTIONS.any(
-		func(action: StringName) -> bool: return event.is_action_pressed(action)
-	):
+	if not (is_navigation(event) or event.is_action_pressed(&"ui_accept")):
 		return
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	if focused != null and is_ancestor_of(focused):
@@ -47,7 +42,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Deals a hand of up to hand_size storylets from the pools, rendering each as a card.
 func deal(pools: Array) -> void:
-	if not _can_render():
+	if not _can_render(DIALOGUE_RUNNING):
 		return
 	_pools = pools.duplicate()
 	_clear_table()
@@ -71,17 +66,16 @@ func clear() -> void:
 	_clear_table()
 
 
-func _connect_engine() -> void:
-	engine.state_loaded.connect(clear)
+func _engine_signals() -> Array[Array]:
+	return [[engine.state_loaded, clear]]
 
 
-func _disconnect_engine() -> void:
-	engine.state_loaded.disconnect(clear)
+func _on_engine_detached() -> void:
 	clear()
 
 
 func _choose(option: WeavlyModel.Option) -> void:
-	if not _can_render():
+	if not _can_render(DIALOGUE_RUNNING):
 		return
 	var entries: Array[WeavlyModel.Statement] = engine.render_option(option)
 	_clear_table()
@@ -98,11 +92,8 @@ func _on_continue_pressed() -> void:
 
 
 func _make_card(entries: Array[WeavlyModel.Statement]) -> WeavlyCard:
-	for entry: WeavlyModel.Statement in entries:
-		if entry is WeavlyModel.CommandStatement:
-			command_rendered.emit(entry)
 	var card: WeavlyCard = WeavlyCard.new()
-	card.show_entries(entries, engine)
+	card.show_entries(entries, engine, command_rendered.emit)
 	card.chosen.connect(_choose)
 	return card
 
@@ -132,12 +123,3 @@ func _clear_table() -> void:
 		card.queue_free()
 	_hand.visible = false
 	_outcome.visible = false
-
-
-func _can_render() -> bool:
-	if not _attached:
-		return false
-	if engine.is_running():
-		push_warning(DIALOGUE_RUNNING)
-		return false
-	return true

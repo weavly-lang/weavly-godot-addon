@@ -12,16 +12,12 @@ func _init() -> void:
 	add_child(_content)
 
 
-func show_entries(entries: Array[WeavlyModel.Statement], engine: WeavlyEngine) -> void:
-	for entry: WeavlyModel.Statement in entries:
-		if entry is WeavlyModel.LineStatement:
-			_content.add_child(WeavlyUI.create_line_label(entry, engine))
-		elif entry is WeavlyModel.OptionBlock:
-			var choices: WeavlyChoiceList = WeavlyChoiceList.new()
-			choices.show_options(entry.options)
-			choices.chosen.connect(chosen.emit)
-			_lists.append(choices)
-			_content.add_child(choices)
+func show_entries(
+	entries: Array[WeavlyModel.Statement], engine: WeavlyEngine, on_command: Callable
+) -> void:
+	_lists = WeavlyUI.add_entries(_content, entries, engine, on_command)
+	for choices: WeavlyChoiceList in _lists:
+		choices.chosen.connect(chosen.emit)
 
 
 func has_choosable() -> bool:

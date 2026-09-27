@@ -4,6 +4,9 @@ extends Control
 const BOTH_ENGINES = "'%s' has both engine and engine_autoload set, using engine."
 const MISSING_AUTOLOAD = "'%s' can't find an autoload named '%s'."
 const NOT_AN_ENGINE = "'%s' can't use autoload '%s' because it isn't a WeavlyEngine."
+const NAVIGATION_ACTIONS: Array[StringName] = [
+	&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"
+]
 
 ## An engine in the same scene. Wins over engine_autoload when both are set.
 @export var engine: WeavlyEngine:
@@ -27,10 +30,7 @@ func _ready() -> void:
 static func create_line_label(
 	line: WeavlyModel.LineStatement, engine: WeavlyEngine
 ) -> RichTextLabel:
-	var text: RichTextLabel = RichTextLabel.new()
-	text.fit_content = true
-	text.scroll_active = false
-	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var text: RichTextLabel = create_text_label()
 	if line is WeavlyModel.CharacterLine:
 		text.push_bold()
 		text.add_text(speaker_name(line, engine) + ": ")
@@ -39,11 +39,74 @@ static func create_line_label(
 	return text
 
 
+# An empty paragraph that grows with its text and lets clicks through.
+static func create_text_label() -> RichTextLabel:
+	var text: RichTextLabel = RichTextLabel.new()
+	text.fit_content = true
+	text.scroll_active = false
+	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return text
+
+
 # The character's display name, or the name as written when there's no such character.
 static func speaker_name(line: WeavlyModel.CharacterLine, engine: WeavlyEngine) -> String:
+	var character: WeavlyCharacter = find_character(line, engine)
+	return character.display_name if character != null else line.name
+
+
+# Null when no character has the line's name.
+static func find_character(
+	line: WeavlyModel.CharacterLine, engine: WeavlyEngine
+) -> WeavlyCharacter:
 	if engine.character_service.has(line.name):
-		return engine.character_service.get_character(line.name).display_name
-	return line.name
+		return engine.character_service.get_character(line.name)
+	return null
+
+
+# Adds a label per line and a choice list per option block; each command goes to on_command.
+static func add_entries(
+	parent: Node,
+	entries: Array[WeavlyModel.Statement],
+	engine: WeavlyEngine,
+	on_command: Callable,
+	links: bool = false,
+) -> Array[WeavlyChoiceList]:
+	var lists: Array[WeavlyChoiceList] = []
+	for entry: WeavlyModel.Statement in entries:
+		if entry is WeavlyModel.LineStatement:
+			parent.add_child(create_line_label(entry, engine))
+		elif entry is WeavlyModel.CommandStatement:
+			on_command.call(entry)
+		elif entry is WeavlyModel.OptionBlock:
+			var choices: WeavlyChoiceList = WeavlyChoiceList.new()
+			choices.links = links
+			choices.show_options(entry.options)
+			lists.append(choices)
+			parent.add_child(choices)
+	return lists
+
+
+static func free_children(parent: Node, keep: Node = null) -> void:
+	for child: Node in parent.get_children():
+		if child != keep:
+			parent.remove_child(child)
+			child.queue_free()
+
+
+# False for an empty action or one the project doesn't define.
+static func is_pressed(event: InputEvent, action: StringName) -> bool:
+	return action != &"" and InputMap.has_action(action) and event.is_action_pressed(action)
+
+
+static func is_navigation(event: InputEvent) -> bool:
+	return NAVIGATION_ACTIONS.any(
+		func(action: StringName) -> bool: return event.is_action_pressed(action)
+	)
+
+
+static func is_left_click(event: InputEvent) -> bool:
+	var mouse: InputEventMouseButton = event as InputEventMouseButton
+	return mouse != null and mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT
 
 
 # A text as wide as its content, up to max_width, where it wraps.
@@ -65,10 +128,26 @@ func set_engine(value: WeavlyEngine) -> void:
 		_attach()
 
 
-# Connects to the engine's signals and services, which exist once the engine is ready.
-@abstract func _connect_engine() -> void
+# [signal, handler] pairs on the engine and its services, which exist once the engine is ready.
+@abstract func _engine_signals() -> Array[Array]
 
-@abstract func _disconnect_engine() -> void
+
+func _on_engine_attached() -> void:
+	pass
+
+
+func _on_engine_detached() -> void:
+	pass
+
+
+# False while detached or while a dialogue runs, which a render can't interrupt.
+func _can_render(warning: String) -> bool:
+	if not _attached:
+		return false
+	if engine.is_running():
+		push_warning(warning)
+		return false
+	return true
 
 
 func _find_autoload() -> WeavlyEngine:
@@ -90,7 +169,9 @@ func _attach() -> void:
 			engine.ready.connect(_attach, CONNECT_ONE_SHOT)
 		return
 	_attached = true
-	_connect_engine()
+	for pair: Array in _engine_signals():
+		(pair[0] as Signal).connect(pair[1])
+	_on_engine_attached()
 
 
 func _detach() -> void:
@@ -100,4 +181,6 @@ func _detach() -> void:
 		engine.ready.disconnect(_attach)
 	if _attached:
 		_attached = false
-		_disconnect_engine()
+		for pair: Array in _engine_signals():
+			(pair[0] as Signal).disconnect(pair[1])
+		_on_engine_detached()
