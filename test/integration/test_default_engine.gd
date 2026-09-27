@@ -5,20 +5,20 @@ extends WeavlyTestSuite
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
-const LINEAR_FIXTURE = "res://test/fixtures/integration/linear"
+const LINEAR_FIXTURE = "res://test/fixtures/integration/linear/build"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke/build"
 const CI_SMOKE_GLOBALS_JSON = CI_SMOKE_FIXTURE + "/globals.wvl.json"
-const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle"
-const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop"
-const OPTIONS_FIXTURE = "res://test/fixtures/integration/options"
-const VISITS_FIXTURE = "res://test/fixtures/integration/visits"
-const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions"
+const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle/build"
+const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop/build"
+const OPTIONS_FIXTURE = "res://test/fixtures/integration/options/build"
+const VISITS_FIXTURE = "res://test/fixtures/integration/visits/build"
+const FUNCTIONS_FIXTURE = "res://test/fixtures/integration/functions/build"
 const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
-const TEXT_FIXTURE = "res://test/fixtures/integration/text"
-const HOLD_FIXTURE = "res://test/fixtures/integration/hold"
-const SAVE_FIXTURE = "res://test/fixtures/integration/save"
-const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only"
-const RANDOM_FIXTURE = "res://test/fixtures/integration/random"
+const TEXT_FIXTURE = "res://test/fixtures/integration/text/build"
+const HOLD_FIXTURE = "res://test/fixtures/integration/hold/build"
+const SAVE_FIXTURE = "res://test/fixtures/integration/save/build"
+const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only/build"
+const RANDOM_FIXTURE = "res://test/fixtures/integration/random/build"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
 # =====================

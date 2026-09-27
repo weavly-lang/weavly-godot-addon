@@ -1,0 +1,23 @@
+@env
+count: number = 0
+@endenv
+
+@node hub
+@match first
+    @when visited(hub)
+        Back again
+    @when true
+        First time
+@endmatch
+@set $count = visit_count(hub)
+@match first
+    @when visit_count(hub) < 2
+        @goto hub
+@endmatch
+Done
+@endnode
+
+@node finisher
+Bye
+@finish
+@endnode

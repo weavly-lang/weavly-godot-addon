@@ -1,0 +1,14 @@
+@env
+roll: number = 0
+@endenv
+
+@node start
+@set $roll = random(1, 1000000)
+@random
+@case 1: A
+@case 1: B
+@case 1: C
+@case 1: D
+@endrandom
+@finish
+@endnode

@@ -1,0 +1,11 @@
+@node menu
+@options
+@option "Go on" -> after
+@hint "Locked"
+@endoptions
+@endnode
+
+@node after
+After
+@finish
+@endnode

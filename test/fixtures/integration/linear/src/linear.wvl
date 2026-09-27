@@ -1,0 +1,15 @@
+@env
+counter: number = 0
+@endenv
+
+@node start
+Welcome
+>Guide: Hello
+@set $counter = 7
+@goto end
+@endnode
+
+@node end
+Goodbye
+@finish
+@endnode

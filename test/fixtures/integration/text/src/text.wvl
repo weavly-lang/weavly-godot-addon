@@ -1,0 +1,12 @@
+@env
+name: string = "Ada"
+coins: number = 3
+@endenv
+
+@node start
+Hi {$name}, you have {$coins} coins.
+$name: I am {$name}.
+@options
+@option "Pay {$coins}": @finish
+@endoptions
+@endnode
