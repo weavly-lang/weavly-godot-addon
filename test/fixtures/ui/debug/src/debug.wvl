@@ -1,0 +1,38 @@
+@env
+gold: number = 3
+name: string = "Robin"
+brave: flag = false
+extern secret: number
+city: pool
+@endenv
+
+@node start
+Hello {$name}.
+@increase $gold 2
+Second line.
+@goto gate
+@endnode
+
+@node gate
+The gate is shut.
+@endnode
+
+@node broken
+The secret is {$secret}.
+@endnode
+
+@node bob
+@meta
+pool: city
+when: $gold > 2
+priority: 1
+@endmeta
+Bob waves.
+@endnode
+
+@node ann
+@meta
+pool: city
+@endmeta
+Ann nods.
+@endnode
