@@ -54,6 +54,7 @@ test/                               # gdUnit4 tests: unit/ mirrors src/, ui/ cov
                                     # fixtures with a src/ folder are compiler-built, see above
 ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
                                     # external_media/ is copied next to the exported binary
+tools/mutation/                     # mutate.py: mutation testing, see CONTRIBUTING
 ```
 
 ### Conventions

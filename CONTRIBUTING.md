@@ -91,6 +91,18 @@ godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res
 
 `-c` continues a suite after a failure. Reports land in `reports/` (gitignored). `godot` must be on your PATH; on Windows, create a `godot.bat` shim pointing at the executable.
 
+### Mutation testing
+
+`tools/mutation/mutate.py` checks whether the tests would notice a bug. It changes one line of an addon script at a time (flips a comparison, deletes a statement, negates a condition, swaps `and`/`or`, shifts a number, changes a string constant), runs the whole suite and records which tests fail. A mutant no test catches points at behaviour nothing checks.
+
+```bash
+python tools/mutation/mutate.py addons/weavly/src/core/weavly_storylet_selector.gd --godot <path to the Godot console executable>
+```
+
+Pass the scripts or folders a change touched; with none it mutates all of `addons/weavly/src` and `addons/weavly/ui`, which takes about two hours on 8 workers. It runs in copies of the project under the system temp folder, never in the working copy, and writes `report.md` there: the score per script, every surviving mutant, and, after a full run, the tests that caught nothing. Results are kept per state of the repository, so rerunning after an interruption only runs what is left.
+
+Not every survivor is a gap. Some mutants can't change behaviour, like storing `false` in a dictionary that is only checked with `has()`, and drawing code is rarely worth asserting. A test that catches no mutant isn't necessarily redundant either: the tool only mutates `.gd` lines, not scenes, themes or fixtures.
+
 ### Compiler-built fixtures
 
 Every folder under `test/fixtures/` with a `src/` folder is a Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the tests load. `test/fixtures/integration/ci_smoke/` covers every statement type, so it is where a change in the compiler's output shape shows up.
