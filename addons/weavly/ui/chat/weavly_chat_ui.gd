@@ -1,9 +1,6 @@
 class_name WeavlyChatUI
 extends WeavlyUI
 
-const NAVIGATION_ACTIONS: Array[StringName] = [
-	&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"
-]
 const DOT_INTERVAL: float = 0.4
 
 ## The character id whose lines are the player's own, shown on the right.
@@ -59,12 +56,8 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
-	var advancing: bool = (
-		InputMap.has_action(advance_action) and event.is_action_pressed(advance_action)
-	)
-	var navigating: bool = NAVIGATION_ACTIONS.any(
-		func(action: StringName) -> bool: return event.is_action_pressed(action)
-	)
+	var advancing: bool = is_pressed(event, advance_action)
+	var navigating: bool = is_navigation(event)
 	if (advancing or navigating) and _focus_first():
 		get_viewport().set_input_as_handled()
 	elif advancing and _waiting:
@@ -90,24 +83,19 @@ func clear() -> void:
 	_last_speaker = ""
 	_replies.clear()
 	_continue.visible = false
-	for row: Node in _messages.get_children():
-		if row != _typing:
-			_messages.remove_child(row)
-			row.queue_free()
+	free_children(_messages, _typing)
 
 
-func _connect_engine() -> void:
-	engine.state_loaded.connect(clear)
-	engine.line_service.executed_narration_line.connect(_receive)
-	engine.line_service.executed_character_line.connect(_receive)
-	engine.option_service.options_added.connect(_on_options_added)
+func _engine_signals() -> Array[Array]:
+	return [
+		[engine.state_loaded, clear],
+		[engine.line_service.executed_narration_line, _receive],
+		[engine.line_service.executed_character_line, _receive],
+		[engine.option_service.options_added, _on_options_added],
+	]
 
 
-func _disconnect_engine() -> void:
-	engine.state_loaded.disconnect(clear)
-	engine.line_service.executed_narration_line.disconnect(_receive)
-	engine.line_service.executed_character_line.disconnect(_receive)
-	engine.option_service.options_added.disconnect(_on_options_added)
+func _on_engine_detached() -> void:
 	clear()
 
 
@@ -182,9 +170,7 @@ func _is_player(line: WeavlyModel.CharacterLine) -> bool:
 
 func _add_line(line: WeavlyModel.LineStatement) -> void:
 	if line is WeavlyModel.CharacterLine:
-		var character: WeavlyCharacter = null
-		if engine.character_service.has(line.name):
-			character = engine.character_service.get_character(line.name)
+		var character: WeavlyCharacter = find_character(line, engine)
 		_add_bubble(line.text, character, _is_player(line), speaker_name(line, engine))
 		return
 	_last_speaker = ""
@@ -246,18 +232,14 @@ func _add_row(alignment: BoxContainer.AlignmentMode) -> HBoxContainer:
 
 
 func _add_text(parent: Control, content: String) -> RichTextLabel:
-	var text: RichTextLabel = RichTextLabel.new()
-	text.fit_content = true
-	text.scroll_active = false
-	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var text: RichTextLabel = create_text_label()
 	parent.add_child(text)
 	text.add_text(content)
 	return text
 
 
 func _on_phone_input(event: InputEvent) -> void:
-	var mouse: InputEventMouseButton = event as InputEventMouseButton
-	if mouse != null and mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
+	if is_left_click(event):
 		advance()
 
 

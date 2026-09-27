@@ -58,11 +58,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if (
-		toggle_action != &""
-		and InputMap.has_action(toggle_action)
-		and event.is_action_pressed(toggle_action)
-	):
+	if is_pressed(event, toggle_action):
 		get_viewport().set_input_as_handled()
 		visible = not visible
 
@@ -81,35 +77,32 @@ func refresh() -> void:
 
 func clear_errors() -> void:
 	_error_count = 0
-	for entry: Node in _error_list.get_children():
-		_error_list.remove_child(entry)
-		entry.queue_free()
+	free_children(_error_list)
 	_tabs.set_tab_title(ERRORS_TAB, "Errors")
 
 
-func _connect_engine() -> void:
-	engine.started_dialogue.connect(_on_changed)
-	engine.entered_node.connect(_on_node_entered)
-	engine.finished_dialogue.connect(_on_changed)
-	engine.state_loaded.connect(_on_changed)
-	engine.runtime_error.connect(_on_runtime_error)
-	engine.variable_service.variable_changed.connect(_on_variable_changed)
+func _engine_signals() -> Array[Array]:
+	return [
+		[engine.started_dialogue, _on_changed],
+		[engine.entered_node, _on_node_entered],
+		[engine.finished_dialogue, _on_changed],
+		[engine.state_loaded, _on_changed],
+		[engine.runtime_error, _on_runtime_error],
+		[engine.variable_service.variable_changed, _on_variable_changed],
+	]
+
+
+func _on_engine_attached() -> void:
 	_build_variables()
 	_build_nodes()
 	_pools_dirty = true
 	refresh()
 
 
-func _disconnect_engine() -> void:
-	engine.started_dialogue.disconnect(_on_changed)
-	engine.entered_node.disconnect(_on_node_entered)
-	engine.finished_dialogue.disconnect(_on_changed)
-	engine.state_loaded.disconnect(_on_changed)
-	engine.runtime_error.disconnect(_on_runtime_error)
-	engine.variable_service.variable_changed.disconnect(_on_variable_changed)
-	_clear_children(_variable_grid)
-	_clear_children(_node_grid)
-	_clear_children(_pool_list)
+func _on_engine_detached() -> void:
+	free_children(_variable_grid)
+	free_children(_node_grid)
+	free_children(_pool_list)
 	_variable_editors.clear()
 	_node_rows.clear()
 	clear_errors()
@@ -197,7 +190,7 @@ func _commit_variable(id: String, edit: LineEdit, declaration: WeavlyModel.Varia
 # An extern variable joins the list once the game gives it a value.
 func _refresh_variables() -> void:
 	if engine.variable_service.get_all_ids().size() != _variable_editors.size():
-		_clear_children(_variable_grid)
+		free_children(_variable_grid)
 		_variable_editors.clear()
 		_build_variables()
 	for id: String in _variable_editors:
@@ -267,7 +260,7 @@ func _jump(node_id: String) -> void:
 
 func _refresh_pools() -> void:
 	_pools_dirty = false
-	_clear_children(_pool_list)
+	free_children(_pool_list)
 	var pools: Array[String] = []
 	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
 		if node.meta == null:
@@ -292,9 +285,3 @@ func _create_label(text: String, variation: StringName = &"") -> Label:
 	label.text = text
 	label.theme_type_variation = variation
 	return label
-
-
-func _clear_children(parent: Node) -> void:
-	for child: Node in parent.get_children():
-		parent.remove_child(child)
-		child.queue_free()

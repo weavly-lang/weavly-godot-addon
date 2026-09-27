@@ -26,9 +26,7 @@ func show_options(options: Array[WeavlyModel.Option]) -> void:
 
 
 func clear() -> void:
-	for child: Node in get_children():
-		remove_child(child)
-		child.queue_free()
+	WeavlyUI.free_children(self)
 
 
 func has_choosable() -> bool:
