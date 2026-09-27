@@ -48,7 +48,7 @@ CI (`.github/workflows/ci.yml`) runs four jobs on every push and PR:
 - **`lint`** — `gdlint` and `gdformat --check`.
 - **`test`** — the gdUnit4 suite on Godot 4.5, 4.6 and 4.7, pinned to the latest patch of each. A failure on one version does not stop the others.
 - **`export`** — exports `ci/export_smoke/` on the oldest and newest version and runs the binary, which covers what only breaks once `res://` is a PCK.
-- **`fixtures`** — rebuilds the compiler-built fixture and checks it still matches what is committed.
+- **`fixtures`** — rebuilds every compiler-built fixture and checks it still matches what is committed.
 
 When a new minor version of Godot is released, add it to the `test` and `export` matrices, drop the oldest, and bump the vendored gdUnit4 to a release that covers the new range.
 
@@ -107,9 +107,9 @@ The `fixtures` job rebuilds every such folder with a pinned `weavly` from PyPI a
 
 ### Check project.godot after importing
 
-`config/features` in `project.godot` pins the oldest supported Godot version. Opening the project or running `--import` with a newer Godot rewrites that pin and can add compatibility keys, which raises the addon's minimum version and fails the oldest `test` and `export` jobs. Importing also rewrites line endings in the vendored `.import` files.
+`config/features` in `project.godot` pins the newest supported Godot version, the one the dev project is edited with. Opening the project or running `--import` with any other version rewrites the pin to that version, older ones included. The pin doesn't set the addon's minimum version: only `addons/weavly/` ships, and CI runs the suite on every supported version regardless.
 
-After any import:
+After importing with another version, discard what it rewrote:
 
 ```bash
 git diff project.godot
