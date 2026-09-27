@@ -93,17 +93,17 @@ godot --headless --path . -s -d res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res
 
 ### Compiler-built fixtures
 
-`test/fixtures/integration/ci_smoke/` is a Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the integration tests load. It covers every statement type, so it is where a change in the compiler's output shape shows up.
+Every folder under `test/fixtures/` with a `src/` folder is a Weavly project: `src/` holds the `.wvl` sources, `build/` the committed JSON the tests load. `test/fixtures/integration/ci_smoke/` covers every statement type, so it is where a change in the compiler's output shape shows up.
 
-Edit the sources, never `build/`, and commit both together:
+Edit the sources, never `build/`, and rebuild from the fixture folder, then commit both together:
 
 ```bash
 cd test/fixtures/integration/ci_smoke && weavly build
 ```
 
-Keep the sources split, with `globals.wvl` declaring the variables and `story.wvl` holding the nodes, so the build still covers the compiler's cross-file declaration merge. An integration test enforces this.
+Keep the `ci_smoke` sources split, with `globals.wvl` declaring the variables and `story.wvl` holding the nodes, so the build still covers the compiler's cross-file declaration merge. An integration test enforces this.
 
-The `fixtures` job builds with a pinned `weavly` from PyPI; `.github/workflows/compiler-latest.yml` does the same weekly against the newest release. When that weekly run fails, decide whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild and adjust the addon to match; if not, it is an upstream bug.
+The `fixtures` job rebuilds every such folder with a pinned `weavly` from PyPI and fails when a `build/` differs from what is committed; `.github/workflows/compiler-latest.yml` does the same weekly against the newest release. When that weekly run fails, decide whether the new output is intended: if it is, bump the pin in `ci.yml`, rebuild and adjust the addon to match; if not, it is an upstream bug.
 
 ### Check project.godot after importing
 
