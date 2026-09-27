@@ -80,3 +80,48 @@ func test_node_gutter_is_a_custom_strip() -> void:
 	assert_int(_panel._code_edit.get_gutter_width(gutter)).is_equal(
 		WeavlyEditorPanel._NODE_STRIP_WIDTH + WeavlyEditorPanel._NODE_STRIP_GAP
 	)
+
+
+func _open_wrapped() -> CodeEdit:
+	_open_with_text("@node start\n" + "word ".repeat(60) + "\nshort\n@endnode\n")
+	var edit: CodeEdit = _panel._code_edit
+	_panel._line_wrap.button_pressed = true
+	# The headless viewport is tiny, so the panel gets a usual size instead of filling it.
+	_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_panel.size = Vector2(400, 700)
+	await await_idle_frame()
+	return edit
+
+
+func _text_area(edit: CodeEdit) -> Rect2:
+	var style: StyleBox = edit.get_theme_stylebox(&"normal")
+	var top: float = style.get_margin(SIDE_TOP)
+	return Rect2(0.0, top, edit.size.x, edit.size.y - top - style.get_margin(SIDE_BOTTOM))
+
+
+func test_node_strip_spans_every_row_of_a_wrapped_line() -> void:
+	var edit: CodeEdit = await _open_wrapped()
+	var rows: int = edit.get_line_wrap_count(1) + 1
+	assert_int(rows).is_greater(1)
+	var height: float = edit.get_line_height()
+	var strip: Rect2 = _panel._node_strip_rect(1, Rect2(4, 40, 10, height))
+	assert_that(strip).is_equal(Rect2(4, 40, WeavlyEditorPanel._NODE_STRIP_WIDTH, height * rows))
+
+
+func test_node_strip_covers_one_row_without_wrap() -> void:
+	var edit: CodeEdit = await _open_wrapped()
+	_panel._line_wrap.button_pressed = false
+	await await_idle_frame()
+	var height: float = edit.get_line_height()
+	var strip: Rect2 = _panel._node_strip_rect(1, Rect2(4, 40, 10, height))
+	assert_that(strip).is_equal(Rect2(4, 40, WeavlyEditorPanel._NODE_STRIP_WIDTH, height))
+
+
+func test_node_strip_stays_inside_the_text_area() -> void:
+	var edit: CodeEdit = await _open_wrapped()
+	var height: float = edit.get_line_height()
+	var text_area: Rect2 = _text_area(edit)
+	var above: Rect2 = _panel._node_strip_rect(1, Rect2(4, -height * 2, 10, height))
+	assert_float(above.position.y).is_equal(text_area.position.y)
+	var below: Rect2 = _panel._node_strip_rect(1, Rect2(4, edit.size.y - height, 10, height))
+	assert_float(below.end.y).is_equal(text_area.end.y)
