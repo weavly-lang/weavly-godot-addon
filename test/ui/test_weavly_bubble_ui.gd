@@ -265,6 +265,33 @@ func test_clicking_the_bubble_advances() -> void:
 	assert_str(_bar_text().get_parsed_text()).is_equal("The gate creaks.")
 
 
+func test_clicking_the_bar_advances() -> void:
+	_engine.start("start")
+	_ui.advance()
+	_bar().gui_input.emit(mouse_button(MOUSE_BUTTON_LEFT))
+	assert_str(_bar_text().get_parsed_text()).is_equal("Fresh bread!")
+
+
+func test_only_pressing_the_left_button_advances() -> void:
+	_engine.start("start")
+	_bubble().gui_input.emit(mouse_button(MOUSE_BUTTON_RIGHT))
+	_bubble().gui_input.emit(mouse_button(MOUSE_BUTTON_LEFT, false))
+	assert_str(_bubble_text()).is_equal("Halt! Who goes there?")
+
+
+func test_clicks_and_keys_the_ui_uses_dont_reach_the_game() -> void:
+	_engine.start("start")
+	var click: Callable = func(event: InputEvent) -> void: _bubble().gui_input.emit(event)
+	assert_bool(handles_input(click, mouse_button(MOUSE_BUTTON_LEFT), _world)).is_true()
+	(
+		assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_accept"), _world))
+		. is_true()
+	)
+	_ui.advance()
+	_ui.advance()
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_down"), _world)).is_true()
+
+
 func test_input_action_advances() -> void:
 	_engine.start("start")
 	_press(&"ui_accept")

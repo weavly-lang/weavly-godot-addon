@@ -214,6 +214,12 @@ func test_keys_select_and_choose_an_option() -> void:
 	assert_array(_outcome()).is_equal(["You win 5 gold at cards."])
 
 
+func test_the_key_that_selects_an_option_doesnt_reach_the_game() -> void:
+	_ui.deal(["city"])
+	await get_tree().process_frame
+	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_right"))).is_true()
+
+
 func test_cards_keep_their_width_with_long_options() -> void:
 	_ui.deal(["city"])
 	await get_tree().process_frame
