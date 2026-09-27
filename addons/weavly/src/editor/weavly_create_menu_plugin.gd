@@ -25,6 +25,9 @@ func _on_create(paths: Variant) -> void:
 		return
 
 	var path: String = _unique_path(folder)
+	if path == "":
+		push_error("[Weavly] No free name for a new %s file in %s" % [_EXTENSION, folder])
+		return
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		push_error("[Weavly] Could not create %s" % path)
@@ -52,6 +55,7 @@ func _resolve_folder(paths: Variant) -> String:
 	return candidate
 
 
+# Empty when every candidate name is taken.
 func _unique_path(folder: String) -> String:
 	var base: String = folder.path_join(_DEFAULT_NAME + _EXTENSION)
 	if not FileAccess.file_exists(base):
@@ -60,4 +64,4 @@ func _unique_path(folder: String) -> String:
 		var candidate: String = folder.path_join("%s_%d%s" % [_DEFAULT_NAME, index, _EXTENSION])
 		if not FileAccess.file_exists(candidate):
 			return candidate
-	return base
+	return ""

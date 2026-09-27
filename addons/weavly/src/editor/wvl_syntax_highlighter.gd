@@ -152,21 +152,14 @@ func _find_block_lines(editor: TextEdit) -> void:
 
 # An inline statement after ':' is line text unless it's another directive.
 func _expression_end(text: String) -> int:
-	var in_string: bool = false
-	var i: int = 0
-	while i < text.length():
-		var character: String = text[i]
-		if in_string:
-			if character == "\\":
-				i += 1
-			elif character == '"':
-				in_string = false
-		elif character == '"':
-			in_string = true
-		elif character == ":" and not text.substr(i + 1).strip_edges(true, false).begins_with("@"):
-			return i
-		i += 1
-	return text.length()
+	var end: int = _find_outside_strings(
+		text,
+		func(i: int) -> bool:
+			return (
+				text[i] == ":" and not text.substr(i + 1).strip_edges(true, false).begins_with("@")
+			)
+	)
+	return end if end != -1 else text.length()
 
 
 func _paint_numbers(colors: PackedColorArray, text: String) -> void:
@@ -206,7 +199,11 @@ func _comment_start(text: String) -> int:
 		return text.length() - stripped.length()
 	if not stripped.begins_with("@"):
 		return -1
+	return _find_outside_strings(text, func(i: int) -> bool: return text[i] == "#")
 
+
+# The first index outside a string for which found(index) holds, or -1.
+func _find_outside_strings(text: String, found: Callable) -> int:
 	var in_string: bool = false
 	var i: int = 0
 	while i < text.length():
@@ -218,7 +215,7 @@ func _comment_start(text: String) -> int:
 				in_string = false
 		elif character == '"':
 			in_string = true
-		elif character == "#":
+		elif found.call(i):
 			return i
 		i += 1
 	return -1
