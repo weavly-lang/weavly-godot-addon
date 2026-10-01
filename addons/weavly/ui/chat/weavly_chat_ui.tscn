@@ -67,9 +67,3 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 script = ExtResource("3_choices")
-
-[node name="Continue" type="Button" parent="Phone/Column"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-text = "Continue"

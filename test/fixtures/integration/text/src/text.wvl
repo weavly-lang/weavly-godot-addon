@@ -1,6 +1,6 @@
 @env
-name: string = "Ada"
-coins: number = 3
+var name: string = "Ada"
+var coins: number = 3
 @endenv
 
 @node start

@@ -208,17 +208,15 @@ func test_speaker_without_a_character_shows_the_name_as_written() -> void:
 	assert_str(_nameplate().text).is_equal("stranger")
 
 
-func test_options_show_in_the_bar_with_hints_disabled() -> void:
+func test_options_show_in_the_bar() -> void:
 	_engine.start("start")
 	for i: int in 4:
 		_ui.advance()
 	var buttons: Array[Button] = _choices()
 	(
 		assert_array(buttons.map(func(button: Button) -> String: return button.text))
-		. is_equal(["Answer", "Bribe (no gold)"])
+		. is_equal(["Answer"])
 	)
-	assert_bool(buttons[0].disabled).is_false()
-	assert_bool(buttons[1].disabled).is_true()
 	assert_bool(_bar().visible).is_true()
 	assert_str(_bar_text().get_parsed_text()).is_equal("Psst.")
 
@@ -227,7 +225,7 @@ func test_advancing_doesnt_skip_a_choice() -> void:
 	_engine.start("start")
 	for i: int in 5:
 		_ui.advance()
-	assert_int(_choices().size()).is_equal(2)
+	assert_int(_choices().size()).is_equal(1)
 
 
 func test_choosing_an_option_continues() -> void:
@@ -240,20 +238,12 @@ func test_choosing_an_option_continues() -> void:
 	assert_str(_bubble_text()).is_equal("Pass, then.")
 
 
-func test_navigating_focuses_the_first_choosable_option() -> void:
+func test_navigating_focuses_the_first_option() -> void:
 	_engine.start("start")
 	for i: int in 4:
 		_ui.advance()
 	_press(&"ui_down")
 	assert_bool(_choices()[0].has_focus()).is_true()
-
-
-func test_only_hints_wait_for_advance() -> void:
-	_engine.start("hints")
-	assert_int(_choices().size()).is_equal(1)
-	_ui.advance()
-	assert_array(_choices()).is_empty()
-	assert_str(_bar_text().get_parsed_text()).is_equal("You walk on.")
 
 
 func test_clicking_the_bubble_advances() -> void:
@@ -322,7 +312,7 @@ func test_auto_advance_waits_for_a_choice() -> void:
 	for i: int in 4:
 		_ui.advance()
 	_ui._process(5.0)
-	assert_int(_choices().size()).is_equal(2)
+	assert_int(_choices().size()).is_equal(1)
 
 
 func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:

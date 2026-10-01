@@ -97,20 +97,13 @@ func test_shows_lines_and_option_blocks_in_order() -> void:
 			[
 				[
 					"Guide: Welcome, you have 0 gold.",
-					["Buy a drink", "Leave", "Gamble (closed)"],
+					["Buy a drink", "Leave"],
 					"Stranger: Mind the fire.",
 					["Warm up"],
 				]
 			]
 		)
 	)
-
-
-func test_hints_cant_be_clicked_or_selected() -> void:
-	_ui.show_passage("tavern")
-	var hint: LinkButton = _link("Gamble (closed)")
-	assert_bool(hint.disabled).is_true()
-	assert_int(hint.focus_mode).is_equal(Control.FOCUS_NONE)
 
 
 func test_commands_are_emitted_in_order() -> void:
@@ -128,7 +121,7 @@ func test_following_a_link_into_the_next_node() -> void:
 func test_a_link_from_a_later_option_block() -> void:
 	_ui.show_passage("tavern")
 	_link("Warm up").pressed.emit()
-	assert_array(_describe()).is_equal([["You warm up.", ["Stay (too hot)"]]])
+	assert_array(_describe()).is_equal([["You warm up."]])
 
 
 func test_append_keeps_earlier_passages() -> void:
@@ -151,11 +144,6 @@ func test_a_passage_without_options_finishes() -> void:
 	_link("Leave").pressed.emit()
 	assert_array(_describe()).is_equal([["The street is empty."]])
 	assert_array(_events).contains(["finished"])
-
-
-func test_a_passage_of_only_hints_finishes() -> void:
-	_ui.show_passage("fire")
-	assert_array(_events).is_equal(["finished"])
 
 
 func test_a_passage_with_options_doesnt_finish() -> void:

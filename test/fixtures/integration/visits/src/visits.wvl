@@ -1,5 +1,5 @@
 @env
-count: number = 0
+var count: number = 0
 @endenv
 
 @node hub
@@ -12,7 +12,7 @@ count: number = 0
 @set $count = visit_count(hub)
 @match first
     @when visit_count(hub) < 2
-        @goto hub
+        @jump hub
 @endmatch
 Done
 @endnode

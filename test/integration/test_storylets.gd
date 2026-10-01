@@ -166,7 +166,7 @@ func test_node_meta_exposes_pools_and_slots() -> void:
 	assert_object(engine.node_service.get_node("count_skips").meta).is_null()
 
 
-func test_goto_and_start_ignore_the_metadata() -> void:
+func test_jump_and_start_ignore_the_metadata() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.start("when_no")
 	assert_int(engine.node_service.get_visit_count("when_no")).is_equal(1)
@@ -229,7 +229,7 @@ func test_draw_resets_the_drawn_node_and_counts_the_other_eligible_ones() -> voi
 	assert_int(engine.node_service.get_skip_count("never")).is_equal(0)
 
 
-func test_the_draw_statement_enters_the_drawn_node_like_a_goto() -> void:
+func test_the_draw_statement_enters_the_drawn_node_like_a_jump() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
 	engine.start("draw_one")

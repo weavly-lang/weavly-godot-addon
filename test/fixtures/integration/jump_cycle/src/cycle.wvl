@@ -1,11 +1,11 @@
 @node self_loop
-@goto self_loop
+@jump self_loop
 @endnode
 
 @node ping
-@goto pong
+@jump pong
 @endnode
 
 @node pong
-@goto ping
+@jump ping
 @endnode

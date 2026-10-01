@@ -275,14 +275,56 @@ func test_match_with_a_failing_case_condition_is_dropped() -> void:
 	assert_logged(["Unknown expression type at nodes[0].body[0].cases[0].condition"])
 
 
+func _inline(meta: Dictionary) -> Dictionary:
+	return {"type": "inline", "line": 3.0, "meta": meta, "body": []}
+
+
+func _label(text: String) -> Dictionary:
+	return {"line": 3.0, "value": [text]}
+
+
 func test_option_block_with_a_failing_condition_is_dropped() -> void:
 	var items: Array = [
-		{"line": 3.0, "condition": {"bogus": 1}, "text": ["a"], "body": [], "hint": false},
-		{"line": 4.0, "condition": true, "text": ["b"], "body": [], "hint": false},
+		_inline({"label": _label("a"), "when": {"line": 3.0, "value": {"bogus": 1}}}),
+		_inline({"label": _label("b")}),
 	]
 	var body: Array = _body_of({"type": "option", "items": items})
 	assert_that(body.size()).is_equal(1)
-	assert_logged(["Unknown expression type at nodes[0].body[0].items[0].condition"])
+	assert_logged(["Unknown expression type at nodes[0].body[0].items[0].meta.when.value"])
+
+
+func test_goto_is_an_unknown_statement() -> void:
+	var body: Array = _body_of({"type": "goto", "id": "end"})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown statement type 'goto' at nodes[0].body[0]"])
+
+
+func test_option_block_in_the_old_shape_is_dropped() -> void:
+	var items: Array = [{"line": 3.0, "condition": true, "text": ["a"], "body": [], "hint": false}]
+	var body: Array = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'type' at nodes[0].body[0].items[0]"])
+
+
+func test_option_block_with_an_unknown_option_type_is_dropped() -> void:
+	var items: Array = [{"type": "node", "line": 3.0, "id": "camp"}]
+	var body: Array = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown option type 'node' at nodes[0].body[0].items[0]"])
+
+
+func test_inline_option_with_an_unknown_meta_key_is_dropped() -> void:
+	var items: Array = [_inline({"label": _label("a"), "available": {"line": 3.0, "value": true}})]
+	var body: Array = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown option meta key 'available' at nodes[0].body[0].items[0].meta"])
+
+
+func test_inline_option_without_a_label_is_dropped() -> void:
+	var items: Array = [_inline({})]
+	var body: Array = _body_of({"type": "option", "items": items})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'label' at nodes[0].body[0].items[0].meta"])
 
 
 func test_random_block_with_a_failing_weight_is_dropped() -> void:
@@ -323,7 +365,7 @@ func test_match_with_a_case_missing_its_line_is_dropped() -> void:
 
 
 func test_option_block_with_an_option_missing_its_line_is_dropped() -> void:
-	var items: Array = [{"condition": true, "text": ["a"], "body": [], "hint": false}]
+	var items: Array = [{"type": "inline", "meta": {"label": _label("a")}, "body": []}]
 	var body: Array = _body_of({"type": "option", "items": items})
 	assert_that(body.size()).is_equal(1)
 	assert_logged(["Missing required field 'line' at nodes[0].body[0].items[0]"])

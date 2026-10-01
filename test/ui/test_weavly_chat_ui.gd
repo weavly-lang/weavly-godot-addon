@@ -197,16 +197,15 @@ func test_a_plain_character_uses_the_theme_bubble() -> void:
 	assert_bool(bubble.has_theme_stylebox_override(&"panel")).is_false()
 
 
-func test_replies_show_with_hints_disabled() -> void:
+func test_replies_show_as_buttons() -> void:
 	_engine.start("start")
 	for i: int in 4:
 		_wait_out()
 	var replies: Array[Button] = _replies()
 	(
 		assert_array(replies.map(func(button: Button) -> String: return button.text))
-		. is_equal(["what happened?", "going to sleep", "call her (no signal)"])
+		. is_equal(["what happened?", "going to sleep"])
 	)
-	assert_bool(replies[2].disabled).is_true()
 	assert_bool(_ui.is_waiting()).is_false()
 
 
@@ -219,26 +218,6 @@ func test_the_chosen_reply_becomes_a_player_bubble() -> void:
 	assert_str(_describe()[-1]).is_equal("right: what happened?")
 	_wait_out()
 	assert_str(_describe()[-1]).is_equal("left Mara: you won't believe it")
-
-
-func test_a_reply_bar_of_only_hints_waits_for_continue() -> void:
-	_engine.start("hints")
-	_wait_out()
-	(
-		assert_array(_replies().map(func(button: Button) -> bool: return button.disabled))
-		. is_equal([true])
-	)
-	var next: Button = _ui.get_node("%Continue")
-	assert_bool(next.visible).is_true()
-	assert_bool(_ui.is_waiting()).is_false()
-	_click()
-	_wait_out()
-	assert_int(_replies().size()).is_equal(1)
-	next.pressed.emit()
-	assert_array(_replies()).is_empty()
-	assert_bool(next.visible).is_false()
-	_wait_out()
-	assert_str(_describe()[-1]).is_equal("left: nvm")
 
 
 func test_bubbles_fit_short_text_and_wrap_long_text() -> void:
@@ -269,22 +248,6 @@ func test_keys_select_a_reply() -> void:
 	event.pressed = true
 	_ui._unhandled_input(event)
 	assert_bool(_replies()[0].has_focus()).is_true()
-
-
-func test_keys_and_hover_select_continue() -> void:
-	_engine.start("hints")
-	_wait_out()
-	var next: Button = _ui.get_node("%Continue")
-	var event: InputEventAction = InputEventAction.new()
-	event.action = &"ui_accept"
-	event.pressed = true
-	_ui._unhandled_input(event)
-	assert_bool(next.has_focus()).is_true()
-	assert_int(_replies().size()).is_equal(1)
-	next.mouse_exited.emit()
-	assert_bool(next.has_focus()).is_false()
-	next.mouse_entered.emit()
-	assert_bool(next.has_focus()).is_true()
 
 
 func test_clear_hides_and_empties_the_conversation() -> void:

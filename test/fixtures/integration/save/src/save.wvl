@@ -1,12 +1,12 @@
 @env
-gold: number = 0
-seen_shop: flag = false
+var gold: number = 0
+var seen_shop: flag = false
 @endenv
 
 @node start
 @set $gold = $gold + 5
 In start
-@goto shop
+@jump shop
 @endnode
 
 @node shop

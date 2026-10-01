@@ -90,10 +90,40 @@ func test_character_line_with_a_variable_name() -> void:
 	assert_that(line.name_is_id).is_true()
 
 
-func test_goto_statement() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "goto", "id": "end"})
-	assert_object(stmt).is_instanceof(WeavlyModel.GotoStatement)
-	assert_that((stmt as WeavlyModel.GotoStatement).id).is_equal("end")
+func test_jump_statement() -> void:
+	var stmt: WeavlyModel.Statement = _compile_single({"type": "jump", "id": "end"})
+	assert_object(stmt).is_instanceof(WeavlyModel.JumpStatement)
+	assert_that((stmt as WeavlyModel.JumpStatement).id).is_equal("end")
+
+
+func test_inline_options_read_label_condition_and_body() -> void:
+	var guarded: Dictionary = {
+		"type": "inline",
+		"line": 3.0,
+		"meta":
+		{
+			"label": {"line": 3.0, "value": ["Pay ", {"variable": "gold"}]},
+			"when": {"line": 3.0, "value": {"variable": "rich"}},
+		},
+		"body": [{"type": "finish", "line": 3.0}],
+	}
+	var plain: Dictionary = {
+		"type": "inline",
+		"line": 4.0,
+		"meta": {"label": {"line": 4.0, "value": ["Leave"]}},
+		"body": []
+	}
+	var stmt: WeavlyModel.Statement = _compile_single(
+		{"type": "option", "items": [guarded, plain]}
+	)
+	var options: Array[WeavlyModel.Option] = (stmt as WeavlyModel.OptionBlock).options
+	assert_that(options[0].segments[0]).is_equal("Pay ")
+	assert_object(options[0].segments[1]).is_instanceof(WeavlyModel.Identifier)
+	assert_object(options[0].condition).is_instanceof(WeavlyModel.Identifier)
+	assert_object(options[0].body[0]).is_instanceof(WeavlyModel.FinishStatement)
+	assert_that(options[1].segments).is_equal(["Leave"])
+	assert_object(options[1].condition).is_instanceof(WeavlyModel.TrueExpression)
+	assert_that(options[1].body).is_empty()
 
 
 func test_finish_statement() -> void:
@@ -362,7 +392,15 @@ func test_option_and_random_case_lines_are_read() -> void:
 	var option_block: Dictionary = {
 		"type": "option",
 		"line": 4.0,
-		"items": [{"line": 5.0, "condition": true, "text": ["a"], "body": [], "hint": false}]
+		"items":
+		[
+			{
+				"type": "inline",
+				"line": 5.0,
+				"meta": {"label": {"line": 5.0, "value": ["a"]}},
+				"body": []
+			}
+		]
 	}
 	var random_block: Dictionary = {
 		"type": "random",

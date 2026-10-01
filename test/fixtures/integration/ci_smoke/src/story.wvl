@@ -10,11 +10,11 @@ Welcome to the smoke test.
 @clearflag $has_key
 
 @if $score > 10
-    @goto choices
+    @jump choices
 @elif $score == 10
-    @goto choices
+    @jump choices
 @else
-    @goto choices
+    @jump choices
 @endif
 @endnode
 
@@ -29,8 +29,8 @@ $player_name: Which path?
 
 @node random_node
 @random
-@case 1: @goto match_node
-@case 1: @goto match_node
+@case 1: @jump match_node
+@case 1: @jump match_node
 @endrandom
 @endnode
 
@@ -38,10 +38,10 @@ $player_name: Which path?
 @match
     @when $has_key
         You have the key.
-        @goto end
+        @jump end
     @when not $has_key
         No key needed.
-        @goto end
+        @jump end
 @endmatch
 @endnode
 

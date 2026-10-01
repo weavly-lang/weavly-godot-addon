@@ -106,8 +106,8 @@ func test_deals_the_first_cards_in_selection_order() -> void:
 		. is_equal(
 			[
 				["Guide: A stranger waves you over.", ["Join them"]],
-				["Someone grabs your purse.", ["Chase", "Let go", "Call the guard (none around)"]],
-				["A troll blocks the way.", ["Pass (no gold)"]],
+				["Someone grabs your purse.", ["Chase", "Let go"]],
+				["A troll blocks the way."],
 			]
 		)
 	)
@@ -169,13 +169,6 @@ func test_an_outcome_with_options_hides_continue() -> void:
 	_button(_cards("%Outcome")[0], "Keep running").pressed.emit()
 	assert_array(_outcome()).is_equal(["You're out of breath."])
 	assert_bool(_ui.get_node("%Continue").visible).is_true()
-
-
-func test_a_card_of_only_hints_cant_be_chosen() -> void:
-	_ui.deal(["city"])
-	var hint: Button = _button(_cards()[2], "Pass (no gold)")
-	assert_bool(hint.disabled).is_true()
-	assert_int(hint.focus_mode).is_equal(Control.FOCUS_NONE)
 
 
 func test_continue_deals_again_from_the_same_pools() -> void:

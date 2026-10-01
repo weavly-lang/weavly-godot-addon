@@ -6,7 +6,7 @@ const SYNTAX_ERROR_OUTPUT = """src/sub/broken.wvl:2:11: error: unexpected end of
   2 | @set $x =
     |           ^
   expected one of: '$', '(', '-', 'false', 'not', 'true', a number, a quoted string
-src/b.wvl:2:7: error: goto target 'nowhere' matches no node"""
+src/b.wvl:2:7: error: jump target 'nowhere' matches no node"""
 
 # =====================
 # build_command
@@ -132,7 +132,7 @@ func test_parse_errors_collects_every_error_and_skips_detail_lines() -> void:
 	assert_that(errors[0].column).is_equal(11)
 	assert_that(errors[0].message).is_equal("unexpected end of line")
 	assert_that(errors[1].file).is_equal("src/b.wvl")
-	assert_that(errors[1].message).is_equal("goto target 'nowhere' matches no node")
+	assert_that(errors[1].message).is_equal("jump target 'nowhere' matches no node")
 
 
 func test_parse_errors_handles_crlf_output() -> void:
@@ -179,13 +179,14 @@ func test_parse_version_returns_empty_for_unrelated_output() -> void:
 
 
 func test_is_version_supported_accepts_the_minimum_and_newer() -> void:
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.4.0")).is_true()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.4.1")).is_true()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.5.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.5.1")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.6.0")).is_true()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("1.0.0")).is_true()
 
 
 func test_is_version_supported_rejects_older_and_unknown() -> void:
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.4.9")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.3.9")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.2.9")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.9")).is_false()

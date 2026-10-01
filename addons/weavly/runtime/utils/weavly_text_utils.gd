@@ -51,7 +51,7 @@ static func fill_character_line(
 
 static func fill_option(option: WeavlyModel.Option, engine: WeavlyEngine) -> WeavlyModel.Option:
 	var filled: WeavlyModel.Option = WeavlyModel.Option.new(
-		option.condition, option.segments, option.body, option.hint
+		option.condition, option.segments, option.body
 	)
 	filled.text = fill_text(option.segments, engine)
 	filled.line = option.line
