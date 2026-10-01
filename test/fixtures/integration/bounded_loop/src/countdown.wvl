@@ -1,12 +1,12 @@
 @env
-i: number = 3
+var i: number = 3
 @endenv
 
 @node countdown
 @set $i = $i - 1
 @match first
     @when $i > 0
-        @goto countdown
+        @jump countdown
 @endmatch
 @finish
 @endnode

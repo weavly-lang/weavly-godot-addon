@@ -1,11 +1,18 @@
 @node menu
 @options
 @option "Go on" -> after
-@hint "Locked"
 @endoptions
 @endnode
 
 @node after
 After
+@finish
+@endnode
+
+@node none
+@options
+@option [ false ] "Open": @finish
+@endoptions
+Nothing to choose
 @finish
 @endnode

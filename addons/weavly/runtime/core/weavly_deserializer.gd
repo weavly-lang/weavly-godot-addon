@@ -38,11 +38,11 @@ const KEY_POOL = "pool"
 const KEY_SLOT = "slot"
 const KEY_WHEN = "when"
 const KEY_PRIORITY = "priority"
+const KEY_LABEL = "label"
 
 # Block keys
 const KEY_CASES = "cases"
 const KEY_OPTIONS = "items"
-const KEY_HINT = "hint"
 
 # Variable keys
 const KEY_NAME = "name"
@@ -57,7 +57,7 @@ const TYPE_CHARACTER = "character"
 const TYPE_MATCH = "match"
 const TYPE_OPTION = "option"
 const TYPE_SET = "set"
-const TYPE_GOTO = "goto"
+const TYPE_JUMP = "jump"
 const TYPE_FINISH = "finish"
 const TYPE_COMMAND = "command"
 const TYPE_NUMBER = "number"
@@ -65,6 +65,7 @@ const TYPE_STRING = "string"
 const TYPE_FLAG = "flag"
 const TYPE_RANDOM = "random"
 const TYPE_DRAW = "draw"
+const TYPE_INLINE = "inline"
 
 # Variable type -> value an extern starts with; its type is the declared value's type.
 const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
@@ -272,8 +273,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 			return compile_option_block(data, path)
 		TYPE_SET:
 			return compile_set_statement(data, path)
-		TYPE_GOTO:
-			return compile_goto_statement(data, path)
+		TYPE_JUMP:
+			return compile_jump_statement(data, path)
 		TYPE_FINISH:
 			return compile_finish_statement(data, path)
 		TYPE_COMMAND:
@@ -315,11 +316,11 @@ static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel
 	return WeavlyModel.SetStatement.new(id, expression)
 
 
-static func compile_goto_statement(data: Dictionary, path: String) -> WeavlyModel.GotoStatement:
+static func compile_jump_statement(data: Dictionary, path: String) -> WeavlyModel.JumpStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
-	return WeavlyModel.GotoStatement.new(id)
+	return WeavlyModel.JumpStatement.new(id)
 
 
 static func compile_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:
@@ -349,12 +350,12 @@ static func compile_command_statement(
 
 
 # Strings are plain text, anything else is an interpolated expression.
-static func compile_text(data: Dictionary, path: String) -> Variant:
-	var text_data: Variant = get_required(data, KEY_TEXT, Variant.Type.TYPE_ARRAY, path)
+static func compile_text(data: Dictionary, path: String, key: String = KEY_TEXT) -> Variant:
+	var text_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, path)
 	if text_data == null:
 		return null
 	var segments: Array = []
-	if not _compile_list(text_data, _path_join(path, KEY_TEXT), _compile_segment, segments):
+	if not _compile_list(text_data, _path_join(path, key), _compile_segment, segments):
 		return null
 	return segments
 
@@ -422,15 +423,34 @@ static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.
 
 
 static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option:
-	var condition: WeavlyModel.WeavlyExpression = compile_required_expression(
-		data, KEY_CONDITION, path
-	)
-	var segments: Variant = compile_text(data, path)
-	var body: Variant = compile_body(data, path)
-	var hint: Variant = get_required(data, KEY_HINT, Variant.Type.TYPE_BOOL, path)
-	if condition == null or segments == null or body == null or hint == null:
+	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
+	if type == null:
 		return null
-	return WeavlyModel.Option.new(condition, segments, body, hint)
+	if type != TYPE_INLINE:
+		push_error("Unknown option type '%s' at %s" % [type, path])
+		return null
+	var meta: Variant = get_required(data, KEY_META, Variant.Type.TYPE_DICTIONARY, path)
+	var body: Variant = compile_body(data, path)
+	if meta == null or body == null:
+		return null
+	var meta_path: String = _path_join(path, KEY_META)
+	for key: Variant in meta:
+		if key != KEY_LABEL and key != KEY_WHEN:
+			push_error("Unknown option meta key '%s' at %s" % [key, meta_path])
+			return null
+	var label: Variant = get_required(meta, KEY_LABEL, Variant.Type.TYPE_DICTIONARY, meta_path)
+	if label == null:
+		return null
+	var segments: Variant = compile_text(label, _path_join(meta_path, KEY_LABEL), KEY_VALUE)
+	var condition: WeavlyModel.WeavlyExpression = WeavlyModel.TrueExpression.new()
+	if meta.has(KEY_WHEN):
+		var entry: Variant = get_required(meta, KEY_WHEN, Variant.Type.TYPE_DICTIONARY, meta_path)
+		if entry == null:
+			return null
+		condition = compile_required_expression(entry, KEY_VALUE, _path_join(meta_path, KEY_WHEN))
+	if segments == null or condition == null:
+		return null
+	return WeavlyModel.Option.new(condition, segments, body)
 
 
 # =====================

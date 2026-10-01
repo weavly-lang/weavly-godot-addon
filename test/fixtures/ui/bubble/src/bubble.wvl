@@ -5,19 +5,11 @@ The gate creaks.
 >stranger: Psst.
 @options
 @option "Answer" -> answered
-@hint "Bribe (no gold)"
 @endoptions
 @endnode
 
 @node answered
 >guard: Pass, then.
-@endnode
-
-@node hints
-@options
-@hint "Locked door"
-@endoptions
-You walk on.
 @endnode
 
 @node bark

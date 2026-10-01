@@ -26,7 +26,7 @@ After opening the project with a Godot version other than the newest supported o
 
 ## Fixtures
 
-Every folder under `test/fixtures/` with a `src/` folder is a Weavly project. Edit its `.wvl` sources, never `build/`, and rebuild from that folder with `weavly build`. CI fails when a committed `build/` doesn't match what the pinned compiler produces; a weekly run does the same against the newest compiler release.
+Every folder under `test/fixtures/` and `ci/export_smoke/` with a `src/` folder is a Weavly project. Edit its `.wvl` sources, never `build/`, and rebuild from that folder with `weavly build`. CI fails when a committed `build/` doesn't match what the pinned compiler produces; a weekly run does the same against the newest compiler release.
 
 ## Mutation testing
 

@@ -1,16 +1,16 @@
 @env
-gold: number = 3
-name: string = "Robin"
-brave: flag = false
-extern secret: number
-city: pool
+var gold: number = 3
+var name: string = "Robin"
+var brave: flag = false
+extern var secret: number
+pool city
 @endenv
 
 @node start
 Hello {$name}.
 @increase $gold 2
 Second line.
-@goto gate
+@jump gate
 @endnode
 
 @node gate

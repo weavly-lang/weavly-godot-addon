@@ -87,7 +87,7 @@ class SetStatement:
 		self.expression = expression
 
 
-class GotoStatement:
+class JumpStatement:
 	extends Statement
 	var id: String
 
@@ -166,14 +166,12 @@ class Option:
 	var segments: Array
 	var text: String = ""
 	var body: Array[Statement]
-	var hint: bool
 	var line: int = 0
 
-	func _init(condition: WeavlyExpression, segments: Array, body: Array[Statement], hint: bool):
+	func _init(condition: WeavlyExpression, segments: Array, body: Array[Statement]):
 		self.condition = condition
 		self.segments = segments
 		self.body = body
-		self.hint = hint
 
 
 # =====================

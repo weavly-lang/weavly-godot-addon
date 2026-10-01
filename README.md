@@ -8,7 +8,7 @@ A Godot 4.5+ addon that plays [Weavly](https://github.com/weavly-lang/weavly-com
 
 ## Features
 
-- **Runtime engine**: a `WeavlyEngine` node that plays lines, options, `match` and `random` blocks, variables, gotos, commands and storylet pools.
+- **Runtime engine**: a `WeavlyEngine` node that plays lines, options, `match` and `random` blocks, variables, jumps, commands and storylet pools.
 - **No UI lock-in**: your game listens to signals and draws the dialogue however it likes.
 - **Starter UIs**: visual novel, Twine-style passage, card, chat, speech bubbles and a debug overlay, ready to drop in or copy.
 - **Swappable services**: replace any part of the runtime through the engine's `*_service_script` exports.
@@ -18,7 +18,7 @@ A Godot 4.5+ addon that plays [Weavly](https://github.com/weavly-lang/weavly-com
 
 1. Download `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the Weavly compiler (0.4.0 or newer) and restart Godot:
+3. For the editor tooling, install the Weavly compiler (0.5.0 or newer) and restart Godot:
 
    ```bash
    uv tool install weavly

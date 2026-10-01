@@ -151,22 +151,20 @@ func test_only_pressing_the_left_button_advances() -> void:
 	assert_str(_text().text).is_equal("Hello there.")
 
 
-func test_options_show_hints_disabled() -> void:
+func test_options_show_as_buttons() -> void:
 	_engine.start("start")
 	_advance(4)
 	var buttons: Array[Button] = _choices()
 	(
 		assert_array(buttons.map(func(button: Button) -> String: return button.text))
-		. is_equal(["Wave", "Fight (too tired)"])
+		. is_equal(["Wave"])
 	)
-	assert_bool(buttons[0].disabled).is_false()
-	assert_bool(buttons[1].disabled).is_true()
 
 
 func test_advancing_doesnt_skip_a_choice() -> void:
 	_engine.start("start")
 	_advance(5)
-	assert_int(_choices().size()).is_equal(2)
+	assert_int(_choices().size()).is_equal(1)
 	assert_str(_text().text).is_equal("Who are you?")
 
 
@@ -184,7 +182,7 @@ func test_options_open_without_focus() -> void:
 	assert_bool(_choices().any(func(button: Button) -> bool: return button.has_focus())).is_false()
 
 
-func test_navigating_focuses_the_first_choosable_option() -> void:
+func test_navigating_focuses_the_first_option() -> void:
 	_engine.start("start")
 	_advance(4)
 	_press(&"ui_down")
@@ -196,7 +194,7 @@ func test_advance_action_focuses_instead_of_choosing() -> void:
 	_advance(4)
 	_press(&"ui_accept")
 	assert_bool(_choices()[0].has_focus()).is_true()
-	assert_int(_choices().size()).is_equal(2)
+	assert_int(_choices().size()).is_equal(1)
 
 
 func test_keys_choose_the_focused_option() -> void:
@@ -220,26 +218,6 @@ func test_keys_choose_the_hovered_option() -> void:
 	_choices()[1].mouse_entered.emit()
 	_press_key(KEY_ENTER)
 	assert_str(_text().text).is_equal("You go right.")
-
-
-func test_hints_cant_be_selected() -> void:
-	_engine.start("start")
-	_advance(4)
-	var hint: Button = _choices()[1]
-	assert_int(hint.focus_mode).is_equal(Control.FOCUS_NONE)
-	hint.mouse_entered.emit()
-	assert_bool(hint.has_focus()).is_false()
-
-
-func test_only_hints_wait_for_advance() -> void:
-	_engine.start("hints")
-	(
-		assert_array(_choices().map(func(button: Button) -> bool: return button.disabled))
-		. is_equal([true])
-	)
-	_ui.advance()
-	assert_array(_choices()).is_empty()
-	assert_str(_text().text).is_equal("You walk on.")
 
 
 func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:

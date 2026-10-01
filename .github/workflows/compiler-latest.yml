@@ -20,11 +20,11 @@ jobs:
       - run: weavly --version
       - name: Rebuild the fixtures from their .wvl sources
         run: |
-          for src in $(find test/fixtures -type d -name src | sort); do
+          for src in $(find test/fixtures ci/export_smoke -type d -name src | sort); do
             echo "Building $(dirname "$src")"
             (cd "$(dirname "$src")" && weavly build)
           done
       - name: Fail if the newest compiler emits different JSON
         run: |
-          git add -A test/fixtures
-          git diff --cached --exit-code -- test/fixtures
+          git add -A test/fixtures ci/export_smoke
+          git diff --cached --exit-code -- test/fixtures ci/export_smoke

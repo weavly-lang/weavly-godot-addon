@@ -1,12 +1,12 @@
 @env
-counter: number = 0
+var counter: number = 0
 @endenv
 
 @node start
 Welcome
 >Guide: Hello
 @set $counter = 7
-@goto end
+@jump end
 @endnode
 
 @node end

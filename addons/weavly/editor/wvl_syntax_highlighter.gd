@@ -28,7 +28,7 @@ var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_
 var _meta_key_regex: RegEx = RegEx.create_from_string(
 	"^[ \\t]*(pool|slot|when|priority|weight|once)[ \\t]*:"
 )
-var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|hint|continue)\\b")
+var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|continue)\\b")
 var _interpolation_regex: RegEx = RegEx.create_from_string("(?<!\\\\)\\{[^{}\\n]*\\}")
 
 # Line -> "@env" or "@meta" for the lines inside such a block.

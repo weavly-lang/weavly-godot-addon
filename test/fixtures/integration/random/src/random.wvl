@@ -1,5 +1,5 @@
 @env
-roll: number = 0
+var roll: number = 0
 @endenv
 
 @node start

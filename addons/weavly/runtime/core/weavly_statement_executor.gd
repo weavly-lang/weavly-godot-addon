@@ -13,8 +13,8 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 		execute_character_line(statement, engine)
 	elif statement is WeavlyModel.SetStatement:
 		execute_set_statement(statement, engine)
-	elif statement is WeavlyModel.GotoStatement:
-		execute_goto_statement(statement, engine)
+	elif statement is WeavlyModel.JumpStatement:
+		execute_jump_statement(statement, engine)
 	elif statement is WeavlyModel.FinishStatement:
 		execute_finish_statement(statement, engine)
 	elif statement is WeavlyModel.CommandStatement:
@@ -72,11 +72,11 @@ static func execute_set_statement(
 	engine.variable_service.set_variable(set_statement.id, value)
 
 
-static func execute_goto_statement(
-	goto_statement: WeavlyModel.GotoStatement, engine: WeavlyEngine
+static func execute_jump_statement(
+	jump_statement: WeavlyModel.JumpStatement, engine: WeavlyEngine
 ) -> void:
 	engine.leave_current_node()
-	engine.enter_node(goto_statement.id)
+	engine.enter_node(jump_statement.id)
 
 
 # Without an eligible node, execution continues with the next statement.

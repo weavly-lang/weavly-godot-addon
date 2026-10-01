@@ -147,7 +147,7 @@ func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> vo
 func test_fill_option_copies_with_filled_text() -> void:
 	var body: Array[WeavlyModel.Statement] = []
 	var option: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), _segments(["Ask ", {"variable": "name"}]), body, false
+		WeavlyModel.TrueExpression.new(), _segments(["Ask ", {"variable": "name"}]), body
 	)
 	option.line = 6
 	var filled: WeavlyModel.Option = WeavlyTextUtils.fill_option(option, _engine_with_name())
@@ -164,7 +164,7 @@ func test_fill_options_reports_a_failing_interpolation_at_the_option_line() -> v
 	)
 	var body: Array[WeavlyModel.Statement] = []
 	var option: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), _segments([{"variable": "missing"}]), body, false
+		WeavlyModel.TrueExpression.new(), _segments([{"variable": "missing"}]), body
 	)
 	option.line = 9
 	var options: Array[WeavlyModel.Option] = [option]
@@ -176,7 +176,7 @@ func test_fill_options_reports_a_failing_interpolation_at_the_option_line() -> v
 func test_fill_option_block_copies_with_filled_options() -> void:
 	var body: Array[WeavlyModel.Statement] = []
 	var options: Array[WeavlyModel.Option] = [
-		WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), _segments(["Hi"]), body, true)
+		WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), _segments(["Hi"]), body)
 	]
 	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(options)
 	block.line = 7
@@ -184,7 +184,6 @@ func test_fill_option_block_copies_with_filled_options() -> void:
 	assert_that(filled).is_not_same(block)
 	assert_int(filled.line).is_equal(7)
 	assert_that(filled.options[0].text).is_equal("Hi")
-	assert_bool(filled.options[0].hint).is_true()
 
 
 func test_fill_command_copies_with_evaluated_values() -> void:

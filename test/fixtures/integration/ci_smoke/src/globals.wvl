@@ -1,12 +1,15 @@
 @env
-score: number = 0
-player_name: string = "Hero"
-has_key: flag = false
-choice_visits: number = 0
-been_to_start: flag = false
-extern reputation: number
-city: pool
-night: pool
-empty: pool
-bob: slot
+var score: number = 0
+var player_name: string = "Hero"
+var has_key: flag = false
+var choice_visits: number = 0
+var been_to_start: flag = false
+extern var reputation: number
+pool city
+pool night
+pool empty
+slot bob
+command fade_in()
+command play_sound(file: string)
+command log(value: number, count: number)
 @endenv

@@ -1,9 +1,10 @@
 @env
-gold: number = 0
-city: pool
-night: pool
-empty: pool
-styled: pool
+var gold: number = 0
+pool city
+pool night
+pool empty
+pool styled
+command header(title: string)
 @endenv
 
 @node inn
@@ -27,7 +28,6 @@ Someone grabs your purse.
 @options
 @option "Chase" -> chase
 @option "Let go" -> let_go
-@hint "Call the guard (none around)"
 @endoptions
 @endnode
 
@@ -37,9 +37,6 @@ pool: city
 priority: 1
 @endmeta
 A troll blocks the way.
-@options
-@hint "Pass (no gold)"
-@endoptions
 @endnode
 
 @node well

@@ -3,7 +3,7 @@ extends WeavlyEngine
 
 const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
 const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
-const GOTO_CYCLE = "Entered %d nodes without pausing (likely a goto cycle); finishing the dialogue."
+const JUMP_CYCLE = "Entered %d nodes without pausing (likely a jump cycle); finishing the dialogue."
 const NOT_HELD = "release() was called without a matching hold()."
 const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected version %d."
 const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
@@ -149,9 +149,6 @@ func _take_rendered_option(option: WeavlyModel.Option) -> Variant:
 	if not _finished:
 		push_warning(CHOOSE_IN_PROGRESS % option.text)
 		return null
-	if option.hint:
-		push_warning(WeavlyOptionService.HINT_CHOSEN % option.text)
-		return null
 	if not _rendered_options.has(option):
 		push_warning(NOT_RENDERED % option.text)
 		return null
@@ -206,7 +203,7 @@ func next() -> void:
 		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
-				report_error(GOTO_CYCLE % max_node_entries_per_step)
+				report_error(JUMP_CYCLE % max_node_entries_per_step)
 				finish()
 				break
 			_enter_pending_node()

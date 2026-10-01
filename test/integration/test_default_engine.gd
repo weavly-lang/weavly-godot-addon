@@ -8,7 +8,7 @@ extends WeavlyTestSuite
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear/build"
 const CI_SMOKE_FIXTURE = "res://test/fixtures/integration/ci_smoke/build"
 const CI_SMOKE_GLOBALS_JSON = CI_SMOKE_FIXTURE + "/globals.wvl.json"
-const GOTO_CYCLE_FIXTURE = "res://test/fixtures/integration/goto_cycle/build"
+const JUMP_CYCLE_FIXTURE = "res://test/fixtures/integration/jump_cycle/build"
 const BOUNDED_LOOP_FIXTURE = "res://test/fixtures/integration/bounded_loop/build"
 const OPTIONS_FIXTURE = "res://test/fixtures/integration/options/build"
 const VISITS_FIXTURE = "res://test/fixtures/integration/visits/build"
@@ -17,7 +17,6 @@ const LOCATIONS_FIXTURE = "res://test/fixtures/integration/locations"
 const TEXT_FIXTURE = "res://test/fixtures/integration/text/build"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold/build"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save/build"
-const HINTS_ONLY_FIXTURE = "res://test/fixtures/integration/hints_only/build"
 const RANDOM_FIXTURE = "res://test/fixtures/integration/random/build"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
 
@@ -216,15 +215,6 @@ func test_double_choose_runs_the_option_once() -> void:
 	assert_int(_signal_log.count("entered_node:after")).is_equal(1)
 
 
-func test_choosing_a_hint_keeps_the_options_showing() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
-	engine.start("menu")
-	var hint: WeavlyModel.Option = engine.option_service.pending_options[1]
-	engine.option_service.choose_option(hint)
-	assert_logged([], ["Can't choose option 'Locked' because it's a hint."])
-	assert_bool(engine.option_service.has_options()).is_true()
-
-
 # =====================
 # Full linear run
 # =====================
@@ -233,10 +223,10 @@ func test_choosing_a_hint_keeps_the_options_showing() -> void:
 func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
-	# start node body: narration, character, set, goto
+	# start node body: narration, character, set, jump
 	# Narration pauses, so drive forward with next() until the dialogue finishes.
 	engine.next()  # character line -> pause
-	engine.next()  # set counter, goto end, narration "Goodbye" -> pause
+	engine.next()  # set counter, jump end, narration "Goodbye" -> pause
 	engine.next()  # finish
 
 	var expected_signals: Array[String] = [
@@ -247,7 +237,7 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 	]
 	assert_that(_signal_log).is_equal(expected_signals)
 
-	# start is left by its goto, end by its @finish.
+	# start is left by its jump, end by its @finish.
 	assert_that(engine.variable_service.get_variable("counter")).is_equal(7.0)
 	assert_int(engine.node_service.get_visit_count("start")).is_equal(1)
 	assert_int(engine.node_service.get_visit_count("end")).is_equal(1)
@@ -266,11 +256,11 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.variable_service.set_variable("reputation", 3.0)
 	engine.start("start")
 	# start node: narration pauses immediately. Drive past the character line,
-	# the chain of set/match statements (which goto choices), the character
+	# the chain of set/match statements (which jump to choices), the character
 	# line at choices, and finally land on the option block.
 	engine.next()  # commands, then character "Let the test begin." -> pause
 	assert_that(_command_log).is_equal(["fade_in:", "play_sound:chime.ogg"])
-	engine.next()  # sets + match (-> goto choices) + character "Which path?" -> pause
+	engine.next()  # sets + match (-> jump choices) + character "Which path?" -> pause
 	engine.next()  # option block -> options registered, loop exits
 
 	# We should now be sitting on the options at choices.
@@ -281,7 +271,7 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	assert_that(options[0].text).is_equal("Roll the dice")
 
 	# Choosing the dice option drives us through random_node -> match_node ->
-	# narration ("No key needed.", which pauses) -> goto end -> finish.
+	# narration ("No key needed.", which pauses) -> jump end -> finish.
 	engine.option_service.choose_option(options[0])
 	engine.next()  # past the narration, into end's FinishStatement
 
@@ -379,39 +369,39 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 
 
 # =====================
-# Goto cycles (issue #39)
+# Jump cycles (issue #39)
 # =====================
 
 
-func test_self_referencing_goto_aborts_via_error_not_crash() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(GOTO_CYCLE_FIXTURE)
-	# A node that gotos itself never pauses. Pre-fix this recursed until stack
+func test_self_referencing_jump_aborts_via_error_not_crash() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(JUMP_CYCLE_FIXTURE)
+	# A node that jumps to itself never pauses. Pre-fix this recursed until stack
 	# overflow; now the flat loop trips the guard and finishes cleanly.
 	engine.max_node_entries_per_step = 5
 	engine.start("self_loop")
 	assert_logged(
-		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
+		["Entered 5 nodes without pausing (likely a jump cycle); finishing the dialogue."]
 	)
 	assert_int(_signal_log.count("entered_node:self_loop")).is_equal(5)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
 
-func test_two_node_goto_cycle_aborts_via_error() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(GOTO_CYCLE_FIXTURE)
+func test_two_node_jump_cycle_aborts_via_error() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(JUMP_CYCLE_FIXTURE)
 	# Indirect cycle (ping -> pong -> ping) is caught the same way as a self-loop.
 	engine.max_node_entries_per_step = 5
 	engine.start("ping")
 	assert_logged(
-		["Entered 5 nodes without pausing (likely a goto cycle); finishing the dialogue."]
+		["Entered 5 nodes without pausing (likely a jump cycle); finishing the dialogue."]
 	)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(engine.is_running()).is_false()
 
 
-func test_bounded_goto_loop_completes_without_tripping_guard() -> void:
+func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(BOUNDED_LOOP_FIXTURE)
-	# countdown decrements i from 3 and gotos itself while i > 0, re-entering the
+	# countdown decrements i from 3 and jumps to itself while i > 0, re-entering the
 	# same node three times before finishing. The counter guard allows this; a
 	# naive "node revisited" detector would wrongly abort it. A limit of exactly
 	# three entries still lets it finish.
@@ -473,7 +463,7 @@ func test_engine_applies_its_group_patterns_and_extensions() -> void:
 # =====================
 
 
-func test_visits_count_on_leaving_a_node_and_its_own_goto() -> void:
+func test_visits_count_on_leaving_a_node_and_its_own_jump() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("hub")
@@ -482,7 +472,7 @@ func test_visits_count_on_leaving_a_node_and_its_own_goto() -> void:
 	engine.next()
 	engine.next()
 	assert_that(_narration_log).is_equal(["First time", "Back again", "Back again", "Done"])
-	# Two gotos into hub, then the end of its body.
+	# Two jumps into hub, then the end of its body.
 	assert_int(engine.node_service.get_visit_count("hub")).is_equal(3)
 	assert_that(engine.variable_service.get_variable("count")).is_equal(2.0)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
@@ -683,7 +673,7 @@ func _through_json(state: Dictionary) -> Dictionary:
 	return JSON.parse_string(JSON.stringify(state))
 
 
-# start: gold += 5, "In start", goto shop. shop: seen_shop = visited(shop), gold += 1, "In shop".
+# start: gold += 5, "In start", jump shop. shop: seen_shop = visited(shop), gold += 1, "In shop".
 func _save_in_shop(engine: WeavlyEngine) -> Dictionary:
 	engine.start("start")
 	engine.next()
@@ -791,24 +781,8 @@ func test_a_custom_services_state_is_saved_and_restored() -> void:
 # =====================
 
 
-func test_a_block_of_only_hints_shows_them_and_continues_on_next() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(HINTS_ONLY_FIXTURE)
-	_connect_content_log(engine)
-	var shown: Array[String] = []
-	engine.option_service.options_added.connect(
-		func(options: Array[WeavlyModel.Option]) -> void:
-			for option: WeavlyModel.Option in options:
-				shown.append(option.text)
-	)
-	engine.start("locked")
-	assert_that(shown).is_equal(["Locked door"])
-	assert_that(_narration_log).is_empty()
-	engine.next()
-	assert_that(_narration_log).is_equal(["You walk on"])
-
-
 func test_a_block_without_an_available_option_is_skipped() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(HINTS_ONLY_FIXTURE)
+	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("none")
 	assert_that(_narration_log).is_equal(["Nothing to choose"])

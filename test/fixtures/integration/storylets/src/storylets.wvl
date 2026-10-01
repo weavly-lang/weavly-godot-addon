@@ -1,23 +1,23 @@
 @env
-gold: number = 0
-count: number = 0
-extern mood: flag
-when_test: pool
-priority_test: pool
-weight_test: pool
-slot_test: pool
-left: pool
-right: pool
-skip_test: pool
-error_test: pool
-shuffle_test: pool
-unused: pool
-a: slot
-b: slot
-c: slot
-d: slot
-x: slot
-k: slot
+var gold: number = 0
+var count: number = 0
+extern var mood: flag
+pool when_test
+pool priority_test
+pool weight_test
+pool slot_test
+pool left
+pool right
+pool skip_test
+pool error_test
+pool shuffle_test
+pool unused
+slot a
+slot b
+slot c
+slot d
+slot x
+slot k
 @endenv
 
 @node when_yes

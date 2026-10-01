@@ -1,7 +1,8 @@
 @env
-gold: number = 0
-drinks: number = 0
-left: flag = false
+var gold: number = 0
+var drinks: number = 0
+var left: flag = false
+command header(title: string, gold: number)
 @endenv
 
 @node tavern
@@ -12,9 +13,8 @@ left: flag = false
 @option "Buy a drink"
     @increase $drinks
     The drink is cold.
-    @goto bar
+    @jump bar
 @option [ $gold > 100 ] "Rent a room" -> room
-@hint "Gamble (closed)"
 @endoptions
 The fire crackles.
 @options
@@ -35,7 +35,7 @@ Unreachable.
 @endnode
 
 @node lobby
-@goto tavern
+@jump tavern
 @endnode
 
 @node lucky

@@ -1,5 +1,6 @@
 @env
-gold: number = 0
+var gold: number = 0
+command header(title: string)
 @endenv
 
 @node tavern
@@ -9,9 +10,8 @@ gold: number = 0
 @option "Buy a drink"
     @increase $gold 1
     The drink is cold.
-    @goto bar
+    @jump bar
 @option "Leave" -> street
-@hint "Gamble (closed)"
 @endoptions
 >Stranger: Mind the fire.
 @options
@@ -32,9 +32,6 @@ The street is empty.
 
 @node fire
 You warm up.
-@options
-@hint "Stay (too hot)"
-@endoptions
 @endnode
 
 @node formatted

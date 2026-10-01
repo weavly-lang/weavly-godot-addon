@@ -77,7 +77,7 @@ func test_indented_comment_is_highlighted() -> void:
 
 
 func test_comment_after_a_directive_is_highlighted() -> void:
-	var spans: Array[String] = _spans("@goto start # a note", WvlSyntaxHighlighter.COMMENT_COLOR)
+	var spans: Array[String] = _spans("@jump start # a note", WvlSyntaxHighlighter.COMMENT_COLOR)
 	assert_array(spans).contains_exactly(["# a note"])
 
 
@@ -206,8 +206,8 @@ func test_a_directive_or_variable_is_not_a_keyword_or_function() -> void:
 
 func test_strings_and_comments_win_over_keywords_and_functions() -> void:
 	assert_array(_spans('@if "and" == $x', KEYWORD)).is_empty()
-	assert_array(_spans("@goto x # visited(x) and", FUNCTION)).is_empty()
-	assert_array(_spans("@goto x # visited(x) and", KEYWORD)).is_empty()
+	assert_array(_spans("@jump x # visited(x) and", FUNCTION)).is_empty()
+	assert_array(_spans("@jump x # visited(x) and", KEYWORD)).is_empty()
 
 
 # =====================

@@ -1,1 +1,0 @@
-{"source":"cycle.wvl","nodes":[{"id":"self_loop","line":1,"body":[{"type":"goto","line":2,"id":"self_loop"}]},{"id":"ping","line":5,"body":[{"type":"goto","line":6,"id":"pong"}]},{"id":"pong","line":9,"body":[{"type":"goto","line":10,"id":"ping"}]}]}
