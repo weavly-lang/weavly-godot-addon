@@ -5,6 +5,7 @@ signal variable_changed(id: String, value: Variant)
 
 const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
 const UNDECLARED = "Can't set variable '%s' because it isn't declared."
+const UNKNOWN_NAME = "Can't set variable '%s' to '%s' because no %s has that name."
 
 @abstract func has(id: String) -> bool
 

@@ -10,6 +10,7 @@ const KEY_NODES = "nodes"
 const KEY_DECLARATIONS = "declarations"
 const KEY_SOURCE = "source"
 const KEY_POOLS = "pools"
+const KEY_SLOTS = "slots"
 
 # Common keys
 const KEY_ID = "id"
@@ -63,6 +64,9 @@ const TYPE_COMMAND = "command"
 const TYPE_NUMBER = "number"
 const TYPE_STRING = "string"
 const TYPE_FLAG = "flag"
+const TYPE_NODE = "node"
+const TYPE_POOL = "pool"
+const TYPE_SLOT = "slot"
 const TYPE_RANDOM = "random"
 const TYPE_DRAW = "draw"
 const TYPE_INLINE = "inline"
@@ -72,6 +76,9 @@ const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
 	TYPE_NUMBER: 0.0,
 	TYPE_STRING: "",
 	TYPE_FLAG: false,
+	TYPE_NODE: "",
+	TYPE_POOL: "",
+	TYPE_SLOT: "",
 }
 
 # =====================
@@ -604,10 +611,19 @@ static func compile_variable_declarations(
 
 # The pool names declared in env.json.
 static func compile_pool_names(data: Dictionary, source: String = "") -> Array[String]:
+	return _compile_names(data, KEY_POOLS, source)
+
+
+# The slot names declared in env.json.
+static func compile_slot_names(data: Dictionary, source: String = "") -> Array[String]:
+	return _compile_names(data, KEY_SLOTS, source)
+
+
+static func _compile_names(data: Dictionary, key: String, source: String) -> Array[String]:
 	var names: Array[String] = []
-	var names_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, source)
+	var names_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, source)
 	if names_data != null:
-		_compile_list(names_data, _path_root(source, KEY_POOLS), _compile_name, names, false)
+		_compile_list(names_data, _path_root(source, key), _compile_name, names, false)
 	return names
 
 
@@ -651,5 +667,7 @@ static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Va
 			variable = WeavlyModel.StringVariable.new(id, value)
 		TYPE_FLAG:
 			variable = WeavlyModel.FlagVariable.new(id, value)
+		TYPE_NODE, TYPE_POOL, TYPE_SLOT:
+			variable = WeavlyModel.NameVariable.new(id, type, value)
 	variable.extern = extern
 	return variable

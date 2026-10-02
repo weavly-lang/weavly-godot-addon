@@ -94,6 +94,8 @@ static func load_dialogue(
 				_add_variable(engine, variable, file_path, sources)
 			for pool: String in WeavlyDeserializer.compile_pool_names(data, file_path):
 				engine.node_service.add_pool(pool)
+			for slot: String in WeavlyDeserializer.compile_slot_names(data, file_path):
+				engine.node_service.add_slot(slot)
 	load_variables_from_resources(engine, variable_dir, sources)
 
 

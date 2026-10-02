@@ -4,6 +4,7 @@ extends WeavlyTestSuite
 const Service = preload(
 	"res://addons/weavly/runtime/services/implementations/default_variable_service.gd"
 )
+const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _service: Service
 
@@ -257,3 +258,97 @@ func test_set_state_leaves_an_extern_undefined_unless_saved() -> void:
 	assert_bool(_service.has("reputation")).is_false()
 	_service.set_state({"reputation": 2.0})
 	assert_that(_service.get_variable("reputation")).is_equal(2.0)
+
+
+# =====================
+# Node, pool and slot variables (issue #233)
+# =====================
+
+
+# A service whose engine declares node start, pool city and slot bob.
+func _name_service() -> Service:
+	var engine: FakeEngine = auto_free(FakeEngine.new())
+	var body: Array[WeavlyModel.Statement] = []
+	engine.node_service.add_node(WeavlyModel.WeavlyNode.new("start", body))
+	engine.node_service.add_pool("city")
+	engine.node_service.add_slot("bob")
+	return engine.variable_service
+
+
+func test_a_name_variable_accepts_a_declared_name_of_its_type() -> void:
+	var service: Service = _name_service()
+	service.add_variable(WeavlyModel.NameVariable.new("next", "node", "start"))
+	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
+	service.add_variable(WeavlyModel.NameVariable.new("partner", "slot", "bob"))
+	service.set_variable("next", "start")
+	service.set_variable("region", "city")
+	service.set_variable("partner", "bob")
+	assert_that(service.get_state()).is_equal(
+		{"next": "start", "region": "city", "partner": "bob"}
+	)
+
+
+func test_a_name_variable_rejects_a_name_that_isnt_declared_for_its_type() -> void:
+	var service: Service = _name_service()
+	service.add_variable(WeavlyModel.NameVariable.new("next", "node", "start"))
+	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
+	service.add_variable(WeavlyModel.NameVariable.new("partner", "slot", "bob"))
+	var changed: Array[String] = []
+	service.variable_changed.connect(func(id: String, _value: Variant) -> void: changed.append(id))
+	service.set_variable("next", "city")
+	service.set_variable("region", "bob")
+	service.set_variable("partner", "start")
+	assert_that(service.get_state()).is_equal(
+		{"next": "start", "region": "city", "partner": "bob"}
+	)
+	assert_array(changed).is_empty()
+	assert_logged(
+		[
+			"Can't set variable 'next' to 'city' because no node has that name.",
+			"Can't set variable 'region' to 'bob' because no pool has that name.",
+			"Can't set variable 'partner' to 'start' because no slot has that name.",
+		]
+	)
+
+
+func test_a_name_variable_rejects_a_value_of_another_type() -> void:
+	var service: Service = _name_service()
+	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
+	service.set_variable("region", 3.0)
+	assert_logged(["Can't set variable 'region' to a value of type 'float' because it's a pool."])
+
+
+func test_an_extern_name_variable_has_no_value_until_the_game_sets_it() -> void:
+	var service: Service = _name_service()
+	var home: WeavlyModel.NameVariable = WeavlyModel.NameVariable.new("home", "pool", "")
+	home.extern = true
+	service.add_variable(home)
+	assert_bool(service.has("home")).is_false()
+	service.set_variable("home", "city")
+	assert_that(service.get_variable("home")).is_equal("city")
+
+
+func test_set_state_skips_a_saved_name_that_no_longer_exists() -> void:
+	var service: Service = _name_service()
+	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
+	var home: WeavlyModel.NameVariable = WeavlyModel.NameVariable.new("home", "pool", "")
+	home.extern = true
+	service.add_variable(home)
+	service.set_state({"region": "harbor", "home": "harbor"})
+	assert_that(service.get_variable("region")).is_equal("city")
+	assert_bool(service.has("home")).is_false()
+	assert_logged(
+		[],
+		[
+			"Saved variable 'region' is skipped because pool 'harbor' no longer exists.",
+			"Saved variable 'home' is skipped because pool 'harbor' no longer exists.",
+		]
+	)
+
+
+func test_set_state_restores_a_declared_name() -> void:
+	var service: Service = _name_service()
+	service.add_variable(WeavlyModel.NameVariable.new("next", "node", "start"))
+	service.set_variable("next", "start")
+	service.set_state({"next": "start"})
+	assert_that(service.get_variable("next")).is_equal("start")

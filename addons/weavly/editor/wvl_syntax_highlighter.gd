@@ -21,8 +21,12 @@ var _keyword_regex: RegEx = RegEx.create_from_string(
 	"(?<![@$\\w])(?:and|or|not|true|false)(?!\\w)"
 )
 var _function_regex: RegEx = RegEx.create_from_string("(?<![@$\\w])[A-Za-z_]\\w*(?=\\()")
-var _extern_regex: RegEx = RegEx.create_from_string("^[ \\t]*(extern)(?!\\w)")
-var _type_regex: RegEx = RegEx.create_from_string(":[ \\t]*(number|string|flag|pool|slot)(?!\\w)")
+var _kind_regex: RegEx = RegEx.create_from_string(
+	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot)(?!\\w)"
+)
+var _type_regex: RegEx = RegEx.create_from_string(
+	":[ \\t]*(number|string|flag|node|pool|slot)(?!\\w)"
+)
 var _flag_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]+)")
 var _meta_key_regex: RegEx = RegEx.create_from_string(
@@ -69,7 +73,7 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	var text_start: int = 0
 	match _block_at(editor, line):
 		"@env":
-			_paint(colors, text, _extern_regex, KEYWORD_COLOR, 1)
+			_paint(colors, text, _kind_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _type_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _flag_value_regex, KEYWORD_COLOR, 1)
 			text_start = length

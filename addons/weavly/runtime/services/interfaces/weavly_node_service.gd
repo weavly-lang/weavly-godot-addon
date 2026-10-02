@@ -18,6 +18,14 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 
 @abstract func has_pool(pool: String) -> bool
 
+@abstract func get_all_pools() -> Array[String]
+
+@abstract func add_slot(slot: String) -> void
+
+@abstract func has_slot(slot: String) -> bool
+
+@abstract func get_all_slots() -> Array[String]
+
 # The nodes whose @meta names the pool, in the order they were added.
 @abstract func get_pool_members(pool: String) -> Array[String]
 

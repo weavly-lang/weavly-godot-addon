@@ -49,6 +49,9 @@ $player_name: Which path?
 @set $choice_visits = visit_count(choices)
 @set $been_to_start = visited(start)
 @set $score = max($score, 20)
+@set $last_scene = end
+@set $region = night
+@set $names_match = $region == night and $last_scene != start and $partner == bob
 @log $reputation, visit_count(choices) + 1
 @finish
 @endnode

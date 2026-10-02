@@ -283,6 +283,9 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	assert_that(engine.variable_service.get_variable("choice_visits")).is_equal(1.0)
 	assert_bool(engine.variable_service.get_variable("been_to_start")).is_true()
 	assert_that(engine.variable_service.get_variable("score")).is_equal(20.0)
+	assert_that(engine.variable_service.get_variable("last_scene")).is_equal("end")
+	assert_that(engine.variable_service.get_variable("region")).is_equal("night")
+	assert_bool(engine.variable_service.get_variable("names_match")).is_true()
 	assert_that(_command_log.back()).is_equal("log:3.0,2.0")
 	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
 

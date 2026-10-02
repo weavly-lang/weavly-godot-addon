@@ -9,6 +9,7 @@ var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 var _visits: Dictionary[String, int] = {}
 var _skips: Dictionary[String, int] = {}
 var _pools: Dictionary[String, bool] = {}
+var _slots: Dictionary[String, bool] = {}
 var _pool_members: Dictionary[String, Array] = {}
 
 
@@ -52,6 +53,26 @@ func add_pool(pool: String) -> void:
 
 func has_pool(pool: String) -> bool:
 	return _pools.has(pool)
+
+
+func get_all_pools() -> Array[String]:
+	var pools: Array[String] = []
+	pools.assign(_pools.keys())
+	return pools
+
+
+func add_slot(slot: String) -> void:
+	_slots[slot] = true
+
+
+func has_slot(slot: String) -> bool:
+	return _slots.has(slot)
+
+
+func get_all_slots() -> Array[String]:
+	var slots: Array[String] = []
+	slots.assign(_slots.keys())
+	return slots
 
 
 func get_pool_members(pool: String) -> Array[String]:
