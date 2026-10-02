@@ -19,6 +19,10 @@ const HOLD_FIXTURE = "res://test/fixtures/integration/hold/build"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save/build"
 const RANDOM_FIXTURE = "res://test/fixtures/integration/random/build"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
+# The commands the fixtures declare; each is logged unless a test handles it.
+const COMMAND_ARGUMENT_COUNTS: Dictionary[String, int] = {
+	"fade_in": 0, "play_sound": 1, "log": 2, "shake": 0
+}
 
 # =====================
 # Setup helpers
@@ -62,10 +66,21 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 		func(node_id: String) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
-	engine.command_service.executed_command.connect(
-		func(command: WeavlyModel.CommandStatement) -> void:
-			_command_log.append("%s:%s" % [command.id, ",".join(command.values.map(str))])
-	)
+	for id: String in engine.command_service.get_unregistered():
+		engine.register_command(id, _command_logger(id, COMMAND_ARGUMENT_COUNTS[id]))
+	if "bonus" in engine.function_service.get_unregistered():
+		engine.register_function("bonus", func(points: float) -> float: return points * 2.0)
+
+
+func _command_logger(id: String, count: int) -> Callable:
+	var record: Callable = func(values: Array) -> void:
+		_command_log.append("%s:%s" % [id, ",".join(values.map(str))])
+	match count:
+		0:
+			return func() -> void: record.call([])
+		1:
+			return func(a: Variant) -> void: record.call([a])
+	return func(a: Variant, b: Variant) -> void: record.call([a, b])
 
 
 func _connect_content_log(engine: WeavlyEngine) -> void:
@@ -599,8 +614,9 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
 	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
-	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement) -> void:
+	engine.register_command(
+		"shake",
+		func() -> void:
 			for i: int in holds:
 				engine.hold()
 	)
@@ -634,8 +650,9 @@ func test_two_holds_need_two_releases() -> void:
 func test_releasing_inside_the_handler_continues_the_same_step() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
-	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement) -> void:
+	engine.register_command(
+		"shake",
+		func() -> void:
 			engine.hold()
 			engine.release()
 	)
@@ -657,8 +674,13 @@ func test_a_hold_while_a_line_waits_does_not_advance_on_release() -> void:
 func test_finish_clears_holds() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
-	engine.command_service.executed_command.connect(
-		func(_command: WeavlyModel.CommandStatement) -> void: engine.hold(), CONNECT_ONE_SHOT
+	var held: Array[bool] = [false]
+	engine.register_command(
+		"shake",
+		func() -> void:
+			if not held[0]:
+				held[0] = true
+				engine.hold()
 	)
 	engine.start("start")
 	engine.finish()

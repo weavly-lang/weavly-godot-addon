@@ -1,0 +1,40 @@
+@env
+func trust(from: string, to: node): number
+func mood(): flag
+func greeting(name: string): string
+func next_scene(): node
+func region(): pool
+func partner(): slot
+command shout(text: string, volume: number)
+command wave()
+meta cost: number = 1
+var score: number = 0
+var scene: node = start
+var area: pool = city
+var seat: slot = bob
+pool city
+slot bob
+@endenv
+
+@node start
+@meta
+pool: city
+slot: bob
+cost: trust("ann", start) + 1
+@endmeta
+@set $score = trust("ann", start)
+@if mood()
+Happy.
+@endif
+{greeting("Ann")} is here.
+@shout "hey", $score
+@wave
+@set $scene = next_scene()
+@set $area = region()
+@set $seat = partner()
+Done.
+@endnode
+
+@node other
+Other.
+@endnode

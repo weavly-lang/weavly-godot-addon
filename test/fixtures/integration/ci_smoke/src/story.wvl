@@ -48,7 +48,7 @@ $player_name: Which path?
 @node end
 @detour tally
 @set $been_to_start = visited(start)
-@set $score = max($score, 20)
+@set $score = max($score, bonus(10))
 @set $last_scene = end
 @set $region = night
 @set $names_match = $region == night and $last_scene != start and $partner == bob

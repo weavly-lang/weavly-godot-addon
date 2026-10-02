@@ -101,6 +101,14 @@ static func load_dialogue(
 			)
 			for key: String in meta_keys:
 				engine.node_service.add_meta_key(key, meta_keys[key])
+			for function: WeavlyModel.Signature in WeavlyDeserializer.compile_functions(
+				data, file_path
+			):
+				engine.function_service.add_declaration(function)
+			for command: WeavlyModel.Signature in WeavlyDeserializer.compile_commands(
+				data, file_path
+			):
+				engine.command_service.add_declaration(command)
 	load_variables_from_resources(engine, variable_dir, sources)
 
 

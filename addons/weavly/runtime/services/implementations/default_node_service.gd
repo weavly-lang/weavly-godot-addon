@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends WeavlyNodeService
 
 const TYPE = "Node"
@@ -74,6 +75,17 @@ func get_all_slots() -> Array[String]:
 	var slots: Array[String] = []
 	slots.assign(_slots.keys())
 	return slots
+
+
+func has_name(type: String, name: String) -> bool:
+	match type:
+		WeavlyDeserializer.TYPE_NODE:
+			return has(name)
+		WeavlyDeserializer.TYPE_POOL:
+			return has_pool(name)
+		WeavlyDeserializer.TYPE_SLOT:
+			return has_slot(name)
+	return false
 
 
 func add_meta_key(key: String, default: Variant) -> void:

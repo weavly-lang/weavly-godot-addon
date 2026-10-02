@@ -290,12 +290,44 @@ func test_expression_call() -> void:
 	assert_that(visited.node_id).is_equal("shop")
 
 
-func test_expression_call_with_unknown_function_is_rejected() -> void:
+func test_any_other_call_is_read_as_a_declared_function_with_its_arguments() -> void:
 	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
-		{"call": "bogus", "node": "shop"}, "test"
+		{"call": "trust", "args": ["ann", "shop"]}, "test"
+	)
+	var call: WeavlyModel.Call = expr as WeavlyModel.Call
+	assert_str(call.name).is_equal("trust")
+	assert_int(call.args.size()).is_equal(2)
+	assert_str((call.args[1] as WeavlyModel.StringLiteral).value).is_equal("shop")
+
+
+func test_a_declared_function_call_without_args_is_rejected() -> void:
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+		{"call": "trust"}, "test"
 	)
 	assert_object(expr).is_null()
-	assert_logged(["Unknown function 'bogus' at test"])
+	assert_logged(["Missing required field 'args' at test"])
+
+
+func test_functions_and_commands_are_read_from_env() -> void:
+	var data: Dictionary = {
+		"functions":
+		[
+			{
+				"name": "trust",
+				"params": [{"name": "from", "type": "string"}, {"name": "to", "type": "node"}],
+				"returns": "number",
+			}
+		],
+		"commands": [{"name": "shake", "params": []}],
+	}
+	var functions: Array[WeavlyModel.Signature] = WeavlyDeserializer.compile_functions(data)
+	assert_str(functions[0].name).is_equal("trust")
+	assert_array(functions[0].param_types).is_equal(["string", "node"])
+	assert_str(functions[0].return_type).is_equal("number")
+	var commands: Array[WeavlyModel.Signature] = WeavlyDeserializer.compile_commands(data)
+	assert_str(commands[0].name).is_equal("shake")
+	assert_array(commands[0].param_types).is_empty()
+	assert_str(commands[0].return_type).is_empty()
 
 
 func test_expression_call_without_node_is_rejected() -> void:

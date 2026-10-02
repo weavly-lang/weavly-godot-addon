@@ -26,6 +26,9 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 
 @abstract func get_all_slots() -> Array[String]
 
+# Whether a declared node, pool or slot, by the type's name, has the name.
+@abstract func has_name(type: String, name: String) -> bool
+
 # A custom meta key declared in env.json.
 @abstract func add_meta_key(key: String, default: Variant) -> void
 

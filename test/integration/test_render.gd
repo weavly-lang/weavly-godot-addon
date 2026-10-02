@@ -34,9 +34,8 @@ func _make_engine() -> WeavlyDefaultEngine:
 	engine.option_service.options_added.connect(
 		func(_options: Array[WeavlyModel.Option]) -> void: _events.append("options_added")
 	)
-	engine.command_service.executed_command.connect(
-		func(command: WeavlyModel.CommandStatement) -> void:
-			_events.append("command:" + command.id)
+	engine.register_command(
+		"header", func(_title: String, _gold: float) -> void: _events.append("command:header")
 	)
 	return engine
 

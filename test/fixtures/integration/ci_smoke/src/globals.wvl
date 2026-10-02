@@ -14,6 +14,7 @@ pool night
 pool empty
 slot bob
 meta toll: number = 1
+func bonus(points: number): number
 command fade_in()
 command play_sound(file: string)
 command log(value: number, count: number)

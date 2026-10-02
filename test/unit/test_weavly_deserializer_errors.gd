@@ -437,6 +437,18 @@ func test_a_meta_call_without_a_key_fails() -> void:
 	assert_logged(["Missing required field 'key' at x"])
 
 
+func test_a_function_with_an_unknown_return_type_is_skipped() -> void:
+	var data: Dictionary = {"functions": [{"name": "f", "params": [], "returns": "list"}]}
+	assert_array(WeavlyDeserializer.compile_functions(data)).is_empty()
+	assert_logged(["Unknown type 'list' at functions[0].returns"])
+
+
+func test_a_command_with_an_unknown_parameter_type_is_skipped() -> void:
+	var data: Dictionary = {"commands": [{"name": "c", "params": [{"name": "x", "type": "list"}]}]}
+	assert_array(WeavlyDeserializer.compile_commands(data)).is_empty()
+	assert_logged(["Unknown type 'list' at commands[0].params[0]"])
+
+
 func test_env_without_pools_is_reported() -> void:
 	var names: Array[String] = WeavlyDeserializer.compile_pool_names({"declarations": []})
 	assert_array(names).is_empty()

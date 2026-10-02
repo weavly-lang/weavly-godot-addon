@@ -33,9 +33,8 @@ func before_test() -> void:
 	add_child(auto_free(_engine))
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
-	_ui.command_rendered.connect(
-		func(command: WeavlyModel.CommandStatement) -> void:
-			_events.append("command:%s %s" % [command.id, command.values])
+	_engine.register_command(
+		"header", func(title: String) -> void: _events.append("command:header %s" % str([title]))
 	)
 	_ui.finished.connect(func() -> void: _events.append("finished"))
 	add_child(_ui)

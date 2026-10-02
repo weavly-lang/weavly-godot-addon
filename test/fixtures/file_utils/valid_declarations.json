@@ -8,5 +8,7 @@
   ],
   "pools": [],
   "slots": [],
-  "meta_keys": []
+  "meta_keys": [],
+  "functions": [],
+  "commands": []
 }

@@ -252,6 +252,17 @@ func test_meta_declarations_are_keywords_in_an_env_block() -> void:
 	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["meta", "pool"])
 
 
+func test_function_and_command_declarations_are_keywords_in_an_env_block() -> void:
+	var text: String = (
+		"@env\nfunc trust(from: string, to: node): number\n"
+		+ "command shake(power: number)\n@endenv"
+	)
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(
+		["func", "string", "node", "number"]
+	)
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["command", "number"])
+
+
 func test_custom_meta_keys_are_keywords_and_meta_a_function() -> void:
 	var text: String = "@node a\n@meta\ncost: meta(b, cost) + 1\n@endmeta\n@endnode"
 	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["cost"])
