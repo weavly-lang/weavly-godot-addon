@@ -29,10 +29,13 @@ var _last_speaker: String = ""
 @onready var _typing: Control = %Typing
 @onready var _typing_dots: Label = %TypingDots
 @onready var _replies: WeavlyChoiceList = %Replies
+@onready var _continue: Button = %Continue
 
 
 func _ready() -> void:
 	_replies.chosen.connect(_choose)
+	_continue.pressed.connect(_on_continue_pressed)
+	WeavlyChoiceList.follow_mouse(_continue)
 	_phone.gui_input.connect(_on_phone_input)
 	_scroll.get_v_scroll_bar().changed.connect(_follow_newest)
 	clear()
@@ -79,6 +82,7 @@ func clear() -> void:
 	_pending = null
 	_last_speaker = ""
 	_replies.clear()
+	_continue.visible = false
 	free_children(_messages, _typing)
 
 
@@ -105,10 +109,18 @@ func _receive(line: WeavlyModel.LineStatement) -> void:
 func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 	visible = true
 	_replies.show_options(options)
+	_continue.visible = not _replies.has_choosable()
+
+
+func _on_options_refreshed() -> void:
+	super()
+	if _replies.get_child_count() > 0:
+		_continue.visible = not _replies.has_choosable()
 
 
 func _choose(option: WeavlyModel.Option) -> void:
 	_replies.clear()
+	_continue.visible = false
 	_add_bubble(option.text, null, true)
 	engine.option_service.choose_option(option)
 
@@ -136,9 +148,21 @@ func _end_wait() -> void:
 	engine.next()
 
 
+# A reply bar where nothing can be chosen stays until the player has read it and continues.
+func _on_continue_pressed() -> void:
+	_continue.visible = false
+	_replies.clear()
+	engine.next()
+
+
 # Nothing is selected until the first key press, like the other starter UIs.
 func _focus_first() -> bool:
-	return _replies.focus_first()
+	if _replies.has_choosable():
+		return _replies.focus_first()
+	if _continue.visible and not _continue.has_focus():
+		_continue.grab_focus()
+		return true
+	return false
 
 
 func _typing_wait(text: String) -> float:

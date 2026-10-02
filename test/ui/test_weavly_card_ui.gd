@@ -247,3 +247,8 @@ func test_disconnecting_the_engine_clears_and_stops_dealing() -> void:
 	assert_bool(_ui.visible).is_false()
 	_ui.deal(["city"])
 	assert_array(_cards()).is_empty()
+
+
+func test_a_teased_storylet_isnt_dealt() -> void:
+	_ui.deal(["teased"])
+	assert_array(_hand()).is_equal([["An open square."]])

@@ -100,6 +100,13 @@ func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
 	visible = true
 
 
+# A block where nothing can be chosen any more lets the player continue past it.
+func _on_options_refreshed() -> void:
+	super()
+	if _choices.get_child_count() > 0:
+		_awaiting_choice = _choices.has_choosable()
+
+
 func _choose(option: WeavlyModel.Option) -> void:
 	_choices.clear()
 	_awaiting_choice = false

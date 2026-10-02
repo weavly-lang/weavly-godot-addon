@@ -99,3 +99,72 @@ func test_clear_removes_every_option() -> void:
 	_show(2)
 	_list.clear()
 	assert_int(_list.get_child_count()).is_equal(0)
+
+
+func _locked(text: String, state: WeavlyModel.Option.State) -> WeavlyModel.Option:
+	var option: WeavlyModel.Option = _option(text)
+	option.state = state
+	return option
+
+
+func _show_options(options: Array[WeavlyModel.Option]) -> void:
+	_list.show_options(options)
+
+
+func test_a_locked_option_shows_disabled_and_takes_no_focus() -> void:
+	var options: Array[WeavlyModel.Option] = [
+		_locked("Teased", WeavlyModel.Option.State.TEASER), _option("Open")
+	]
+	_show_options(options)
+	var locked: Button = _list.get_child(0)
+	assert_str(locked.text).is_equal("Teased")
+	assert_bool(locked.disabled).is_true()
+	assert_int(locked.focus_mode).is_equal(Control.FOCUS_NONE)
+	assert_bool(_list.focus_first()).is_true()
+	assert_bool((_list.get_child(1) as Button).has_focus()).is_true()
+
+
+func test_only_locked_options_have_nothing_choosable() -> void:
+	var options: Array[WeavlyModel.Option] = [
+		_locked("Poor", WeavlyModel.Option.State.UNAVAILABLE)
+	]
+	_show_options(options)
+	assert_bool(_list.has_choosable()).is_false()
+	assert_bool(_list.focus_first()).is_false()
+
+
+func test_a_locked_link_has_no_underline() -> void:
+	_list.links = true
+	var options: Array[WeavlyModel.Option] = [
+		_locked("Poor", WeavlyModel.Option.State.UNAVAILABLE)
+	]
+	_show_options(options)
+	assert_int((_list.get_child(0) as LinkButton).underline).is_equal(
+		LinkButton.UNDERLINE_MODE_NEVER
+	)
+
+
+func test_refresh_shows_the_current_text_and_state() -> void:
+	var teased: WeavlyModel.Option = _locked("Teased", WeavlyModel.Option.State.TEASER)
+	var open: WeavlyModel.Option = _option("Open")
+	var options: Array[WeavlyModel.Option] = [teased, open]
+	_show_options(options)
+	(_list.get_child(1) as Button).grab_focus()
+	teased.state = WeavlyModel.Option.State.AVAILABLE
+	teased.text = "Hack"
+	open.hidden = true
+	_list.refresh()
+	var first: Button = _list.get_child(0)
+	assert_str(first.text).is_equal("Hack")
+	assert_bool(first.disabled).is_false()
+	assert_bool((_list.get_child(1) as Button).visible).is_false()
+	assert_bool((_list.get_child(1) as Button).has_focus()).is_false()
+
+
+func test_hovering_a_locked_option_doesnt_select_it() -> void:
+	var options: Array[WeavlyModel.Option] = [
+		_locked("Poor", WeavlyModel.Option.State.UNAVAILABLE)
+	]
+	_show_options(options)
+	(_list.get_child(0) as Button).mouse_entered.emit()
+	assert_bool(_list.has_focus_inside()).is_false()
