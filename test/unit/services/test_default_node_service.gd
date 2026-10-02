@@ -147,3 +147,19 @@ func test_skip_count_is_zero_until_set() -> void:
 	assert_int(_service.get_skip_count("a")).is_equal(0)
 	_service.set_skip_count("a", 3)
 	assert_int(_service.get_skip_count("a")).is_equal(3)
+
+
+# =====================
+# meta keys
+# =====================
+
+
+func test_a_declared_meta_key_keeps_its_default() -> void:
+	_service.add_meta_key("cost", 1.0)
+	assert_bool(_service.has_meta_key("cost")).is_true()
+	assert_that(_service.get_meta_default("cost")).is_equal(1.0)
+
+
+func test_an_undeclared_meta_key_has_no_default() -> void:
+	assert_bool(_service.has_meta_key("cost")).is_false()
+	assert_object(_service.get_meta_default("cost")).is_null()

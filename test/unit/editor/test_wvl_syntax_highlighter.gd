@@ -246,6 +246,18 @@ func test_meta_keys_are_keywords_and_their_values_expressions() -> void:
 	assert_array(_spans_at(text, 4, KEYWORD)).contains_exactly(["once", "true"])
 
 
+func test_meta_declarations_are_keywords_in_an_env_block() -> void:
+	var text: String = "@env\nmeta cost: number = 1\nmeta home: pool = city\n@endenv"
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["meta", "number"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["meta", "pool"])
+
+
+func test_custom_meta_keys_are_keywords_and_meta_a_function() -> void:
+	var text: String = "@node a\n@meta\ncost: meta(b, cost) + 1\n@endmeta\n@endnode"
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["cost"])
+	assert_array(_spans_at(text, 2, FUNCTION)).contains_exactly(["meta"])
+
+
 func test_meta_keys_after_the_meta_block_are_text() -> void:
 	var text: String = "@node a\n@meta\npool: city\n@endmeta\npool: the water is cold\n@endnode"
 	assert_array(_spans_at(text, 4, KEYWORD)).is_empty()

@@ -8,7 +8,7 @@ A Godot 4.5+ addon that plays [Weavly](https://github.com/weavly-lang/weavly-com
 
 ## Features
 
-- **Runtime engine**: a `WeavlyEngine` node that plays lines, options, `match` and `random` blocks, variables, jumps and detours, commands and storylet pools.
+- **Runtime engine**: a `WeavlyEngine` node that plays lines, options, `match` and `random` blocks, variables, jumps and detours, commands, storylet pools and meta keys.
 - **No UI lock-in**: your game listens to signals and draws the dialogue however it likes.
 - **Starter UIs**: visual novel, Twine-style passage, card, chat, speech bubbles and a debug overlay, ready to drop in or copy.
 - **Swappable services**: replace any part of the runtime through the engine's `*_service_script` exports.

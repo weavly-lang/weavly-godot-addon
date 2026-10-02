@@ -75,7 +75,7 @@ priority: 2
 weight: 1 + skip_count()
 once: true
 @endmeta
->Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times.
+>Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times and charges {meta(night_market, toll)}.
 @endnode
 
 @node night_market
@@ -83,6 +83,7 @@ once: true
 pool: city, night
 slot: bob
 priority: 1
+toll: 2 + 1
 @endmeta
 The night market is open.
 @endnode

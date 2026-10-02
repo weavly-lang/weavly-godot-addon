@@ -69,9 +69,9 @@ func _variable_editor(id: String) -> Control:
 
 func _node_cells(id: String) -> Array[Node]:
 	var cells: Array[Node] = _ui.get_node("%NodeGrid").get_children()
-	for i: int in range(0, cells.size(), 5):
+	for i: int in range(0, cells.size(), 6):
 		if (cells[i] as Label).text == id:
-			return cells.slice(i, i + 5)
+			return cells.slice(i, i + 6)
 	return []
 
 
@@ -263,13 +263,13 @@ func test_nodes_show_their_location_and_counts() -> void:
 	_engine.next()
 	_engine.next()
 	_ui.refresh()
-	var rows: Array[Array] = _rows("%NodeGrid", 5)
+	var rows: Array[Array] = _rows("%NodeGrid", 6)
 	(
 		assert_array(rows.map(func(row: Array) -> String: return row[0]))
 		. is_equal(["ann", "aside_start", "bob", "broken", "gate", "start"])
 	)
-	assert_array(rows[5]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "Start"])
-	assert_array(rows[4]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "Start"])
+	assert_array(rows[5]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "", "Start"])
+	assert_array(rows[4]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "", "Start"])
 
 
 func test_the_current_node_is_marked() -> void:
@@ -290,17 +290,47 @@ func test_the_filter_hides_other_nodes() -> void:
 	(_ui.get_node("%NodeFilter") as LineEdit).text = "B"
 	(_ui.get_node("%NodeFilter") as LineEdit).text_changed.emit("B")
 	(
-		assert_array(_rows("%NodeGrid", 5).map(func(row: Array) -> String: return row[0]))
+		assert_array(_rows("%NodeGrid", 6).map(func(row: Array) -> String: return row[0]))
 		. is_equal(["bob", "broken"])
 	)
 
 
 func test_start_jumps_to_a_node() -> void:
 	_engine.start("start")
-	(_node_cells("gate")[4] as Button).pressed.emit()
+	(_node_cells("gate")[5] as Button).pressed.emit()
 	assert_bool(_engine.is_running()).is_true()
 	assert_str(_engine.current_node_id).is_equal("gate")
 	assert_str(_status()).is_equal("running, node gate at debug.wvl:21")
+
+
+func _meta(id: String) -> String:
+	return (_node_cells(id)[4] as Label).text
+
+
+func test_nodes_show_the_meta_keys_they_write() -> void:
+	_show_tab(WeavlyDebugUI.NODES_TAB)
+	assert_str(_meta("bob")).is_equal("pool: city; when: true; priority: 1")
+	assert_str(_meta("ann")).is_equal("pool: city")
+	assert_str(_meta("start")).is_empty()
+	assert_logged(["secret"])
+
+
+func test_meta_values_follow_variable_changes() -> void:
+	_show_tab(WeavlyDebugUI.NODES_TAB)
+	_engine.variable_service.set_variable("gold", 1.0)
+	assert_str(_meta("bob")).is_equal("pool: city; when: false; priority: 1")
+	assert_logged(["secret", "secret"])
+
+
+func test_a_failing_meta_entry_shows_error() -> void:
+	_show_tab(WeavlyDebugUI.NODES_TAB)
+	assert_str(_meta("aside_start")).is_equal("priority: error")
+	assert_logged(["secret"])
+
+
+func test_meta_values_arent_read_on_other_tabs() -> void:
+	_ui.refresh()
+	assert_str(_meta("bob")).is_empty()
 
 
 func test_pools_show_what_list_pool_would_return() -> void:
@@ -353,6 +383,6 @@ func test_disconnecting_the_engine_clears_the_overlay() -> void:
 	_engine.runtime_error.emit("one", "", 0)
 	_ui.engine = null
 	assert_array(_rows("%VariableGrid", 3)).is_empty()
-	assert_array(_rows("%NodeGrid", 5)).is_empty()
+	assert_array(_rows("%NodeGrid", 6)).is_empty()
 	assert_array(_errors()).is_empty()
 	assert_str(_status()).is_empty()

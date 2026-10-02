@@ -20,14 +20,13 @@ class WeavlyNode:
 		self.body = body
 
 
-# Storylet metadata; an entry that isn't written is null and uses its default.
+# A key that isn't written uses its default.
 class NodeMeta:
 	extends RefCounted
 	var pools: Array[String] = []
 	var slots: Array[String] = []
-	var when: MetaExpression = null
-	var priority: MetaExpression = null
-	var weight: MetaExpression = null
+	# Every other key, built-in or custom.
+	var entries: Dictionary[String, MetaExpression] = {}
 
 
 class MetaExpression:
@@ -285,6 +284,16 @@ class Identifier:
 
 	func _init(value: String):
 		self.value = value
+
+
+class MetaCall:
+	extends WeavlyExpression
+	var node_id: String
+	var key: String
+
+	func _init(node_id: String, key: String):
+		self.node_id = node_id
+		self.key = key
 
 
 # =====================

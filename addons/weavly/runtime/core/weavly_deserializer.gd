@@ -11,6 +11,7 @@ const KEY_DECLARATIONS = "declarations"
 const KEY_SOURCE = "source"
 const KEY_POOLS = "pools"
 const KEY_SLOTS = "slots"
+const KEY_META_KEYS = "meta_keys"
 
 # Common keys
 const KEY_ID = "id"
@@ -32,6 +33,7 @@ const KEY_RIGHT = "right"
 const KEY_CALL = "call"
 const KEY_NODE = "node"
 const KEY_ARGS = "args"
+const KEY_KEY = "key"
 
 # Meta keys
 const KEY_META = "meta"
@@ -39,7 +41,9 @@ const KEY_POOL = "pool"
 const KEY_SLOT = "slot"
 const KEY_WHEN = "when"
 const KEY_PRIORITY = "priority"
+const KEY_AVAILABLE = "available"
 const KEY_LABEL = "label"
+const TEXT_META_KEYS = [KEY_LABEL, "label_unavailable", "label_teaser"]
 
 # Block keys
 const KEY_CASES = "cases"
@@ -217,25 +221,22 @@ static func compile_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
 static func _compile_meta_entry(
 	meta: WeavlyModel.NodeMeta, key: Variant, entry: Dictionary, path: String
 ) -> bool:
-	var value_path: String = _path_join(path, KEY_VALUE)
-	match key:
-		KEY_POOL, KEY_SLOT:
-			var names_data: Variant = get_required(entry, KEY_VALUE, Variant.Type.TYPE_ARRAY, path)
-			var names: Array[String] = meta.pools if key == KEY_POOL else meta.slots
-			return (
-				names_data != null and _compile_list(names_data, value_path, _compile_name, names)
-			)
-		KEY_WHEN, KEY_PRIORITY, KEY_WEIGHT:
-			var line: Variant = _get_required_line(entry, path)
-			var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
-				entry, KEY_VALUE, path
-			)
-			if line == null or expression == null:
-				return false
-			meta.set(key, WeavlyModel.MetaExpression.new(expression, line))
-			return true
-	push_error("Unknown meta key '%s' at %s" % [key, path])
-	return false
+	if key == KEY_POOL or key == KEY_SLOT:
+		var names_data: Variant = get_required(entry, KEY_VALUE, Variant.Type.TYPE_ARRAY, path)
+		var names: Array[String] = meta.pools if key == KEY_POOL else meta.slots
+		var value_path: String = _path_join(path, KEY_VALUE)
+		return names_data != null and _compile_list(names_data, value_path, _compile_name, names)
+	if key in TEXT_META_KEYS:
+		push_error("Unknown meta key '%s' at %s" % [key, path])
+		return false
+	var line: Variant = _get_required_line(entry, path)
+	var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
+		entry, KEY_VALUE, path
+	)
+	if line == null or expression == null:
+		return false
+	meta.entries[key] = WeavlyModel.MetaExpression.new(expression, line)
+	return true
 
 
 static func _compile_name(data: Variant, path: String) -> Variant:
@@ -571,12 +572,14 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 	return null
 
 
-static func compile_call(data: Dictionary, path: String) -> WeavlyModel.Call:
+static func compile_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyExpression:
 	var name: Variant = get_required(data, KEY_CALL, Variant.Type.TYPE_STRING, path)
 	if name == null:
 		return null
 	if WeavlyExpressionEvaluator.is_number_function(name):
 		return _compile_number_call(name, data, path)
+	if name == WeavlyExpressionEvaluator.META:
+		return _compile_meta_call(data, path)
 	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
 		push_error("Unknown function '%s' at %s" % [name, path])
 		return null
@@ -584,6 +587,14 @@ static func compile_call(data: Dictionary, path: String) -> WeavlyModel.Call:
 	if node_id == null:
 		return null
 	return WeavlyModel.Call.new(name, node_id)
+
+
+static func _compile_meta_call(data: Dictionary, path: String) -> WeavlyModel.MetaCall:
+	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
+	var key: Variant = get_required(data, KEY_KEY, Variant.Type.TYPE_STRING, path)
+	if node_id == null or key == null:
+		return null
+	return WeavlyModel.MetaCall.new(node_id, key)
 
 
 static func _compile_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
@@ -629,6 +640,40 @@ static func compile_pool_names(data: Dictionary, source: String = "") -> Array[S
 # The slot names declared in env.json.
 static func compile_slot_names(data: Dictionary, source: String = "") -> Array[String]:
 	return _compile_names(data, KEY_SLOTS, source)
+
+
+# The declared custom meta keys in env.json, each with its default.
+static func compile_meta_keys(
+	data: Dictionary, source: String = ""
+) -> Dictionary[String, Variant]:
+	var keys: Dictionary[String, Variant] = {}
+	var keys_data: Variant = get_required(data, KEY_META_KEYS, Variant.Type.TYPE_ARRAY, source)
+	if keys_data == null:
+		return keys
+	var declared: Array = []
+	_compile_list(keys_data, _path_root(source, KEY_META_KEYS), _compile_meta_key, declared, false)
+	for key: Array in declared:
+		keys[key[0]] = key[1]
+	return keys
+
+
+# [name, default], or null.
+static func _compile_meta_key(data: Variant, path: String) -> Variant:
+	if data is not Dictionary:
+		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+		return null
+	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
+	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
+	if name == null or type == null:
+		return null
+	if type not in VARIABLE_DEFAULTS:
+		push_error("Unknown meta key type '%s' at %s" % [type, path])
+		return null
+	var expected: Variant.Type = typeof(VARIABLE_DEFAULTS[type]) as Variant.Type
+	var value: Variant = get_required(data, KEY_VALUE, expected, path)
+	if value == null:
+		return null
+	return [name, value]
 
 
 static func _compile_names(data: Dictionary, key: String, source: String) -> Array[String]:

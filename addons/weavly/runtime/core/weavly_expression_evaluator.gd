@@ -35,6 +35,7 @@ const VISITED = "visited"
 const VISIT_COUNT = "visit_count"
 const SKIP_COUNT = "skip_count"
 const NODE_FUNCTIONS = [VISITED, VISIT_COUNT, SKIP_COUNT]
+const META = "meta"
 
 const DEFAULT_CONDITION_RETURN: bool = false
 const DEFAULT_DIVISION_BY_ZERO_RETURN: float = 0.0
@@ -109,6 +110,8 @@ static func evaluate_expression(
 		return evaluate_identifier(expression, engine)
 	if expression is WeavlyModel.Call:
 		return evaluate_call(expression, engine)
+	if expression is WeavlyModel.MetaCall:
+		return WeavlyMetaReader.read(engine, expression.node_id, expression.key)
 	if expression is WeavlyModel.UnaryExpression:
 		return evaluate_unary_expression(expression, engine)
 	if expression is WeavlyModel.BinaryExpression:

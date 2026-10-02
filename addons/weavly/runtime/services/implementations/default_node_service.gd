@@ -11,6 +11,7 @@ var _skips: Dictionary[String, int] = {}
 var _pools: Dictionary[String, bool] = {}
 var _slots: Dictionary[String, bool] = {}
 var _pool_members: Dictionary[String, Array] = {}
+var _meta_defaults: Dictionary[String, Variant] = {}
 
 
 func has(id: String) -> bool:
@@ -73,6 +74,18 @@ func get_all_slots() -> Array[String]:
 	var slots: Array[String] = []
 	slots.assign(_slots.keys())
 	return slots
+
+
+func add_meta_key(key: String, default: Variant) -> void:
+	_meta_defaults[key] = default
+
+
+func has_meta_key(key: String) -> bool:
+	return _meta_defaults.has(key)
+
+
+func get_meta_default(key: String) -> Variant:
+	return _meta_defaults.get(key)
 
 
 func get_pool_members(pool: String) -> Array[String]:

@@ -2,6 +2,7 @@ class_name WeavlyDebugUI
 extends WeavlyUI
 
 const DEFAULT_TOGGLE_KEY: Key = KEY_F3
+const NODES_TAB: int = 1
 const POOLS_TAB: int = 2
 const ERRORS_TAB: int = 3
 
@@ -15,8 +16,10 @@ const ERRORS_TAB: int = 3
 @export var max_errors: int = 100
 
 var _refresh_left: float = 0.0
-# Peeking evaluates pool conditions, which can report errors, so pools refresh on changes only.
+# Peeking and meta values evaluate expressions, which can report errors, so they refresh on
+# changes only.
 var _pools_dirty: bool = true
+var _meta_dirty: bool = true
 var _variable_editors: Dictionary[String, Control] = {}
 var _node_rows: Dictionary[String, Array] = {}
 var _error_count: int = 0
@@ -71,6 +74,8 @@ func refresh() -> void:
 	_refresh_status()
 	_refresh_variables()
 	_refresh_nodes()
+	if _meta_dirty and _tabs.current_tab == NODES_TAB:
+		_refresh_meta()
 	if _pools_dirty and _tabs.current_tab == POOLS_TAB:
 		_refresh_pools()
 
@@ -96,6 +101,7 @@ func _on_engine_attached() -> void:
 	_build_variables()
 	_build_nodes()
 	_pools_dirty = true
+	_meta_dirty = true
 	refresh()
 
 
@@ -111,6 +117,7 @@ func _on_engine_detached() -> void:
 
 func _on_changed() -> void:
 	_pools_dirty = true
+	_meta_dirty = true
 	if visible:
 		refresh()
 
@@ -261,6 +268,7 @@ func _build_nodes() -> void:
 			_create_label("%s:%d" % [node.source, node.line], &"WeavlyDebugMuted"),
 			_create_label(""),
 			_create_label(""),
+			_create_meta_label(),
 			jump,
 		]
 		for control: Control in row:
@@ -276,6 +284,44 @@ func _refresh_nodes() -> void:
 		(row[3] as Label).text = "%d skips" % engine.node_service.get_skip_count(id)
 		var current: bool = engine.is_running() and id == engine.current_node_id
 		(row[0] as Label).theme_type_variation = &"WeavlyDebugCurrent" if current else &""
+
+
+# The keys each node writes in its @meta block, with their current values.
+func _refresh_meta() -> void:
+	_meta_dirty = false
+	for id: String in _node_rows:
+		var meta: WeavlyModel.NodeMeta = engine.node_service.get_node(id).meta
+		if meta == null:
+			continue
+		var keys: Array[String] = []
+		if not meta.pools.is_empty():
+			keys.append(WeavlyDeserializer.KEY_POOL)
+		if not meta.slots.is_empty():
+			keys.append(WeavlyDeserializer.KEY_SLOT)
+		for key: String in meta.entries:
+			keys.append(key)
+		var entries: PackedStringArray = []
+		for key: String in keys:
+			entries.append("%s: %s" % [key, _format_meta(engine.get_node_meta(id, key))])
+		var label: Label = _node_rows[id][4]
+		label.text = "; ".join(entries)
+		label.tooltip_text = label.text
+
+
+func _format_meta(value: Variant) -> String:
+	if value == null:
+		return "error"
+	if value is Array:
+		return ", ".join(PackedStringArray(value))
+	return _format(value)
+
+
+func _create_meta_label() -> Label:
+	var label: Label = _create_label("", &"WeavlyDebugMuted")
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
+	return label
 
 
 func _filter_nodes() -> void:
