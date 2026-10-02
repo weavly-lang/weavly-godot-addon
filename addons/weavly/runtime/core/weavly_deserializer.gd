@@ -12,6 +12,8 @@ const KEY_SOURCE = "source"
 const KEY_POOLS = "pools"
 const KEY_SLOTS = "slots"
 const KEY_META_KEYS = "meta_keys"
+const KEY_FUNCTIONS = "functions"
+const KEY_COMMANDS = "commands"
 
 # Common keys
 const KEY_ID = "id"
@@ -55,6 +57,8 @@ const KEY_VALUE = "value"
 const KEY_MIN = "min"
 const KEY_MAX = "max"
 const KEY_EXTERN = "extern"
+const KEY_PARAMS = "params"
+const KEY_RETURNS = "returns"
 
 # Type values
 const TYPE_NARRATION = "narration"
@@ -581,8 +585,8 @@ static func compile_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyEx
 	if name == WeavlyExpressionEvaluator.META:
 		return _compile_meta_call(data, path)
 	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
-		push_error("Unknown function '%s' at %s" % [name, path])
-		return null
+		var args: Variant = compile_arguments(data, path)
+		return null if args == null else WeavlyModel.Call.new(name, "", args)
 	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
 	if node_id == null:
 		return null
@@ -674,6 +678,67 @@ static func _compile_meta_key(data: Variant, path: String) -> Variant:
 	if value == null:
 		return null
 	return [name, value]
+
+
+# The declared functions in env.json.
+static func compile_functions(
+	data: Dictionary, source: String = ""
+) -> Array[WeavlyModel.Signature]:
+	return _compile_signatures(data, KEY_FUNCTIONS, source)
+
+
+# The declared commands in env.json.
+static func compile_commands(
+	data: Dictionary, source: String = ""
+) -> Array[WeavlyModel.Signature]:
+	return _compile_signatures(data, KEY_COMMANDS, source)
+
+
+static func _compile_signatures(
+	data: Dictionary, key: String, source: String
+) -> Array[WeavlyModel.Signature]:
+	var signatures: Array[WeavlyModel.Signature] = []
+	var signatures_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, source)
+	if signatures_data != null:
+		var compile: Callable = _compile_signature.bind(key == KEY_FUNCTIONS)
+		_compile_list(signatures_data, _path_root(source, key), compile, signatures, false)
+	return signatures
+
+
+static func _compile_signature(
+	data: Variant, path: String, returns: bool
+) -> WeavlyModel.Signature:
+	if data is not Dictionary:
+		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+		return null
+	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
+	var params: Variant = get_required(data, KEY_PARAMS, Variant.Type.TYPE_ARRAY, path)
+	var return_type: Variant = (
+		get_required(data, KEY_RETURNS, Variant.Type.TYPE_STRING, path) if returns else ""
+	)
+	if name == null or params == null or return_type == null:
+		return null
+	var param_types: Array[String] = []
+	if not _compile_list(params, _path_join(path, KEY_PARAMS), _compile_param_type, param_types):
+		return null
+	if returns and not _is_value_type(return_type, _path_join(path, KEY_RETURNS)):
+		return null
+	return WeavlyModel.Signature.new(name, param_types, return_type)
+
+
+static func _compile_param_type(data: Variant, path: String) -> Variant:
+	if data is not Dictionary:
+		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+		return null
+	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
+	return type if type != null and _is_value_type(type, path) else null
+
+
+static func _is_value_type(type: String, path: String) -> bool:
+	if type in VARIABLE_DEFAULTS:
+		return true
+	push_error("Unknown type '%s' at %s" % [type, path])
+	return false
 
 
 static func _compile_names(data: Dictionary, key: String, source: String) -> Array[String]:

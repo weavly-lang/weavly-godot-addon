@@ -83,13 +83,7 @@ func _store(id: String, value: Variant) -> bool:
 
 # True for every variable that doesn't hold a name.
 func _names_a_declared_one(variable: WeavlyModel.Variable, value: Variant) -> bool:
-	if variable is not WeavlyModel.NameVariable:
-		return true
-	match variable.type:
-		WeavlyDeserializer.TYPE_NODE:
-			return engine.node_service.has(value)
-		WeavlyDeserializer.TYPE_POOL:
-			return engine.node_service.has_pool(value)
-		WeavlyDeserializer.TYPE_SLOT:
-			return engine.node_service.has_slot(value)
-	return false
+	return (
+		variable is not WeavlyModel.NameVariable
+		or engine.node_service.has_name(variable.type, value)
+	)

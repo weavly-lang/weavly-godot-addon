@@ -1,8 +1,6 @@
 class_name WeavlyCardUI
 extends WeavlyUI
 
-## Emitted for each rendered command, in order; the UI doesn't interpret commands.
-signal command_rendered(command: WeavlyModel.CommandStatement)
 ## Emitted when a deal finds no eligible storylet; the UI hides itself.
 signal hand_empty
 
@@ -93,7 +91,7 @@ func _on_continue_pressed() -> void:
 
 func _make_card(entries: Array[WeavlyModel.Statement]) -> WeavlyCard:
 	var card: WeavlyCard = WeavlyCard.new()
-	card.show_entries(entries, engine, command_rendered.emit)
+	card.show_entries(entries, engine)
 	card.chosen.connect(_choose)
 	return card
 

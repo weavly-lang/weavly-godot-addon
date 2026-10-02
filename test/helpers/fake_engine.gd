@@ -9,6 +9,9 @@ const DefaultStatementService = preload(
 const DefaultNodeService = preload(
 	"res://addons/weavly/runtime/services/implementations/default_node_service.gd"
 )
+const DefaultFunctionService = preload(
+	"res://addons/weavly/runtime/services/implementations/default_function_service.gd"
+)
 
 var did_finish: bool = false
 var did_next: bool = false
@@ -24,6 +27,8 @@ func _init() -> void:
 	statement_service.initialize(self)
 	node_service = DefaultNodeService.new()
 	node_service.initialize(self)
+	function_service = DefaultFunctionService.new()
+	function_service.initialize(self)
 
 
 func start(_node_id: String) -> void:

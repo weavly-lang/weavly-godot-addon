@@ -25,8 +25,17 @@ class _SpyCommandService:
 	extends WeavlyCommandService
 	var command_calls: Array[WeavlyModel.CommandStatement] = []
 
+	func add_declaration(_signature: WeavlyModel.Signature) -> void:
+		pass
+
+	func register_command(_name: String, _callable: Callable) -> void:
+		pass
+
 	func execute_command(command: WeavlyModel.CommandStatement) -> void:
 		command_calls.append(command)
+
+	func get_unregistered() -> Array[String]:
+		return []
 
 
 class _SpyOptionService:

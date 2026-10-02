@@ -1,8 +1,6 @@
 class_name WeavlyPassageUI
 extends WeavlyUI
 
-## Emitted for each rendered command, in order; the UI doesn't interpret commands.
-signal command_rendered(command: WeavlyModel.CommandStatement)
 ## Emitted when a passage has no option left to choose.
 signal finished
 
@@ -78,9 +76,7 @@ func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
 	_current = VBoxContainer.new()
 	_current.theme_type_variation = &"WeavlyPassage"
 	_passages.add_child(_current)
-	var lists: Array[WeavlyChoiceList] = add_entries(
-		_current, entries, engine, command_rendered.emit, true
-	)
+	var lists: Array[WeavlyChoiceList] = add_entries(_current, entries, engine, true)
 	var choosable: bool = false
 	for choices: WeavlyChoiceList in lists:
 		choices.chosen.connect(_choose)

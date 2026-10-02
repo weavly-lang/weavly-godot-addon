@@ -301,6 +301,36 @@ class MetaCall:
 # =====================
 
 
+# A declared function or command; a command has no return type.
+class Signature:
+	extends RefCounted
+	const UNDECLARED = "Can't register %s '%s' because it isn't declared."
+	const WRONG_ARGUMENT_COUNT = "Can't register %s '%s' because it takes %d instead of %d arguments."
+
+	var name: String
+	var param_types: Array[String]
+	var return_type: String
+
+	func _init(name: String, param_types: Array[String], return_type: String = ""):
+		self.name = name
+		self.param_types = param_types
+		self.return_type = return_type
+
+	# Pushes an error and returns false when the callable doesn't fit a declaration of the name.
+	static func can_register(
+		kind: String, name: String, callable: Callable, declarations: Dictionary
+	) -> bool:
+		if not declarations.has(name):
+			push_error(UNDECLARED % [kind, name])
+			return false
+		var expected: int = (declarations[name] as Signature).param_types.size()
+		var count: int = callable.get_argument_count()
+		if count != expected:
+			push_error(WRONG_ARGUMENT_COUNT % [kind, name, count, expected])
+			return false
+		return true
+
+
 class Variable:
 	extends RefCounted
 	var id: String

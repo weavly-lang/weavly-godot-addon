@@ -22,7 +22,7 @@ var _keyword_regex: RegEx = RegEx.create_from_string(
 )
 var _function_regex: RegEx = RegEx.create_from_string("(?<![@$\\w])[A-Za-z_]\\w*(?=\\()")
 var _kind_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|meta)(?!\\w)"
+	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|meta|func|command)(?!\\w)"
 )
 var _type_regex: RegEx = RegEx.create_from_string(
 	":[ \\t]*(number|string|flag|node|pool|slot)(?!\\w)"

@@ -12,10 +12,8 @@ func _init() -> void:
 	add_child(_content)
 
 
-func show_entries(
-	entries: Array[WeavlyModel.Statement], engine: WeavlyEngine, on_command: Callable
-) -> void:
-	_lists = WeavlyUI.add_entries(_content, entries, engine, on_command)
+func show_entries(entries: Array[WeavlyModel.Statement], engine: WeavlyEngine) -> void:
+	_lists = WeavlyUI.add_entries(_content, entries, engine)
 	for choices: WeavlyChoiceList in _lists:
 		choices.chosen.connect(chosen.emit)
 

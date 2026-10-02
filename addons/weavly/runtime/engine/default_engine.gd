@@ -22,6 +22,7 @@ const KEY_RENDERED = "rendered"
 const DEFAULTS_PATH = "res://addons/weavly/runtime/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
 const DEFAULT_COMMAND_SERVICE = preload(DEFAULTS_PATH + "default_command_service.gd")
+const DEFAULT_FUNCTION_SERVICE = preload(DEFAULTS_PATH + "default_function_service.gd")
 const DEFAULT_IMAGE_SERVICE = preload(DEFAULTS_PATH + "default_image_service.gd")
 const DEFAULT_LINE_SERVICE = preload(DEFAULTS_PATH + "default_line_service.gd")
 const DEFAULT_NODE_SERVICE = preload(DEFAULTS_PATH + "default_node_service.gd")
@@ -34,6 +35,7 @@ const DEFAULT_VIDEO_SERVICE = preload(DEFAULTS_PATH + "default_video_service.gd"
 static var _service_types: Dictionary[String, Array] = {
 	"character": [DEFAULT_CHARACTER_SERVICE, WeavlyCharacterService],
 	"command": [DEFAULT_COMMAND_SERVICE, WeavlyCommandService],
+	"function": [DEFAULT_FUNCTION_SERVICE, WeavlyFunctionService],
 	"image": [DEFAULT_IMAGE_SERVICE, WeavlyImageService],
 	"line": [DEFAULT_LINE_SERVICE, WeavlyLineService],
 	"node": [DEFAULT_NODE_SERVICE, WeavlyNodeService],
@@ -60,6 +62,7 @@ static var _service_types: Dictionary[String, Array] = {
 
 @export var character_service_script: Script
 @export var command_service_script: Script
+@export var function_service_script: Script
 @export var image_service_script: Script
 @export var line_service_script: Script
 @export var node_service_script: Script
@@ -111,6 +114,7 @@ func start(node_id: String) -> void:
 	if not _finished:
 		push_warning(DIALOGUE_IN_PROGRESS % node_id)
 	else:
+		_check_registrations()
 		_finished = false
 		clear_location()
 		started_dialogue.emit()
@@ -123,6 +127,7 @@ func render(node_id: String) -> Array[WeavlyModel.Statement]:
 	if not _finished:
 		push_warning(RENDER_IN_PROGRESS % node_id)
 		return []
+	_check_registrations()
 	_begin_render()
 	enter_node(node_id)
 	return _end_render()

@@ -10,9 +10,12 @@ signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
 
 const DRAW_IN_PROGRESS = "Dialogue is already in progress, can't draw from %s."
+const UNREGISTERED_FUNCTION = "Function '%s' is declared, but no callable is registered for it."
+const UNREGISTERED_COMMAND = "Command '%s' is declared, but no handler is registered for it."
 
 var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService
+var function_service: WeavlyFunctionService
 var image_service: WeavlyImageService
 var line_service: WeavlyLineService
 var node_service: WeavlyNodeService
@@ -37,6 +40,7 @@ var _rendering: bool = false
 var _render_output: Array[WeavlyModel.Statement] = []
 # The options choose() and render_option() accept, with the source of their node.
 var _rendered_options: Dictionary[WeavlyModel.Option, String] = {}
+var _registrations_checked: bool = false
 
 @abstract func start(node_id: String) -> void
 
@@ -79,19 +83,38 @@ func add_rendered(statement: WeavlyModel.Statement) -> void:
 			_rendered_options[option] = current_source
 
 
+# The callable gets the arguments in declaration order, and must not change state:
+# conditions are evaluated often and in no fixed order.
+func register_function(name: String, callable: Callable) -> void:
+	function_service.register_function(name, callable)
+
+
+# The handler gets the arguments in declaration order; to wait, it calls hold() and release().
+func register_command(name: String, callable: Callable) -> void:
+	command_service.register_command(name, callable)
+
+
+# Runs a rendered command through its handler.
+func run_command(command: WeavlyModel.CommandStatement) -> void:
+	command_service.execute_command(command)
+
+
 # Up to limit storylet ids in selection order, each taken while its slots are free; -1 takes all.
 func list_pool(pools: Array, limit: int = -1) -> Array[String]:
+	_check_registrations()
 	return WeavlyStoryletSelector.list_pool(self, pools, limit)
 
 
 # What list_pool would return now, without changing skip counts or the generator.
 func peek_pool(pools: Array, limit: int = -1) -> Array[String]:
+	_check_registrations()
 	return WeavlyStoryletSelector.peek_pool(self, pools, limit)
 
 
 # The node's value for a meta key, else the key's default; null once an error is reported.
 # Leaves the generator as it was, like peek_pool.
 func get_node_meta(node_id: String, key: String) -> Variant:
+	_check_registrations()
 	var rng_state: int = rng.state
 	var value: Variant = WeavlyMetaReader.read(self, node_id, key)
 	rng.state = rng_state
@@ -103,11 +126,23 @@ func draw(pools: Array) -> bool:
 	if is_running():
 		push_warning(DRAW_IN_PROGRESS % ", ".join(PackedStringArray(pools)))
 		return false
+	_check_registrations()
 	var node_id: String = WeavlyStoryletSelector.draw(self, pools)
 	if node_id == "":
 		return false
 	start(node_id)
 	return true
+
+
+# Once, on the game's first use: the game registers after the engine's _ready.
+func _check_registrations() -> void:
+	if _registrations_checked:
+		return
+	_registrations_checked = true
+	for name: String in function_service.get_unregistered():
+		report_error(UNREGISTERED_FUNCTION % name)
+	for name: String in command_service.get_unregistered():
+		report_error(UNREGISTERED_COMMAND % name)
 
 
 func report_error(message: String) -> void:

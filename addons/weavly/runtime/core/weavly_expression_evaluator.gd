@@ -143,8 +143,7 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 	if is_number_function(call.name):
 		return _evaluate_number_call(call, engine)
 	if call.name not in NODE_FUNCTIONS:
-		engine.report_error(UNKNOWN_FUNCTION % call.name)
-		return ERROR
+		return _evaluate_declared_call(call, engine)
 	if not engine.node_service.has(call.node_id):
 		engine.report_error(UNKNOWN_NODE % [call.node_id, call.name])
 		return ERROR
@@ -154,6 +153,16 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 	if call.name == VISITED:
 		return count > 0
 	return float(count)
+
+
+static func _evaluate_declared_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
+	var values: Array = []
+	for arg: WeavlyModel.WeavlyExpression in call.args:
+		var value: Variant = evaluate_expression(arg, engine)
+		if is_error(value):
+			return ERROR
+		values.append(value)
+	return engine.function_service.call_function(call.name, values)
 
 
 static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
