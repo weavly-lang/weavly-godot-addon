@@ -448,15 +448,20 @@ func test_meta_is_read_with_its_lines() -> void:
 		"when": {"line": 4.0, "value": true},
 		"priority": {"line": 5.0, "value": 2.0},
 		"weight": {"line": 6.0, "value": {"variable": "w"}},
+		"cost": {"line": 7.0, "value": "cheap"},
 	}
 	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_equal(["city", "night"])
 	assert_array(meta.slots).is_equal(["bob"])
-	assert_object(meta.when.expression).is_instanceof(WeavlyModel.TrueExpression)
-	assert_int(meta.when.line).is_equal(4)
-	assert_that((meta.priority.expression as WeavlyModel.Number).value).is_equal(2.0)
-	assert_object(meta.weight.expression).is_instanceof(WeavlyModel.Identifier)
-	assert_int(meta.weight.line).is_equal(6)
+	assert_array(meta.entries.keys()).is_equal(["when", "priority", "weight", "cost"])
+	assert_object(meta.entries["when"].expression).is_instanceof(WeavlyModel.TrueExpression)
+	assert_int(meta.entries["when"].line).is_equal(4)
+	assert_that((meta.entries["priority"].expression as WeavlyModel.Number).value).is_equal(2.0)
+	assert_object(meta.entries["weight"].expression).is_instanceof(WeavlyModel.Identifier)
+	assert_str((meta.entries["cost"].expression as WeavlyModel.StringLiteral).value).is_equal(
+		"cheap"
+	)
+	assert_int(meta.entries["cost"].line).is_equal(7)
 
 
 func test_an_empty_meta_puts_the_node_in_no_pool() -> void:
@@ -464,11 +469,35 @@ func test_an_empty_meta_puts_the_node_in_no_pool() -> void:
 	node_data["meta"] = {}
 	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_empty()
-	assert_object(meta.when).is_null()
+	assert_dict(meta.entries).is_empty()
 
 
 func test_a_node_without_meta_has_none() -> void:
 	assert_object(WeavlyDeserializer.compile_nodes(_build([_node("a", [])]))[0].meta).is_null()
+
+
+func test_meta_keys_are_read_from_env_with_their_defaults() -> void:
+	var data: Dictionary = {
+		"meta_keys":
+		[
+			{"type": "number", "name": "cost", "value": 1.0},
+			{"type": "string", "name": "tag", "value": ""},
+			{"type": "flag", "name": "urgent", "value": true},
+			{"type": "node", "name": "next", "value": "shop"},
+		]
+	}
+	assert_dict(WeavlyDeserializer.compile_meta_keys(data)).is_equal(
+		{"cost": 1.0, "tag": "", "urgent": true, "next": "shop"}
+	)
+
+
+func test_a_meta_call_is_read_with_its_node_and_key() -> void:
+	var call: Variant = WeavlyDeserializer.compile_expression(
+		{"call": "meta", "node": "shop", "key": "cost"}, ""
+	)
+	assert_object(call).is_instanceof(WeavlyModel.MetaCall)
+	assert_str((call as WeavlyModel.MetaCall).node_id).is_equal("shop")
+	assert_str((call as WeavlyModel.MetaCall).key).is_equal("cost")
 
 
 func test_pool_names_are_read_from_env() -> void:

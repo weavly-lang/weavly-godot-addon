@@ -1,0 +1,31 @@
+@node stall
+@meta
+pool: market
+tag: "fresh"
+priority: meta(shop, cost)
+weight: 2
+@endmeta
+Stall.
+@endnode
+
+@node moody
+@meta
+urgent: $mood
+cost: $bonus
+@endmeta
+Moody.
+@endnode
+
+@node chain
+@meta
+cost: meta(moody, cost) + 1
+@endmeta
+Chain.
+@endnode
+
+@node moody_check
+@if meta(moody, urgent)
+Urgent.
+@endif
+After.
+@endnode

@@ -89,6 +89,15 @@ func peek_pool(pools: Array, limit: int = -1) -> Array[String]:
 	return WeavlyStoryletSelector.peek_pool(self, pools, limit)
 
 
+# The node's value for a meta key, else the key's default; null once an error is reported.
+# Leaves the generator as it was, like peek_pool.
+func get_node_meta(node_id: String, key: String) -> Variant:
+	var rng_state: int = rng.state
+	var value: Variant = WeavlyMetaReader.read(self, node_id, key)
+	rng.state = rng_state
+	return null if WeavlyExpressionEvaluator.is_error(value) else value
+
+
 # Starts a dialogue with the first node in selection order; false when none is eligible.
 func draw(pools: Array) -> bool:
 	if is_running():

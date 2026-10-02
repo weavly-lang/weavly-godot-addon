@@ -22,16 +22,14 @@ var _keyword_regex: RegEx = RegEx.create_from_string(
 )
 var _function_regex: RegEx = RegEx.create_from_string("(?<![@$\\w])[A-Za-z_]\\w*(?=\\()")
 var _kind_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot)(?!\\w)"
+	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|meta)(?!\\w)"
 )
 var _type_regex: RegEx = RegEx.create_from_string(
 	":[ \\t]*(number|string|flag|node|pool|slot)(?!\\w)"
 )
 var _flag_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]+)")
-var _meta_key_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*(pool|slot|when|priority|weight|once)[ \\t]*:"
-)
+var _meta_key_regex: RegEx = RegEx.create_from_string("^[ \\t]*([A-Za-z_]\\w*)[ \\t]*:")
 var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|continue)\\b")
 var _interpolation_regex: RegEx = RegEx.create_from_string("(?<!\\\\)\\{[^{}\\n]*\\}")
 

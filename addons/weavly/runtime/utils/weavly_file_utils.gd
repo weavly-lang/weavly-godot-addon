@@ -96,6 +96,11 @@ static func load_dialogue(
 				engine.node_service.add_pool(pool)
 			for slot: String in WeavlyDeserializer.compile_slot_names(data, file_path):
 				engine.node_service.add_slot(slot)
+			var meta_keys: Dictionary[String, Variant] = WeavlyDeserializer.compile_meta_keys(
+				data, file_path
+			)
+			for key: String in meta_keys:
+				engine.node_service.add_meta_key(key, meta_keys[key])
 	load_variables_from_resources(engine, variable_dir, sources)
 
 

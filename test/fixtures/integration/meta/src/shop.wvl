@@ -1,0 +1,43 @@
+@env
+meta cost: number = 1
+meta tag: string = "plain"
+meta urgent: flag = false
+var gold: number = 5
+var paid: number = 0
+var rolled: number = 0
+extern var mood: flag
+extern var bonus: number
+pool market
+slot table
+@endenv
+
+@node shop
+@meta
+pool: market
+slot: table
+cost: 2 + $gold
+available: $gold >= meta(cost)
+@endmeta
+@set $paid = meta(cost)
+@if meta(stall, tag) == "fresh"
+Fresh.
+@endif
+@endnode
+
+@node plain
+Plain.
+@endnode
+
+@node lucky
+@meta
+cost: random(1, 1000)
+@endmeta
+@set $rolled = meta(cost)
+@endnode
+
+@node once_only
+@meta
+once: true
+@endmeta
+Once.
+@endnode

@@ -1,9 +1,6 @@
 class_name WeavlyStoryletSelector
 
 const UNDECLARED_POOL = "Pool '%s' isn't declared."
-const WRONG_NUMBER_TYPE = "Storylet %s can't be of type '%s'."
-const DEFAULT_PRIORITY: float = 0.0
-const DEFAULT_WEIGHT: float = 1.0
 
 
 class Candidate:
@@ -54,16 +51,10 @@ static func _rank(engine: WeavlyEngine, pools: Array) -> Array[Candidate]:
 				ids.append(id)
 
 	var candidates: Array[Candidate] = []
-	var source: String = engine.current_source
-	var line: int = engine.current_line
 	for id: String in ids:
-		var node: WeavlyModel.WeavlyNode = engine.node_service.get_node(id)
-		engine.current_source = node.source
-		var candidate: Candidate = _evaluate(node, engine)
+		var candidate: Candidate = _evaluate(engine.node_service.get_node(id), engine)
 		if candidate != null:
 			candidates.append(candidate)
-	engine.current_source = source
-	engine.current_line = line
 
 	candidates.sort_custom(
 		func(a: Candidate, b: Candidate) -> bool:
@@ -74,36 +65,23 @@ static func _rank(engine: WeavlyEngine, pools: Array) -> Array[Candidate]:
 
 # Null when the node isn't eligible; a failing entry is reported at its meta line.
 static func _evaluate(node: WeavlyModel.WeavlyNode, engine: WeavlyEngine) -> Candidate:
-	var meta: WeavlyModel.NodeMeta = node.meta
-	if meta.when != null:
-		engine.current_line = meta.when.line
-		if not WeavlyExpressionEvaluator.evaluate_condition(meta.when.expression, engine):
-			return null
-	var priority: Variant = _evaluate_number(meta.priority, "priority", DEFAULT_PRIORITY, engine)
-	var weight: Variant = _evaluate_number(meta.weight, "weight", DEFAULT_WEIGHT, engine)
-	if priority == null or weight == null or weight <= 0.0:
+	var when: Variant = WeavlyMetaReader.read_node(engine, node, WeavlyDeserializer.KEY_WHEN)
+	if WeavlyExpressionEvaluator.is_error(when) or not when:
+		return null
+	var priority: Variant = WeavlyMetaReader.read_node(
+		engine, node, WeavlyDeserializer.KEY_PRIORITY
+	)
+	var weight: Variant = WeavlyMetaReader.read_node(engine, node, WeavlyDeserializer.KEY_WEIGHT)
+	if WeavlyExpressionEvaluator.is_error(priority) or WeavlyExpressionEvaluator.is_error(weight):
+		return null
+	if weight <= 0.0:
 		return null
 	var candidate: Candidate = Candidate.new()
 	candidate.id = node.id
-	candidate.slots = meta.slots
+	candidate.slots = node.meta.slots
 	candidate.priority = priority
 	candidate.order = pow(engine.rng.randf(), 1.0 / weight)
 	return candidate
-
-
-static func _evaluate_number(
-	entry: WeavlyModel.MetaExpression, name: String, default: float, engine: WeavlyEngine
-) -> Variant:
-	if entry == null:
-		return default
-	engine.current_line = entry.line
-	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(entry.expression, engine)
-	if WeavlyExpressionEvaluator.is_error(value):
-		return null
-	if value is not float:
-		engine.report_error(WRONG_NUMBER_TYPE % [name, type_string(typeof(value))])
-		return null
-	return value
 
 
 static func _count_skips(

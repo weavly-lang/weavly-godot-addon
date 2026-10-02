@@ -389,7 +389,7 @@ func _node_with_meta(meta: Variant) -> Dictionary:
 	return node_data
 
 
-func test_an_unknown_meta_key_drops_the_node() -> void:
+func test_a_text_meta_key_drops_the_node() -> void:
 	var data: Dictionary = _build([_node_with_meta({"label": {"line": 2.0, "value": "Bob"}})])
 	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
 	assert_logged(["Unknown meta key 'label' at nodes[0].meta.label"])
@@ -409,6 +409,32 @@ func test_a_failing_meta_expression_drops_the_node() -> void:
 	)
 	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
 	assert_logged(["Unknown expression type at nodes[0].meta.when.value"])
+
+
+func test_a_meta_key_with_a_default_of_the_wrong_type_is_skipped() -> void:
+	var data: Dictionary = {
+		"meta_keys":
+		[
+			{"type": "number", "name": "cost", "value": "1"},
+			{"type": "flag", "name": "urgent", "value": true},
+		]
+	}
+	assert_dict(WeavlyDeserializer.compile_meta_keys(data)).is_equal({"urgent": true})
+	assert_logged(["Required field 'value' has wrong type at meta_keys[0]"])
+
+
+func test_a_meta_key_of_an_unknown_type_is_skipped() -> void:
+	var data: Dictionary = {"meta_keys": [{"type": "list", "name": "cost", "value": 1.0}]}
+	assert_dict(WeavlyDeserializer.compile_meta_keys(data)).is_empty()
+	assert_logged(["Unknown meta key type 'list' at meta_keys[0]"])
+
+
+func test_a_meta_call_without_a_key_fails() -> void:
+	var call: Variant = WeavlyDeserializer.compile_expression(
+		{"call": "meta", "node": "shop"}, "x"
+	)
+	assert_object(call).is_null()
+	assert_logged(["Missing required field 'key' at x"])
 
 
 func test_env_without_pools_is_reported() -> void:

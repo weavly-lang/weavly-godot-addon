@@ -42,5 +42,8 @@ Ann nods.
 @endnode
 
 @node aside_start
+@meta
+priority: $secret
+@endmeta
 @detour gate
 @endnode

@@ -26,6 +26,13 @@ func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel
 
 @abstract func get_all_slots() -> Array[String]
 
+# A custom meta key declared in env.json.
+@abstract func add_meta_key(key: String, default: Variant) -> void
+
+@abstract func has_meta_key(key: String) -> bool
+
+@abstract func get_meta_default(key: String) -> Variant
+
 # The nodes whose @meta names the pool, in the order they were added.
 @abstract func get_pool_members(pool: String) -> Array[String]
 

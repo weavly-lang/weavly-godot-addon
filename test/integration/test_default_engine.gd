@@ -302,11 +302,15 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	engine.start("arrival")
 	assert_that(_narration_log.back()).is_equal("You arrive with 1 points, written as {score}.")
 	engine.next()
-	assert_that(character_lines.back()).is_equal("Welcome back, Hero. The market waited 1 times.")
+	assert_that(character_lines.back()).is_equal(
+		"Welcome back, Hero. The market waited 1 times and charges 3."
+	)
 	engine.next()
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(_signal_log.has("entered_node:night_market")).is_false()
 	assert_int(engine.node_service.get_skip_count("plaza")).is_equal(1)
+	assert_that(engine.get_node_meta("night_market", "toll")).is_equal(3.0)
+	assert_that(engine.get_node_meta("plaza", "toll")).is_equal(1.0)
 
 	var peeked: Array[String] = engine.peek_pool(["city", "night"])
 	assert_array(peeked).is_equal(["night_market", "plaza"])
