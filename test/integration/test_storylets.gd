@@ -52,6 +52,49 @@ func test_equal_weights_shuffle_and_the_same_seed_repeats_the_order() -> void:
 	assert_int(orders.size()).is_greater(1)
 
 
+# menu: menu_top has priority 1; menu_other (menu.wvl) and menu_zeta, menu_alpha and
+# menu_beta (storylets.wvl, in that order) tie. menu_zeta and menu_beta share slot m,
+# menu_zeta has weight 1000 and menu_alpha weight 0.
+func test_without_shuffle_ties_keep_source_order_and_weight_is_ignored() -> void:
+	assert_array(_make_engine().list_pool(["menu"], -1, false)).is_equal(
+		["menu_top", "menu_other", "menu_zeta", "menu_alpha"]
+	)
+
+
+func test_without_shuffle_the_order_repeats_on_every_call() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var first: Array[String] = engine.list_pool(["menu"], -1, false)
+	for i: int in 10:
+		assert_array(engine.list_pool(["menu"], -1, false)).is_equal(first)
+
+
+func test_without_shuffle_limit_and_skip_counts_follow_source_order() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	assert_array(engine.list_pool(["menu"], 2, false)).is_equal(["menu_top", "menu_other"])
+	for id: String in ["menu_zeta", "menu_alpha", "menu_beta"]:
+		assert_int(engine.node_service.get_skip_count(id)).is_equal(1)
+	assert_int(engine.node_service.get_skip_count("menu_top")).is_equal(0)
+
+
+func test_without_shuffle_the_generator_is_untouched() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var state: int = engine.rng.state
+	engine.list_pool(["menu"], -1, false)
+	engine.peek_pool(["menu"], -1, false)
+	assert_int(engine.rng.state).is_equal(state)
+
+
+func test_peek_pool_without_shuffle_matches_list_pool() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var peeked: Array[String] = engine.peek_pool(["menu"], 3, false)
+	assert_int(engine.node_service.get_skip_count("menu_alpha")).is_equal(0)
+	assert_array(engine.list_pool(["menu"], 3, false)).is_equal(peeked)
+
+
+func test_with_shuffle_a_weight_of_zero_leaves_the_node_out() -> void:
+	assert_bool(_make_engine().list_pool(["menu"]).has("menu_alpha")).is_false()
+
+
 func test_a_node_is_skipped_when_any_of_its_slots_is_taken() -> void:
 	assert_array(_make_engine().list_pool(["slot_test"])).is_equal(["in_abc", "in_d", "free"])
 

@@ -1,0 +1,10 @@
+@env
+pool menu
+slot m
+@endenv
+
+@node menu_other
+@meta
+pool: menu
+@endmeta
+@endnode

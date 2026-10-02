@@ -100,15 +100,16 @@ func run_command(command: WeavlyModel.CommandStatement) -> void:
 
 
 # Up to limit storylet ids in selection order, each taken while its slots are free; -1 takes all.
-func list_pool(pools: Array, limit: int = -1) -> Array[String]:
+# Without shuffle, nodes of one priority keep their source order and weight isn't read.
+func list_pool(pools: Array, limit: int = -1, shuffle: bool = true) -> Array[String]:
 	_check_registrations()
-	return WeavlyStoryletSelector.list_pool(self, pools, limit)
+	return WeavlyStoryletSelector.list_pool(self, pools, limit, shuffle)
 
 
 # What list_pool would return now, without changing skip counts or the generator.
-func peek_pool(pools: Array, limit: int = -1) -> Array[String]:
+func peek_pool(pools: Array, limit: int = -1, shuffle: bool = true) -> Array[String]:
 	_check_registrations()
-	return WeavlyStoryletSelector.peek_pool(self, pools, limit)
+	return WeavlyStoryletSelector.peek_pool(self, pools, limit, shuffle)
 
 
 # The node's value for a meta key, else the key's default; null once an error is reported.
