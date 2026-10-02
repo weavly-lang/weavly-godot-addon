@@ -278,7 +278,7 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	# Final state: dialogue finished, every node visited once, has_key was toggled
 	# to false by the last set statement, and end read the visits and reputation.
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
-	for node_id: String in ["start", "choices", "random_node", "match_node", "end"]:
+	for node_id: String in ["start", "choices", "random_node", "match_node", "tally", "end"]:
 		assert_int(engine.node_service.get_visit_count(node_id)).is_equal(1)
 	assert_that(engine.variable_service.get_variable("choice_visits")).is_equal(1.0)
 	assert_bool(engine.variable_service.get_variable("been_to_start")).is_true()
@@ -362,6 +362,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 				"plaza",
 				"random_node",
 				"start",
+				"tally",
 			]
 		)
 	)

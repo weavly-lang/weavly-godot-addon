@@ -229,11 +229,15 @@ func test_draw_resets_the_drawn_node_and_counts_the_other_eligible_ones() -> voi
 	assert_int(engine.node_service.get_skip_count("never")).is_equal(0)
 
 
-func test_the_draw_statement_enters_the_drawn_node_like_a_jump() -> void:
+func test_the_draw_statement_runs_the_drawn_node_like_a_detour() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
+	var left: Array[String] = []
+	engine.left_node.connect(func(id: String) -> void: left.append(id))
 	engine.start("draw_one")
 	assert_array(entered).is_equal(["draw_one", "when_yes"])
+	assert_array(left).is_equal(["when_yes", "draw_one"])
+	assert_that(engine.variable_service.get_variable("count")).is_equal(1.0)
 	assert_int(engine.node_service.get_visit_count("draw_one")).is_equal(1)
 
 

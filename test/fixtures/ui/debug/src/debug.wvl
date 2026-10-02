@@ -40,3 +40,7 @@ pool: city
 @endmeta
 Ann nods.
 @endnode
+
+@node aside_start
+@detour gate
+@endnode

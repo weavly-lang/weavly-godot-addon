@@ -14,6 +14,7 @@ var did_finish: bool = false
 var did_next: bool = false
 var holds: int = 0
 var last_entered_node: String = ""
+var last_detoured_node: String = ""
 
 
 func _init() -> void:
@@ -43,6 +44,10 @@ func choose(_option: WeavlyModel.Option) -> void:
 
 func enter_node(node_id: String) -> void:
 	last_entered_node = node_id
+
+
+func detour(node_id: String) -> void:
+	last_detoured_node = node_id
 
 
 func next() -> void:

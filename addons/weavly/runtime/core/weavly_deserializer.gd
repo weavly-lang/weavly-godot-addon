@@ -59,6 +59,7 @@ const TYPE_MATCH = "match"
 const TYPE_OPTION = "option"
 const TYPE_SET = "set"
 const TYPE_JUMP = "jump"
+const TYPE_DETOUR = "detour"
 const TYPE_FINISH = "finish"
 const TYPE_COMMAND = "command"
 const TYPE_NUMBER = "number"
@@ -282,6 +283,8 @@ static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Sta
 			return compile_set_statement(data, path)
 		TYPE_JUMP:
 			return compile_jump_statement(data, path)
+		TYPE_DETOUR:
+			return compile_detour_statement(data, path)
 		TYPE_FINISH:
 			return compile_finish_statement(data, path)
 		TYPE_COMMAND:
@@ -328,6 +331,15 @@ static func compile_jump_statement(data: Dictionary, path: String) -> WeavlyMode
 	if id == null:
 		return null
 	return WeavlyModel.JumpStatement.new(id)
+
+
+static func compile_detour_statement(
+	data: Dictionary, path: String
+) -> WeavlyModel.DetourStatement:
+	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
+	if id == null:
+		return null
+	return WeavlyModel.DetourStatement.new(id)
 
 
 static func compile_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:

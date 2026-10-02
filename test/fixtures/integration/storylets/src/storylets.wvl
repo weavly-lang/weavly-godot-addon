@@ -203,6 +203,7 @@ pool: shuffle_test
 
 @node draw_one
 @draw when_test
+@set $count = 1
 @endnode
 
 @node draw_several

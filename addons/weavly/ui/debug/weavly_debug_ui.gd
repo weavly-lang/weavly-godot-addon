@@ -141,8 +141,9 @@ func _refresh_status() -> void:
 	if not engine.is_running():
 		_status.text = "idle"
 		return
-	var node_id: String = engine.current_node_id if engine.current_node_id != "" else "-"
-	_status.text = "running, node %s" % node_id
+	var stack: Array[String] = engine.get_location_stack()
+	var nodes: String = " > ".join(PackedStringArray(stack)) if not stack.is_empty() else "-"
+	_status.text = "running, node %s" % nodes
 	if engine.current_source != "":
 		_status.text += " at %s:%d" % [engine.current_source, engine.current_line]
 
