@@ -135,3 +135,31 @@ func test_line_wrap_toggle_sets_wrap_mode() -> void:
 	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_NONE)
 	_panel._line_wrap.button_pressed = true
 	assert_int(_panel._code_edit.wrap_mode).is_equal(TextEdit.LINE_WRAPPING_BOUNDARY)
+
+
+# =====================
+# Build status
+# =====================
+
+
+func _status_after_success(output: String) -> String:
+	_panel._report_success(WeavlyCompilerRunner.build_result(0, output))
+	return _panel._status_label.text
+
+
+func test_a_build_without_warnings_is_successful() -> void:
+	assert_str(_status_after_success("Built 1 file into build/")).is_equal("Build successful")
+
+
+func test_a_build_with_warnings_counts_them() -> void:
+	var output: String = (
+		"src/a.wvl:2:6: warning: pool 'harbor' has no nodes\n"
+		+ "src/a.wvl:5:5: warning: variable 'gold' is never used\n"
+		+ "Built 1 file into build/"
+	)
+	assert_str(_status_after_success(output)).is_equal("Build successful, 2 warnings - see Output")
+
+
+func test_a_build_with_one_warning_says_warning() -> void:
+	var output: String = "src/a.wvl:2:6: warning: pool 'harbor' has no nodes"
+	assert_str(_status_after_success(output)).is_equal("Build successful, 1 warning - see Output")

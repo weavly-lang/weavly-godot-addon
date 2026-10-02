@@ -3,16 +3,17 @@ class_name WeavlyCompilerRunner
 extends RefCounted
 
 const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
-const ERROR_LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: error: (.*)$"
+const LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: %s: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
 const MINIMUM_VERSION = "0.5.0"
 
 static var _ansi_escape_regex: RegEx = RegEx.create_from_string(ANSI_ESCAPE_PATTERN)
-static var _error_location_regex: RegEx = RegEx.create_from_string(ERROR_LOCATION_PATTERN)
+static var _error_location_regex: RegEx = RegEx.create_from_string(LOCATION_PATTERN % "error")
+static var _warning_location_regex: RegEx = RegEx.create_from_string(LOCATION_PATTERN % "warning")
 static var _version_regex: RegEx = RegEx.create_from_string(VERSION_PATTERN)
 
 
-class CompileError:
+class CompileMessage:
 	extends RefCounted
 
 	var file: String = ""
@@ -27,7 +28,8 @@ class CompileResult:
 	var success: bool = false
 	var exit_code: int = -1
 	var output: String = ""
-	var errors: Array[CompileError] = []
+	var errors: Array[CompileMessage] = []
+	var warnings: Array[CompileMessage] = []
 
 
 static func build_version_command(executable_path: String) -> Dictionary:
@@ -89,7 +91,9 @@ static func build_result(
 	result.exit_code = exit_code
 	result.output = strip_ansi(raw_output).strip_edges()
 	result.success = exit_code == 0
-	if not result.success:
+	if result.success:
+		result.warnings = parse_warnings(result.output, working_dir)
+	else:
 		result.errors = parse_errors(result.output, working_dir)
 	return result
 
@@ -98,17 +102,31 @@ static func strip_ansi(text: String) -> String:
 	return _ansi_escape_regex.sub(text, "", true)
 
 
-static func parse_errors(output: String, working_dir: String = "") -> Array[CompileError]:
-	var errors: Array[CompileError] = []
-	for found: RegExMatch in _error_location_regex.search_all(output):
-		var error: CompileError = CompileError.new()
-		error.file = _resolve_path(found.get_string(1), working_dir)
-		error.line = found.get_string(2).to_int()
+static func parse_errors(output: String, working_dir: String = "") -> Array[CompileMessage]:
+	return _parse_messages(_error_location_regex, output, working_dir)
+
+
+static func parse_warnings(output: String, working_dir: String = "") -> Array[CompileMessage]:
+	return _parse_messages(_warning_location_regex, output, working_dir)
+
+
+static func is_warning(line: String) -> bool:
+	return _warning_location_regex.search(line) != null
+
+
+static func _parse_messages(
+	regex: RegEx, output: String, working_dir: String
+) -> Array[CompileMessage]:
+	var messages: Array[CompileMessage] = []
+	for found: RegExMatch in regex.search_all(output):
+		var message: CompileMessage = CompileMessage.new()
+		message.file = _resolve_path(found.get_string(1), working_dir)
+		message.line = found.get_string(2).to_int()
 		if found.get_string(3) != "":
-			error.column = found.get_string(3).to_int()
-		error.message = found.get_string(4).strip_edges()
-		errors.append(error)
-	return errors
+			message.column = found.get_string(3).to_int()
+		message.message = found.get_string(4).strip_edges()
+		messages.append(message)
+	return messages
 
 
 static func _resolve_path(path: String, working_dir: String) -> String:
