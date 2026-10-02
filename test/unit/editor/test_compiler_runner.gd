@@ -7,6 +7,9 @@ const SYNTAX_ERROR_OUTPUT = """src/sub/broken.wvl:2:11: error: unexpected end of
     |           ^
   expected one of: '$', '(', '-', 'false', 'not', 'true', a number, a quoted string
 src/b.wvl:2:7: error: jump target 'nowhere' matches no node"""
+const WARNING_OUTPUT = """src/city.wvl:2:6: warning: pool 'harbor' has no nodes
+src/city.wvl:5:5: warning: variable 'gold' is never used
+Built 1 file into build/"""
 
 # =====================
 # build_command
@@ -96,7 +99,7 @@ func test_build_result_strips_ansi_from_output() -> void:
 
 
 func test_parse_errors_reads_file_line_column_and_message() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		"src/story.wvl:12:4: error: unexpected 'Go'"
 	)
 	assert_that(errors.size()).is_equal(1)
@@ -107,7 +110,7 @@ func test_parse_errors_reads_file_line_column_and_message() -> void:
 
 
 func test_parse_errors_without_column() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		"src/d.wvl:2: error: invalid encoding, files must be saved as UTF-8"
 	)
 	assert_that(errors.size()).is_equal(1)
@@ -116,14 +119,14 @@ func test_parse_errors_without_column() -> void:
 
 
 func test_parse_errors_ignores_errors_without_location() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		"error: directory 'src' already exists"
 	)
 	assert_that(errors.size()).is_equal(0)
 
 
 func test_parse_errors_collects_every_error_and_skips_detail_lines() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		SYNTAX_ERROR_OUTPUT
 	)
 	assert_that(errors.size()).is_equal(2)
@@ -136,7 +139,7 @@ func test_parse_errors_collects_every_error_and_skips_detail_lines() -> void:
 
 
 func test_parse_errors_handles_crlf_output() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		SYNTAX_ERROR_OUTPUT.replace("\n", "\r\n")
 	)
 	assert_that(errors.size()).is_equal(2)
@@ -145,10 +148,54 @@ func test_parse_errors_handles_crlf_output() -> void:
 
 
 func test_parse_errors_resolves_paths_against_working_dir() -> void:
-	var errors: Array[WeavlyCompilerRunner.CompileError] = WeavlyCompilerRunner.parse_errors(
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
 		"src/sub/a.wvl:1:1: error: boom", "C:/Games/My Project/dialogue"
 	)
 	assert_that(errors[0].file).is_equal("C:/Games/My Project/dialogue/src/sub/a.wvl")
+
+
+# =====================
+# parse_warnings
+# =====================
+
+
+func test_build_result_parses_warnings_on_success() -> void:
+	var result: WeavlyCompilerRunner.CompileResult = WeavlyCompilerRunner.build_result(
+		0, WARNING_OUTPUT
+	)
+	assert_bool(result.success).is_true()
+	assert_that(result.warnings.size()).is_equal(2)
+	assert_that(result.errors.size()).is_equal(0)
+
+
+func test_parse_warnings_reads_file_line_column_and_message() -> void:
+	var warnings: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_warnings(
+		WARNING_OUTPUT, "C:/Games/dialogue"
+	)
+	assert_that(warnings[0].file).is_equal("C:/Games/dialogue/src/city.wvl")
+	assert_that(warnings[0].line).is_equal(2)
+	assert_that(warnings[0].column).is_equal(6)
+	assert_that(warnings[0].message).is_equal("pool 'harbor' has no nodes")
+	assert_that(warnings[1].message).is_equal("variable 'gold' is never used")
+
+
+func test_errors_and_warnings_are_parsed_apart() -> void:
+	var output: String = "src/a.wvl:1:1: error: boom\n" + WARNING_OUTPUT
+	var errors: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_errors(
+		output
+	)
+	var warnings: Array[WeavlyCompilerRunner.CompileMessage] = WeavlyCompilerRunner.parse_warnings(
+		output
+	)
+	assert_that(errors.size()).is_equal(1)
+	assert_that(errors[0].message).is_equal("boom")
+	assert_that(warnings.size()).is_equal(2)
+
+
+func test_is_warning_matches_warning_lines_only() -> void:
+	assert_bool(WeavlyCompilerRunner.is_warning("src/city.wvl:2:6: warning: unused")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_warning("src/city.wvl:2:6: error: boom")).is_false()
+	assert_bool(WeavlyCompilerRunner.is_warning("Built 1 file into build/")).is_false()
 
 
 # =====================

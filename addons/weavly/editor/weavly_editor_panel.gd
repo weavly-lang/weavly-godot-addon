@@ -23,6 +23,7 @@ const _VERSION_TOO_OLD = (
 
 const _COLOR_ERROR = Color(0.94, 0.42, 0.42)
 const _COLOR_SUCCESS = Color(0.50, 0.84, 0.52)
+const _COLOR_WARNING = Color(0.94, 0.78, 0.40)
 const _COLOR_INFO = Color(0.66, 0.74, 0.88)
 
 var _path_label: Label
@@ -238,9 +239,7 @@ func _on_compile_finished(
 		_checked_executable = executable
 		_report_version(executable, version)
 	if result.success:
-		_set_status("Build successful", _COLOR_SUCCESS)
-		var message: String = result.output if result.output != "" else "Build successful."
-		print_rich("[color=#80d685]%s %s[/color]" % [_LOG_PREFIX, message])
+		_report_success(result)
 		_rescan_filesystem()
 	else:
 		_report_failure(result)
@@ -259,12 +258,28 @@ func _set_compiling(compiling: bool) -> void:
 	_refresh_controls()
 
 
+func _report_success(result: WeavlyCompilerRunner.CompileResult) -> void:
+	var count: int = result.warnings.size()
+	if count == 0:
+		_set_status("Build successful", _COLOR_SUCCESS)
+	else:
+		var noun: String = "warning" if count == 1 else "warnings"
+		_set_status("Build successful, %d %s - see Output" % [count, noun], _COLOR_WARNING)
+	var output: String = result.output if result.output != "" else "Build successful."
+	for line: String in output.split("\n"):
+		var line_color: Color = (
+			_COLOR_WARNING if WeavlyCompilerRunner.is_warning(line) else _COLOR_SUCCESS
+		)
+		var text: String = line.strip_edges().replace("[", "[lb]")
+		print_rich("[color=#%s]%s %s[/color]" % [line_color.to_html(false), _LOG_PREFIX, text])
+
+
 func _report_failure(result: WeavlyCompilerRunner.CompileResult) -> void:
 	_set_status("Build failed - see Output", _COLOR_ERROR)
 	push_error("%s Build failed (exit code %d)." % [_LOG_PREFIX, result.exit_code])
 	if result.output != "":
 		print(result.output)
-	var error: WeavlyCompilerRunner.CompileError = _first_error_in_open_file(result)
+	var error: WeavlyCompilerRunner.CompileMessage = _first_error_in_open_file(result)
 	if error != null:
 		_code_edit.set_caret_line(error.line - 1)
 		_code_edit.set_caret_column(maxi(error.column - 1, 0))
@@ -281,11 +296,11 @@ func _rescan_filesystem() -> void:
 
 func _first_error_in_open_file(
 	result: WeavlyCompilerRunner.CompileResult
-) -> WeavlyCompilerRunner.CompileError:
+) -> WeavlyCompilerRunner.CompileMessage:
 	if _current_path == "":
 		return null
 	var open_path: String = _current_path.simplify_path()
-	for error: WeavlyCompilerRunner.CompileError in result.errors:
+	for error: WeavlyCompilerRunner.CompileMessage in result.errors:
 		if error.file.simplify_path() == open_path:
 			return error
 	return null
