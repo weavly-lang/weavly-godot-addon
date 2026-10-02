@@ -56,3 +56,5 @@ func test_every_starter_ui_disconnects_everything_from_an_engine_it_leaves() -> 
 			. override_failure_message("%s stays connected" % scene.resource_path.get_file())
 			. is_empty()
 		)
+	# The debug overlay's name dropdowns are only queued for freeing when the engine leaves.
+	await await_idle_frame()

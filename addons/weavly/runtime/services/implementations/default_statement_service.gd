@@ -25,6 +25,12 @@ func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 	_stack.push_back(frame)
 
 
+func add_node_statements(statements: Array[WeavlyModel.Statement]) -> void:
+	var frame: Frame = Frame.new(statements)
+	frame.ends_node = true
+	_stack.push_back(frame)
+
+
 func add_statement_groups(groups: Array[Array]) -> void:
 	# Last group first, so the first group ends up on top of the stack. Iterating
 	# backwards leaves the caller's array untouched.
@@ -34,13 +40,14 @@ func add_statement_groups(groups: Array[Array]) -> void:
 
 func advance_statements() -> void:
 	if _stack.is_empty():
-		engine.leave_current_node()
 		engine.finish()
 		return
 
 	var frame: Frame = _stack[-1]
 	if not frame.has_next():
 		_stack.pop_back()
+		if frame.ends_node:
+			engine.leave_current_node()
 		return
 
 	var statement: WeavlyModel.Statement = frame.get_current_statement()

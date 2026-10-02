@@ -95,6 +95,14 @@ class JumpStatement:
 		self.id = id
 
 
+class DetourStatement:
+	extends Statement
+	var id: String
+
+	func _init(id: String):
+		self.id = id
+
+
 class FinishStatement:
 	extends Statement
 

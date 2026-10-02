@@ -15,6 +15,8 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 		execute_set_statement(statement, engine)
 	elif statement is WeavlyModel.JumpStatement:
 		execute_jump_statement(statement, engine)
+	elif statement is WeavlyModel.DetourStatement:
+		execute_detour_statement(statement, engine)
 	elif statement is WeavlyModel.FinishStatement:
 		execute_finish_statement(statement, engine)
 	elif statement is WeavlyModel.CommandStatement:
@@ -75,25 +77,30 @@ static func execute_set_statement(
 static func execute_jump_statement(
 	jump_statement: WeavlyModel.JumpStatement, engine: WeavlyEngine
 ) -> void:
-	engine.leave_current_node()
+	engine.leave_all_nodes()
 	engine.enter_node(jump_statement.id)
 
 
-# Without an eligible node, execution continues with the next statement.
+static func execute_detour_statement(
+	detour_statement: WeavlyModel.DetourStatement, engine: WeavlyEngine
+) -> void:
+	engine.detour(detour_statement.id)
+
+
+# The drawn node runs like a detour; without an eligible node, execution continues right away.
 static func execute_draw_statement(
 	draw_statement: WeavlyModel.DrawStatement, engine: WeavlyEngine
 ) -> void:
 	var node_id: String = WeavlyStoryletSelector.draw(engine, draw_statement.pools)
 	if node_id == "":
 		return
-	engine.leave_current_node()
-	engine.enter_node(node_id)
+	engine.detour(node_id)
 
 
 static func execute_finish_statement(
 	_finish_statement: WeavlyModel.FinishStatement, engine: WeavlyEngine
 ) -> void:
-	engine.leave_current_node()
+	engine.leave_all_nodes()
 	engine.finish()
 
 

@@ -54,6 +54,9 @@ class _SpyStatementService:
 	func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 		add_statements_calls.append(statements)
 
+	func add_node_statements(_statements: Array[WeavlyModel.Statement]) -> void:
+		pass
+
 	func add_statement_groups(groups: Array[Array]) -> void:
 		add_statement_groups_calls.append(groups)
 
@@ -206,6 +209,13 @@ func test_jump_statement_delegates_to_engine_enter_node() -> void:
 	var jump: WeavlyModel.JumpStatement = WeavlyModel.JumpStatement.new("target_node")
 	WeavlyStatementExecutor.execute_statement(jump, _engine)
 	assert_that(_engine.last_entered_node).is_equal("target_node")
+
+
+func test_detour_statement_delegates_to_engine_detour() -> void:
+	var detour: WeavlyModel.DetourStatement = WeavlyModel.DetourStatement.new("aside")
+	WeavlyStatementExecutor.execute_statement(detour, _engine)
+	assert_that(_engine.last_detoured_node).is_equal("aside")
+	assert_that(_engine.last_entered_node).is_empty()
 
 
 # =====================
@@ -569,17 +579,27 @@ func test_case_condition_that_fails_counts_as_false() -> void:
 # =====================
 
 
-func test_jump_records_a_visit_to_the_current_node() -> void:
-	_engine.current_node_id = "here"
-	WeavlyStatementExecutor.execute_statement(WeavlyModel.JumpStatement.new("there"), _engine)
-	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
-	assert_that(_engine.current_node_id).is_empty()
+# "here" detoured from "below".
+func _run_in_a_detour(statement: WeavlyModel.Statement) -> void:
+	var body: Array[WeavlyModel.Statement] = []
+	for id: String in ["below", "here"]:
+		_engine.node_service.add_node(WeavlyModel.WeavlyNode.new(id, body))
+	_engine._location_stack.assign(["below", "here"])
+	WeavlyStatementExecutor.execute_statement(statement, _engine)
 
 
-func test_finish_records_a_visit_to_the_current_node() -> void:
-	_engine.current_node_id = "here"
-	WeavlyStatementExecutor.execute_statement(WeavlyModel.FinishStatement.new(), _engine)
+func test_jump_records_a_visit_to_every_running_node() -> void:
+	_run_in_a_detour(WeavlyModel.JumpStatement.new("there"))
 	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
+	assert_int(_engine.node_service.get_visit_count("below")).is_equal(1)
+	assert_that(_engine.get_location_stack()).is_empty()
+
+
+func test_finish_records_a_visit_to_every_running_node() -> void:
+	_run_in_a_detour(WeavlyModel.FinishStatement.new())
+	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
+	assert_int(_engine.node_service.get_visit_count("below")).is_equal(1)
+	assert_that(_engine.get_location_stack()).is_empty()
 
 
 func test_set_defines_an_undefined_extern() -> void:

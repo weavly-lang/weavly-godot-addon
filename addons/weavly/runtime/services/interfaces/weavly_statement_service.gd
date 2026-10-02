@@ -11,6 +11,9 @@ extends WeavlyService
 
 @abstract func add_statements(statements: Array[WeavlyModel.Statement]) -> void
 
+# A node's body: when it runs out, the node is left.
+@abstract func add_node_statements(statements: Array[WeavlyModel.Statement]) -> void
+
 @abstract func add_statement_groups(groups: Array[Array]) -> void
 
 @abstract func advance_statements() -> void
@@ -18,6 +21,7 @@ extends WeavlyService
 
 class Frame:
 	extends RefCounted
+	var ends_node: bool = false
 	var _statements: Array[WeavlyModel.Statement]
 	var _counter: int = 0
 

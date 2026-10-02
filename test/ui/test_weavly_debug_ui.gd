@@ -143,6 +143,12 @@ func test_status_shows_idle_and_the_current_node_and_line() -> void:
 	assert_str(_status()).is_equal("running, node start at debug.wvl:16")
 
 
+func test_status_shows_every_running_node() -> void:
+	_engine.start("aside_start")
+	_ui.refresh()
+	assert_str(_status()).is_equal("running, node aside_start > gate at debug.wvl:21")
+
+
 func test_variables_show_sorted_with_their_types_and_values() -> void:
 	(
 		assert_array(_rows("%VariableGrid", 3))
@@ -223,7 +229,7 @@ func _items(names: OptionButton) -> Array[String]:
 
 func test_name_variables_offer_the_declared_names_of_their_type() -> void:
 	assert_array(_items(_variable_editor("target"))).is_equal(
-		["ann", "bob", "broken", "gate", "start"]
+		["ann", "aside_start", "bob", "broken", "gate", "start"]
 	)
 	assert_array(_items(_variable_editor("area"))).is_equal(["city"])
 	assert_array(_items(_variable_editor("partner"))).is_equal(["pair"])
@@ -260,10 +266,10 @@ func test_nodes_show_their_location_and_counts() -> void:
 	var rows: Array[Array] = _rows("%NodeGrid", 5)
 	(
 		assert_array(rows.map(func(row: Array) -> String: return row[0]))
-		. is_equal(["ann", "bob", "broken", "gate", "start"])
+		. is_equal(["ann", "aside_start", "bob", "broken", "gate", "start"])
 	)
-	assert_array(rows[4]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "Start"])
-	assert_array(rows[3]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "Start"])
+	assert_array(rows[5]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "Start"])
+	assert_array(rows[4]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "Start"])
 
 
 func test_the_current_node_is_marked() -> void:

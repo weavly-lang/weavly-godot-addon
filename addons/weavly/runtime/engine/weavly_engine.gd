@@ -4,6 +4,7 @@ extends Node
 
 signal started_dialogue
 signal entered_node(node_id: String)
+signal left_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
@@ -23,10 +24,15 @@ var video_service: WeavlyVideoService
 # @random and random() roll with this, so a seed and a saved state reproduce them.
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
-var current_node_id: String = ""
+# The top of the location stack.
+var current_node_id: String:
+	get:
+		return "" if _location_stack.is_empty() else _location_stack.back()
 var current_source: String = ""
 var current_line: int = 0
 
+# The running nodes, bottom to top: each detour pushes, each node that ends pops.
+var _location_stack: Array[String] = []
 var _rendering: bool = false
 var _render_output: Array[WeavlyModel.Statement] = []
 # The options choose() and render_option() accept, with the source of their node.
@@ -41,6 +47,8 @@ var _rendered_options: Dictionary[WeavlyModel.Option, String] = {}
 @abstract func choose(option: WeavlyModel.Option) -> void
 
 @abstract func enter_node(node_id: String) -> void
+
+@abstract func detour(node_id: String) -> void
 
 @abstract func next() -> void
 
@@ -114,9 +122,21 @@ func _locate(message: String) -> String:
 	return message
 
 
-# Counts a visit to the current node; later calls until the next node is entered do nothing.
+func get_location_stack() -> Array[String]:
+	return _location_stack.duplicate()
+
+
+# Counts a visit to the current node and returns to the node below it.
 func leave_current_node() -> void:
-	if current_node_id == "":
+	if _location_stack.is_empty():
 		return
-	node_service.record_visit(current_node_id)
-	current_node_id = ""
+	var node_id: String = _location_stack.pop_back()
+	node_service.record_visit(node_id)
+	if not _location_stack.is_empty():
+		set_location(node_service.get_node(current_node_id))
+	left_node.emit(node_id)
+
+
+func leave_all_nodes() -> void:
+	while not _location_stack.is_empty():
+		leave_current_node()

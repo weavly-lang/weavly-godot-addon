@@ -4,6 +4,7 @@ extends WeavlyEngine
 const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
 const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
 const JUMP_CYCLE = "Entered %d nodes without pausing (likely a jump cycle); finishing the dialogue."
+const DETOUR_TOO_DEEP = "Can't detour to node '%s' past %d running nodes; finishing the dialogue."
 const NOT_HELD = "release() was called without a matching hold()."
 const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected version %d."
 const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
@@ -52,6 +53,8 @@ static var _service_types: Dictionary[String, Array] = {
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
 @export var video_extensions: PackedStringArray = [".ogv"]
 @export var max_node_entries_per_step: int = 10000
+## How many nodes can run at once through detours, drawn and chosen nodes.
+@export var max_detour_depth: int = 64
 ## 0 picks a new seed on every run.
 @export var random_seed: int = 0
 
@@ -67,6 +70,7 @@ static var _service_types: Dictionary[String, Array] = {
 
 # Null when no node is waiting to be entered.
 var _pending_node_id: Variant = null
+var _pending_detour: bool = false
 var _in_next: bool = false
 
 var _finished: bool = true
@@ -179,7 +183,7 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 	_render_output = []
 	_finished = true
 	_pending_node_id = null
-	current_node_id = ""
+	_location_stack.clear()
 	clear_location()
 	statement_service.clear_statements()
 	if not _checkpoint.is_empty():
@@ -189,6 +193,14 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 
 func enter_node(node_id: String) -> void:
 	_pending_node_id = node_id
+	_pending_detour = false
+	if not _in_next:
+		next()
+
+
+func detour(node_id: String) -> void:
+	_pending_node_id = node_id
+	_pending_detour = true
 	if not _in_next:
 		next()
 
@@ -214,22 +226,30 @@ func next() -> void:
 
 func _enter_pending_node() -> void:
 	var node_id: String = _pending_node_id
+	var detoured: bool = _pending_detour
 	_pending_node_id = null
+	_pending_detour = false
 	if not node_service.has(node_id):
 		report_error(MISSING_NODE % node_id)
 		finish()
 		return
 	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
-	_checkpoint = {
-		KEY_VERSION: STATE_VERSION,
-		KEY_NODE: node_id,
-		KEY_SERVICES: _collect_service_states(),
-		KEY_RNG: str(rng.state),
-	}
-	current_node_id = node_id
+	if not detoured:
+		_location_stack.clear()
+		statement_service.clear_statements()
+		_checkpoint = {
+			KEY_VERSION: STATE_VERSION,
+			KEY_NODE: node_id,
+			KEY_SERVICES: _collect_service_states(),
+			KEY_RNG: str(rng.state),
+		}
+	elif _location_stack.size() >= max_detour_depth:
+		report_error(DETOUR_TOO_DEEP % [node_id, max_detour_depth])
+		finish()
+		return
+	_location_stack.push_back(node_id)
 	set_location(node)
-	statement_service.clear_statements()
-	statement_service.add_statements(node.body)
+	statement_service.add_node_statements(node.body)
 	entered_node.emit(node_id)
 
 
@@ -248,8 +268,9 @@ func _stop() -> void:
 	_holds = 0
 	_hold_interrupted_step = false
 	_pending_node_id = null
+	_pending_detour = false
 	_checkpoint = {}
-	current_node_id = ""
+	_location_stack.clear()
 	clear_location()
 	statement_service.clear_statements()
 	option_service.clear_options()
