@@ -3,7 +3,11 @@ var gold: number = 3
 var name: string = "Robin"
 var brave: flag = false
 extern var secret: number
+var target: node = gate
+var area: pool = city
+var partner: slot = pair
 pool city
+slot pair
 @endenv
 
 @node start

@@ -341,3 +341,18 @@ class FlagVariable:
 
 	func get_type_name() -> String:
 		return "flag"
+
+
+# A node, pool or slot variable; its value names a declared one of that type.
+class NameVariable:
+	extends Variable
+	var type: String
+	var value: String
+
+	func _init(id: String, type: String, value: String):
+		super._init(id)
+		self.type = type
+		self.value = value
+
+	func get_type_name() -> String:
+		return type

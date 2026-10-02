@@ -4,6 +4,10 @@ var player_name: string = "Hero"
 var has_key: flag = false
 var choice_visits: number = 0
 var been_to_start: flag = false
+var names_match: flag = false
+var last_scene: node = start
+var region: pool = city
+var partner: slot = bob
 extern var reputation: number
 pool city
 pool night

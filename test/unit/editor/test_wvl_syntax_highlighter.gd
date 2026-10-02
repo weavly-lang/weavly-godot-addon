@@ -127,25 +127,26 @@ func test_minus_after_a_number_is_not_part_of_the_number() -> void:
 # =====================
 
 
-func test_extern_and_its_type_are_keywords_in_an_env_block() -> void:
-	var text: String = "@env\nextern reputation: number\n@endenv"
-	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["extern", "number"])
+func test_extern_var_and_its_type_are_keywords_in_an_env_block() -> void:
+	var text: String = "@env\nextern var reputation: number\n@endenv"
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["extern var", "number"])
 
 
 func test_types_and_flag_values_are_keywords_in_an_env_block() -> void:
-	var text: String = '@env\n  name: string = "and"\n  seen: flag = true\n@endenv'
-	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["string"])
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["flag", "true"])
+	var text: String = '@env\n  var name: string = "and"\n  var seen: flag = true\n@endenv'
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["var", "string"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "flag", "true"])
 
 
 func test_a_variable_named_like_a_type_is_not_a_keyword() -> void:
-	var text: String = "@env\nnumber: number = 1\n@endenv"
-	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["number"])
-	assert_str(_spans_at(text, 1, WvlSyntaxHighlighter.TEXT_COLOR)[0]).is_equal("number: ")
+	var text: String = "@env\nvar number: number = 1\nvar variable: flag\n@endenv"
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["var", "number"])
+	assert_str(_spans_at(text, 1, WvlSyntaxHighlighter.TEXT_COLOR)[0]).is_equal(" number: ")
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "flag"])
 
 
 func test_type_names_outside_an_env_block_are_text() -> void:
-	var text: String = "@env\nx: number\n@endenv\n@node start\nPhysics: string theory\n@endnode"
+	var text: String = "@env\nvar x: number\n@endenv\n@node start\nPhysics: string theory\n@endnode"
 	assert_array(_spans_at(text, 4, KEYWORD)).is_empty()
 
 
@@ -154,7 +155,7 @@ func test_narration_before_any_env_block_is_text() -> void:
 
 
 func test_editing_the_env_line_updates_the_lines_below() -> void:
-	_edit.text = "@env\nextern reputation: number\n@endenv"
+	_edit.text = "@env\nextern var reputation: number\n@endenv"
 	var before_edit: Dictionary = _highlighter.get_line_syntax_highlighting(1)
 	assert_that(before_edit[0]["color"]).is_equal(KEYWORD)
 	_edit.set_line(0, "")
@@ -215,10 +216,16 @@ func test_strings_and_comments_win_over_keywords_and_functions() -> void:
 # =====================
 
 
-func test_pool_and_slot_are_types_in_an_env_block() -> void:
-	var text: String = "@env\ncity: pool\nbob: slot\n@endenv"
+func test_pool_and_slot_declarations_and_name_types_are_keywords_in_an_env_block() -> void:
+	var text: String = (
+		"@env\npool city\nslot bob\nvar region: pool = city\nvar next: node = start\n"
+		+ "var partner: slot = bob\n@endenv"
+	)
 	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["pool"])
 	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["slot"])
+	assert_array(_spans_at(text, 3, KEYWORD)).contains_exactly(["var", "pool"])
+	assert_array(_spans_at(text, 4, KEYWORD)).contains_exactly(["var", "node"])
+	assert_array(_spans_at(text, 5, KEYWORD)).contains_exactly(["var", "slot"])
 
 
 func test_meta_and_draw_are_directives() -> void:

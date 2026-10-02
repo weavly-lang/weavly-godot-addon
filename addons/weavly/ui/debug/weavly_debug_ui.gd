@@ -170,6 +170,17 @@ func _create_variable_editor(id: String, declaration: WeavlyModel.Variable) -> C
 				refresh()
 		)
 		return check
+	if declaration is WeavlyModel.NameVariable:
+		var names: OptionButton = OptionButton.new()
+		names.focus_mode = Control.FOCUS_NONE
+		for declared: String in _declared_names(declaration.type):
+			names.add_item(declared)
+		names.item_selected.connect(
+			func(index: int) -> void:
+				engine.variable_service.set_variable(id, names.get_item_text(index))
+				refresh()
+		)
+		return names
 	var edit: LineEdit = LineEdit.new()
 	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	edit.text_submitted.connect(func(_text: String) -> void: edit.release_focus())
@@ -199,8 +210,32 @@ func _refresh_variables() -> void:
 		if editor is CheckBox:
 			editor.set_pressed_no_signal(bool(value))
 			editor.text = str(bool(value))
+		elif editor is OptionButton:
+			_select_name(editor, str(value))
 		elif not editor.has_focus():
 			editor.text = _format(value)
+
+
+func _declared_names(type: String) -> Array[String]:
+	var names: Array[String] = []
+	match type:
+		WeavlyDeserializer.TYPE_NODE:
+			for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
+				names.append(node.id)
+		WeavlyDeserializer.TYPE_POOL:
+			names = engine.node_service.get_all_pools()
+		WeavlyDeserializer.TYPE_SLOT:
+			names = engine.node_service.get_all_slots()
+	names.sort()
+	return names
+
+
+func _select_name(names: OptionButton, value: String) -> void:
+	for i: int in names.item_count:
+		if names.get_item_text(i) == value:
+			names.select(i)
+			return
+	names.select(-1)
 
 
 # Exact, unlike numbers in dialogue text, with whole numbers shown without decimals.

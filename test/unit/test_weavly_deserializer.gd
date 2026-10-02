@@ -238,6 +238,28 @@ func test_variable_declarations() -> void:
 	assert_object(vars[2]).is_instanceof(WeavlyModel.FlagVariable)
 
 
+func test_node_pool_and_slot_variables_hold_names() -> void:
+	var data: Dictionary = {
+		"declarations":
+		[
+			{"name": "next", "type": "node", "value": "start"},
+			{"name": "region", "type": "pool", "value": "city"},
+			{"name": "partner", "type": "slot", "value": "bob"},
+			{"name": "home", "type": "pool", "extern": true},
+		]
+	}
+	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(data)
+	var types: Array[String] = []
+	var values: Array[String] = []
+	for variable: WeavlyModel.Variable in vars:
+		assert_object(variable).is_instanceof(WeavlyModel.NameVariable)
+		types.append(variable.get_type_name())
+		values.append((variable as WeavlyModel.NameVariable).value)
+	assert_array(types).is_equal(["node", "pool", "slot", "pool"])
+	assert_array(values).is_equal(["start", "city", "bob", ""])
+	assert_bool(vars[3].extern).is_true()
+
+
 func test_number_variable_fields() -> void:
 	var data: Dictionary = {
 		"declarations":
@@ -452,6 +474,11 @@ func test_a_node_without_meta_has_none() -> void:
 func test_pool_names_are_read_from_env() -> void:
 	var data: Dictionary = {"declarations": [], "pools": ["city", "night"], "slots": ["bob"]}
 	assert_array(WeavlyDeserializer.compile_pool_names(data)).is_equal(["city", "night"])
+
+
+func test_slot_names_are_read_from_env() -> void:
+	var data: Dictionary = {"declarations": [], "pools": ["city"], "slots": ["bob", "ann"]}
+	assert_array(WeavlyDeserializer.compile_slot_names(data)).is_equal(["bob", "ann"])
 
 
 func test_draw_statement() -> void:

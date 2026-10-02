@@ -137,15 +137,25 @@ func test_status_shows_idle_and_the_current_node_and_line() -> void:
 	assert_str(_status()).is_equal("idle")
 	_engine.start("start")
 	_ui.refresh()
-	assert_str(_status()).is_equal("running, node start at debug.wvl:10")
+	assert_str(_status()).is_equal("running, node start at debug.wvl:14")
 	_engine.next()
 	_ui.refresh()
-	assert_str(_status()).is_equal("running, node start at debug.wvl:12")
+	assert_str(_status()).is_equal("running, node start at debug.wvl:16")
 
 
 func test_variables_show_sorted_with_their_types_and_values() -> void:
-	assert_array(_rows("%VariableGrid", 3)).is_equal(
-		[["brave", "flag", false], ["gold", "number", "3"], ["name", "string", "Robin"]]
+	(
+		assert_array(_rows("%VariableGrid", 3))
+		. is_equal(
+			[
+				["area", "pool", "city"],
+				["brave", "flag", false],
+				["gold", "number", "3"],
+				["name", "string", "Robin"],
+				["partner", "slot", "pair"],
+				["target", "node", "gate"],
+			]
+		)
 	)
 
 
@@ -154,7 +164,7 @@ func test_an_extern_variable_shows_once_it_has_a_value() -> void:
 	_ui.refresh()
 	(
 		assert_array(_rows("%VariableGrid", 3).map(func(row: Array) -> String: return row[0]))
-		. is_equal(["brave", "gold", "name", "secret"])
+		. is_equal(["area", "brave", "gold", "name", "partner", "secret", "target"])
 	)
 	assert_str((_variable_editor("secret") as LineEdit).text).is_equal("42")
 
@@ -204,6 +214,36 @@ func test_editing_a_string_sets_it() -> void:
 	assert_str(_engine.variable_service.get_variable("name")).is_equal("Sam")
 
 
+func _items(names: OptionButton) -> Array[String]:
+	var items: Array[String] = []
+	for i: int in names.item_count:
+		items.append(names.get_item_text(i))
+	return items
+
+
+func test_name_variables_offer_the_declared_names_of_their_type() -> void:
+	assert_array(_items(_variable_editor("target"))).is_equal(
+		["ann", "bob", "broken", "gate", "start"]
+	)
+	assert_array(_items(_variable_editor("area"))).is_equal(["city"])
+	assert_array(_items(_variable_editor("partner"))).is_equal(["pair"])
+
+
+func test_choosing_a_name_sets_it() -> void:
+	var names: OptionButton = _variable_editor("target")
+	var index: int = _items(names).find("start")
+	names.select(index)
+	names.item_selected.emit(index)
+	assert_str(_engine.variable_service.get_variable("target")).is_equal("start")
+	assert_str(names.text).is_equal("start")
+
+
+func test_name_variables_follow_the_dialogue() -> void:
+	_engine.variable_service.set_variable("target", "bob")
+	_ui.refresh()
+	assert_str((_variable_editor("target") as OptionButton).text).is_equal("bob")
+
+
 func test_toggling_a_flag_sets_it() -> void:
 	var check: CheckBox = _variable_editor("brave")
 	assert_str(check.text).is_equal("false")
@@ -222,8 +262,8 @@ func test_nodes_show_their_location_and_counts() -> void:
 		assert_array(rows.map(func(row: Array) -> String: return row[0]))
 		. is_equal(["ann", "bob", "broken", "gate", "start"])
 	)
-	assert_array(rows[4]).is_equal(["start", "debug.wvl:9", "1 visits", "0 skips", "Start"])
-	assert_array(rows[3]).is_equal(["gate", "debug.wvl:16", "0 visits", "0 skips", "Start"])
+	assert_array(rows[4]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "Start"])
+	assert_array(rows[3]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "Start"])
 
 
 func test_the_current_node_is_marked() -> void:
@@ -254,7 +294,7 @@ func test_start_jumps_to_a_node() -> void:
 	(_node_cells("gate")[4] as Button).pressed.emit()
 	assert_bool(_engine.is_running()).is_true()
 	assert_str(_engine.current_node_id).is_equal("gate")
-	assert_str(_status()).is_equal("running, node gate at debug.wvl:17")
+	assert_str(_status()).is_equal("running, node gate at debug.wvl:21")
 
 
 func test_pools_show_what_list_pool_would_return() -> void:
@@ -283,7 +323,7 @@ func test_runtime_errors_are_listed_with_their_location() -> void:
 	_engine.start("broken")
 	assert_logged(["secret"])
 	assert_int(_errors().size()).is_equal(1)
-	assert_str(_errors()[0]).starts_with("debug.wvl:21: ")
+	assert_str(_errors()[0]).starts_with("debug.wvl:25: ")
 	assert_str(_errors()[0]).contains("secret")
 	assert_str(_errors_title()).is_equal("Errors (1)")
 
