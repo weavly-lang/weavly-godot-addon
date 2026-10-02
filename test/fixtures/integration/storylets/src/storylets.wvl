@@ -222,3 +222,32 @@ pool: shuffle_test
 @node talk
 Hello.
 @endnode
+
+@node menu_zeta
+@meta
+pool: menu
+slot: m
+weight: 1000
+@endmeta
+@endnode
+
+@node menu_alpha
+@meta
+pool: menu
+weight: 0
+@endmeta
+@endnode
+
+@node menu_beta
+@meta
+pool: menu
+slot: m
+@endmeta
+@endnode
+
+@node menu_top
+@meta
+pool: menu
+priority: 1
+@endmeta
+@endnode
