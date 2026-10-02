@@ -12,6 +12,7 @@ extern var reputation: number
 pool city
 pool night
 pool empty
+pool camp
 slot bob
 meta toll: number = 1
 func bonus(points: number): number

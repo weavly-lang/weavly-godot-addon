@@ -49,35 +49,6 @@ static func fill_character_line(
 	return filled
 
 
-static func fill_option(option: WeavlyModel.Option, engine: WeavlyEngine) -> WeavlyModel.Option:
-	var filled: WeavlyModel.Option = WeavlyModel.Option.new(
-		option.condition, option.segments, option.body
-	)
-	filled.text = fill_text(option.segments, engine)
-	filled.line = option.line
-	return filled
-
-
-static func fill_options(
-	options: Array[WeavlyModel.Option], engine: WeavlyEngine
-) -> Array[WeavlyModel.Option]:
-	var filled: Array[WeavlyModel.Option] = []
-	for option: WeavlyModel.Option in options:
-		engine.current_line = option.line
-		filled.append(fill_option(option, engine))
-	return filled
-
-
-static func fill_option_block(
-	block: WeavlyModel.OptionBlock, engine: WeavlyEngine
-) -> WeavlyModel.OptionBlock:
-	var filled: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(
-		fill_options(block.options, engine)
-	)
-	filled.line = block.line
-	return filled
-
-
 # Null when an argument fails; the evaluator has reported it.
 static func fill_command(
 	command: WeavlyModel.CommandStatement, engine: WeavlyEngine

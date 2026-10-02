@@ -116,7 +116,8 @@ func test_inline_options_read_label_condition_and_body() -> void:
 	var stmt: WeavlyModel.Statement = _compile_single(
 		{"type": "option", "items": [guarded, plain]}
 	)
-	var options: Array[WeavlyModel.Option] = (stmt as WeavlyModel.OptionBlock).options
+	var options: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
+	assert_object(options[0]).is_instanceof(WeavlyModel.InlineOptionItem)
 	assert_that(options[0].segments[0]).is_equal("Pay ")
 	assert_object(options[0].segments[1]).is_instanceof(WeavlyModel.Identifier)
 	assert_object(options[0].condition).is_instanceof(WeavlyModel.Identifier)
@@ -124,6 +125,36 @@ func test_inline_options_read_label_condition_and_body() -> void:
 	assert_that(options[1].segments).is_equal(["Leave"])
 	assert_object(options[1].condition).is_instanceof(WeavlyModel.TrueExpression)
 	assert_that(options[1].body).is_empty()
+
+
+func test_node_and_pool_options_are_read() -> void:
+	var pool: Dictionary = {
+		"type": "pool",
+		"line": 4.0,
+		"pools": ["camp"],
+		"limit": 3.0,
+		"shuffle": false,
+		"locked": "extra",
+	}
+	var open: Dictionary = {
+		"type": "pool",
+		"line": 5.0,
+		"pools": ["camp"],
+		"limit": null,
+		"shuffle": true,
+		"locked": "hide"
+	}
+	var items: Array = [{"type": "node", "line": 3.0, "id": "hack"}, pool, open]
+	var stmt: WeavlyModel.Statement = _compile_single({"type": "option", "items": items})
+	var read: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
+	assert_str((read[0] as WeavlyModel.NodeOptionItem).node_id).is_equal("hack")
+	var limited: WeavlyModel.PoolOptionItem = read[1]
+	assert_array(limited.pools).is_equal(["camp"])
+	assert_that((limited.limit as WeavlyModel.Number).value).is_equal(3.0)
+	assert_object(limited.shuffle).is_instanceof(WeavlyModel.FalseExpression)
+	assert_int(limited.locked).is_equal(WeavlyEngine.Locked.EXTRA)
+	assert_object((read[2] as WeavlyModel.PoolOptionItem).limit).is_null()
+	assert_int((read[2] as WeavlyModel.PoolOptionItem).locked).is_equal(WeavlyEngine.Locked.HIDE)
 
 
 func test_finish_statement() -> void:
@@ -463,7 +494,7 @@ func test_option_and_random_case_lines_are_read() -> void:
 	}
 	var data: Dictionary = _build([_node("start", [option_block, random_block])])
 	var body: Array[WeavlyModel.Statement] = WeavlyDeserializer.compile_nodes(data)[0].body
-	assert_int(body[0].options[0].line).is_equal(5)
+	assert_int(body[0].items[0].line).is_equal(5)
 	assert_int(body[1].cases[0].line).is_equal(7)
 
 
@@ -481,6 +512,7 @@ func test_meta_is_read_with_its_lines() -> void:
 		"priority": {"line": 5.0, "value": 2.0},
 		"weight": {"line": 6.0, "value": {"variable": "w"}},
 		"cost": {"line": 7.0, "value": "cheap"},
+		"label": {"line": 8.0, "value": ["Buy ", {"variable": "item"}]},
 	}
 	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_equal(["city", "night"])
@@ -494,6 +526,9 @@ func test_meta_is_read_with_its_lines() -> void:
 		"cheap"
 	)
 	assert_int(meta.entries["cost"].line).is_equal(7)
+	assert_array(meta.texts.keys()).is_equal(["label"])
+	assert_that(meta.texts["label"].segments[0]).is_equal("Buy ")
+	assert_int(meta.texts["label"].line).is_equal(8)
 
 
 func test_an_empty_meta_puts_the_node_in_no_pool() -> void:

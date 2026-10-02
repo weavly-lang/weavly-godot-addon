@@ -12,7 +12,7 @@ func before_test() -> void:
 
 
 func _option(text: String) -> WeavlyModel.Option:
-	var option: WeavlyModel.Option = WeavlyModel.Option.new(null, [text], [])
+	var option: WeavlyModel.Option = WeavlyModel.Option.new()
 	option.text = text
 	return option
 

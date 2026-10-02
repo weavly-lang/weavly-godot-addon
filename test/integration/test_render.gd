@@ -174,9 +174,8 @@ func test_choose_plays_on_into_the_node_a_jump_leads_to() -> void:
 func test_choose_rejects_an_option_that_was_not_rendered() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
-	var parsed: WeavlyModel.Option = engine.node_service.get_node("tavern").body[5].options[0]
-	engine.choose(parsed)
-	assert_logged([], ["Can't choose option '' because it wasn't rendered."])
+	engine.choose(inline_option("Leave"))
+	assert_logged([], ["Can't choose option 'Leave' because it wasn't rendered."])
 	assert_bool(engine.is_running()).is_false()
 	assert_bool(engine.variable_service.get_variable("left")).is_false()
 

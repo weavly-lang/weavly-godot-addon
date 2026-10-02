@@ -31,6 +31,7 @@ addons/weavly/runtime/
     weavly_expression_evaluator.gd  # evaluate WeavlyExpression trees
     weavly_storylet_selector.gd     # list_pool/peek_pool: pick storylet nodes from pools
     weavly_meta_reader.gd           # get_node_meta and meta(): a node's meta value or the key's default
+    weavly_option_builder.gd        # offered options: the display rule, pool(...) items, refresh
   engine/
     weavly_engine.gd                # WeavlyEngine: @abstract base — signals + service refs
     default_engine.gd               # WeavlyDefaultEngine: runtime control flow, service setup

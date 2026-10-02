@@ -1,0 +1,126 @@
+@env
+pool locked_test
+pool fire_test
+slot fire
+@endenv
+
+@node journey
+@options
+@option node(go_on)
+@option node(deep)
+@option node(gamble)
+@endoptions
+Back on the journey.
+@endnode
+
+@node go_on
+@meta
+label: "Go on"
+@endmeta
+You go.
+@jump road
+@endnode
+
+@node road
+Road.
+@endnode
+
+@node deep
+@meta
+label: "Go deep"
+@endmeta
+@options
+@option "Inner"
+    Inner.
+@endoptions
+Deep end.
+@endnode
+
+@node stuck
+@options
+@option node(hack)
+@endoptions
+After stuck.
+@endnode
+
+@node locked_menu
+@options
+@option pool(locked_test, limit: 2, shuffle: false, locked: extra)
+@endoptions
+@endnode
+
+@node lt_open
+@meta
+pool: locked_test
+label: "Open"
+@endmeta
+@endnode
+
+@node lt_tease
+@meta
+pool: locked_test
+label: "x"
+label_teaser: "Tease"
+when: false
+@endmeta
+@endnode
+
+@node lt_poor
+@meta
+pool: locked_test
+label: "y"
+label_unavailable: "Poor"
+available: false
+@endmeta
+@endnode
+
+@node lt_hidden
+@meta
+pool: locked_test
+label: "z"
+when: false
+@endmeta
+@endnode
+
+@node lt_gone
+@meta
+pool: locked_test
+label: "w"
+available: false
+@endmeta
+@endnode
+
+@node lt_last
+@meta
+pool: locked_test
+label: "Last"
+@endmeta
+@endnode
+
+@node fire_tease
+@meta
+pool: fire_test
+slot: fire
+label: "a"
+label_teaser: "Fire tease"
+when: false
+priority: 2
+@endmeta
+@endnode
+
+@node fire_cook
+@meta
+pool: fire_test
+slot: fire
+label: "Fire cook"
+priority: 1
+@endmeta
+@endnode
+
+@node fire_dance
+@meta
+pool: fire_test
+slot: fire
+label: "Fire dance"
+@endmeta
+@endnode

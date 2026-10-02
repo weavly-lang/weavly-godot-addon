@@ -10,18 +10,9 @@ var _service: Service
 
 
 func _make_option(text: String = "option") -> WeavlyModel.Option:
-	var body: Array[WeavlyModel.Statement] = []
-	return WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), [text], body)
+	return inline_option(text)
 
 
-func _filled(options: Array[WeavlyModel.Option]) -> Array[WeavlyModel.Option]:
-	var filled: Array[WeavlyModel.Option] = []
-	for option: WeavlyModel.Option in options:
-		filled.append(WeavlyTextUtils.fill_option(option, _engine))
-	return filled
-
-
-# Returns the copy the service offers, as a game receives it.
 func _offer(option: WeavlyModel.Option) -> WeavlyModel.Option:
 	var options: Array[WeavlyModel.Option] = [option]
 	_service.add_options(options)
@@ -60,7 +51,7 @@ func test_add_options_emits_signal() -> void:
 	var added: Array[Array] = []
 	_service.options_added.connect(func(o: Array[WeavlyModel.Option]) -> void: added.append(o))
 	_service.add_options(opts)
-	assert_array(added).is_equal([_filled(opts)])
+	assert_array(added).is_equal([opts])
 
 
 # =====================
@@ -77,9 +68,7 @@ func test_choose_option_clears_pending_options() -> void:
 
 func test_choose_option_adds_body_to_statement_service() -> void:
 	var body: Array[WeavlyModel.Statement] = [WeavlyModel.FinishStatement.new()]
-	var opt: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), ["opt"], body
-	)
+	var opt: WeavlyModel.Option = inline_option("opt", body)
 	opt = _offer(opt)
 	_service.choose_option(opt)
 	_engine.statement_service.advance_statements()
@@ -104,7 +93,7 @@ func test_choose_option_calls_engine_next() -> void:
 
 func test_choose_option_ignores_an_option_that_is_not_offered() -> void:
 	var offered: WeavlyModel.Option = _make_option("offered")
-	var stale: WeavlyModel.Option = WeavlyTextUtils.fill_option(_make_option("stale"), _engine)
+	var stale: WeavlyModel.Option = _make_option("stale")
 	offered = _offer(offered)
 	var chosen: Array[WeavlyModel.Option] = []
 	_service.option_chosen.connect(func(o: WeavlyModel.Option) -> void: chosen.append(o))
@@ -123,6 +112,25 @@ func test_choose_option_twice_chooses_it_once() -> void:
 	_service.choose_option(option)
 	assert_logged([], ["Can't choose option 'twice' because it isn't offered right now."])
 	assert_int(chosen.size()).is_equal(1)
+
+
+func test_choose_option_refuses_an_option_that_is_locked_now() -> void:
+	var option: WeavlyModel.Option = _offer(inline_option("gone", [], false))
+	_service.choose_option(option)
+	assert_logged([], ["Can't choose option 'gone' because it's locked."])
+	assert_bool(_service.has_options()).is_true()
+	assert_bool(_engine.did_next).is_false()
+
+
+func test_choosing_a_node_option_detours_into_its_node() -> void:
+	var body: Array[WeavlyModel.Statement] = []
+	_engine.node_service.add_node(WeavlyModel.WeavlyNode.new("shop", body))
+	var option: WeavlyModel.Option = WeavlyModel.Option.new()
+	option.node_id = "shop"
+	option.text = "Shop"
+	_service.choose_option(_offer(option))
+	assert_str(_engine.last_detoured_node).is_equal("shop")
+	assert_bool(_service.has_options()).is_false()
 
 
 # =====================

@@ -20,6 +20,35 @@ static func read(engine: WeavlyEngine, node_id: String, key: String) -> Variant:
 	return read_node(engine, engine.node_service.get_node(node_id), key)
 
 
+# Every key the node writes, evaluated once; a failing one is left out.
+static func snapshot(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode) -> Dictionary:
+	var values: Dictionary = {}
+	if node.meta == null:
+		return values
+	var keys: Array = node.meta.entries.keys() + node.meta.texts.keys()
+	for key: String in keys:
+		var value: Variant = read_node(engine, node, key)
+		if not WeavlyExpressionEvaluator.is_error(value):
+			values[key] = value
+	return values
+
+
+# An unwritten label key is empty.
+static func _read_text(
+	engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, text: WeavlyModel.MetaText
+) -> String:
+	if text == null:
+		return ""
+	var source: String = engine.current_source
+	var line: int = engine.current_line
+	engine.current_source = node.source
+	engine.current_line = text.line
+	var filled: String = WeavlyTextUtils.fill_text(text.segments, engine)
+	engine.current_source = source
+	engine.current_line = line
+	return filled
+
+
 # Errors point to the entry, in the node's source; the location is restored afterwards.
 static func read_node(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, key: String) -> Variant:
 	var meta: WeavlyModel.NodeMeta = node.meta if node.meta != null else WeavlyModel.NodeMeta.new()
@@ -27,6 +56,11 @@ static func read_node(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, key: S
 		return meta.pools.duplicate()
 	if key == WeavlyDeserializer.KEY_SLOT:
 		return meta.slots.duplicate()
+	var snapshot: Dictionary = engine.get_meta_snapshot(node.id)
+	if snapshot.has(key):
+		return snapshot[key]
+	if key in WeavlyDeserializer.TEXT_META_KEYS:
+		return _read_text(engine, node, meta.texts.get(key))
 	var default: Variant = BUILT_IN_DEFAULTS.get(key)
 	if default == null and engine.node_service.has_meta_key(key):
 		default = engine.node_service.get_meta_default(key)

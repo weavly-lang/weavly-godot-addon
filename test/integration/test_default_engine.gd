@@ -334,6 +334,28 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(0)
 
 
+# camp_menu: a node option and a pool option whose only node shows as a teaser.
+func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	_connect_content_log(engine)
+	engine.start("camp_menu")
+	var options: Array[WeavlyModel.Option] = engine.option_service.get_options()
+	(
+		assert_that(options.map(func(option: WeavlyModel.Option) -> String: return option.text))
+		. is_equal(["Sit by the fire", "A closed tent"])
+	)
+	assert_int(options[1].state).is_equal(WeavlyModel.Option.State.TEASER)
+	engine.variable_service.set_variable("has_key", true)
+	assert_str(options[0].text).is_equal("The fire is out")
+	assert_str(options[1].text).is_equal("Sleep in the tent")
+	engine.option_service.choose_option(options[1])
+	assert_that(_narration_log.back()).is_equal("You sleep.")
+	assert_int(engine.node_service.get_visit_count("tent")).is_equal(0)
+	engine.next()
+	assert_int(engine.node_service.get_visit_count("tent")).is_equal(1)
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
 # modifiers: @match last plays only its last true case, @match all plays every true case.
 func test_ci_smoke_fixture_match_last_and_all() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
@@ -373,6 +395,8 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 			[
 				"arrival",
 				"bob_greets",
+				"camp_menu",
+				"campfire",
 				"choices",
 				"end",
 				"match_node",
@@ -382,6 +406,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 				"random_node",
 				"start",
 				"tally",
+				"tent",
 			]
 		)
 	)

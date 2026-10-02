@@ -44,7 +44,9 @@ func deal(pools: Array) -> void:
 		return
 	_pools = pools.duplicate()
 	_clear_table()
-	var node_ids: Array[String] = engine.list_pool(pools, hand_size)
+	var node_ids: Array[String] = engine.list_pool(
+		pools, hand_size, true, WeavlyEngine.Locked.HIDE
+	)
 	if node_ids.is_empty():
 		clear()
 		hand_empty.emit()
