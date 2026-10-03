@@ -23,6 +23,8 @@ var _meta_dirty: bool = true
 var _variable_editors: Dictionary[String, Control] = {}
 var _node_rows: Dictionary[String, Array] = {}
 var _error_count: int = 0
+# Every node's visits and skips at the last refresh; they change without a signal.
+var _counts: PackedInt32Array = []
 
 @onready var _status: Label = %Status
 @onready var _tabs: TabContainer = %Tabs
@@ -278,12 +280,20 @@ func _build_nodes() -> void:
 
 
 func _refresh_nodes() -> void:
+	var counts: PackedInt32Array = []
 	for id: String in _node_rows:
 		var row: Array = _node_rows[id]
-		(row[2] as Label).text = "%d visits" % engine.node_service.get_visit_count(id)
-		(row[3] as Label).text = "%d skips" % engine.node_service.get_skip_count(id)
+		var visits: int = engine.node_service.get_visit_count(id)
+		var skips: int = engine.node_service.get_skip_count(id)
+		counts.append_array([visits, skips])
+		(row[2] as Label).text = "%d visits" % visits
+		(row[3] as Label).text = "%d skips" % skips
 		var current: bool = engine.is_running() and id == engine.current_node_id
 		(row[0] as Label).theme_type_variation = &"WeavlyDebugCurrent" if current else &""
+	if counts != _counts:
+		_counts = counts
+		_meta_dirty = true
+		_pools_dirty = true
 
 
 # The keys each node writes in its @meta block, with their current values.

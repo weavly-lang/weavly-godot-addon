@@ -1,0 +1,24 @@
+@env
+pool night
+@endenv
+
+@node trip
+@detour gate
+Back from the gate.
+@endnode
+
+@node lookout
+@meta
+when: visited(gate)
+@endmeta
+The lookout saw you at the gate.
+@endnode
+
+@node owl
+@meta
+pool: night
+when: not visited(gate)
+weight: 1 + skip_count()
+@endmeta
+An owl hoots.
+@endnode

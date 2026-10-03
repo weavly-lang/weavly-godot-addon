@@ -229,9 +229,9 @@ func _items(names: OptionButton) -> Array[String]:
 
 func test_name_variables_offer_the_declared_names_of_their_type() -> void:
 	assert_array(_items(_variable_editor("target"))).is_equal(
-		["ann", "aside_start", "bob", "broken", "gate", "start"]
+		["ann", "aside_start", "bob", "broken", "gate", "lookout", "owl", "start", "trip"]
 	)
-	assert_array(_items(_variable_editor("area"))).is_equal(["city"])
+	assert_array(_items(_variable_editor("area"))).is_equal(["city", "night"])
 	assert_array(_items(_variable_editor("partner"))).is_equal(["pair"])
 
 
@@ -266,9 +266,11 @@ func test_nodes_show_their_location_and_counts() -> void:
 	var rows: Array[Array] = _rows("%NodeGrid", 6)
 	(
 		assert_array(rows.map(func(row: Array) -> String: return row[0]))
-		. is_equal(["ann", "aside_start", "bob", "broken", "gate", "start"])
+		. is_equal(
+			["ann", "aside_start", "bob", "broken", "gate", "lookout", "owl", "start", "trip"]
+		)
 	)
-	assert_array(rows[5]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "", "Start"])
+	assert_array(rows[7]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "", "Start"])
 	assert_array(rows[4]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "", "Start"])
 
 
@@ -335,13 +337,38 @@ func test_meta_values_arent_read_on_other_tabs() -> void:
 
 func test_pools_show_what_list_pool_would_return() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
-	assert_array(_pools()).is_equal(["city", "bob, ann"])
+	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "owl"])
 
 
 func test_pools_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	_engine.variable_service.set_variable("gold", 1.0)
-	assert_array(_pools()).is_equal(["city", "ann"])
+	assert_array(_pools()).is_equal(["city", "ann", "night", "owl"])
+
+
+# Skips and visits change without a signal; the overlay notices on its next refresh.
+func test_meta_values_follow_skips_from_list_pool() -> void:
+	_show_tab(WeavlyDebugUI.NODES_TAB)
+	_engine.list_pool(["night"], 0)
+	_ui.refresh()
+	assert_str(_meta("owl")).is_equal("pool: night; when: true; weight: 2")
+	assert_logged(["secret", "secret"])
+
+
+func test_meta_values_follow_a_visit_when_a_detour_returns() -> void:
+	_show_tab(WeavlyDebugUI.NODES_TAB)
+	_engine.start("trip")
+	_engine.next()
+	_ui.refresh()
+	assert_str(_meta("lookout")).is_equal("when: true")
+	assert_logged(["secret", "secret", "secret", "secret", "secret"])
+
+
+func test_pools_follow_a_visit_in_a_render() -> void:
+	_show_tab(WeavlyDebugUI.POOLS_TAB)
+	_engine.render("gate")
+	_ui.refresh()
+	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "(none)"])
 
 
 func test_peeking_doesnt_change_skip_counts() -> void:
