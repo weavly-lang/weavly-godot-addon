@@ -243,3 +243,32 @@ func test_is_version_supported_rejects_older_and_unknown() -> void:
 
 func test_get_version_is_empty_for_a_missing_executable() -> void:
 	assert_str(WeavlyCompilerRunner.get_version("weavly-does-not-exist")).is_equal("")
+
+
+# =====================
+# project_dir_of
+# =====================
+
+
+func test_a_file_in_src_belongs_to_the_folder_above() -> void:
+	assert_str(WeavlyCompilerRunner.project_dir_of("D:/game/dialogue/src/a.wvl")).is_equal(
+		"D:/game/dialogue"
+	)
+
+
+func test_a_file_in_a_subfolder_of_src_belongs_to_the_same_project() -> void:
+	assert_str(WeavlyCompilerRunner.project_dir_of("D:/game/dialogue/src/town/a.wvl")).is_equal(
+		"D:/game/dialogue"
+	)
+
+
+func test_the_nearest_src_decides() -> void:
+	assert_str(WeavlyCompilerRunner.project_dir_of("D:/game/src/old/src/a.wvl")).is_equal(
+		"D:/game/src/old"
+	)
+
+
+func test_a_file_outside_any_src_has_no_project() -> void:
+	assert_str(WeavlyCompilerRunner.project_dir_of("D:/game/dialogue/a.wvl")).is_empty()
+	assert_str(WeavlyCompilerRunner.project_dir_of("/a.wvl")).is_empty()
+	assert_str(WeavlyCompilerRunner.project_dir_of("")).is_empty()

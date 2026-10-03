@@ -2,14 +2,13 @@
 class_name WeavlyEditorPanel
 extends Control
 
-const SETTING_PROJECT_DIR = "weavly/dialogue_project_dir"
 const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
 const SETTING_LINE_WRAP = "weavly/line_wrap"
-const DEFAULT_PROJECT_DIR = "res://dialogue"
 const DEFAULT_EXECUTABLE = "weavly"
 
 const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit it."
+const _NOT_IN_PROJECT = "%s isn't in a Weavly project: there's no src folder above it."
 const _LOG_PREFIX = "[Weavly]"
 const _VERSION_UNKNOWN = (
 	"%s Could not read the version of '%s'. Install the Weavly compiler %s or newer with "
@@ -77,8 +76,9 @@ func get_current_path() -> String:
 	return _current_path
 
 
+# The open file's Weavly project, empty when it isn't in one.
 func get_project_dir() -> String:
-	return _resolve_working_dir()
+	return WeavlyCompilerRunner.project_dir_of(_current_path)
 
 
 func _build_ui() -> void:
@@ -225,12 +225,12 @@ func _save_file() -> bool:
 
 
 func _compile() -> void:
-	if _compiling:
+	if _compiling or _current_path == "":
 		return
 
-	var working_dir: String = _resolve_working_dir()
-	if not DirAccess.dir_exists_absolute(working_dir):
-		_report_error("Weavly project dir not found: %s" % working_dir)
+	var working_dir: String = get_project_dir()
+	if working_dir == "":
+		_report_error(_NOT_IN_PROJECT % _current_path)
 		return
 
 	var executable: String = _resolve_executable()
@@ -328,13 +328,6 @@ func _first_error_in_open_file(
 	return null
 
 
-func _resolve_working_dir() -> String:
-	var dir: String = DEFAULT_PROJECT_DIR
-	if ProjectSettings.has_setting(SETTING_PROJECT_DIR):
-		dir = ProjectSettings.get_setting(SETTING_PROJECT_DIR)
-	return ProjectSettings.globalize_path(dir)
-
-
 func _resolve_executable() -> String:
 	return _get_editor_setting(SETTING_EXECUTABLE, DEFAULT_EXECUTABLE)
 
@@ -355,7 +348,7 @@ func _set_editor_setting(setting: String, value: Variant) -> void:
 func _refresh_controls() -> void:
 	var has_file: bool = _current_path != ""
 	_save_button.disabled = not has_file or _compiling
-	_compile_button.disabled = _compiling
+	_compile_button.disabled = not has_file or _compiling
 	if not has_file:
 		_path_label.text = _NO_FILE_TEXT
 		return

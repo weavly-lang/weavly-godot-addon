@@ -177,6 +177,16 @@ func test_an_open_file_outside_the_project_is_indexed() -> void:
 	assert_array(index.find(WeavlyProjectIndex.Kind.NODE, "scratch")).has_size(1)
 
 
+func test_scanning_no_folder_keeps_only_the_open_file() -> void:
+	_write_file("a.wvl", "@node saved\n@endnode\n")
+	var index: WeavlyProjectIndex = WeavlyProjectIndex.new()
+	index.scan(_dir)
+	index.set_open_file("C:/elsewhere/scratch.wvl", "@node scratch\n@endnode\n")
+	index.scan("")
+	assert_array(index.find(WeavlyProjectIndex.Kind.NODE, "saved")).is_empty()
+	assert_array(index.find(WeavlyProjectIndex.Kind.NODE, "scratch")).has_size(1)
+
+
 func test_a_declaration_shows_its_line() -> void:
 	var index: WeavlyProjectIndex = _scanned(_CITY)
 	var found: Array[WeavlyProjectIndex.Definition] = index.find(

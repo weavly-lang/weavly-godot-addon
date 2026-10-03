@@ -1,4 +1,4 @@
-extends GdUnitTestSuite
+extends WeavlyTestSuite
 
 var _panel: WeavlyEditorPanel
 var _dir: String
@@ -163,3 +163,32 @@ func test_a_build_with_warnings_counts_them() -> void:
 func test_a_build_with_one_warning_says_warning() -> void:
 	var output: String = "src/a.wvl:2:6: warning: pool 'harbor' has no nodes"
 	assert_str(_status_after_success(output)).is_equal("Build successful, 1 warning - see Output")
+
+
+# =====================
+# The open file's project (issue #251)
+# =====================
+
+
+func test_the_project_is_the_open_files() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir.path_join("src")))
+	var path: String = _write_file("src/a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	assert_str(_panel.get_project_dir()).is_equal(ProjectSettings.globalize_path(_dir))
+
+
+func test_compile_is_disabled_without_a_file() -> void:
+	assert_bool(_panel._compile_button.disabled).is_true()
+
+
+func test_compiling_a_file_outside_a_project_reports_it() -> void:
+	var path: String = _write_file("loose.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	_panel._compile()
+	var message: String = (
+		"%s isn't in a Weavly project: there's no src folder above it."
+		% ProjectSettings.globalize_path(path)
+	)
+	assert_str(_panel._status_label.text).is_equal(message)
+	assert_logged(["[Weavly] " + message])
+	assert_bool(_panel._compiling).is_false()

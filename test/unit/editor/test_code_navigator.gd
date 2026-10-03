@@ -36,17 +36,12 @@ func before_test() -> void:
 	_dir = ProjectSettings.globalize_path(
 		create_temp_dir("code_navigator_%d" % Time.get_ticks_usec())
 	)
-	ProjectSettings.set_setting(WeavlyEditorPanel.SETTING_PROJECT_DIR, _dir)
 	_write_file("src/env.wvl", _ENV)
 	_story = _write_file("src/story.wvl", _STORY)
 	_city = _write_file("src/city.wvl", _CITY)
 	_panel = auto_free(WeavlyEditorPanel.new())
 	add_child(_panel)
 	_panel.open_file(_story)
-
-
-func after_test() -> void:
-	ProjectSettings.set_setting(WeavlyEditorPanel.SETTING_PROJECT_DIR, null)
 
 
 func _write_file(relative: String, text: String) -> String:
@@ -249,3 +244,15 @@ func test_resting_the_mouse_past_the_end_of_a_line_shows_none() -> void:
 
 func test_an_empty_tooltip_shows_nothing() -> void:
 	assert_object(_panel._code_edit._make_custom_tooltip("")).is_null()
+
+
+func test_another_project_beside_it_isnt_indexed() -> void:
+	var other: String = ProjectSettings.globalize_path(
+		create_temp_dir("other_project_%d" % Time.get_ticks_usec())
+	)
+	DirAccess.make_dir_recursive_absolute(other.path_join("src"))
+	var file: FileAccess = FileAccess.open(other.path_join("src/hub.wvl"), FileAccess.WRITE)
+	file.store_string("@node hub\n@endnode\n")
+	file.close()
+	var column: int = _panel._code_edit.get_line(3).find("hub")
+	assert_array(_panel._navigator.sections_at(3, column)[0].definitions).has_size(1)
