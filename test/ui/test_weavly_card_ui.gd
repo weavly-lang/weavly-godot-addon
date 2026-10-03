@@ -8,6 +8,8 @@ const SCENE = preload("res://addons/weavly/ui/card/weavly_card_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
 var _ui: WeavlyCardUI
+# What the fixture's open() returns.
+var _door_open: bool
 var _events: Array[String]
 var _window_size: Vector2i
 
@@ -28,6 +30,8 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
+	_door_open = true
+	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
 	_engine.register_command(
@@ -249,3 +253,13 @@ func test_disconnecting_the_engine_clears_and_stops_dealing() -> void:
 func test_a_teased_storylet_isnt_dealt() -> void:
 	_ui.deal(["teased"])
 	assert_array(_hand()).is_equal([["An open square."]])
+
+
+func test_a_refused_option_keeps_the_card_and_shows_the_change() -> void:
+	_ui.deal(["doors"])
+	_door_open = false
+	_button(_cards()[0], "Open").pressed.emit()
+	assert_int(_cards().size()).is_equal(1)
+	assert_bool(_button(_cards()[0], "Open").visible).is_false()
+	assert_bool(_ui.get_node("%Outcome").visible).is_false()
+	assert_int(_engine.node_service.get_visit_count("let_go")).is_equal(0)

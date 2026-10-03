@@ -8,6 +8,8 @@ const SCENE = preload("res://addons/weavly/ui/passage/weavly_passage_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
 var _ui: WeavlyPassageUI
+# What the fixture's open() returns.
+var _door_open: bool
 var _events: Array[String]
 var _window_size: Vector2i
 
@@ -28,6 +30,8 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
+	_door_open = true
+	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
 	_engine.register_command(
@@ -211,3 +215,13 @@ func test_disconnecting_the_engine_clears_and_stops_rendering() -> void:
 	assert_bool(_ui.visible).is_false()
 	_ui.show_passage("tavern")
 	assert_array(_describe()).is_empty()
+
+
+func test_a_refused_link_keeps_the_passage_and_shows_the_change() -> void:
+	_ui.show_passage("door")
+	_door_open = false
+	_link("Open").pressed.emit()
+	assert_bool(_link("Open").visible).is_false()
+	assert_bool(_link("Stay").visible).is_true()
+	assert_array(_events).is_empty()
+	assert_int(_engine.node_service.get_visit_count("street")).is_equal(0)

@@ -33,9 +33,8 @@ Instance `addons/weavly/runtime/weavly_engine.tscn` in your scene, connect to it
 
 
 func _ready() -> void:
-    engine.line_service.executed_narration_line.connect(_show_line)
-    engine.line_service.executed_character_line.connect(_show_line)
-    engine.option_service.options_added.connect(_show_options)
+    engine.line_reached.connect(_show_line)
+    engine.options_offered.connect(_show_options)
     engine.start("start")
 
 
@@ -45,7 +44,7 @@ func _on_continue_pressed() -> void:
 
 
 func _on_option_pressed(option: WeavlyModel.Option) -> void:
-    engine.option_service.choose_option(option)
+    engine.choose(option)
 ```
 
 Values your game owns, like the player's gold, are declared `extern var` in `@env` and set with `engine.variable_service.set_variable()`. Stories can change them too, and Weavly only checks their type, so your game keeps them in range. `engine.get_state()` leaves them out, so save them with your game's own data.

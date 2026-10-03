@@ -1,6 +1,7 @@
 @env
 var gold: number = 0
 command header(title: string)
+func open(): flag
 @endenv
 
 @node tavern
@@ -38,5 +39,12 @@ You warm up.
 Hello [b]world[/b].
 @options
 @option "[i]Wave[/i]" -> tavern
+@endoptions
+@endnode
+
+@node door
+@options
+@option [ open() ] "Open" -> street
+@option "Stay" -> street
 @endoptions
 @endnode

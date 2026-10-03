@@ -4,7 +4,9 @@ pool city
 pool night
 pool empty
 pool styled
+pool doors
 command header(title: string)
+func open(): flag
 @endenv
 
 @node inn
@@ -105,4 +107,14 @@ Behind the door.
 pool: teased
 @endmeta
 An open square.
+@endnode
+
+@node door
+@meta
+pool: doors
+@endmeta
+@options
+@option [ open() ] "Open" -> let_go
+@option "Stay" -> let_go
+@endoptions
 @endnode

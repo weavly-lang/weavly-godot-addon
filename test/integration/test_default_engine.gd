@@ -63,6 +63,8 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 		engine.register_command(id, _command_logger(id, COMMAND_ARGUMENT_COUNTS[id]))
 	if "bonus" in engine.function_service.get_unregistered():
 		engine.register_function("bonus", func(points: float) -> float: return points * 2.0)
+	if "open" in engine.function_service.get_unregistered():
+		engine.register_function("open", func() -> bool: return true)
 
 
 func _command_logger(id: String, count: int) -> Callable:
@@ -184,7 +186,7 @@ func test_choosing_an_option_after_finish_is_ignored() -> void:
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
 	engine.finish()
 	var log_after_finish: Array[String] = _signal_log.duplicate()
-	engine.option_service.choose_option(option)
+	engine.choose(option)
 	assert_logged([], ["Can't choose option 'Go on' because it isn't offered right now."])
 	assert_that(_signal_log).is_equal(log_after_finish)
 
@@ -217,8 +219,8 @@ func test_double_choose_runs_the_option_once() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
-	engine.option_service.choose_option(option)
-	engine.option_service.choose_option(option)
+	engine.choose(option)
+	engine.choose(option)
 	assert_logged([], ["Can't choose option 'Go on' because it isn't offered right now."])
 	assert_int(_signal_log.count("entered_node:after")).is_equal(1)
 
@@ -280,7 +282,7 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 
 	# Choosing the dice option drives us through random_node -> match_node ->
 	# narration ("No key needed.", which pauses) -> jump end -> finish.
-	engine.option_service.choose_option(options[0])
+	engine.choose(options[0])
 	engine.next()  # past the narration, into end's FinishStatement
 
 	# Final state: dialogue finished, every node visited once, has_key was toggled
@@ -341,7 +343,7 @@ func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 	engine.variable_service.set_variable("has_key", true)
 	assert_str(options[0].text).is_equal("The fire is out")
 	assert_str(options[1].text).is_equal("Sleep in the tent")
-	engine.option_service.choose_option(options[1])
+	engine.choose(options[1])
 	assert_that(_narration_log.back()).is_equal("You sleep.")
 	assert_int(engine.node_service.get_visit_count("tent")).is_equal(0)
 	engine.next()
@@ -639,7 +641,7 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 	assert_that(characters[0].text).is_equal("I am Ada.")
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
 	assert_that(option.text).is_equal("Pay 3")
-	engine.option_service.choose_option(option)
+	engine.choose(option)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 
 

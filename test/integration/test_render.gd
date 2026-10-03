@@ -175,7 +175,7 @@ func test_choose_rejects_an_option_that_was_not_rendered() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
 	engine.choose(inline_option("Leave"))
-	assert_logged([], ["Can't choose option 'Leave' because it wasn't rendered."])
+	assert_logged([], ["Can't choose option 'Leave' because it isn't offered right now."])
 	assert_bool(engine.is_running()).is_false()
 	assert_bool(engine.variable_service.get_variable("left")).is_false()
 
@@ -216,7 +216,7 @@ func test_render_option_replaces_the_options_that_can_be_chosen() -> void:
 		_option(entries, "Buy a drink")
 	)
 	assert_array(engine.render_option(_option(entries, "Leave"))).is_empty()
-	assert_logged([], ["Can't choose option 'Leave' because it wasn't rendered."])
+	assert_logged([], ["Can't choose option 'Leave' because it isn't offered right now."])
 	var again: Array[WeavlyModel.Statement] = engine.render_option(
 		_option(next_entries, "Another")
 	)

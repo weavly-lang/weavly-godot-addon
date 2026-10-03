@@ -8,6 +8,8 @@ const SCENE = preload("res://addons/weavly/ui/novel/weavly_novel_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
 var _ui: WeavlyNovelUI
+# What the fixture's open() returns.
+var _door_open: bool
 
 
 func before_test() -> void:
@@ -15,6 +17,8 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
+	_door_open = true
+	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
 	_ui.characters_per_second = 0.0
@@ -286,3 +290,14 @@ func test_advancing_continues_past_a_block_where_nothing_can_be_chosen() -> void
 	_ui.advance()
 	assert_str(_text().text).is_equal("You walk on.")
 	assert_array(_choices()).is_empty()
+
+
+func test_a_refused_choice_keeps_the_choices_and_shows_the_change() -> void:
+	_engine.start("door")
+	_door_open = false
+	_choices()[0].pressed.emit()
+	assert_logged([], ["Can't choose option 'Open' because it's locked."])
+	assert_bool(_choices()[0].visible).is_false()
+	assert_bool(_choices()[1].visible).is_true()
+	_choices()[1].pressed.emit()
+	assert_str(_engine.current_node_id).is_equal("waved")

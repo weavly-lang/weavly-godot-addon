@@ -8,6 +8,8 @@ const SCENE = preload("res://addons/weavly/ui/chat/weavly_chat_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
 var _ui: WeavlyChatUI
+# What the fixture's open() returns.
+var _door_open: bool
 
 
 func before_test() -> void:
@@ -15,6 +17,8 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
+	_door_open = true
+	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
 	_ui.player_character = "me"
@@ -298,3 +302,15 @@ func test_continue_stays_hidden_while_a_reply_can_be_chosen() -> void:
 		_wait_out()
 	assert_int(_replies().size()).is_equal(2)
 	assert_bool((_ui.get_node("%Continue") as Button).visible).is_false()
+
+
+func test_a_refused_reply_keeps_the_replies_and_adds_no_bubble() -> void:
+	_engine.start("door")
+	var before: Array = _describe()
+	_door_open = false
+	_replies()[0].pressed.emit()
+	assert_logged([], ["Can't choose option 'Open' because it's locked."])
+	assert_array(_describe()).is_equal(before)
+	assert_bool(_replies()[0].visible).is_false()
+	assert_bool(_replies()[1].visible).is_true()
+	assert_bool(_ui.get_node("%Continue").visible).is_false()

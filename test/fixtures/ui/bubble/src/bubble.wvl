@@ -23,3 +23,14 @@ The gate creaks.
 @option "[i]Wave[/i]" -> answered
 @endoptions
 @endnode
+
+@env
+func open(): flag
+@endenv
+
+@node door
+@options
+@option [ open() ] "Open" -> answered
+@option "Stay" -> answered
+@endoptions
+@endnode

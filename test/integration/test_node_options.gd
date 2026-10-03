@@ -53,7 +53,7 @@ func _run_to_options(node_id: String) -> void:
 
 
 func _choose(text: String) -> void:
-	_engine.option_service.choose_option(_option(text))
+	_engine.choose(_option(text))
 	while _engine.is_running() and not _engine.option_service.has_options():
 		_engine.next()
 
@@ -140,7 +140,7 @@ func test_once_and_visits_apply_to_real_nodes_and_inline_options_use_their_node(
 
 func test_choosing_a_locked_option_is_refused() -> void:
 	_run_to_options("camp")
-	_engine.option_service.choose_option(_option("Something blinks"))
+	_engine.choose(_option("Something blinks"))
 	assert_logged([], ["Can't choose option 'Something blinks' because it's locked."])
 	assert_bool(_engine.option_service.has_options()).is_true()
 
@@ -150,7 +150,7 @@ func test_the_choice_is_checked_again() -> void:
 	_run_to_options("journey")
 	var gamble: WeavlyModel.Option = _option("Gamble")
 	_lucky = false
-	_engine.option_service.choose_option(gamble)
+	_engine.choose(gamble)
 	assert_logged([], ["because it's locked."])
 	assert_str(gamble.text).is_equal("No luck")
 
@@ -199,7 +199,7 @@ func test_locked_nodes_dont_take_slots_and_teasers_keep_their_skip_count() -> vo
 func test_a_variable_change_refreshes_offered_options_in_place() -> void:
 	_run_to_options("camp")
 	var refreshed: Array[int] = [0]
-	_engine.option_service.options_refreshed.connect(func() -> void: refreshed[0] += 1)
+	_engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
 	var hack: WeavlyModel.Option = _option("Something blinks")
 	var search: WeavlyModel.Option = _option("Search")
 	_set_variable("found", true)
@@ -236,7 +236,7 @@ func test_refresh_options_covers_game_owned_state() -> void:
 func test_the_chosen_node_reads_its_meta_values_as_they_were_at_the_choice() -> void:
 	_set_variable("found", true)
 	_run_to_options("camp")
-	_engine.option_service.choose_option(_option("Hack (-3 energy)"))
+	_engine.choose(_option("Hack (-3 energy)"))
 	assert_str(_events.back()).is_equal("Hacked.")
 	assert_that(_engine.variable_service.get_variable("energy")).is_equal(2.0)
 	assert_that(_engine.variable_service.get_variable("paid")).is_equal(3.0)

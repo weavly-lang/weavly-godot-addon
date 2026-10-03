@@ -77,6 +77,9 @@ func _on_engine_detached() -> void:
 func _choose(option: WeavlyModel.Option) -> void:
 	if not _can_render(DIALOGUE_RUNNING):
 		return
+	if not engine.can_choose(option):
+		_on_options_refreshed()
+		return
 	var entries: Array[WeavlyModel.Statement] = engine.render_option(option)
 	_clear_table()
 	var card: WeavlyCard = _make_card(entries)

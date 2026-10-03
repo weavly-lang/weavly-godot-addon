@@ -68,9 +68,9 @@ func _engine_signals() -> Array[Array]:
 		[engine.started_dialogue, _clear],
 		[engine.finished_dialogue, _clear],
 		[engine.state_loaded, _clear],
-		[engine.line_service.executed_narration_line, _on_narration_line],
-		[engine.line_service.executed_character_line, _on_character_line],
-		[engine.option_service.options_added, _on_options_added],
+		[engine.line_reached, _on_line],
+		[engine.options_offered, _on_options_offered],
+		[engine.option_chosen, _on_option_chosen],
 	]
 
 
@@ -78,12 +78,15 @@ func _on_engine_detached() -> void:
 	_clear()
 
 
-func _on_narration_line(line: WeavlyModel.NarrationLine) -> void:
-	_nameplate.visible = false
+func _on_line(line: WeavlyModel.LineStatement) -> void:
+	if line is WeavlyModel.CharacterLine:
+		_show_speaker(line)
+	else:
+		_nameplate.visible = false
 	_show_text(line.text)
 
 
-func _on_character_line(line: WeavlyModel.CharacterLine) -> void:
+func _show_speaker(line: WeavlyModel.CharacterLine) -> void:
 	var character: WeavlyCharacter = find_character(line, engine)
 	_nameplate.text = speaker_name(line, engine)
 	if character is WeavlyNovelCharacter:
@@ -91,10 +94,9 @@ func _on_character_line(line: WeavlyModel.CharacterLine) -> void:
 	else:
 		_nameplate.remove_theme_color_override(&"font_color")
 	_nameplate.visible = true
-	_show_text(line.text)
 
 
-func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
+func _on_options_offered(options: Array[WeavlyModel.Option]) -> void:
 	_choices.show_options(options)
 	_awaiting_choice = _choices.has_choosable()
 	visible = true
@@ -107,10 +109,14 @@ func _on_options_refreshed() -> void:
 		_awaiting_choice = _choices.has_choosable()
 
 
-func _choose(option: WeavlyModel.Option) -> void:
+func _on_option_chosen(_option: WeavlyModel.Option) -> void:
 	_choices.clear()
 	_awaiting_choice = false
-	engine.option_service.choose_option(option)
+
+
+func _choose(option: WeavlyModel.Option) -> void:
+	if not engine.choose(option):
+		_on_options_refreshed()
 
 
 func _show_text(text: String) -> void:
