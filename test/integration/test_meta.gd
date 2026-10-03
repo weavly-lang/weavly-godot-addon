@@ -15,7 +15,6 @@ func before_test() -> void:
 	_engine.video_path = FIXTURE
 	_engine.image_path = FIXTURE
 	_engine.character_path = FIXTURE
-	_engine.variable_path = FIXTURE
 	_engine.random_seed = 3
 	add_child(auto_free(_engine))
 	_engine.runtime_error.connect(

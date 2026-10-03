@@ -18,7 +18,6 @@ func _make_engine() -> WeavlyDefaultEngine:
 	engine.video_path = FIXTURE
 	engine.image_path = FIXTURE
 	engine.character_path = FIXTURE
-	engine.variable_path = FIXTURE
 	add_child(auto_free(engine))
 	engine.started_dialogue.connect(func() -> void: _events.append("started_dialogue"))
 	engine.finished_dialogue.connect(func() -> void: _events.append("finished_dialogue"))

@@ -48,6 +48,8 @@ func _on_option_pressed(option: WeavlyModel.Option) -> void:
     engine.option_service.choose_option(option)
 ```
 
+Values your game owns, like the player's gold, are declared `extern var` in `@env` and set with `engine.variable_service.set_variable()`. `engine.get_state()` leaves them out, so save them with your game's own data.
+
 The engine loads compiled dialogue from `res://dialogue/build` by default. For exports, add `*.json` to *Filters to export non-resource files* in your export preset.
 
 Or skip the code: add one of the starter UIs from `addons/weavly/ui/` to your scene and set its `engine` to the engine node.

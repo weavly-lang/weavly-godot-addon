@@ -12,7 +12,6 @@ func _make_engine(random_seed: int = 1) -> WeavlyDefaultEngine:
 	engine.video_path = FIXTURE
 	engine.image_path = FIXTURE
 	engine.character_path = FIXTURE
-	engine.variable_path = FIXTURE
 	engine.random_seed = random_seed
 	add_child(auto_free(engine))
 	return engine

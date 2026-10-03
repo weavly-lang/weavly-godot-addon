@@ -7,7 +7,6 @@ const DefaultImageService = preload(
 )
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
-const RESOURCES_DIR = FIXTURE_DIR + "/resources"
 const PLAIN_PATH = FIXTURE_DIR + "/plain.json"
 const INVALID_PATH = FIXTURE_DIR + "/invalid.json"
 const MISSING_PATH = FIXTURE_DIR + "/does_not_exist.json"
@@ -91,32 +90,6 @@ func test_load_json_returns_null_on_missing_file() -> void:
 
 
 # =====================
-# load_variables_from_resources
-# =====================
-
-
-func test_load_variables_from_resources_loads_number_variable() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
-	assert_bool(engine.variable_service.has("score")).is_true()
-	assert_that(engine.variable_service.get_variable("score")).is_equal(7.0)
-
-
-func test_load_variables_from_resources_loads_string_variable() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
-	assert_bool(engine.variable_service.has("player_name")).is_true()
-	assert_that(engine.variable_service.get_variable("player_name")).is_equal("Ada")
-
-
-func test_load_variables_from_resources_loads_flag_variable() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_resources(engine, RESOURCES_DIR)
-	assert_bool(engine.variable_service.has("door_open")).is_true()
-	assert_that(engine.variable_service.get_variable("door_open")).is_equal(true)
-
-
-# =====================
 # load_dialogue: malformed input (issue #38)
 # =====================
 
@@ -126,15 +99,10 @@ func test_load_dialogue_skips_malformed_files_without_crashing() -> void:
 	# without a "nodes" key alongside valid nodes and declarations. A single bad
 	# file must not crash startup.
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(engine, FIXTURE_DIR, RESOURCES_DIR)
+	WeavlyFileUtils.load_dialogue(engine, FIXTURE_DIR)
 	assert_bool(engine.node_service.has("start")).is_true()
 	assert_that(engine.variable_service.get_variable("score")).is_equal(0.0)
-	assert_logged(
-		[
-			"JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0",
-			"Variable 'score' is declared in both ",
-		]
-	)
+	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
 
 
 # =====================
@@ -167,85 +135,13 @@ func test_find_returns_empty_for_a_missing_external_directory() -> void:
 
 
 # =====================
-# load_dialogue: variables declared more than once
-# =====================
-
-
-func test_wvl_declaration_wins_over_a_resource_with_the_same_name() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(
-		engine, VARIABLES_DIR + "/dialogue", VARIABLES_DIR + "/resources"
-	)
-	assert_that(engine.variable_service.get_variable("score")).is_equal(1.0)
-	var env: String = VARIABLES_DIR + "/dialogue/env.json"
-	var resource: String = VARIABLES_DIR + "/resources/score.tres"
-	assert_logged(
-		[
-			(
-				"Variable 'score' is declared in both %s and %s, using the one in %s."
-				% [env, resource, env]
-			)
-		]
-	)
-
-
-func test_two_resources_with_the_same_name_report_once() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/twice")
-	assert_logged(["Variable 'gold' is declared in both "])
-	assert_bool(engine.variable_service.get_variable("gold") in [1.0, 2.0]).is_true()
-
-
-func test_resource_default_outside_its_range_is_clamped() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_variables_from_resources(engine, VARIABLES_DIR + "/range")
-	assert_that(engine.variable_service.get_variable("health")).is_equal(100.0)
-	assert_logged(
-		[
-			(
-				"Variable 'health' in %s/range/health.tres has default 150.0 outside its range,"
-				% VARIABLES_DIR
-			)
-		]
-	)
-
-
-# =====================
 # load_dialogue: extern declarations
 # =====================
 
 
-func test_a_resource_defines_an_extern_variable() -> void:
+func test_an_extern_is_declared_without_a_value() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(
-		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_resources"
-	)
-	assert_that(engine.variable_service.get_variable("reputation")).is_equal(5.0)
-	assert_bool(engine.variable_service.has("title")).is_false()
-
-
-func test_a_resource_of_the_wrong_type_for_an_extern_is_rejected() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(
-		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/extern_wrong"
-	)
-	assert_logged(
-		[
-			(
-				"Variable 'title' in %s/extern_wrong/title.tres is a number, " % VARIABLES_DIR
-				+ "but it's declared extern as a string."
-			)
-		]
-	)
-	assert_bool(engine.variable_service.has("title")).is_false()
-
-
-func test_an_extern_without_a_resource_is_not_an_error() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(
-		engine, VARIABLES_DIR + "/extern_dialogue", VARIABLES_DIR + "/range_does_not_exist"
-	)
-	assert_logged(["Failed to open directory: " + VARIABLES_DIR + "/range_does_not_exist"])
+	WeavlyFileUtils.load_dialogue(engine, VARIABLES_DIR + "/extern_dialogue")
 	assert_bool(engine.variable_service.has("reputation")).is_false()
 	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
 

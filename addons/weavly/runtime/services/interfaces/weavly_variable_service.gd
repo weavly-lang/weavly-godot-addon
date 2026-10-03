@@ -10,7 +10,6 @@ const UNKNOWN_NAME = "Can't set variable '%s' to '%s' because no %s has that nam
 
 @abstract func has(id: String) -> bool
 
-# Replaces an existing declaration; the loader reports conflicting ones.
 @abstract func add_variable(variable: WeavlyModel.Variable) -> void
 
 # Null when the name isn't declared; an extern declaration has no value until defined.

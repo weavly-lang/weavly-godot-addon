@@ -21,7 +21,6 @@ func _ready() -> void:
 	engine.dialogue_path = "res://dialogue/build"
 	engine.image_path = "res://media/images"
 	engine.character_path = "res://characters"
-	engine.variable_path = "res://variables"
 	engine.video_path = external_base.path_join("videos")
 	engine.finished_dialogue.connect(func() -> void: _finished = true)
 	add_child(engine)
@@ -49,7 +48,6 @@ func _check_discovery(engine: WeavlyEngine) -> void:
 	_expect(engine.node_service.has("start"), "node 'start' not found in the packed dialogue JSON")
 	_expect(engine.node_service.has("end"), "node 'end' not found in the packed dialogue JSON")
 	_expect(engine.variable_service.has("score"), "variable 'score' not found in env.json")
-	_expect(engine.variable_service.has("lives"), "variable 'lives' not found in variables/*.tres")
 	_expect(
 		engine.character_service.get_character("guide") != null,
 		"character 'guide' not found in characters/*.tres"

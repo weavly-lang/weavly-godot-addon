@@ -19,7 +19,6 @@ func before_test() -> void:
 	_engine.video_path = FIXTURE + "/build"
 	_engine.image_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
-	_engine.variable_path = FIXTURE + "/build"
 	add_child(auto_free(_engine))
 	_world = auto_free(SubViewport.new())
 	_world.size = Vector2i(1280, 720)
