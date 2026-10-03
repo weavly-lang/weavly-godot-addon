@@ -533,11 +533,11 @@ func test_finish_statement_counts_a_visit() -> void:
 	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
 
 
-func test_game_calling_finish_counts_no_visit() -> void:
+func test_game_calling_finish_counts_the_visit() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
 	engine.start("finisher")
 	engine.finish()
-	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(0)
+	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
 
 
 func test_nodes_create_no_variables() -> void:

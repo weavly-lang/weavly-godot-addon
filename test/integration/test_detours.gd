@@ -110,6 +110,50 @@ func test_finish_inside_a_detour_ends_the_dialogue() -> void:
 	assert_array(_visits(["quit", "stop"])).is_equal([1, 1])
 
 
+func test_finishing_from_the_game_leaves_every_running_node() -> void:
+	_engine.start("travel")
+	_engine.next()
+	_engine.finish()
+	(
+		assert_array(_events)
+		. is_equal(
+			[
+				"enter:travel",
+				"You set off.",
+				"enter:ambush",
+				"Bandits!",
+				"leave:ambush",
+				"leave:travel",
+				"finished",
+			]
+		)
+	)
+	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+	assert_array(_engine.get_location_stack()).is_empty()
+
+
+func test_finishing_from_a_left_node_handler_finishes_once() -> void:
+	_engine.left_node.connect(func(_id: String) -> void: _engine.finish())
+	_engine.start("travel")
+	_engine.next()
+	_engine.finish()
+	(
+		assert_array(_events.filter(func(event: String) -> bool: return event == "finished"))
+		. has_size(1)
+	)
+	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+
+
+func test_loading_a_state_while_a_detour_runs_leaves_no_nodes() -> void:
+	_engine.start("nested")
+	var state: Dictionary = _engine.get_state()
+	_engine.next()
+	_events.clear()
+	_engine.set_state(state)
+	assert_array(_events.filter(func(event: String) -> bool: return "leave:" in event)).is_empty()
+	assert_array(_visits(["nested", "middle", "inner"])).is_equal([0, 0, 0])
+
+
 func test_a_node_split_by_a_detour_at_its_end() -> void:
 	_run("split_a")
 	(

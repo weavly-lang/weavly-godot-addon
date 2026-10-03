@@ -294,6 +294,10 @@ func _enter_pending_node() -> void:
 func finish() -> void:
 	if _finished:
 		return
+	leave_all_nodes()
+	# A left_node handler may have finished the dialogue already.
+	if _finished:
+		return
 	if _rendering:
 		_finished = true
 		return

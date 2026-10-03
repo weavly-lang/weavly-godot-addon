@@ -610,13 +610,6 @@ func test_jump_records_a_visit_to_every_running_node() -> void:
 	assert_that(_engine.get_location_stack()).is_empty()
 
 
-func test_finish_records_a_visit_to_every_running_node() -> void:
-	_run_in_a_detour(WeavlyModel.FinishStatement.new())
-	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
-	assert_int(_engine.node_service.get_visit_count("below")).is_equal(1)
-	assert_that(_engine.get_location_stack()).is_empty()
-
-
 func test_set_defines_an_undefined_extern() -> void:
 	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
 		"reputation", 0.0, null, null
