@@ -126,7 +126,7 @@ func _on_node_entered(_node_id: String) -> void:
 	_on_changed()
 
 
-func _on_variable_changed(_id: String, _value: Variant) -> void:
+func _on_variable_changed(_id: String, _value: Variant, _old_value: Variant) -> void:
 	_on_changed()
 
 

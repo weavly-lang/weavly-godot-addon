@@ -1,7 +1,8 @@
 @abstract class_name WeavlyVariableService
 extends WeavlyService
 
-signal variable_changed(id: String, value: Variant)
+# Fires only when the stored value differs; old_value is null on an extern's first set.
+signal variable_changed(id: String, value: Variant, old_value: Variant)
 
 const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
 const UNDECLARED = "Can't set variable '%s' because it isn't declared."

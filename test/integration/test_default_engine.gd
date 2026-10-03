@@ -815,7 +815,7 @@ func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
 	var events: Array[String] = []
 	engine.state_loaded.connect(func() -> void: events.append("state_loaded"))
 	engine.variable_service.variable_changed.connect(
-		func(id: String, _value: Variant) -> void: events.append(id)
+		func(id: String, _value: Variant, _old_value: Variant) -> void: events.append(id)
 	)
 	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
 	assert_that(events).is_equal(["state_loaded"])
