@@ -13,12 +13,6 @@ const _DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"command": Kind.COMMAND,
 }
 
-static var _node_regex: RegEx = RegEx.create_from_string("^\\s*@node\\s+([A-Za-z_]\\w*)")
-static var _end_node_regex: RegEx = RegEx.create_from_string("^\\s*@endnode\\b")
-static var _env_regex: RegEx = RegEx.create_from_string("^\\s*@env\\b")
-static var _end_env_regex: RegEx = RegEx.create_from_string("^\\s*@endenv\\b")
-static var _meta_regex: RegEx = RegEx.create_from_string("^\\s*@meta\\b")
-static var _end_meta_regex: RegEx = RegEx.create_from_string("^\\s*@endmeta\\b")
 static var _declaration_regex: RegEx = RegEx.create_from_string(
 	"^\\s*(?:extern\\s+)?(var|pool|slot|meta|func|command)\\s+([A-Za-z_]\\w*)"
 )
@@ -103,49 +97,47 @@ func members(kind: Kind, name: String) -> Array[Definition]:
 
 static func parse(path: String, text: String) -> Array[Definition]:
 	var definitions: Array[Definition] = []
-	var in_env: bool = false
-	var in_meta: bool = false
 	var node: Definition = null
 	var lines: PackedStringArray = text.split("\n")
+	var blocks: PackedInt32Array = WeavlyLineScanner.blocks(lines)
 	for line: int in lines.size():
 		var content: String = lines[line]
-		if in_env:
-			if _end_env_regex.search(content) != null:
-				in_env = false
-				continue
-			var declaration: RegExMatch = _declaration_regex.search(content)
-			if declaration != null:
-				var definition: Definition = _definition(
-					_DECLARATION_KINDS[declaration.get_string(1)],
-					declaration.get_string(2),
-					path,
-					line
-				)
-				definition.text = content.strip_edges()
-				definitions.append(definition)
-		elif in_meta:
-			node.text += "\n" + content.strip_edges(false, true)
-			if _end_meta_regex.search(content) != null:
-				in_meta = false
-				continue
-			var entry: RegExMatch = _group_entry_regex.search(content)
-			if entry != null:
-				var names: PackedStringArray = _ids(entry.get_string(2))
-				if entry.get_string(1) == "pool":
-					node.pools.append_array(names)
-				else:
-					node.slots.append_array(names)
-		elif _env_regex.search(content) != null:
-			in_env = true
-		elif _node_regex.search(content) != null:
-			node = _definition(Kind.NODE, _node_regex.search(content).get_string(1), path, line)
-			node.text = content.strip_edges()
-			definitions.append(node)
-		elif node != null and _meta_regex.search(content) != null:
-			node.text += "\n" + content.strip_edges()
-			in_meta = true
-		elif _end_node_regex.search(content) != null:
-			node = null
+		match blocks[line]:
+			WeavlyLineScanner.Block.ENV:
+				var declaration: RegExMatch = _declaration_regex.search(content)
+				if declaration != null:
+					var definition: Definition = _definition(
+						_DECLARATION_KINDS[declaration.get_string(1)],
+						declaration.get_string(2),
+						path,
+						line
+					)
+					definition.text = content.strip_edges()
+					definitions.append(definition)
+			WeavlyLineScanner.Block.META:
+				if node == null:
+					continue
+				node.text += "\n" + content.strip_edges(false, true)
+				var entry: RegExMatch = _group_entry_regex.search(content)
+				if entry != null:
+					var names: PackedStringArray = _ids(entry.get_string(2))
+					if entry.get_string(1) == "pool":
+						node.pools.append_array(names)
+					else:
+						node.slots.append_array(names)
+			_:
+				match WeavlyLineScanner.directive(content):
+					"@node":
+						var name: String = WeavlyLineScanner.node_name(content)
+						node = null if name == "" else _definition(Kind.NODE, name, path, line)
+						if node != null:
+							node.text = content.strip_edges()
+							definitions.append(node)
+					"@meta":
+						if node != null and blocks[line] == WeavlyLineScanner.Block.BODY:
+							node.text += "\n" + content.strip_edges()
+					"@endnode":
+						node = null
 	return definitions
 
 

@@ -7,10 +7,6 @@ const STRIP_WIDTH = 4
 const STRIP_GAP = 6
 
 var _code_edit: CodeEdit
-var _node_start_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*@node[ \\t]+([A-Za-z_][A-Za-z0-9_]*)"
-)
-var _node_end_regex: RegEx = RegEx.create_from_string("^[ \\t]*@endnode\\b")
 var _node_lines: PackedInt32Array = []
 # Each line's index into _node_lines, -1 outside a node.
 var _line_nodes: PackedInt32Array = []
@@ -34,17 +30,20 @@ func refresh() -> void:
 	_node_lines.clear()
 	clear()
 	_line_nodes.resize(_code_edit.get_line_count())
-	var node: int = -1
+	var lines: PackedStringArray = []
 	for line: int in _code_edit.get_line_count():
-		var text: String = _code_edit.get_line(line)
-		var start: RegExMatch = _node_start_regex.search(text)
-		if start != null:
+		lines.append(_code_edit.get_line(line))
+	var blocks: PackedInt32Array = WeavlyLineScanner.blocks(lines)
+	var node: int = -1
+	for line: int in lines.size():
+		var name: String = WeavlyLineScanner.node_name(lines[line])
+		if name != "" and blocks[line] != WeavlyLineScanner.Block.ENV:
 			node = _node_lines.size()
 			_node_lines.append(line)
-			add_item(start.get_string(1))
-		_line_nodes[line] = node
-		if _node_end_regex.search(text) != null:
+			add_item(name)
+		elif blocks[line] == WeavlyLineScanner.Block.NONE:
 			node = -1
+		_line_nodes[line] = node
 	disabled = _node_lines.is_empty()
 	_sync_selection()
 	_code_edit.queue_redraw()

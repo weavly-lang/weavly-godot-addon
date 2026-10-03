@@ -274,6 +274,15 @@ func test_meta_keys_after_the_meta_block_are_text() -> void:
 	assert_array(_spans_at(text, 4, KEYWORD)).is_empty()
 
 
+func test_meta_outside_a_node_is_not_a_meta_block() -> void:
+	assert_array(_spans_at("@meta\npool: city\n@endmeta", 1, KEYWORD)).is_empty()
+
+
+func test_numbers_and_directives_in_narration_are_text() -> void:
+	assert_array(_spans("Pay 3 coins at @noon", WvlSyntaxHighlighter.NUMBER_COLOR)).is_empty()
+	assert_array(_spans("Pay 3 coins at @noon", WvlSyntaxHighlighter.DIRECTIVE_COLOR)).is_empty()
+
+
 func test_skip_count_is_a_function_with_or_without_an_argument() -> void:
 	var spans: Array[String] = _spans("@set $n = skip_count() + skip_count(bob)", FUNCTION)
 	assert_array(spans).contains_exactly(["skip_count", "skip_count"])

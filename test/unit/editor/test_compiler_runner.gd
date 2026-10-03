@@ -225,19 +225,16 @@ func test_parse_version_returns_empty_for_unrelated_output() -> void:
 	assert_str(WeavlyCompilerRunner.parse_version("command not found")).is_equal("")
 
 
-func test_is_version_supported_accepts_the_minimum_and_newer() -> void:
+func test_is_version_supported_accepts_every_patch_of_the_supported_release() -> void:
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.5.0")).is_true()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.5.1")).is_true()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.6.0")).is_true()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("1.0.0")).is_true()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.5.12")).is_true()
 
 
-func test_is_version_supported_rejects_older_and_unknown() -> void:
+func test_is_version_supported_rejects_older_newer_and_unknown() -> void:
 	assert_bool(WeavlyCompilerRunner.is_version_supported("0.4.9")).is_false()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.3.9")).is_false()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.2.9")).is_false()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.1.9")).is_false()
-	assert_bool(WeavlyCompilerRunner.is_version_supported("0.0.9")).is_false()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.6.0")).is_false()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("0.50.0")).is_false()
+	assert_bool(WeavlyCompilerRunner.is_version_supported("1.5.0")).is_false()
 	assert_bool(WeavlyCompilerRunner.is_version_supported("")).is_false()
 
 

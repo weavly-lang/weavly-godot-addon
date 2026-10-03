@@ -63,6 +63,20 @@ func _edit(object: Object) -> void:
 		_panel.open_file(object.source_path)
 
 
+# Godot asks before quitting while this isn't empty; an empty for_scene means the editor closes.
+func _get_unsaved_status(for_scene: String) -> String:
+	if for_scene != "" or _panel == null:
+		return ""
+	var path: String = _panel.get_unsaved_path()
+	return "" if path == "" else "Save changes to '%s' before closing?" % path.get_file()
+
+
+# Godot's own save commands, and saving before quitting or running the project.
+func _save_external_data() -> void:
+	if _panel != null:
+		_panel.save_unsaved()
+
+
 func _make_visible(visible: bool) -> void:
 	if _panel != null:
 		_panel.visible = visible
