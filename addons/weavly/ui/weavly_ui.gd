@@ -175,10 +175,8 @@ func _attach() -> void:
 			engine.ready.connect(_attach, CONNECT_ONE_SHOT)
 		return
 	_attached = true
-	for pair: Array in _engine_signals():
+	for pair: Array in _all_engine_signals():
 		(pair[0] as Signal).connect(pair[1])
-	if engine.option_service != null:
-		engine.option_service.options_refreshed.connect(_on_options_refreshed)
 	_on_engine_attached()
 
 
@@ -189,8 +187,12 @@ func _detach() -> void:
 		engine.ready.disconnect(_attach)
 	if _attached:
 		_attached = false
-		for pair: Array in _engine_signals():
+		for pair: Array in _all_engine_signals():
 			(pair[0] as Signal).disconnect(pair[1])
-		if engine.option_service != null:
-			engine.option_service.options_refreshed.disconnect(_on_options_refreshed)
 		_on_engine_detached()
+
+
+func _all_engine_signals() -> Array[Array]:
+	var pairs: Array[Array] = _engine_signals()
+	pairs.append([engine.option_service.options_refreshed, _on_options_refreshed])
+	return pairs
