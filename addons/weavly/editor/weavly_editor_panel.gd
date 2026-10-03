@@ -29,7 +29,7 @@ const _COLOR_INFO = Color(0.66, 0.74, 0.88)
 var _path_label: Label
 var _node_outline: WeavlyNodeOutline
 var _status_label: Label
-var _code_edit: CodeEdit
+var _code_edit: WeavlyCodeEdit
 var _compile_on_save: CheckButton
 var _line_wrap: CheckButton
 var _save_button: Button
@@ -93,7 +93,7 @@ func _build_ui() -> void:
 	var root: VBoxContainer = VBoxContainer.new()
 	margin.add_child(root)
 
-	_code_edit = CodeEdit.new()
+	_code_edit = WeavlyCodeEdit.new()
 	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_code_edit.gutters_draw_line_numbers = true

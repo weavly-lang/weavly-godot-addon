@@ -175,3 +175,25 @@ func test_an_open_file_outside_the_project_is_indexed() -> void:
 	index.set_open_file("C:/elsewhere/scratch.wvl", "@node scratch\n@endnode\n")
 	index.scan(_dir)
 	assert_array(index.find(WeavlyProjectIndex.Kind.NODE, "scratch")).has_size(1)
+
+
+func test_a_declaration_shows_its_line() -> void:
+	var index: WeavlyProjectIndex = _scanned(_CITY)
+	var found: Array[WeavlyProjectIndex.Definition] = index.find(
+		WeavlyProjectIndex.Kind.VARIABLE, "reputation"
+	)
+	assert_str(found[0].text).is_equal("extern var reputation: number")
+
+
+func test_a_node_shows_its_header_and_meta_block() -> void:
+	var index: WeavlyProjectIndex = _scanned(_CITY)
+	var market: WeavlyProjectIndex.Definition = (
+		index.find(WeavlyProjectIndex.Kind.NODE, "market")[0]
+	)
+	assert_str(market.text).is_equal(
+		"@node market # stalls\n@meta\npool: city, night # both\nslot: bob\n@endmeta"
+	)
+	var harbor: WeavlyProjectIndex.Definition = (
+		index.find(WeavlyProjectIndex.Kind.NODE, "harbor")[0]
+	)
+	assert_str(harbor.text).is_equal("@node harbor")

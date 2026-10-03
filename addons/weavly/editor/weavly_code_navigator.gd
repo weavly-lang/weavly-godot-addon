@@ -35,7 +35,7 @@ class Location:
 
 var index: WeavlyProjectIndex = WeavlyProjectIndex.new()
 var _panel: WeavlyEditorPanel
-var _code_edit: CodeEdit
+var _code_edit: WeavlyCodeEdit
 var _indexed_path: String = ""
 var _buffer_stale: bool = true
 # Popup item id -> its definition.
@@ -44,7 +44,7 @@ var _back: Array[Location] = []
 var _forward: Array[Location] = []
 
 
-func _init(panel: WeavlyEditorPanel, code_edit: CodeEdit) -> void:
+func _init(panel: WeavlyEditorPanel, code_edit: WeavlyCodeEdit) -> void:
 	_panel = panel
 	_code_edit = code_edit
 	_code_edit.symbol_lookup_on_click = true
@@ -52,17 +52,15 @@ func _init(panel: WeavlyEditorPanel, code_edit: CodeEdit) -> void:
 	_code_edit.symbol_lookup.connect(_on_symbol_lookup)
 	_code_edit.text_changed.connect(_on_text_changed)
 	_code_edit.gui_input.connect(_on_code_edit_input)
+	_code_edit.tooltip_source = tooltip_at
 	id_pressed.connect(_on_listed_pressed)
 
 
 func sections_at(line: int, column: int) -> Array[Section]:
 	var sections: Array[Section] = []
-	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
-		_code_edit.text.split("\n"), line, column
-	)
+	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
 	if symbol == null:
 		return sections
-	_update_index()
 	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
 		var section: Section = Section.new()
 		section.heading = "%s %s" % [KIND_NAMES[kind], symbol.name]
@@ -76,6 +74,32 @@ func sections_at(line: int, column: int) -> Array[Section]:
 		if not section.definitions.is_empty():
 			sections.append(section)
 	return sections
+
+
+# Each definition's file and source; a pool or slot also counts its nodes.
+func tooltip_at(line: int, column: int) -> String:
+	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
+	if symbol == null:
+		return ""
+	var parts: PackedStringArray = []
+	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
+		var definitions: Array[WeavlyProjectIndex.Definition] = index.find(kind, symbol.name)
+		for definition: WeavlyProjectIndex.Definition in definitions:
+			parts.append(
+				(
+					"%s:%d\n%s"
+					% [_display_path(definition.path), definition.line + 1, definition.text]
+				)
+			)
+		if kind != WeavlyProjectIndex.Kind.POOL and kind != WeavlyProjectIndex.Kind.SLOT:
+			continue
+		var count: int = index.members(kind, symbol.name).size()
+		if definitions.is_empty():
+			if count == 0:
+				continue
+			parts.append("%s %s" % [KIND_NAMES[kind], symbol.name])
+		parts[-1] += "\n1 node" if count == 1 else "\n%d nodes" % count
+	return "\n\n".join(parts)
 
 
 # Goes to the only definition, or lists them; a pool's or slot's nodes are always listed.
@@ -145,6 +169,15 @@ func _move_to(location: Location) -> bool:
 	_code_edit.center_viewport_to_caret()
 	_code_edit.grab_focus()
 	return true
+
+
+func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
+	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
+		_code_edit.text.split("\n"), line, column
+	)
+	if symbol != null:
+		_update_index()
+	return symbol
 
 
 # The open file comes first, so a file just switched away from is read from disk again.

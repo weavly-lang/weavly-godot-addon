@@ -36,6 +36,8 @@ class Definition:
 	# Nodes only: the pools and slots their @meta block names.
 	var pools: PackedStringArray = []
 	var slots: PackedStringArray = []
+	# What a hover shows: the declaration line, or a node's header and @meta block.
+	var text: String
 
 
 # Path -> its definitions.
@@ -111,15 +113,16 @@ static func parse(path: String, text: String) -> Array[Definition]:
 				continue
 			var declaration: RegExMatch = _declaration_regex.search(content)
 			if declaration != null:
-				definitions.append(
-					_definition(
-						_DECLARATION_KINDS[declaration.get_string(1)],
-						declaration.get_string(2),
-						path,
-						line
-					)
+				var definition: Definition = _definition(
+					_DECLARATION_KINDS[declaration.get_string(1)],
+					declaration.get_string(2),
+					path,
+					line
 				)
+				definition.text = content.strip_edges()
+				definitions.append(definition)
 		elif in_meta:
+			node.text += "\n" + content.strip_edges(false, true)
 			if _end_meta_regex.search(content) != null:
 				in_meta = false
 				continue
@@ -134,8 +137,10 @@ static func parse(path: String, text: String) -> Array[Definition]:
 			in_env = true
 		elif _node_regex.search(content) != null:
 			node = _definition(Kind.NODE, _node_regex.search(content).get_string(1), path, line)
+			node.text = content.strip_edges()
 			definitions.append(node)
 		elif node != null and _meta_regex.search(content) != null:
+			node.text += "\n" + content.strip_edges()
 			in_meta = true
 		elif _end_node_regex.search(content) != null:
 			node = null
