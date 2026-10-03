@@ -56,7 +56,6 @@ func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 	engine.video_path = fixture_dir
 	engine.image_path = fixture_dir
 	engine.character_path = fixture_dir
-	engine.variable_path = fixture_dir
 	return engine
 
 
@@ -808,6 +807,22 @@ func test_reset_state_starts_a_new_game() -> void:
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
 	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
 	assert_bool(engine.is_running()).is_false()
+
+
+func test_a_save_holds_no_externs() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	engine.variable_service.set_variable("reputation", 3.0)
+	assert_bool(engine.get_state()["services"]["variable"].has("reputation")).is_false()
+
+
+func test_an_extern_keeps_its_value_through_reset_state_and_set_state() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var state: Dictionary = _through_json(engine.get_state())
+	engine.variable_service.set_variable("reputation", 3.0)
+	engine.reset_state()
+	assert_that(engine.variable_service.get_variable("reputation")).is_equal(3.0)
+	engine.set_state(state)
+	assert_that(engine.variable_service.get_variable("reputation")).is_equal(3.0)
 
 
 func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:

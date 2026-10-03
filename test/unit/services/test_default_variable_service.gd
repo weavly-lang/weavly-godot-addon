@@ -223,13 +223,6 @@ func test_game_code_setting_an_extern_to_the_wrong_type_is_rejected() -> void:
 	assert_bool(_service.has("reputation")).is_false()
 
 
-func test_adding_a_variable_defines_a_matching_extern() -> void:
-	_add_extern("reputation")
-	_service.add_variable(WeavlyModel.NumberVariable.new("reputation", 4.0, 0.0, 10.0))
-	assert_that(_service.get_variable("reputation")).is_equal(4.0)
-	assert_bool(_service.get_declaration("reputation").extern).is_false()
-
-
 func test_get_declaration_of_an_unknown_name_is_null() -> void:
 	assert_object(_service.get_declaration("missing")).is_null()
 
@@ -243,6 +236,13 @@ func test_get_state_holds_values_only() -> void:
 	_service.add_variable(WeavlyModel.NumberVariable.new("score", 3.0, 0.0, 10.0))
 	_service.add_variable(WeavlyModel.StringVariable.new("name", "Ada"))
 	assert_that(_service.get_state()).is_equal({"score": 3.0, "name": "Ada"})
+
+
+func test_get_state_leaves_externs_out() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new("score", 3.0, null, null))
+	_add_extern("reputation")
+	_service.set_variable("reputation", 4.0)
+	assert_that(_service.get_state()).is_equal({"score": 3.0})
 
 
 func test_set_state_restores_values_without_emitting() -> void:
@@ -281,17 +281,19 @@ func test_set_state_checks_types_and_clamps() -> void:
 	assert_logged(["Can't set variable 'flag' to a value of type 'String' because it's a flag."])
 
 
-func test_set_state_leaves_an_extern_undefined_unless_saved() -> void:
-	var variable: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new(
-		"reputation", 0.0, null, null
-	)
-	variable.extern = true
-	_service.add_variable(variable)
+func test_set_state_keeps_an_extern_and_ignores_a_saved_one() -> void:
+	_add_extern("reputation")
 	_service.set_variable("reputation", 4.0)
 	_service.set_state({})
-	assert_bool(_service.has("reputation")).is_false()
+	assert_that(_service.get_variable("reputation")).is_equal(4.0)
 	_service.set_state({"reputation": 2.0})
-	assert_that(_service.get_variable("reputation")).is_equal(2.0)
+	assert_that(_service.get_variable("reputation")).is_equal(4.0)
+
+
+func test_set_state_leaves_an_undefined_extern_undefined() -> void:
+	_add_extern("reputation")
+	_service.set_state({"reputation": 2.0})
+	assert_bool(_service.has("reputation")).is_false()
 
 
 # =====================
@@ -367,18 +369,10 @@ func test_an_extern_name_variable_has_no_value_until_the_game_sets_it() -> void:
 func test_set_state_skips_a_saved_name_that_no_longer_exists() -> void:
 	var service: Service = _name_service()
 	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
-	var home: WeavlyModel.NameVariable = WeavlyModel.NameVariable.new("home", "pool", "")
-	home.extern = true
-	service.add_variable(home)
-	service.set_state({"region": "harbor", "home": "harbor"})
+	service.set_state({"region": "harbor"})
 	assert_that(service.get_variable("region")).is_equal("city")
-	assert_bool(service.has("home")).is_false()
 	assert_logged(
-		[],
-		[
-			"Saved variable 'region' is skipped because pool 'harbor' no longer exists.",
-			"Saved variable 'home' is skipped because pool 'harbor' no longer exists.",
-		]
+		[], ["Saved variable 'region' is skipped because pool 'harbor' no longer exists."]
 	)
 
 

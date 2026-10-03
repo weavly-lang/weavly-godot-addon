@@ -1,9 +1,5 @@
 class_name WeavlyFileUtils
 
-const DUPLICATE_VARIABLE = "Variable '%s' is declared in both %s and %s, using the one in %s."
-const DEFAULT_OUT_OF_RANGE = "Variable '%s' in %s has default %s outside its range, using %s."
-const EXTERN_TYPE_MISMATCH = "Variable '%s' in %s is a %s, but it's declared extern as a %s."
-
 
 static func find_all_files_with_extension(
 	dir_path: String, extension: String
@@ -74,11 +70,7 @@ static func load_json_file(path: String) -> Variant:
 	return json.data
 
 
-# Reads each JSON file once; .wvl declarations load before resources, so they win.
-static func load_dialogue(
-	engine: WeavlyEngine, dialogue_dir: String, variable_dir: String
-) -> void:
-	var sources: Dictionary[String, String] = {}
+static func load_dialogue(engine: WeavlyEngine, dialogue_dir: String) -> void:
 	for file_path: String in find_all_files_with_extension(dialogue_dir, ".json"):
 		var data: Variant = load_json_file(file_path)
 		if data is not Dictionary:
@@ -91,7 +83,7 @@ static func load_dialogue(
 				WeavlyDeserializer.compile_variable_declarations(data, file_path)
 			)
 			for variable: WeavlyModel.Variable in variables:
-				_add_variable(engine, variable, file_path, sources)
+				engine.variable_service.add_variable(variable)
 			for pool: String in WeavlyDeserializer.compile_pool_names(data, file_path):
 				engine.node_service.add_pool(pool)
 			for slot: String in WeavlyDeserializer.compile_slot_names(data, file_path):
@@ -109,50 +101,6 @@ static func load_dialogue(
 				data, file_path
 			):
 				engine.command_service.add_declaration(command)
-	load_variables_from_resources(engine, variable_dir, sources)
-
-
-static func load_variables_from_resources(
-	engine: WeavlyEngine, dir: String, sources: Dictionary[String, String] = {}
-) -> void:
-	for file_path: String in find_all_files_with_extension(dir, ".tres"):
-		var resource: Resource = load(file_path)
-		if resource is WeavlyVariable:
-			var variable: WeavlyModel.Variable = resource.instantiate()
-			if variable is WeavlyModel.NumberVariable:
-				_clamp_default(variable, file_path)
-			_add_variable(engine, variable, file_path, sources)
-
-
-static func _add_variable(
-	engine: WeavlyEngine,
-	variable: WeavlyModel.Variable,
-	source: String,
-	sources: Dictionary[String, String],
-) -> void:
-	var id: String = variable.id
-	if sources.has(id):
-		var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
-		if not declared.extern or variable.extern:
-			push_error(DUPLICATE_VARIABLE % [id, sources[id], source, sources[id]])
-			return
-		if variable.get_type_name() != declared.get_type_name():
-			push_error(
-				(
-					EXTERN_TYPE_MISMATCH
-					% [id, source, variable.get_type_name(), declared.get_type_name()]
-				)
-			)
-			return
-	sources[id] = source
-	engine.variable_service.add_variable(variable)
-
-
-static func _clamp_default(variable: WeavlyModel.NumberVariable, source: String) -> void:
-	var clamped: float = variable.clamp_value(variable.value)
-	if clamped != variable.value:
-		push_error(DEFAULT_OUT_OF_RANGE % [variable.id, source, variable.value, clamped])
-		variable.value = clamped
 
 
 static func index_media_from_files(service: WeavlyMediaService, dir: String) -> void:

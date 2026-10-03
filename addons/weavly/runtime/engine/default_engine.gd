@@ -49,7 +49,6 @@ static var _service_types: Dictionary[String, Array] = {
 @export var video_path: String = "res://media/videos"
 @export var image_path: String = "res://media/images"
 @export var character_path: String = "res://characters"
-@export var variable_path: String = "res://variables"
 @export var image_group_pattern: String = ""
 @export var video_group_pattern: String = ""
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
@@ -104,7 +103,7 @@ func _ready() -> void:
 	video_service.set_supported_extensions(video_extensions)
 
 	variable_service.variable_changed.connect(_on_variable_changed)
-	WeavlyFileUtils.load_dialogue(self, dialogue_path, variable_path)
+	WeavlyFileUtils.load_dialogue(self, dialogue_path)
 	WeavlyFileUtils.index_media_from_files(video_service, video_path)
 	WeavlyFileUtils.index_media_from_files(image_service, image_path)
 	WeavlyFileUtils.index_characters_from_resources(self, character_path)

@@ -17,7 +17,6 @@ func before_test() -> void:
 	_engine.video_path = FIXTURE
 	_engine.image_path = FIXTURE
 	_engine.character_path = FIXTURE
-	_engine.variable_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.line_service.executed_narration_line.connect(
 		func(line: WeavlyModel.NarrationLine) -> void: _events.append(line.text)

@@ -41,7 +41,7 @@ addons/weavly/runtime/
     weavly_media_index.gd           # shared path index + group regex for image/video services
     interfaces/                     # abstract contracts, one per service
     implementations/                # default_* implementations
-  resources/                        # Godot Resources: WeavlyCharacter, Weavly{Number,String,Flag}Variable
+  resources/                        # Godot Resources: WeavlyCharacter
   utils/                            # weavly_file_utils, weavly_text_utils
 
 addons/weavly/editor/               # @tool editor plugin: .wvl main-screen editor, node outline,

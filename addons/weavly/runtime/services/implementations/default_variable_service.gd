@@ -42,13 +42,17 @@ func get_all_ids() -> Array:
 	return _variable_states.keys()
 
 
+# Externs belong to the game, which saves them with its own data.
 func get_state() -> Dictionary:
-	return _variable_states.duplicate()
+	var state: Dictionary = {}
+	for id: String in _variable_states:
+		if not _variables[id].extern:
+			state[id] = _variable_states[id]
+	return state
 
 
-# Values only; every variable missing from the state keeps its default.
+# Values only; every variable missing from the state keeps its default, and externs keep theirs.
 func set_state(state: Dictionary) -> void:
-	_variable_states.clear()
 	for variable: WeavlyModel.Variable in _variables.values():
 		if not variable.extern:
 			_variable_states[variable.id] = variable.value
@@ -57,6 +61,8 @@ func set_state(state: Dictionary) -> void:
 			push_warning(UNKNOWN_SAVED_VARIABLE % id)
 			continue
 		var variable: WeavlyModel.Variable = _variables[id]
+		if variable.extern:
+			continue
 		if state[id] is String and not _names_a_declared_one(variable, state[id]):
 			push_warning(UNKNOWN_SAVED_NAME % [id, variable.get_type_name(), state[id]])
 			continue
