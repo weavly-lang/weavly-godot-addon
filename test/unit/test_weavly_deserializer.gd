@@ -386,6 +386,24 @@ func test_expression_call_with_the_wrong_argument_count_is_rejected() -> void:
 	assert_logged(["min() takes at least 2 arguments, got 1 at test"])
 
 
+func test_functions_with_a_fixed_argument_count_reject_one_more_or_less() -> void:
+	var counts: Dictionary[String, int] = {
+		"random": 2, "clamp": 3, "round": 1, "floor": 1, "ceil": 1, "abs": 1
+	}
+	for function_name: String in counts:
+		var expected: int = counts[function_name]
+		var noun: String = "argument" if expected == 1 else "arguments"
+		for count: int in [expected - 1, expected + 1]:
+			var args: Array = []
+			args.resize(count)
+			args.fill(1.0)
+			var data: Dictionary = {"call": function_name, "args": args}
+			assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+			assert_logged(
+				["%s() takes %d %s, got %d at test" % [function_name, expected, noun, count]]
+			)
+
+
 func test_expression_call_with_a_failing_argument_is_rejected() -> void:
 	var data: Dictionary = {"call": "abs", "args": [{"bogus": 1}]}
 	assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
