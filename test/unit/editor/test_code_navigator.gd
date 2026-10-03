@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends GdUnitTestSuite
 
 const _ENV = "@env\nvar energy: number = 3\npool city\n@endenv\n"
@@ -184,3 +185,44 @@ func test_alt_left_and_alt_right_go_back_and_forward() -> void:
 
 func test_ctrl_click_is_enabled() -> void:
 	assert_bool(_panel._code_edit.symbol_lookup_on_click).is_true()
+
+
+func _tooltip(line: int, word: String) -> String:
+	return _panel._navigator.tooltip_at(line, _panel._code_edit.get_line(line).find(word))
+
+
+func test_a_node_tooltip_shows_its_meta_block() -> void:
+	assert_str(_tooltip(1, "market")).is_equal(
+		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta"
+	)
+
+
+func test_a_variable_tooltip_shows_its_declaration() -> void:
+	assert_str(_tooltip(4, "energy")).is_equal("src/env.wvl:2\nvar energy: number = 3")
+
+
+func test_a_pool_tooltip_counts_its_nodes() -> void:
+	assert_str(_tooltip(2, "city")).is_equal("src/env.wvl:3\npool city\n2 nodes")
+
+
+func test_an_undeclared_slot_tooltip_still_counts_its_nodes() -> void:
+	_write_file("src/dock.wvl", "@node dock\n@meta\nslot: crew\n@endmeta\n@endnode\n")
+	_panel._code_edit.set_line(3, "@if visited(crew): @jump hub")
+	assert_str(_tooltip(3, "crew")).is_equal("slot crew\n1 node")
+
+
+func test_a_bare_name_tooltip_shows_every_match() -> void:
+	_panel._code_edit.set_line(3, "@if visited(city): @jump hub")
+	assert_str(_tooltip(3, "city")).is_equal(
+		"src/city.wvl:13\n@node city\n\nsrc/env.wvl:3\npool city\n2 nodes"
+	)
+
+
+func test_an_unknown_name_has_no_tooltip() -> void:
+	assert_str(_tooltip(5, "nowhere")).is_empty()
+
+
+func test_tooltips_use_the_code_font() -> void:
+	var label: Label = auto_free(_panel._code_edit._make_custom_tooltip("@node market"))
+	assert_str(label.text).is_equal("@node market")
+	assert_object(label.get_theme_font("font")).is_same(_panel._code_edit.get_theme_font("font"))

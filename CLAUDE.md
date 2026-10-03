@@ -45,7 +45,7 @@ addons/weavly/runtime/
   utils/                            # weavly_file_utils, weavly_text_utils
 
 addons/weavly/editor/               # @tool editor plugin: .wvl main-screen editor, node outline,
-                                    # find bar, code navigation (project index, Ctrl+click,
+                                    # find bar, code navigation (project index, Ctrl+click, hover,
                                     # back/forward), import plugin, create-file menu, syntax
                                     # highlighter, compiler runner (invokes the Python compiler)
 

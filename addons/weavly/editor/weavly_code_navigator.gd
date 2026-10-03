@@ -52,17 +52,15 @@ func _init(panel: WeavlyEditorPanel, code_edit: CodeEdit) -> void:
 	_code_edit.symbol_lookup.connect(_on_symbol_lookup)
 	_code_edit.text_changed.connect(_on_text_changed)
 	_code_edit.gui_input.connect(_on_code_edit_input)
+	_code_edit.set_tooltip_request_func(_on_tooltip_requested)
 	id_pressed.connect(_on_listed_pressed)
 
 
 func sections_at(line: int, column: int) -> Array[Section]:
 	var sections: Array[Section] = []
-	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
-		_code_edit.text.split("\n"), line, column
-	)
+	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
 	if symbol == null:
 		return sections
-	_update_index()
 	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
 		var section: Section = Section.new()
 		section.heading = "%s %s" % [KIND_NAMES[kind], symbol.name]
@@ -76,6 +74,32 @@ func sections_at(line: int, column: int) -> Array[Section]:
 		if not section.definitions.is_empty():
 			sections.append(section)
 	return sections
+
+
+# Each definition's file and source; a pool or slot also counts its nodes.
+func tooltip_at(line: int, column: int) -> String:
+	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
+	if symbol == null:
+		return ""
+	var parts: PackedStringArray = []
+	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
+		var definitions: Array[WeavlyProjectIndex.Definition] = index.find(kind, symbol.name)
+		for definition: WeavlyProjectIndex.Definition in definitions:
+			parts.append(
+				(
+					"%s:%d\n%s"
+					% [_display_path(definition.path), definition.line + 1, definition.text]
+				)
+			)
+		if kind != WeavlyProjectIndex.Kind.POOL and kind != WeavlyProjectIndex.Kind.SLOT:
+			continue
+		var count: int = index.members(kind, symbol.name).size()
+		if definitions.is_empty():
+			if count == 0:
+				continue
+			parts.append("%s %s" % [KIND_NAMES[kind], symbol.name])
+		parts[-1] += "\n1 node" if count == 1 else "\n%d nodes" % count
+	return "\n\n".join(parts)
 
 
 # Goes to the only definition, or lists them; a pool's or slot's nodes are always listed.
@@ -147,6 +171,15 @@ func _move_to(location: Location) -> bool:
 	return true
 
 
+func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
+	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
+		_code_edit.text.split("\n"), line, column
+	)
+	if symbol != null:
+		_update_index()
+	return symbol
+
+
 # The open file comes first, so a file just switched away from is read from disk again.
 func _update_index() -> void:
 	var path: String = _panel.get_current_path()
@@ -167,6 +200,13 @@ func _on_symbol_validate(_symbol: String) -> void:
 		Vector2i(_code_edit.get_local_mouse_position())
 	)
 	_code_edit.set_symbol_lookup_word_as_valid(not sections_at(at.y, at.x).is_empty())
+
+
+func _on_tooltip_requested(_word: String) -> String:
+	var at: Vector2i = _code_edit.get_line_column_at_pos(
+		Vector2i(_code_edit.get_local_mouse_position())
+	)
+	return tooltip_at(at.y, at.x)
 
 
 func _on_symbol_lookup(_symbol: String, line: int, column: int) -> void:

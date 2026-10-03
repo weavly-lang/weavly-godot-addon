@@ -93,7 +93,7 @@ func _build_ui() -> void:
 	var root: VBoxContainer = VBoxContainer.new()
 	margin.add_child(root)
 
-	_code_edit = CodeEdit.new()
+	_code_edit = WeavlyCodeEdit.new()
 	_code_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_code_edit.gutters_draw_line_numbers = true
