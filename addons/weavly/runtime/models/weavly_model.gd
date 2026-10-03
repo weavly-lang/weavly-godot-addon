@@ -78,12 +78,10 @@ class NarrationLine:
 class CharacterLine:
 	extends LineStatement
 	var name: String
-	var raw_name: String
 	var name_is_id: bool
 
 	func _init(name: String, name_is_id: bool, segments: Array):
 		self.name = name
-		self.raw_name = name
 		self.name_is_id = name_is_id
 		super(segments)
 

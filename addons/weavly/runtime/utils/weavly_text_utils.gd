@@ -1,12 +1,8 @@
 class_name WeavlyTextUtils
 
-static var default_variable_pipeline: Array[Callable] = [format_float_trim_zero]
-
 
 # A failing expression is reported by the evaluator and left out of the text.
-static func fill_text(
-	segments: Array, engine: WeavlyEngine, pipeline: Array[Callable] = default_variable_pipeline
-) -> String:
+static func fill_text(segments: Array, engine: WeavlyEngine) -> String:
 	var out: String = ""
 	for segment: Variant in segments:
 		if segment is String:
@@ -15,9 +11,7 @@ static func fill_text(
 		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(segment, engine)
 		if WeavlyExpressionEvaluator.is_error(value):
 			continue
-		for method: Callable in pipeline:
-			value = method.call(value)
-		out += str(value)
+		out += str(format_float_trim_zero(value))
 	return out
 
 
@@ -43,7 +37,6 @@ static func fill_character_line(
 	var filled: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
 		name, character_line.name_is_id, character_line.segments
 	)
-	filled.raw_name = character_line.name
 	filled.text = fill_text(character_line.segments, engine)
 	filled.line = character_line.line
 	return filled
