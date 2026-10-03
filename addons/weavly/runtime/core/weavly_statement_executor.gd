@@ -100,7 +100,6 @@ static func execute_draw_statement(
 static func execute_finish_statement(
 	_finish_statement: WeavlyModel.FinishStatement, engine: WeavlyEngine
 ) -> void:
-	engine.leave_all_nodes()
 	engine.finish()
 
 
