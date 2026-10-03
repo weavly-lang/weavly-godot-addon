@@ -17,26 +17,26 @@ func _node(id: String, body: Array) -> Dictionary:
 	return {"id": id, "line": 1.0, "body": body}
 
 
-func _compile_single(statement: Dictionary) -> WeavlyModel.Statement:
+func _read_single(statement: Dictionary) -> WeavlyModel.Statement:
 	var data: Dictionary = _build([_node("start", [statement.merged({"line": 2.0})])])
-	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.compile_nodes(data)
+	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.read_nodes(data)
 	return nodes[0].body[0]
 
 
 # =====================
-# compile_nodes
+# read_nodes
 # =====================
 
 
-func test_compile_nodes_returns_correct_count() -> void:
+func test_read_nodes_returns_correct_count() -> void:
 	var data: Dictionary = _build([_node("a", []), _node("b", [])])
-	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.compile_nodes(data)
+	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.read_nodes(data)
 	assert_that(nodes.size()).is_equal(2)
 
 
-func test_compile_nodes_sets_id() -> void:
+func test_read_nodes_sets_id() -> void:
 	var data: Dictionary = _build([_node("intro", [])])
-	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.compile_nodes(data)
+	var nodes: Array[WeavlyModel.WeavlyNode] = WeavlyDeserializer.read_nodes(data)
 	assert_that(nodes[0].id).is_equal("intro")
 
 
@@ -46,7 +46,7 @@ func test_compile_nodes_sets_id() -> void:
 
 
 func test_narration_line() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "narration", "text": ["Hello world"]}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.NarrationLine)
@@ -54,7 +54,7 @@ func test_narration_line() -> void:
 
 
 func test_narration_line_with_an_interpolation() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "narration", "text": ["Hi ", {"variable": "name"}, "!", 5.0]}
 	)
 	var segments: Array = (stmt as WeavlyModel.NarrationLine).segments
@@ -66,12 +66,12 @@ func test_narration_line_with_an_interpolation() -> void:
 
 
 func test_narration_line_with_empty_text() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "narration", "text": []})
+	var stmt: WeavlyModel.Statement = _read_single({"type": "narration", "text": []})
 	assert_that((stmt as WeavlyModel.NarrationLine).segments).is_empty()
 
 
 func test_character_line() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "character", "name": "Alice", "name_is_id": false, "text": ["Hi there"]}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.CharacterLine)
@@ -82,7 +82,7 @@ func test_character_line() -> void:
 
 
 func test_character_line_with_a_variable_name() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "character", "name": "speaker", "name_is_id": true, "text": ["Hi there"]}
 	)
 	var line: WeavlyModel.CharacterLine = stmt as WeavlyModel.CharacterLine
@@ -91,7 +91,7 @@ func test_character_line_with_a_variable_name() -> void:
 
 
 func test_jump_statement() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "jump", "id": "end"})
+	var stmt: WeavlyModel.Statement = _read_single({"type": "jump", "id": "end"})
 	assert_object(stmt).is_instanceof(WeavlyModel.JumpStatement)
 	assert_that((stmt as WeavlyModel.JumpStatement).id).is_equal("end")
 
@@ -113,7 +113,7 @@ func test_inline_options_read_label_condition_and_body() -> void:
 		"meta": {"label": {"line": 4.0, "value": ["Leave"]}},
 		"body": []
 	}
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "option", "items": [guarded, plain]}
 	)
 	var options: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
@@ -145,7 +145,7 @@ func test_node_and_pool_options_are_read() -> void:
 		"locked": "hide"
 	}
 	var items: Array = [{"type": "node", "line": 3.0, "id": "hack"}, pool, open]
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "option", "items": items})
+	var stmt: WeavlyModel.Statement = _read_single({"type": "option", "items": items})
 	var read: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
 	assert_str((read[0] as WeavlyModel.NodeOptionItem).node_id).is_equal("hack")
 	var limited: WeavlyModel.PoolOptionItem = read[1]
@@ -158,7 +158,7 @@ func test_node_and_pool_options_are_read() -> void:
 
 
 func test_finish_statement() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "finish"})
+	var stmt: WeavlyModel.Statement = _read_single({"type": "finish"})
 	assert_object(stmt).is_instanceof(WeavlyModel.FinishStatement)
 
 
@@ -166,7 +166,7 @@ func test_command_statement() -> void:
 	var data: Dictionary = {
 		"type": "command", "id": "play_sound", "args": ["door", {"variable": "volume"}]
 	}
-	var stmt: WeavlyModel.Statement = _compile_single(data)
+	var stmt: WeavlyModel.Statement = _read_single(data)
 	assert_object(stmt).is_instanceof(WeavlyModel.CommandStatement)
 	var cmd: WeavlyModel.CommandStatement = stmt as WeavlyModel.CommandStatement
 	assert_that(cmd.id).is_equal("play_sound")
@@ -176,14 +176,14 @@ func test_command_statement() -> void:
 
 
 func test_command_statement_without_arguments() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "command", "id": "fade_in", "args": []}
 	)
 	assert_that((stmt as WeavlyModel.CommandStatement).args).is_empty()
 
 
 func test_set_statement() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single(
+	var stmt: WeavlyModel.Statement = _read_single(
 		{"type": "set", "id": "score", "expression": 10}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.SetStatement)
@@ -198,29 +198,29 @@ func test_set_statement() -> void:
 
 
 func test_expression_number() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(42, "test")
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(42, "test")
 	assert_object(expr).is_instanceof(WeavlyModel.Number)
 	assert_that((expr as WeavlyModel.Number).value).is_equal(42.0)
 
 
 func test_expression_string_literal() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression("hello", "test")
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression("hello", "test")
 	assert_object(expr).is_instanceof(WeavlyModel.StringLiteral)
 	assert_that((expr as WeavlyModel.StringLiteral).value).is_equal("hello")
 
 
 func test_expression_true() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(true, "test")
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(true, "test")
 	assert_object(expr).is_instanceof(WeavlyModel.TrueExpression)
 
 
 func test_expression_false() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(false, "test")
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(false, "test")
 	assert_object(expr).is_instanceof(WeavlyModel.FalseExpression)
 
 
 func test_expression_identifier() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"variable": "score"}, "test"
 	)
 	assert_object(expr).is_instanceof(WeavlyModel.Identifier)
@@ -228,7 +228,7 @@ func test_expression_identifier() -> void:
 
 
 func test_expression_binary() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"op": "+", "left": 1, "right": 2}, "test"
 	)
 	assert_object(expr).is_instanceof(WeavlyModel.BinaryExpression)
@@ -239,7 +239,7 @@ func test_expression_binary() -> void:
 
 
 func test_expression_unary() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"op": "not", "expression": true}, "test"
 	)
 	assert_object(expr).is_instanceof(WeavlyModel.UnaryExpression)
@@ -262,7 +262,7 @@ func test_variable_declarations() -> void:
 			{"name": "active", "type": "flag", "value": false},
 		]
 	}
-	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(data)
+	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(data)
 	assert_that(vars.size()).is_equal(3)
 	assert_object(vars[0]).is_instanceof(WeavlyModel.NumberVariable)
 	assert_object(vars[1]).is_instanceof(WeavlyModel.StringVariable)
@@ -279,7 +279,7 @@ func test_node_pool_and_slot_variables_hold_names() -> void:
 			{"name": "home", "type": "pool", "extern": true},
 		]
 	}
-	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(data)
+	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(data)
 	var types: Array[String] = []
 	var values: Array[String] = []
 	for variable: WeavlyModel.Variable in vars:
@@ -298,7 +298,7 @@ func test_number_variable_fields() -> void:
 			{"name": "hp", "type": "number", "value": 100.0, "min": 0.0, "max": 100.0},
 		]
 	}
-	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(data)
+	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(data)
 	var v: WeavlyModel.NumberVariable = vars[0] as WeavlyModel.NumberVariable
 	assert_that(v.id).is_equal("hp")
 	assert_that(v.value).is_equal(100.0)
@@ -312,7 +312,7 @@ func test_number_variable_fields() -> void:
 
 
 func test_expression_call() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"call": "visited", "node": "shop"}, "test"
 	)
 	assert_object(expr).is_instanceof(WeavlyModel.Call)
@@ -322,7 +322,7 @@ func test_expression_call() -> void:
 
 
 func test_any_other_call_is_read_as_a_declared_function_with_its_arguments() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"call": "trust", "args": ["ann", "shop"]}, "test"
 	)
 	var call: WeavlyModel.Call = expr as WeavlyModel.Call
@@ -332,7 +332,7 @@ func test_any_other_call_is_read_as_a_declared_function_with_its_arguments() -> 
 
 
 func test_a_declared_function_call_without_args_is_rejected() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"call": "trust"}, "test"
 	)
 	assert_object(expr).is_null()
@@ -351,18 +351,18 @@ func test_functions_and_commands_are_read_from_env() -> void:
 		],
 		"commands": [{"name": "shake", "params": []}],
 	}
-	var functions: Array[WeavlyModel.Signature] = WeavlyDeserializer.compile_functions(data)
+	var functions: Array[WeavlyModel.Signature] = WeavlyDeserializer.read_functions(data)
 	assert_str(functions[0].name).is_equal("trust")
 	assert_array(functions[0].param_types).is_equal(["string", "node"])
 	assert_str(functions[0].return_type).is_equal("number")
-	var commands: Array[WeavlyModel.Signature] = WeavlyDeserializer.compile_commands(data)
+	var commands: Array[WeavlyModel.Signature] = WeavlyDeserializer.read_commands(data)
 	assert_str(commands[0].name).is_equal("shake")
 	assert_array(commands[0].param_types).is_empty()
 	assert_str(commands[0].return_type).is_empty()
 
 
 func test_expression_call_without_node_is_rejected() -> void:
-	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expr: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		{"call": "visit_count"}, "test"
 	)
 	assert_object(expr).is_null()
@@ -372,7 +372,7 @@ func test_expression_call_without_node_is_rejected() -> void:
 func test_expression_call_with_arguments() -> void:
 	var data: Dictionary = {"call": "max", "args": [1.0, {"variable": "hp"}]}
 	var max_call: WeavlyModel.Call = (
-		WeavlyDeserializer.compile_expression(data, "test") as WeavlyModel.Call
+		WeavlyDeserializer.read_expression(data, "test") as WeavlyModel.Call
 	)
 	assert_that(max_call.name).is_equal("max")
 	assert_that(max_call.args.size()).is_equal(2)
@@ -382,7 +382,7 @@ func test_expression_call_with_arguments() -> void:
 
 func test_expression_call_with_the_wrong_argument_count_is_rejected() -> void:
 	var data: Dictionary = {"call": "min", "args": [1.0]}
-	assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+	assert_object(WeavlyDeserializer.read_expression(data, "test")).is_null()
 	assert_logged(["min() takes at least 2 arguments, got 1 at test"])
 
 
@@ -398,7 +398,7 @@ func test_functions_with_a_fixed_argument_count_reject_one_more_or_less() -> voi
 			args.resize(count)
 			args.fill(1.0)
 			var data: Dictionary = {"call": function_name, "args": args}
-			assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+			assert_object(WeavlyDeserializer.read_expression(data, "test")).is_null()
 			assert_logged(
 				["%s() takes %d %s, got %d at test" % [function_name, expected, noun, count]]
 			)
@@ -406,18 +406,18 @@ func test_functions_with_a_fixed_argument_count_reject_one_more_or_less() -> voi
 
 func test_expression_call_with_a_failing_argument_is_rejected() -> void:
 	var data: Dictionary = {"call": "abs", "args": [{"bogus": 1}]}
-	assert_object(WeavlyDeserializer.compile_expression(data, "test")).is_null()
+	assert_object(WeavlyDeserializer.read_expression(data, "test")).is_null()
 	assert_logged(["Unknown expression type at test.args[0]"])
 
 
 func test_expression_call_without_args_is_rejected() -> void:
-	assert_object(WeavlyDeserializer.compile_expression({"call": "round"}, "test")).is_null()
+	assert_object(WeavlyDeserializer.read_expression({"call": "round"}, "test")).is_null()
 	assert_logged(["Missing required field 'args' at test"])
 
 
 func test_extern_declaration() -> void:
 	var data: Dictionary = {"declarations": [{"type": "string", "name": "title", "extern": true}]}
-	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(
+	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(
 		data
 	)
 	assert_object(variables[0]).is_instanceof(WeavlyModel.StringVariable)
@@ -434,7 +434,7 @@ func test_extern_declarations_start_at_the_default_of_their_type() -> void:
 			{"type": "flag", "name": "brave", "extern": true},
 		]
 	}
-	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.compile_variable_declarations(
+	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(
 		data
 	)
 	var values: Array = variables.map(func(v: WeavlyModel.Variable) -> Variant: return v.value)
@@ -443,7 +443,7 @@ func test_extern_declarations_start_at_the_default_of_their_type() -> void:
 
 func test_extern_declaration_of_an_unknown_type_is_skipped() -> void:
 	var data: Dictionary = {"declarations": [{"type": "list", "name": "items", "extern": true}]}
-	assert_that(WeavlyDeserializer.compile_variable_declarations(data)).is_empty()
+	assert_that(WeavlyDeserializer.read_variable_declarations(data)).is_empty()
 	assert_logged(["Unknown variable type at declarations[0]"])
 
 
@@ -455,7 +455,7 @@ func test_match_modifiers() -> void:
 	}
 	var case_data: Dictionary = {"line": 3.0, "condition": true, "body": []}
 	for modifier: String in expected:
-		var stmt: WeavlyModel.Statement = _compile_single(
+		var stmt: WeavlyModel.Statement = _read_single(
 			{"type": "match", "modifier": modifier, "cases": [case_data]}
 		)
 		assert_that((stmt as WeavlyModel.MatchBlock).modifier).is_equal(expected[modifier])
@@ -483,7 +483,7 @@ func test_source_and_lines_are_read() -> void:
 			}
 		]
 	}
-	var node: WeavlyModel.WeavlyNode = WeavlyDeserializer.compile_nodes(data, "build/x.json")[0]
+	var node: WeavlyModel.WeavlyNode = WeavlyDeserializer.read_nodes(data, "build/x.json")[0]
 	assert_that(node.source).is_equal("chapter/story.wvl")
 	assert_int(node.line).is_equal(1)
 	assert_int(node.body[0].line).is_equal(2)
@@ -511,7 +511,7 @@ func test_option_and_random_case_lines_are_read() -> void:
 		"cases": [{"line": 7.0, "condition": true, "weight": 1.0, "body": []}]
 	}
 	var data: Dictionary = _build([_node("start", [option_block, random_block])])
-	var body: Array[WeavlyModel.Statement] = WeavlyDeserializer.compile_nodes(data)[0].body
+	var body: Array[WeavlyModel.Statement] = WeavlyDeserializer.read_nodes(data)[0].body
 	assert_int(body[0].items[0].line).is_equal(5)
 	assert_int(body[1].cases[0].line).is_equal(7)
 
@@ -532,7 +532,7 @@ func test_meta_is_read_with_its_lines() -> void:
 		"cost": {"line": 7.0, "value": "cheap"},
 		"label": {"line": 8.0, "value": ["Buy ", {"variable": "item"}]},
 	}
-	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
+	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.read_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_equal(["city", "night"])
 	assert_array(meta.slots).is_equal(["bob"])
 	assert_array(meta.entries.keys()).is_equal(["when", "priority", "weight", "cost"])
@@ -552,13 +552,13 @@ func test_meta_is_read_with_its_lines() -> void:
 func test_an_empty_meta_puts_the_node_in_no_pool() -> void:
 	var node_data: Dictionary = _node("bob", [])
 	node_data["meta"] = {}
-	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.compile_nodes(_build([node_data]))[0].meta
+	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.read_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_empty()
 	assert_dict(meta.entries).is_empty()
 
 
 func test_a_node_without_meta_has_none() -> void:
-	assert_object(WeavlyDeserializer.compile_nodes(_build([_node("a", [])]))[0].meta).is_null()
+	assert_object(WeavlyDeserializer.read_nodes(_build([_node("a", [])]))[0].meta).is_null()
 
 
 func test_meta_keys_are_read_from_env_with_their_defaults() -> void:
@@ -571,13 +571,13 @@ func test_meta_keys_are_read_from_env_with_their_defaults() -> void:
 			{"type": "node", "name": "next", "value": "shop"},
 		]
 	}
-	assert_dict(WeavlyDeserializer.compile_meta_keys(data)).is_equal(
+	assert_dict(WeavlyDeserializer.read_meta_keys(data)).is_equal(
 		{"cost": 1.0, "tag": "", "urgent": true, "next": "shop"}
 	)
 
 
 func test_a_meta_call_is_read_with_its_node_and_key() -> void:
-	var call: Variant = WeavlyDeserializer.compile_expression(
+	var call: Variant = WeavlyDeserializer.read_expression(
 		{"call": "meta", "node": "shop", "key": "cost"}, ""
 	)
 	assert_object(call).is_instanceof(WeavlyModel.MetaCall)
@@ -587,15 +587,15 @@ func test_a_meta_call_is_read_with_its_node_and_key() -> void:
 
 func test_pool_names_are_read_from_env() -> void:
 	var data: Dictionary = {"declarations": [], "pools": ["city", "night"], "slots": ["bob"]}
-	assert_array(WeavlyDeserializer.compile_pool_names(data)).is_equal(["city", "night"])
+	assert_array(WeavlyDeserializer.read_pool_names(data)).is_equal(["city", "night"])
 
 
 func test_slot_names_are_read_from_env() -> void:
 	var data: Dictionary = {"declarations": [], "pools": ["city"], "slots": ["bob", "ann"]}
-	assert_array(WeavlyDeserializer.compile_slot_names(data)).is_equal(["bob", "ann"])
+	assert_array(WeavlyDeserializer.read_slot_names(data)).is_equal(["bob", "ann"])
 
 
 func test_draw_statement() -> void:
-	var stmt: WeavlyModel.Statement = _compile_single({"type": "draw", "pools": ["city", "night"]})
+	var stmt: WeavlyModel.Statement = _read_single({"type": "draw", "pools": ["city", "night"]})
 	assert_object(stmt).is_instanceof(WeavlyModel.DrawStatement)
 	assert_array((stmt as WeavlyModel.DrawStatement).pools).is_equal(["city", "night"])

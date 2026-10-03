@@ -18,7 +18,7 @@ Compiler context (commands, grammar, JSON output shape): @../weavly-compiler/CLA
 
 CI guards that shape: every fixture folder with a `src/` folder is a real Weavly project (`.wvl` sources, committed `build/` JSON) that a pinned compiler rebuilds on every PR, plus a weekly run against the newest release. `test/fixtures/integration/ci_smoke/` covers every statement type. Edit the `.wvl` sources and rebuild with `weavly build`; never hand-edit `build/`.
 
-**Naming notes:** "the compiler" = the Python project. `WeavlyDeserializer` ([core/weavly_deserializer.gd](addons/weavly/runtime/core/weavly_deserializer.gd)) = the GDScript JSON-to-model reader (its `compile_*` methods deserialize, they don't compile `.wvl`). `WeavlyCompilerRunner` ([editor/weavly_compiler_runner.gd](addons/weavly/editor/weavly_compiler_runner.gd)) = editor-side wrapper that shells out to the actual Python compiler.
+**Naming notes:** "the compiler" = the Python project. `WeavlyDeserializer` ([core/weavly_deserializer.gd](addons/weavly/runtime/core/weavly_deserializer.gd)) = the GDScript JSON-to-model reader. `WeavlyCompilerRunner` ([editor/weavly_compiler_runner.gd](addons/weavly/editor/weavly_compiler_runner.gd)) = editor-side wrapper that shells out to the actual Python compiler.
 
 ## Layout
 
@@ -74,7 +74,7 @@ tools/mutation/                     # mutate.py: mutation testing, see its docst
 Cross-cuts both repos. Update `weavly-compiler` first (grammar + `WvlTransformer`), then here:
 
 1. Add `KEY_*` / `TYPE_*` constants in [weavly_deserializer.gd](addons/weavly/runtime/core/weavly_deserializer.gd) if needed.
-2. Add `compile_<type>` and wire into the `match` in `compile_statement`.
+2. Add `read_<type>` and wire into the `match` in `read_statement`.
 3. Add the model class in [weavly_model.gd](addons/weavly/runtime/models/weavly_model.gd), extending `Statement` (or `LineStatement` for line-type statements).
 4. Add `execute_<type>` in [weavly_statement_executor.gd](addons/weavly/runtime/core/weavly_statement_executor.gd), wire into the `is_instance_of` chain.
 5. New side effects: add to the relevant service interface + every implementation.

@@ -88,7 +88,7 @@ func _engine_with_name() -> WeavlyEngine:
 
 
 func _segments(text: Array) -> Array:
-	return WeavlyDeserializer.compile_text({"text": text}, "test")
+	return WeavlyDeserializer.read_text({"text": text}, "test")
 
 
 func test_fill_narration_line_copies_with_filled_text() -> void:
