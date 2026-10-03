@@ -115,17 +115,17 @@ func test_invalid_group_pattern_falls_back_to_no_grouping() -> void:
 func test_load_media_returns_what_the_loader_loads() -> void:
 	_index.add("splash", "res://splash.png")
 	var loader: Callable = func(path: String) -> Variant: return "loaded " + path
-	assert_that(_index.load_media("splash", null, loader)).is_equal("loaded res://splash.png")
+	assert_that(_index.load_media("splash", loader)).is_equal("loaded res://splash.png")
 
 
-func test_load_media_of_an_unknown_id_returns_the_default() -> void:
+func test_load_media_of_an_unknown_id_returns_null() -> void:
 	var loader: Callable = func(_path: String) -> Variant: return "loaded"
-	assert_that(_index.load_media("missing", "fallback", loader)).is_equal("fallback")
-	assert_logged(["Image with id 'missing' doesn't exist, returning default 'fallback'."])
+	assert_that(_index.load_media("missing", loader)).is_null()
+	assert_logged(["Image with id 'missing' doesn't exist."])
 
 
-func test_load_media_that_fails_to_load_returns_the_default() -> void:
+func test_load_media_that_fails_to_load_returns_null() -> void:
 	_index.add("broken", "res://broken.png")
 	var loader: Callable = func(_path: String) -> Variant: return null
-	assert_that(_index.load_media("broken", "fallback", loader)).is_equal("fallback")
+	assert_that(_index.load_media("broken", loader)).is_null()
 	assert_logged(["Failed to load Image at path 'res://broken.png' for id 'broken'"])

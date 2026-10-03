@@ -13,8 +13,8 @@ func add_media(id: String, path: String) -> void:
 	image_index.add(id, path)
 
 
-func get_image(id: String, default: Texture2D = null) -> Texture2D:
-	return image_index.load_media(id, default, _load_texture)
+func get_image(id: String) -> Texture2D:
+	return image_index.load_media(id, _load_texture)
 
 
 # Paths outside res:// are not in the resource system, so they are read straight

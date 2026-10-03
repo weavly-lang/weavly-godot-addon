@@ -13,8 +13,8 @@ func add_media(id: String, path: String) -> void:
 	video_index.add(id, path)
 
 
-func get_video(id: String, default: VideoStream = null) -> VideoStream:
-	return video_index.load_media(id, default, _load_video)
+func get_video(id: String) -> VideoStream:
+	return video_index.load_media(id, _load_video)
 
 
 # Paths outside res:// are not in the resource system, so the stream reads the
