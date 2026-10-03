@@ -402,13 +402,20 @@ func _weight(v: float) -> WeavlyModel.Number:
 	return WeavlyModel.Number.new(v)
 
 
-func _const_rng(value: float) -> Callable:
-	return func() -> float: return value
+# Seeds the engine so its next roll lands in (low, high].
+func _roll_between(low: float, high: float) -> void:
+	var probe: RandomNumberGenerator = RandomNumberGenerator.new()
+	for seed_value: int in range(1, 1000):
+		probe.seed = seed_value
+		var roll: float = probe.randf()
+		if roll > low and roll <= high:
+			_engine.rng.seed = seed_value
+			return
+	fail("No seed rolls between %s and %s." % [low, high])
 
 
 func test_random_block_picks_case_based_on_rng() -> void:
-	# Weights: a=10, b=30, c=60. Total=100.
-	# rng=0.05 -> random=5 -> falls in a's bucket (0, 10].
+	# Weights: a=10, b=30, c=60. Total=100, so a roll in (0, 0.1] falls in a's bucket.
 	var a: Array[WeavlyModel.Statement] = _body("a")
 	var b: Array[WeavlyModel.Statement] = _body("b")
 	var c: Array[WeavlyModel.Statement] = _body("c")
@@ -418,13 +425,13 @@ func test_random_block_picks_case_based_on_rng() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.05))
+	_roll_between(0.0, 0.1)
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(a)
 
 
 func test_random_block_rng_in_middle_bucket() -> void:
-	# rng=0.15 -> random=15 -> falls in b's bucket (10, 40].
 	var a: Array[WeavlyModel.Statement] = _body("a")
 	var b: Array[WeavlyModel.Statement] = _body("b")
 	var c: Array[WeavlyModel.Statement] = _body("c")
@@ -434,13 +441,13 @@ func test_random_block_rng_in_middle_bucket() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.15))
+	_roll_between(0.1, 0.4)
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(b)
 
 
 func test_random_block_rng_in_last_bucket() -> void:
-	# rng=0.85 -> random=85 -> falls in c's bucket (40, 100].
 	var a: Array[WeavlyModel.Statement] = _body("a")
 	var b: Array[WeavlyModel.Statement] = _body("b")
 	var c: Array[WeavlyModel.Statement] = _body("c")
@@ -450,26 +457,13 @@ func test_random_block_rng_in_last_bucket() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(60.0), c),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.85))
+	_roll_between(0.4, 1.0)
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(c)
 
 
-func test_random_block_roll_on_a_bucket_boundary_picks_the_earlier_case() -> void:
-	# rng=0.5 -> random=1, the end of a's bucket (0, 1].
-	var a: Array[WeavlyModel.Statement] = _body("a")
-	var b: Array[WeavlyModel.Statement] = _body("b")
-	var cases: Array[WeavlyModel.RandomCase] = [
-		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), a),
-		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), b),
-	]
-	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.5))
-	assert_that(_statement.add_statements_calls[0]).is_same(a)
-
-
 func test_random_block_filters_out_false_conditions() -> void:
-	# The false-conditioned case must never be selected, regardless of rng.
 	var skipped: Array[WeavlyModel.Statement] = _body("skipped")
 	var picked: Array[WeavlyModel.Statement] = _body("picked")
 	var cases: Array[WeavlyModel.RandomCase] = [
@@ -477,7 +471,7 @@ func test_random_block_filters_out_false_conditions() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), picked),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
 
@@ -490,7 +484,7 @@ func test_random_block_excludes_zero_weight_cases() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(10.0), picked),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(1)
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
 
@@ -501,7 +495,7 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(0.0), _body("b")),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.5))
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls.size()).is_equal(0)
 
 
@@ -557,8 +551,20 @@ func test_random_weight_that_fails_counts_as_zero() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
+	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+
+
+func test_random_weight_of_a_case_whose_condition_is_false_is_not_evaluated() -> void:
+	var picked: Array[WeavlyModel.Statement] = _body("picked")
+	var missing: WeavlyModel.Identifier = WeavlyModel.Identifier.new("missing")
+	var cases: Array[WeavlyModel.RandomCase] = [
+		WeavlyModel.RandomCase.new(_bool_expr(false), missing, _body()),
+		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
+	]
+	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
 
 
@@ -570,7 +576,7 @@ func test_random_weight_that_is_not_a_number_counts_as_zero() -> void:
 		WeavlyModel.RandomCase.new(_bool_expr(true), _weight(1.0), picked),
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
-	WeavlyStatementExecutor.execute_random_block(block, _engine, _const_rng(0.0))
+	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_logged(["Random weight can't be of type 'String', using 0 instead."])
 	assert_that(_statement.add_statements_calls[0]).is_same(picked)
 
