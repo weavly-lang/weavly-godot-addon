@@ -33,8 +33,9 @@ func set_variable(id: String, value: Variant) -> void:
 		push_error(UNDECLARED % id)
 		return
 
-	if _store(id, value):
-		variable_changed.emit(id, _variable_states[id])
+	var old_value: Variant = _variable_states.get(id)
+	if _store(id, value) and _variable_states[id] != old_value:
+		variable_changed.emit(id, _variable_states[id], old_value)
 
 
 func get_all_ids() -> Array:

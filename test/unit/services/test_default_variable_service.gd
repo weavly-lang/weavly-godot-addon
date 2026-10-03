@@ -54,15 +54,36 @@ func test_set_variable_updates_value() -> void:
 	assert_that(_service.get_variable("score")).is_equal(42.0)
 
 
-func test_set_variable_emits_signal() -> void:
-	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("score", 0.0, null, null)
-	_service.add_variable(v)
+# Each variable_changed as [id, value, old_value].
+func _record_changes() -> Array[Array]:
 	var changed: Array[Array] = []
 	_service.variable_changed.connect(
-		func(id: String, value: Variant) -> void: changed.append([id, value])
+		func(id: String, value: Variant, old_value: Variant) -> void:
+			changed.append([id, value, old_value])
 	)
+	return changed
+
+
+func test_set_variable_emits_the_new_and_old_value() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new("score", 0.0, null, null))
+	var changed: Array[Array] = _record_changes()
 	_service.set_variable("score", 10.0)
-	assert_array(changed).is_equal([["score", 10.0]])
+	assert_array(changed).is_equal([["score", 10.0, 0.0]])
+
+
+func test_increasing_and_decreasing_pass_the_value_before_each_change() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new("health", 5.0, null, null))
+	var changed: Array[Array] = _record_changes()
+	_service.set_variable("health", 7.0)
+	_service.set_variable("health", 4.0)
+	assert_array(changed).is_equal([["health", 7.0, 5.0], ["health", 4.0, 7.0]])
+
+
+func test_setting_the_same_value_emits_nothing() -> void:
+	_service.add_variable(WeavlyModel.StringVariable.new("name", "Ada"))
+	var changed: Array[Array] = _record_changes()
+	_service.set_variable("name", "Ada")
+	assert_array(changed).is_empty()
 
 
 # =====================
@@ -87,12 +108,17 @@ func test_number_max_clamp() -> void:
 func test_number_min_clamp_emits_clamped_value() -> void:
 	var v: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("health", 50.0, 0.0, null)
 	_service.add_variable(v)
-	var changed: Array[Array] = []
-	_service.variable_changed.connect(
-		func(id: String, value: Variant) -> void: changed.append([id, value])
-	)
+	var changed: Array[Array] = _record_changes()
 	_service.set_variable("health", -5.0)
-	assert_array(changed).is_equal([["health", 0.0]])
+	assert_array(changed).is_equal([["health", 0.0, 50.0]])
+
+
+func test_a_change_clamped_to_the_current_value_emits_nothing() -> void:
+	_service.add_variable(WeavlyModel.NumberVariable.new("health", 100.0, 0.0, 100.0))
+	var changed: Array[Array] = _record_changes()
+	_service.set_variable("health", 120.0)
+	assert_that(_service.get_variable("health")).is_equal(100.0)
+	assert_array(changed).is_empty()
 
 
 func test_number_within_range_is_unchanged() -> void:
@@ -131,7 +157,7 @@ func test_set_variable_with_the_wrong_type_emits_nothing() -> void:
 	_service.add_variable(WeavlyModel.FlagVariable.new("has_key", false))
 	var changed: Array[String] = []
 	_service.variable_changed.connect(
-		func(id: String, _value: Variant) -> void: changed.append(id)
+		func(id: String, _value: Variant, _old_value: Variant) -> void: changed.append(id)
 	)
 	_service.set_variable("has_key", 1.0)
 	assert_logged(["Can't set variable 'has_key' to a value of type 'float' because it's a flag."])
@@ -147,7 +173,7 @@ func test_set_variable_accepts_an_int_for_a_number() -> void:
 func test_set_variable_of_an_undeclared_variable_is_rejected() -> void:
 	var changes: Array = []
 	_service.variable_changed.connect(
-		func(id: String, _value: Variant) -> void: changes.append(id)
+		func(id: String, _value: Variant, _old_value: Variant) -> void: changes.append(id)
 	)
 	_service.set_variable("gold", 3.0)
 	assert_bool(_service.has("gold")).is_false()
@@ -178,6 +204,14 @@ func test_game_code_defines_an_extern_variable() -> void:
 	_add_extern("reputation")
 	_service.set_variable("reputation", 3.0)
 	assert_that(_service.get_variable("reputation")).is_equal(3.0)
+
+
+func test_the_first_set_of_an_extern_has_no_old_value() -> void:
+	_add_extern("reputation")
+	var changed: Array[Array] = _record_changes()
+	_service.set_variable("reputation", 3.0)
+	_service.set_variable("reputation", 5.0)
+	assert_array(changed).is_equal([["reputation", 3.0, null], ["reputation", 5.0, 3.0]])
 
 
 func test_game_code_setting_an_extern_to_the_wrong_type_is_rejected() -> void:
@@ -215,7 +249,7 @@ func test_set_state_restores_values_without_emitting() -> void:
 	_service.add_variable(WeavlyModel.NumberVariable.new("score", 3.0, null, null))
 	var changed: Array[String] = []
 	_service.variable_changed.connect(
-		func(id: String, _value: Variant) -> void: changed.append(id)
+		func(id: String, _value: Variant, _old_value: Variant) -> void: changed.append(id)
 	)
 	_service.set_state({"score": 8.0})
 	assert_that(_service.get_variable("score")).is_equal(8.0)
@@ -294,7 +328,9 @@ func test_a_name_variable_rejects_a_name_that_isnt_declared_for_its_type() -> vo
 	service.add_variable(WeavlyModel.NameVariable.new("region", "pool", "city"))
 	service.add_variable(WeavlyModel.NameVariable.new("partner", "slot", "bob"))
 	var changed: Array[String] = []
-	service.variable_changed.connect(func(id: String, _value: Variant) -> void: changed.append(id))
+	service.variable_changed.connect(
+		func(id: String, _value: Variant, _old_value: Variant) -> void: changed.append(id)
+	)
 	service.set_variable("next", "city")
 	service.set_variable("region", "bob")
 	service.set_variable("partner", "start")

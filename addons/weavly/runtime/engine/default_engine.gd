@@ -249,7 +249,7 @@ func next() -> void:
 	_refresh_stale_options()
 
 
-func _on_variable_changed(_id: String, _value: Variant) -> void:
+func _on_variable_changed(_id: String, _value: Variant, _old_value: Variant) -> void:
 	if _in_next or _rendering:
 		_options_stale = true
 	else:
