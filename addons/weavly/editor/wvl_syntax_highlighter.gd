@@ -14,7 +14,6 @@ const FUNCTION_COLOR = Color(0.96, 0.86, 0.50)
 
 var _number_regex: RegEx = RegEx.create_from_string("\\b\\d+(?:\\.\\d+)?\\b")
 var _variable_regex: RegEx = RegEx.create_from_string("\\$[A-Za-z_][A-Za-z0-9_]*")
-var _string_regex: RegEx = RegEx.create_from_string('"(?:[^"\\\\\\n]|\\\\.)*"')
 var _directive_regex: RegEx = RegEx.create_from_string("@[A-Za-z_]+")
 var _character_regex: RegEx = RegEx.create_from_string("^[ \\t]*>[^:\\n]*:")
 var _keyword_regex: RegEx = RegEx.create_from_string(
@@ -28,7 +27,6 @@ var _type_regex: RegEx = RegEx.create_from_string(
 	":[ \\t]*(number|string|flag|node|pool|slot)(?!\\w)"
 )
 var _flag_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
-var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]+)")
 var _meta_key_regex: RegEx = RegEx.create_from_string("^[ \\t]*([A-Za-z_]\\w*)[ \\t]*:")
 var _option_call_regex: RegEx = RegEx.create_from_string("^[ \\t]*@option[ \\t]+(node|pool)\\(")
 var _pool_parameter_regex: RegEx = RegEx.create_from_string(
@@ -37,16 +35,14 @@ var _pool_parameter_regex: RegEx = RegEx.create_from_string(
 var _locked_value_regex: RegEx = RegEx.create_from_string(
 	"locked[ \\t]*:[ \\t]*(show|extra|hide)(?!\\w)"
 )
-var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|continue)\\b")
-var _interpolation_regex: RegEx = RegEx.create_from_string("(?<!\\\\)\\{[^{}\\n]*\\}")
 
-# Line -> "@env" or "@meta" for the lines inside such a block.
-var _block_lines: Dictionary[int, String] = {}
-var _block_lines_stale: bool = true
+# Each line's WeavlyLineScanner.Block.
+var _blocks: PackedInt32Array = []
+var _blocks_stale: bool = true
 
 
 func _update_cache() -> void:
-	_block_lines_stale = true
+	_blocks_stale = true
 	var editor: TextEdit = get_text_edit()
 	if editor != null and not editor.lines_edited_from.is_connected(_on_lines_edited):
 		editor.lines_edited_from.connect(_on_lines_edited)
@@ -54,7 +50,7 @@ func _update_cache() -> void:
 
 # A line's colors depend on the lines above it once it's inside an env or meta block.
 func _on_lines_edited(_from_line: int, _to_line: int) -> void:
-	_block_lines_stale = true
+	_blocks_stale = true
 	clear_highlighting_cache()
 
 
@@ -72,36 +68,25 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	colors.resize(length)
 	colors.fill(TEXT_COLOR)
 
+	var block: WeavlyLineScanner.Block = _block_at(editor, line)
 	_paint_numbers(colors, text)
 	_paint(colors, text, _variable_regex, VARIABLE_COLOR)
-	# Where text that can hold {} interpolations starts; the line's length when it has none.
-	var text_start: int = 0
-	match _block_at(editor, line):
-		"@env":
+	match block:
+		WeavlyLineScanner.Block.ENV:
 			_paint(colors, text, _kind_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _type_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _flag_value_regex, KEYWORD_COLOR, 1)
-			text_start = length
-		"@meta":
+		WeavlyLineScanner.Block.META:
 			_paint(colors, text, _meta_key_regex, KEYWORD_COLOR, 1)
-			_paint_expression_words(colors, text, 0, length)
-			text_start = length
+			_paint_expression_words(colors, text)
 		_:
-			if text.strip_edges(true, false).begins_with("@"):
-				if _option_call_regex.search(text) != null:
-					_paint_expression_words(colors, text, 0, length)
-					_paint(colors, text, _pool_parameter_regex, KEYWORD_COLOR, 1)
-					_paint(colors, text, _locked_value_regex, KEYWORD_COLOR, 1)
-					text_start = length
-				else:
-					var end: int = _expression_end(text)
-					_paint_expression_words(colors, text, 0, end)
-					text_start = 0 if _text_directive_regex.search(text) != null else end
-	_paint(colors, text, _string_regex, STRING_COLOR)
-	_paint(colors, text, _character_regex, CHARACTER_COLOR)
+			_paint_expression_words(colors, text)
+			if _option_call_regex.search(text) != null:
+				_paint(colors, text, _pool_parameter_regex, KEYWORD_COLOR, 1)
+				_paint(colors, text, _locked_value_regex, KEYWORD_COLOR, 1)
 	_paint(colors, text, _directive_regex, DIRECTIVE_COLOR)
-	_paint_interpolations(colors, text, text_start)
-	_paint_comment(colors, text)
+	_paint_parts(colors, WeavlyLineScanner.parts(text, block))
+	_paint(colors, text, _character_regex, CHARACTER_COLOR)
 
 	var result: Dictionary = {}
 	for i: int in length:
@@ -124,57 +109,31 @@ func _paint(
 			colors[i] = color
 
 
-func _paint_expression_words(colors: PackedColorArray, text: String, start: int, end: int) -> void:
-	_paint(colors, text, _keyword_regex, KEYWORD_COLOR, 0, start, end)
-	_paint(colors, text, _function_regex, FUNCTION_COLOR, 0, start, end)
+func _paint_expression_words(colors: PackedColorArray, text: String) -> void:
+	_paint(colors, text, _keyword_regex, KEYWORD_COLOR)
+	_paint(colors, text, _function_regex, FUNCTION_COLOR)
 
 
-# An interpolation is colored as an expression, even inside an option's quoted text.
-func _paint_interpolations(colors: PackedColorArray, text: String, start: int) -> void:
-	for found: RegExMatch in _interpolation_regex.search_all(text, start):
-		var from: int = found.get_start()
-		var to: int = found.get_end()
-		for i: int in range(from, to):
-			colors[i] = TEXT_COLOR
-		_paint(colors, text, _number_regex, NUMBER_COLOR, 0, from, to)
-		_paint(colors, text, _variable_regex, VARIABLE_COLOR, 0, from, to)
-		_paint_expression_words(colors, text, from, to)
-		_paint(colors, text, _string_regex, STRING_COLOR, 0, from, to)
+# Only code keeps the colors painted above; text, strings and comments get their own.
+func _paint_parts(colors: PackedColorArray, parts: PackedByteArray) -> void:
+	for i: int in parts.size():
+		match parts[i]:
+			WeavlyLineScanner.Part.TEXT:
+				colors[i] = TEXT_COLOR
+			WeavlyLineScanner.Part.STRING:
+				colors[i] = STRING_COLOR
+			WeavlyLineScanner.Part.COMMENT:
+				colors[i] = COMMENT_COLOR
 
 
-func _block_at(editor: TextEdit, line: int) -> String:
-	if _block_lines_stale:
-		_find_block_lines(editor)
-	return _block_lines.get(line, "")
-
-
-func _find_block_lines(editor: TextEdit) -> void:
-	_block_lines.clear()
-	_block_lines_stale = false
-	var block: String = ""
-	for i: int in editor.get_line_count():
-		var found: RegExMatch = _block_directive_regex.search(editor.get_line(i))
-		if found != null:
-			match found.get_string(1):
-				"@env", "@meta":
-					block = found.get_string(1)
-					continue
-				"@endenv", "@endmeta", "@node", "@endnode":
-					block = ""
-		if block != "":
-			_block_lines[i] = block
-
-
-# An inline statement after ':' is line text unless it's another directive.
-func _expression_end(text: String) -> int:
-	var end: int = _find_outside_strings(
-		text,
-		func(i: int) -> bool:
-			return (
-				text[i] == ":" and not text.substr(i + 1).strip_edges(true, false).begins_with("@")
-			)
-	)
-	return end if end != -1 else text.length()
+func _block_at(editor: TextEdit, line: int) -> WeavlyLineScanner.Block:
+	if _blocks_stale:
+		_blocks_stale = false
+		var lines: PackedStringArray = []
+		for i: int in editor.get_line_count():
+			lines.append(editor.get_line(i))
+		_blocks = WeavlyLineScanner.blocks(lines)
+	return _blocks[line] if line < _blocks.size() else WeavlyLineScanner.Block.NONE
 
 
 func _paint_numbers(colors: PackedColorArray, text: String) -> void:
@@ -195,42 +154,3 @@ func _starts_negative_number(text: String, minus: int) -> bool:
 			continue
 		return character in "=(,[+-*/<>!"
 	return true
-
-
-func _paint_comment(colors: PackedColorArray, text: String) -> void:
-	var start: int = _comment_start(text)
-	if start < 0:
-		return
-	for i: int in range(start, text.length()):
-		colors[i] = COMMENT_COLOR
-
-
-# Comments run to the end of the line. On narration and character lines a '#' is
-# part of the text, so only whole-line comments and comments after a directive
-# count. Inside a string it is text as well.
-func _comment_start(text: String) -> int:
-	var stripped: String = text.strip_edges(true, false)
-	if stripped.begins_with("#"):
-		return text.length() - stripped.length()
-	if not stripped.begins_with("@"):
-		return -1
-	return _find_outside_strings(text, func(i: int) -> bool: return text[i] == "#")
-
-
-# The first index outside a string for which found(index) holds, or -1.
-func _find_outside_strings(text: String, found: Callable) -> int:
-	var in_string: bool = false
-	var i: int = 0
-	while i < text.length():
-		var character: String = text[i]
-		if in_string:
-			if character == "\\":
-				i += 1
-			elif character == '"':
-				in_string = false
-		elif character == '"':
-			in_string = true
-		elif found.call(i):
-			return i
-		i += 1
-	return -1

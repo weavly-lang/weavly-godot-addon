@@ -5,7 +5,8 @@ extends RefCounted
 const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
 const LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: %s: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
-const MINIMUM_VERSION = "0.5.0"
+# In 0.x a minor release can change the output, so only this one is accepted.
+const SUPPORTED_VERSION = "0.5"
 const SOURCE_DIR = "src"
 
 static var _ansi_escape_regex: RegEx = RegEx.create_from_string(ANSI_ESCAPE_PATTERN)
@@ -55,16 +56,7 @@ static func parse_version(output: String) -> String:
 
 
 static func is_version_supported(version: String) -> bool:
-	if version == "":
-		return false
-	var parts: PackedStringArray = version.split(".")
-	var minimum: PackedStringArray = MINIMUM_VERSION.split(".")
-	for i: int in minimum.size():
-		var part: int = parts[i].to_int() if i < parts.size() else 0
-		var required: int = minimum[i].to_int()
-		if part != required:
-			return part > required
-	return true
+	return version.begins_with(SUPPORTED_VERSION + ".")
 
 
 # The folder weavly build runs in: the parent of the nearest src folder above the file.

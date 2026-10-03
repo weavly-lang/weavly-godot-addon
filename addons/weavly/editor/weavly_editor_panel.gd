@@ -11,13 +11,13 @@ const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit i
 const _NOT_IN_PROJECT = "%s isn't in a Weavly project: there's no src folder above it."
 const _LOG_PREFIX = "[Weavly]"
 const _VERSION_UNKNOWN = (
-	"%s Could not read the version of '%s'. Install the Weavly compiler %s or newer with "
-	+ "'uv tool install weavly', then restart Godot so it picks up your PATH, or point the "
-	+ "editor setting '%s' at the executable."
+	"%s Could not read the version of '%s'. Install the Weavly compiler %s.x with "
+	+ "'uv tool install \"weavly==%s.*\"', then restart Godot so it picks up your PATH, or "
+	+ "point the editor setting '%s' at the executable."
 )
-const _VERSION_TOO_OLD = (
-	"%s Weavly compiler %s is older than the supported %s. Upgrade it with "
-	+ "'uv tool upgrade weavly'."
+const _VERSION_UNSUPPORTED = (
+	"%s Weavly compiler %s doesn't match this addon, which needs %s.x. Install that with "
+	+ "'uv tool install \"weavly==%s.*\"', or update the addon if the compiler is newer."
 )
 
 const _COLOR_ERROR = Color(0.94, 0.42, 0.42)
@@ -181,6 +181,16 @@ func _shortcut_input(event: InputEvent) -> void:
 		accept_event()
 
 
+# The open file while it has unsaved edits, else empty.
+func get_unsaved_path() -> String:
+	return _current_path if _dirty else ""
+
+
+# True when nothing is left unsaved.
+func save_unsaved() -> bool:
+	return get_unsaved_path() == "" or _save_file()
+
+
 func _on_text_changed() -> void:
 	if _find_bar.visible:
 		_find_bar.update_count()
@@ -268,11 +278,13 @@ func _on_compile_finished(
 
 
 func _report_version(executable: String, version: String) -> void:
-	var minimum: String = WeavlyCompilerRunner.MINIMUM_VERSION
+	var supported: String = WeavlyCompilerRunner.SUPPORTED_VERSION
 	if version == "":
-		push_warning(_VERSION_UNKNOWN % [_LOG_PREFIX, executable, minimum, SETTING_EXECUTABLE])
+		push_warning(
+			_VERSION_UNKNOWN % [_LOG_PREFIX, executable, supported, supported, SETTING_EXECUTABLE]
+		)
 	elif not WeavlyCompilerRunner.is_version_supported(version):
-		push_warning(_VERSION_TOO_OLD % [_LOG_PREFIX, version, minimum])
+		push_warning(_VERSION_UNSUPPORTED % [_LOG_PREFIX, version, supported, supported])
 
 
 func _set_compiling(compiling: bool) -> void:

@@ -49,6 +49,25 @@ func test_open_file_ignores_empty_path() -> void:
 # =====================
 
 
+func test_an_edited_file_is_unsaved_until_saved() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	assert_str(_panel.get_unsaved_path()).is_empty()
+	await _type("@node edited\n@endnode\n")
+	assert_str(_panel.get_unsaved_path()).is_equal(ProjectSettings.globalize_path(path))
+	assert_bool(_panel.save_unsaved()).is_true()
+	assert_str(_panel.get_unsaved_path()).is_empty()
+	assert_str(FileAccess.get_file_as_string(path)).is_equal("@node edited\n@endnode\n")
+
+
+func test_save_unsaved_without_edits_writes_nothing() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@endnode\n")
+	_panel.open_file(path)
+	var modified: int = FileAccess.get_modified_time(path)
+	assert_bool(_panel.save_unsaved()).is_true()
+	assert_int(FileAccess.get_modified_time(path)).is_equal(modified)
+
+
 func test_open_other_file_saves_unsaved_edits() -> void:
 	var first: String = _write_file("first.wvl", "@node first\n@endnode\n")
 	var second: String = _write_file("second.wvl", "@node second\n@endnode\n")

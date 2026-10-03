@@ -18,10 +18,10 @@ A Godot 4.5+ addon that plays [Weavly](https://github.com/weavly-lang/weavly-com
 
 1. Download `weavly-<version>.zip` from [Releases](https://github.com/weavly-lang/weavly-godot-addon/releases) and extract it into your project, so the addon lands in `addons/weavly`.
 2. Enable **Weavly** under *Project Settings → Plugins*.
-3. For the editor tooling, install the Weavly compiler (0.5.0 or newer) and restart Godot:
+3. For the editor tooling, install the Weavly compiler 0.5.x and restart Godot:
 
    ```bash
-   uv tool install weavly
+   uv tool install "weavly==0.5.*"
    ```
 
 ## Quick start
