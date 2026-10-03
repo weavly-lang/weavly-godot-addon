@@ -54,9 +54,6 @@ class _SpyOptionService:
 	func clear_options() -> void:
 		pass
 
-	func choose_option(_option: WeavlyModel.Option) -> void:
-		pass
-
 
 class _SpyStatementService:
 	extends WeavlyStatementService

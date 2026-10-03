@@ -9,8 +9,8 @@ Enable **Weavly** under *Project Settings → Plugins*, then instance `addons/we
 
 
 func _ready() -> void:
-    engine.line_service.executed_narration_line.connect(_show_line)
-    engine.option_service.options_added.connect(_show_options)
+    engine.line_reached.connect(_show_line)
+    engine.options_offered.connect(_show_options)
     engine.start("start")
 ```
 

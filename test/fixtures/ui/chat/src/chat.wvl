@@ -49,3 +49,14 @@ label_unavailable: "the door is locked"
 available: false
 @endmeta
 @endnode
+
+@env
+func open(): flag
+@endenv
+
+@node door
+@options
+@option [ open() ] "Open" -> sleep
+@option "Stay" -> sleep
+@endoptions
+@endnode

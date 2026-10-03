@@ -61,3 +61,14 @@ available: $has_code
 @endmeta
 Opened.
 @endnode
+
+@env
+func open(): flag
+@endenv
+
+@node door
+@options
+@option [ open() ] "Open" -> waved
+@option "Stay" -> waved
+@endoptions
+@endnode

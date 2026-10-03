@@ -95,7 +95,7 @@ func _engine_signals() -> Array[Array]:
 		[engine.finished_dialogue, _on_changed],
 		[engine.state_loaded, _on_changed],
 		[engine.runtime_error, _on_runtime_error],
-		[engine.variable_service.variable_changed, _on_variable_changed],
+		[engine.variable_changed, _on_variable_changed],
 	]
 
 

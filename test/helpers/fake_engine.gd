@@ -48,8 +48,12 @@ func render_option(_option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]:
 	return []
 
 
-func choose(_option: WeavlyModel.Option) -> void:
-	pass
+func choose(_option: WeavlyModel.Option) -> bool:
+	return false
+
+
+func can_choose(_option: WeavlyModel.Option) -> bool:
+	return false
 
 
 func enter_node(node_id: String) -> void:

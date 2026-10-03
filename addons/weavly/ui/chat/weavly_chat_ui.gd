@@ -89,9 +89,9 @@ func clear() -> void:
 func _engine_signals() -> Array[Array]:
 	return [
 		[engine.state_loaded, clear],
-		[engine.line_service.executed_narration_line, _receive],
-		[engine.line_service.executed_character_line, _receive],
-		[engine.option_service.options_added, _on_options_added],
+		[engine.line_reached, _receive],
+		[engine.options_offered, _on_options_offered],
+		[engine.option_chosen, _on_option_chosen],
 	]
 
 
@@ -106,7 +106,7 @@ func _receive(line: WeavlyModel.LineStatement) -> void:
 	_start_wait(_typing_wait(line.text) if incoming else short_wait, incoming)
 
 
-func _on_options_added(options: Array[WeavlyModel.Option]) -> void:
+func _on_options_offered(options: Array[WeavlyModel.Option]) -> void:
 	visible = true
 	_replies.show_options(options)
 	_continue.visible = not _replies.has_choosable()
@@ -118,11 +118,15 @@ func _on_options_refreshed() -> void:
 		_continue.visible = not _replies.has_choosable()
 
 
-func _choose(option: WeavlyModel.Option) -> void:
+func _on_option_chosen(option: WeavlyModel.Option) -> void:
 	_replies.clear()
 	_continue.visible = false
 	_add_bubble(option.text, null, true)
-	engine.option_service.choose_option(option)
+
+
+func _choose(option: WeavlyModel.Option) -> void:
+	if not engine.choose(option):
+		_on_options_refreshed()
 
 
 func _start_wait(seconds: float, typing: bool) -> void:

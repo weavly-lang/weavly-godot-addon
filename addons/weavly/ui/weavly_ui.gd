@@ -194,5 +194,5 @@ func _detach() -> void:
 
 func _all_engine_signals() -> Array[Array]:
 	var pairs: Array[Array] = _engine_signals()
-	pairs.append([engine.option_service.options_refreshed, _on_options_refreshed])
+	pairs.append([engine.options_refreshed, _on_options_refreshed])
 	return pairs

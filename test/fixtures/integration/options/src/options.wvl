@@ -16,3 +16,16 @@ After
 Nothing to choose
 @finish
 @endnode
+
+@env
+func open(): flag
+@endenv
+
+@node door
+@options
+@option [ open() ] "Open"
+    The door opens.
+@option "Roll {random(1, 6)}" -> after
+@option "Leave" -> after
+@endoptions
+@endnode

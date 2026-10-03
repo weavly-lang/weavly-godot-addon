@@ -8,6 +8,14 @@ signal left_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
+# A line is waiting for next(); its text is filled in.
+signal line_reached(line: WeavlyModel.LineStatement)
+signal options_offered(options: Array[WeavlyModel.Option])
+signal option_chosen(option: WeavlyModel.Option)
+# Offered options were updated in place: their text, state or hidden flag may have changed.
+signal options_refreshed
+# Fires only when the stored value differs; old_value is null on an extern's first set.
+signal variable_changed(id: String, value: Variant, old_value: Variant)
 
 # How a pool treats nodes shown locked: SHOW counts them toward the limit, EXTRA shows them
 # on top of it, HIDE leaves them out.
@@ -42,7 +50,7 @@ var current_line: int = 0
 var _location_stack: Array[String] = []
 var _rendering: bool = false
 var _render_output: Array[WeavlyModel.Statement] = []
-# The inline options choose() and render_option() accept.
+# The options of the last renders, which choose() and render_option() accept.
 var _rendered_options: Dictionary[WeavlyModel.Option, bool] = {}
 # get_option's results, refreshed while the game holds them.
 var _listed_options: Array[WeakRef] = []
@@ -56,7 +64,9 @@ var _meta_snapshots: Dictionary[String, Dictionary] = {}
 
 @abstract func render_option(option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]
 
-@abstract func choose(option: WeavlyModel.Option) -> void
+@abstract func choose(option: WeavlyModel.Option) -> bool
+
+@abstract func can_choose(option: WeavlyModel.Option) -> bool
 
 @abstract func enter_node(node_id: String) -> void
 
@@ -149,7 +159,7 @@ func refresh_options() -> void:
 	for option: WeavlyModel.Option in options:
 		WeavlyOptionBuilder.refresh(option, self)
 	rng.state = rng_state
-	option_service.options_refreshed.emit()
+	options_refreshed.emit()
 
 
 func _offered_options() -> Array[WeavlyModel.Option]:

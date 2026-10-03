@@ -8,6 +8,8 @@ const SCENE = preload("res://addons/weavly/ui/bubble/weavly_bubble_ui.tscn")
 
 var _engine: WeavlyDefaultEngine
 var _ui: WeavlyBubbleUI
+# What the fixture's open() returns.
+var _door_open: bool
 var _guard: Node2D
 # The headless root viewport is tiny, so the world and the UI get one of a usual size.
 var _world: SubViewport
@@ -18,6 +20,8 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
+	_door_open = true
+	_engine.register_function("open", func() -> bool: return _door_open)
 	_world = auto_free(SubViewport.new())
 	_world.size = Vector2i(1280, 720)
 	add_child(_world)
@@ -339,3 +343,14 @@ func test_disconnecting_the_engine_hides_and_stops_listening() -> void:
 	assert_bool(_ui.visible).is_false()
 	_engine.next()
 	assert_bool(_ui.visible).is_false()
+
+
+func test_a_refused_choice_keeps_the_choices_and_shows_the_change() -> void:
+	_engine.start("door")
+	_door_open = false
+	_choices()[0].pressed.emit()
+	assert_logged([], ["Can't choose option 'Open' because it's locked."])
+	assert_bool(_choices()[0].visible).is_false()
+	assert_bool(_choices()[1].visible).is_true()
+	_choices()[1].pressed.emit()
+	assert_str(_engine.current_node_id).is_equal("answered")

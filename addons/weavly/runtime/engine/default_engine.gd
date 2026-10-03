@@ -10,7 +10,7 @@ const UNKNOWN_STATE_VERSION = "Can't load a state of version '%s', expected vers
 const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exists."
 const RENDER_IN_PROGRESS = "Dialogue is already in progress, can't render node '%s'."
 const CHOOSE_IN_PROGRESS = "Dialogue is already in progress, can't choose option '%s'."
-const NOT_RENDERED = "Can't choose option '%s' because it wasn't rendered."
+const NOT_OFFERED = "Can't choose option '%s' because it isn't offered right now."
 const LOCKED_OPTION = "Can't choose option '%s' because it's locked."
 
 const STATE_VERSION = 3
@@ -106,6 +106,10 @@ func _ready() -> void:
 	video_service.set_supported_extensions(video_extensions)
 
 	variable_service.variable_changed.connect(_on_variable_changed)
+	variable_service.variable_changed.connect(variable_changed.emit)
+	line_service.executed_narration_line.connect(line_reached.emit)
+	line_service.executed_character_line.connect(line_reached.emit)
+	option_service.options_added.connect(options_offered.emit)
 	WeavlyFileUtils.load_dialogue(self, dialogue_path)
 	if not video_path.is_empty():
 		WeavlyFileUtils.index_media_from_files(video_service, video_path)
@@ -141,39 +145,63 @@ func render(node_id: String) -> Array[WeavlyModel.Statement]:
 	return _end_render()
 
 
-# Runs a chosen option like render(), following jumps into other nodes.
+# Runs a chosen option like render(), following jumps into other nodes. A refused option
+# returns nothing; can_choose() tells it apart from an option without lines.
 func render_option(option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]:
-	if not _accept_choice(option):
+	var refusal: String = CHOOSE_IN_PROGRESS % option.text if not _finished else _refusal(option)
+	if refusal != "":
+		push_warning(refusal)
 		return []
+	_rendered_options.clear()
+	option_chosen.emit(option)
 	_begin_render()
 	_run_choice(option)
 	return _end_render()
 
 
-# Starts a dialogue with a rendered option or one from get_option. An inline option runs only
-# its action, since the rest of its node already ran; a node option runs its node.
-func choose(option: WeavlyModel.Option) -> void:
-	if not _accept_choice(option):
-		return
+# An offered option runs in the dialogue: a node option like a detour, an inline option's
+# body in place. A rendered option or one from get_option starts a dialogue: an inline option
+# runs only its body, since the rest of its node already ran; a node option runs its node.
+func choose(option: WeavlyModel.Option) -> bool:
+	var refusal: String = _refusal(option)
+	if refusal != "":
+		push_warning(refusal)
+		return false
+	if option_service.get_options().has(option):
+		option_service.clear_options()
+		option_chosen.emit(option)
+		if option.item != null:
+			statement_service.add_statements(option.item.body)
+			next()
+		else:
+			snapshot_meta(option.node_id)
+			detour(option.node_id)
+		return true
+	_rendered_options.clear()
+	option_chosen.emit(option)
 	_finished = false
 	started_dialogue.emit()
 	_run_choice(option)
-
-
-# Checks the option again; a locked one is refused.
-func _accept_choice(option: WeavlyModel.Option) -> bool:
-	if not _finished:
-		push_warning(CHOOSE_IN_PROGRESS % option.text)
-		return false
-	if option.item != null and not _rendered_options.has(option):
-		push_warning(NOT_RENDERED % option.text)
-		return false
-	WeavlyOptionBuilder.refresh(option, self)
-	if not option.is_choosable():
-		push_warning(LOCKED_OPTION % option.text)
-		return false
-	_rendered_options.clear()
 	return true
+
+
+func can_choose(option: WeavlyModel.Option) -> bool:
+	return _refusal(option) == ""
+
+
+# Empty when the option can be chosen now: it's offered, pending or rendered or from get_option,
+# and still choosable when checked again.
+func _refusal(option: WeavlyModel.Option) -> String:
+	if not _offered_options().has(option):
+		return NOT_OFFERED % option.text
+	if not _finished and not option_service.get_options().has(option):
+		return CHOOSE_IN_PROGRESS % option.text
+	var rng_state: int = rng.state
+	WeavlyOptionBuilder.refresh(option, self)
+	rng.state = rng_state
+	if not option.is_choosable():
+		return LOCKED_OPTION % option.text
+	return ""
 
 
 func _run_choice(option: WeavlyModel.Option) -> void:
