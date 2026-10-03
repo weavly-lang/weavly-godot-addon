@@ -46,10 +46,12 @@ var _modified_times: Dictionary[String, int] = {}
 var _open_path: String = ""
 
 
-# Rereads the .wvl files under dir that changed since the last scan; the open file is skipped.
+# Rereads the .wvl files under dir that changed since the last scan and drops the rest;
+# the open file is skipped. An empty dir keeps only the open file.
 func scan(dir: String) -> void:
 	var found: Dictionary[String, bool] = {}
-	_collect_files(dir, found)
+	if dir != "":
+		_collect_files(dir, found)
 	for path: String in _files.keys():
 		if path != _open_path and not found.has(path):
 			_files.erase(path)

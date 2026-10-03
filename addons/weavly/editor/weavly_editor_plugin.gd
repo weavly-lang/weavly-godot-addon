@@ -11,7 +11,6 @@ var _panel: WeavlyEditorPanel
 
 
 func _enter_tree() -> void:
-	_register_project_settings()
 	_register_editor_settings()
 
 	_import_plugin = WEAVLY_IMPORT_PLUGIN.new()
@@ -67,18 +66,6 @@ func _edit(object: Object) -> void:
 func _make_visible(visible: bool) -> void:
 	if _panel != null:
 		_panel.visible = visible
-
-
-func _register_project_settings() -> void:
-	var key: String = WeavlyEditorPanel.SETTING_PROJECT_DIR
-	var default_value: String = WeavlyEditorPanel.DEFAULT_PROJECT_DIR
-	if not ProjectSettings.has_setting(key):
-		ProjectSettings.set_setting(key, default_value)
-		ProjectSettings.set_initial_value(key, default_value)
-		ProjectSettings.save()
-	ProjectSettings.add_property_info(
-		{"name": key, "type": TYPE_STRING, "hint": PROPERTY_HINT_NONE, "hint_string": ""}
-	)
 
 
 func _register_editor_settings() -> void:

@@ -191,8 +191,10 @@ func _update_index() -> void:
 
 
 func _display_path(path: String) -> String:
-	var project_dir: String = _panel.get_project_dir().simplify_path() + "/"
-	return path.trim_prefix(project_dir) if path.begins_with(project_dir) else path.get_file()
+	var project_dir: String = _panel.get_project_dir()
+	if project_dir == "" or not path.begins_with(project_dir.simplify_path() + "/"):
+		return path.get_file()
+	return path.trim_prefix(project_dir.simplify_path() + "/")
 
 
 func _on_symbol_validate(_symbol: String) -> void:

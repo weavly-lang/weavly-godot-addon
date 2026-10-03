@@ -6,6 +6,7 @@ const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
 const LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: %s: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
 const MINIMUM_VERSION = "0.5.0"
+const SOURCE_DIR = "src"
 
 static var _ansi_escape_regex: RegEx = RegEx.create_from_string(ANSI_ESCAPE_PATTERN)
 static var _error_location_regex: RegEx = RegEx.create_from_string(LOCATION_PATTERN % "error")
@@ -64,6 +65,17 @@ static func is_version_supported(version: String) -> bool:
 		if part != required:
 			return part > required
 	return true
+
+
+# The folder weavly build runs in: the parent of the nearest src folder above the file.
+# Empty when the file isn't in a Weavly project.
+static func project_dir_of(path: String) -> String:
+	var dir: String = path.simplify_path().get_base_dir()
+	while dir.get_file() != "":
+		if dir.get_file() == SOURCE_DIR:
+			return dir.get_base_dir()
+		dir = dir.get_base_dir()
+	return ""
 
 
 static func build_command(executable_path: String, working_dir: String) -> Dictionary:
