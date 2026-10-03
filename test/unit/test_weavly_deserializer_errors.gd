@@ -453,9 +453,7 @@ func test_a_meta_key_of_an_unknown_type_is_skipped() -> void:
 
 
 func test_a_meta_call_without_a_key_fails() -> void:
-	var call: Variant = WeavlyDeserializer.read_expression(
-		{"call": "meta", "node": "shop"}, "x"
-	)
+	var call: Variant = WeavlyDeserializer.read_expression({"call": "meta", "node": "shop"}, "x")
 	assert_object(call).is_null()
 	assert_logged(["Missing required field 'key' at x"])
 

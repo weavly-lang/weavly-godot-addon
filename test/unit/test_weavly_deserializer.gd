@@ -46,9 +46,7 @@ func test_read_nodes_sets_id() -> void:
 
 
 func test_narration_line() -> void:
-	var stmt: WeavlyModel.Statement = _read_single(
-		{"type": "narration", "text": ["Hello world"]}
-	)
+	var stmt: WeavlyModel.Statement = _read_single({"type": "narration", "text": ["Hello world"]})
 	assert_object(stmt).is_instanceof(WeavlyModel.NarrationLine)
 	assert_that((stmt as WeavlyModel.NarrationLine).segments).is_equal(["Hello world"])
 
@@ -113,9 +111,7 @@ func test_inline_options_read_label_condition_and_body() -> void:
 		"meta": {"label": {"line": 4.0, "value": ["Leave"]}},
 		"body": []
 	}
-	var stmt: WeavlyModel.Statement = _read_single(
-		{"type": "option", "items": [guarded, plain]}
-	)
+	var stmt: WeavlyModel.Statement = _read_single({"type": "option", "items": [guarded, plain]})
 	var options: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
 	assert_object(options[0]).is_instanceof(WeavlyModel.InlineOptionItem)
 	assert_that(options[0].segments[0]).is_equal("Pay ")

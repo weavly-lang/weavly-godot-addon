@@ -248,9 +248,7 @@ static func _read_meta_entry(
 			return false
 		meta.texts[key] = WeavlyModel.MetaText.new(segments, line)
 		return true
-	var expression: WeavlyModel.WeavlyExpression = read_required_expression(
-		entry, KEY_VALUE, path
-	)
+	var expression: WeavlyModel.WeavlyExpression = read_required_expression(entry, KEY_VALUE, path)
 	if line == null or expression == null:
 		return false
 	meta.entries[key] = WeavlyModel.MetaExpression.new(expression, line)
@@ -352,9 +350,7 @@ static func read_jump_statement(data: Dictionary, path: String) -> WeavlyModel.J
 	return WeavlyModel.JumpStatement.new(id)
 
 
-static func read_detour_statement(
-	data: Dictionary, path: String
-) -> WeavlyModel.DetourStatement:
+static func read_detour_statement(data: Dictionary, path: String) -> WeavlyModel.DetourStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
@@ -371,15 +367,11 @@ static func read_draw_statement(data: Dictionary, path: String) -> WeavlyModel.D
 	return WeavlyModel.DrawStatement.new(pools)
 
 
-static func read_finish_statement(
-	_data: Dictionary, _path: String
-) -> WeavlyModel.FinishStatement:
+static func read_finish_statement(_data: Dictionary, _path: String) -> WeavlyModel.FinishStatement:
 	return WeavlyModel.FinishStatement.new()
 
 
-static func read_command_statement(
-	data: Dictionary, path: String
-) -> WeavlyModel.CommandStatement:
+static func read_command_statement(data: Dictionary, path: String) -> WeavlyModel.CommandStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	var args: Variant = read_arguments(data, path)
 	if id == null or args == null:
@@ -504,9 +496,7 @@ static func _read_inline_option(data: Dictionary, path: String) -> WeavlyModel.O
 static func _read_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
 	var locked_name: Variant = get_required(data, KEY_LOCKED, Variant.Type.TYPE_STRING, path)
-	var shuffle: WeavlyModel.WeavlyExpression = read_required_expression(
-		data, KEY_SHUFFLE, path
-	)
+	var shuffle: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_SHUFFLE, path)
 	if pools_data == null or locked_name == null or shuffle == null:
 		return null
 	if not data.has(KEY_LIMIT):
@@ -614,9 +604,7 @@ static func read_expression(data: Variant, path: String) -> WeavlyModel.WeavlyEx
 		if op == null:
 			return null
 		var left: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_LEFT, path)
-		var right: WeavlyModel.WeavlyExpression = read_required_expression(
-			data, KEY_RIGHT, path
-		)
+		var right: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_RIGHT, path)
 		if left == null or right == null:
 			return null
 		return WeavlyModel.BinaryExpression.new(op, left, right)
@@ -696,9 +684,7 @@ static func read_slot_names(data: Dictionary, source: String = "") -> Array[Stri
 
 
 # The declared custom meta keys in env.json, each with its default.
-static func read_meta_keys(
-	data: Dictionary, source: String = ""
-) -> Dictionary[String, Variant]:
+static func read_meta_keys(data: Dictionary, source: String = "") -> Dictionary[String, Variant]:
 	var keys: Dictionary[String, Variant] = {}
 	var keys_data: Variant = get_required(data, KEY_META_KEYS, Variant.Type.TYPE_ARRAY, source)
 	if keys_data == null:
@@ -730,16 +716,12 @@ static func _read_meta_key(data: Variant, path: String) -> Variant:
 
 
 # The declared functions in env.json.
-static func read_functions(
-	data: Dictionary, source: String = ""
-) -> Array[WeavlyModel.Signature]:
+static func read_functions(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
 	return _read_signatures(data, KEY_FUNCTIONS, source)
 
 
 # The declared commands in env.json.
-static func read_commands(
-	data: Dictionary, source: String = ""
-) -> Array[WeavlyModel.Signature]:
+static func read_commands(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
 	return _read_signatures(data, KEY_COMMANDS, source)
 
 
@@ -754,9 +736,7 @@ static func _read_signatures(
 	return signatures
 
 
-static func _read_signature(
-	data: Variant, path: String, returns: bool
-) -> WeavlyModel.Signature:
+static func _read_signature(data: Variant, path: String, returns: bool) -> WeavlyModel.Signature:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
