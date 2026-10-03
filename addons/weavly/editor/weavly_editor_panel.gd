@@ -35,6 +35,7 @@ var _line_wrap: CheckButton
 var _save_button: Button
 var _compile_button: Button
 var _find_bar: WeavlyFindBar
+var _navigator: WeavlyCodeNavigator
 var _current_path: String = ""
 var _dirty: bool = false
 var _compiling: bool = false
@@ -50,16 +51,16 @@ func _ready() -> void:
 	_refresh_controls()
 
 
-func open_file(path: String) -> void:
+func open_file(path: String) -> bool:
 	if path == "":
-		return
+		return false
 	if _dirty and _current_path != "" and not _save_file():
-		return
+		return false
 	var abs_path: String = ProjectSettings.globalize_path(path)
 	var file: FileAccess = FileAccess.open(abs_path, FileAccess.READ)
 	if file == null:
 		_report_error("Could not open %s" % abs_path)
-		return
+		return false
 	_current_path = abs_path
 	_code_edit.text = file.get_as_text()
 	file.close()
@@ -69,6 +70,15 @@ func open_file(path: String) -> void:
 		_find_bar.update_count()
 	_set_status("", _COLOR_INFO)
 	_refresh_controls()
+	return true
+
+
+func get_current_path() -> String:
+	return _current_path
+
+
+func get_project_dir() -> String:
+	return _resolve_working_dir()
 
 
 func _build_ui() -> void:
@@ -133,6 +143,9 @@ func _build_ui() -> void:
 	_find_bar.replaced_all.connect(_on_replaced_all)
 	root.add_child(_find_bar)
 
+	_navigator = WeavlyCodeNavigator.new(self, _code_edit)
+	add_child(_navigator)
+
 
 func _shortcut_input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or _current_path == "":
@@ -142,6 +155,9 @@ func _shortcut_input(event: InputEvent) -> void:
 	var command: bool = (
 		event.is_command_or_control_pressed() and not event.shift_pressed and not event.alt_pressed
 	)
+	var alt: bool = (
+		event.alt_pressed and not event.shift_pressed and not event.is_command_or_control_pressed()
+	)
 	if event.keycode == KEY_S and command:
 		_on_save_pressed()
 		accept_event()
@@ -150,6 +166,12 @@ func _shortcut_input(event: InputEvent) -> void:
 		accept_event()
 	elif event.keycode == KEY_H and command:
 		_find_bar.open(true)
+		accept_event()
+	elif event.keycode == KEY_LEFT and alt:
+		_navigator.back()
+		accept_event()
+	elif event.keycode == KEY_RIGHT and alt:
+		_navigator.forward()
 		accept_event()
 	elif event.keycode == KEY_F3 and _find_bar.visible:
 		if event.shift_pressed:
