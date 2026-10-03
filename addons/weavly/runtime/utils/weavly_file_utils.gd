@@ -1,5 +1,9 @@
 class_name WeavlyFileUtils
 
+const ENV_FILE = "env.json"
+const SOURCE_EXTENSION = ".wvl.json"
+const MISSING_ENV = "Can't load '%s' without env.json; check dialogue_path or build the project."
+
 
 static func find_all_files_with_extension(
 	dir_path: String, extension: String
@@ -70,37 +74,38 @@ static func load_json_file(path: String) -> Variant:
 	return json.data
 
 
+# The compiler writes the declarations to env.json and each source's nodes to its *.wvl.json.
 static func load_dialogue(engine: WeavlyEngine, dialogue_dir: String) -> void:
-	for file_path: String in find_all_files_with_extension(dialogue_dir, ".json"):
+	var env_path: String = dialogue_dir.path_join(ENV_FILE)
+	if not FileAccess.file_exists(env_path):
+		push_error(MISSING_ENV % dialogue_dir)
+		return
+	var env: Variant = load_json_file(env_path)
+	if env is Dictionary:
+		_load_env(engine, env, env_path)
+	for file_path: String in find_all_files_with_extension(dialogue_dir, SOURCE_EXTENSION):
 		var data: Variant = load_json_file(file_path)
-		if data is not Dictionary:
-			continue
-		if data.has(WeavlyDeserializer.KEY_NODES):
-			for node: WeavlyModel.WeavlyNode in WeavlyDeserializer.compile_nodes(data, file_path):
+		if data is Dictionary:
+			for node: WeavlyModel.WeavlyNode in WeavlyDeserializer.read_nodes(data, file_path):
 				engine.node_service.add_node(node)
-		if data.has(WeavlyDeserializer.KEY_DECLARATIONS):
-			var variables: Array[WeavlyModel.Variable] = (
-				WeavlyDeserializer.compile_variable_declarations(data, file_path)
-			)
-			for variable: WeavlyModel.Variable in variables:
-				engine.variable_service.add_variable(variable)
-			for pool: String in WeavlyDeserializer.compile_pool_names(data, file_path):
-				engine.node_service.add_pool(pool)
-			for slot: String in WeavlyDeserializer.compile_slot_names(data, file_path):
-				engine.node_service.add_slot(slot)
-			var meta_keys: Dictionary[String, Variant] = WeavlyDeserializer.compile_meta_keys(
-				data, file_path
-			)
-			for key: String in meta_keys:
-				engine.node_service.add_meta_key(key, meta_keys[key])
-			for function: WeavlyModel.Signature in WeavlyDeserializer.compile_functions(
-				data, file_path
-			):
-				engine.function_service.add_declaration(function)
-			for command: WeavlyModel.Signature in WeavlyDeserializer.compile_commands(
-				data, file_path
-			):
-				engine.command_service.add_declaration(command)
+
+
+static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> void:
+	for variable: WeavlyModel.Variable in WeavlyDeserializer.read_variable_declarations(
+		data, path
+	):
+		engine.variable_service.add_variable(variable)
+	for pool: String in WeavlyDeserializer.read_pool_names(data, path):
+		engine.node_service.add_pool(pool)
+	for slot: String in WeavlyDeserializer.read_slot_names(data, path):
+		engine.node_service.add_slot(slot)
+	var meta_keys: Dictionary[String, Variant] = WeavlyDeserializer.read_meta_keys(data, path)
+	for key: String in meta_keys:
+		engine.node_service.add_meta_key(key, meta_keys[key])
+	for function: WeavlyModel.Signature in WeavlyDeserializer.read_functions(data, path):
+		engine.function_service.add_declaration(function)
+	for command: WeavlyModel.Signature in WeavlyDeserializer.read_commands(data, path):
+		engine.command_service.add_declaration(command)
 
 
 static func index_media_from_files(service: WeavlyMediaService, dir: String) -> void:

@@ -98,25 +98,20 @@ static func _offer_inline(
 
 # Inline options are evaluated at their line in the source of their node.
 static func _inline_holds(option: WeavlyModel.Option, engine: WeavlyEngine) -> bool:
-	var location: Array = _move_to(engine, option.source, option.line)
-	var holds: bool = WeavlyExpressionEvaluator.evaluate_condition(option.item.condition, engine)
-	_move_to(engine, location[0], location[1])
-	return holds
+	return engine.evaluate_at(
+		option.source,
+		option.line,
+		func() -> bool:
+			return WeavlyExpressionEvaluator.evaluate_condition(option.item.condition, engine)
+	)
 
 
 static func _inline_text(option: WeavlyModel.Option, engine: WeavlyEngine) -> String:
-	var location: Array = _move_to(engine, option.source, option.line)
-	var text: String = WeavlyTextUtils.fill_text(option.item.segments, engine)
-	_move_to(engine, location[0], location[1])
-	return text
-
-
-# Returns the location it left.
-static func _move_to(engine: WeavlyEngine, source: String, line: int) -> Array:
-	var left: Array = [engine.current_source, engine.current_line]
-	engine.current_source = source
-	engine.current_line = line
-	return left
+	return engine.evaluate_at(
+		option.source,
+		option.line,
+		func() -> String: return WeavlyTextUtils.fill_text(option.item.segments, engine)
+	)
 
 
 # A failing limit or shuffle is reported and the pool offers nothing.

@@ -76,14 +76,6 @@ func test_fill_text_trims_and_rounds_numbers() -> void:
 	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("10 0.33 0.3 2.5")
 
 
-func test_fill_text_applies_a_custom_pipeline() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	declare_variable(engine, "name", "Alice")
-	var upper_pipeline: Array[Callable] = [func(v: Variant) -> Variant: return str(v).to_upper()]
-	var segments: Array = _segments(["Hi ", {"variable": "name"}])
-	assert_that(WeavlyTextUtils.fill_text(segments, engine, upper_pipeline)).is_equal("Hi ALICE")
-
-
 # =====================
 # fill_*
 # =====================
@@ -96,7 +88,7 @@ func _engine_with_name() -> WeavlyEngine:
 
 
 func _segments(text: Array) -> Array:
-	return WeavlyDeserializer.compile_text({"text": text}, "test")
+	return WeavlyDeserializer.read_text({"text": text}, "test")
 
 
 func test_fill_narration_line_copies_with_filled_text() -> void:
@@ -122,7 +114,6 @@ func test_fill_character_line_resolves_a_name_that_is_an_id() -> void:
 		line, _engine_with_name()
 	)
 	assert_that(filled.name).is_equal("Ada")
-	assert_that(filled.raw_name).is_equal("name")
 	assert_that(filled.text).is_equal("Ada!")
 	assert_int(filled.line).is_equal(5)
 

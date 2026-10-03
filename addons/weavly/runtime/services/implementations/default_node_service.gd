@@ -31,10 +31,10 @@ func add_node(node: WeavlyModel.WeavlyNode) -> void:
 		members.append(node.id)
 
 
-func get_node(id: String, default: WeavlyModel.WeavlyNode = null) -> WeavlyModel.WeavlyNode:
+func get_node(id: String) -> WeavlyModel.WeavlyNode:
 	if not _nodes.has(id):
-		push_error(MISSING_ID % [TYPE, id, default])
-	return _nodes.get(id, default)
+		push_error(MISSING_ID % [TYPE, id])
+	return _nodes.get(id)
 
 
 func get_all_nodes() -> Array[WeavlyModel.WeavlyNode]:

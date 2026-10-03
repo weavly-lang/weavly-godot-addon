@@ -15,7 +15,7 @@ const UNKNOWN_NAME = "Can't set variable '%s' to '%s' because no %s has that nam
 # Null when the name isn't declared; an extern declaration has no value until defined.
 @abstract func get_declaration(id: String) -> WeavlyModel.Variable
 
-@abstract func get_variable(id: String, default: Variant = null) -> Variant
+@abstract func get_variable(id: String) -> Variant
 
 @abstract func set_variable(id: String, value: Variant) -> void
 

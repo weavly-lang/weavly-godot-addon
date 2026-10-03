@@ -150,31 +150,31 @@ static func _get_required_line(data: Dictionary, path: String) -> Variant:
 	return null if line == null else int(line)
 
 
-# Appends each compiled item to into. A failing item is dropped, or with strict
+# Appends each read item to into. A failing item is dropped, or with strict
 # fails the whole list, which then returns false.
-static func _compile_list(
-	items: Array, path: String, compile: Callable, into: Array, strict: bool = true
+static func _read_list(
+	items: Array, path: String, read: Callable, into: Array, strict: bool = true
 ) -> bool:
 	for i: int in range(items.size()):
-		var compiled: Variant = compile.call(items[i], _path_index(path, i))
-		if compiled != null:
-			into.append(compiled)
+		var item: Variant = read.call(items[i], _path_index(path, i))
+		if item != null:
+			into.append(item)
 		elif strict:
 			return false
 	return true
 
 
-# For items compiled from a Dictionary that carries a line.
-static func _compile_located(data: Variant, path: String, compile: Callable) -> Variant:
+# For items read from a Dictionary that carries a line.
+static func _read_located(data: Variant, path: String, read: Callable) -> Variant:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
 	var line: Variant = _get_required_line(data, path)
-	var compiled: Variant = compile.call(data, path)
-	if line == null or compiled == null:
+	var item: Variant = read.call(data, path)
+	if line == null or item == null:
 		return null
-	compiled.line = line
-	return compiled
+	item.line = line
+	return item
 
 
 # =====================
@@ -182,25 +182,25 @@ static func _compile_located(data: Variant, path: String, compile: Callable) -> 
 # =====================
 
 
-static func compile_nodes(data: Dictionary, source: String = "") -> Array[WeavlyModel.WeavlyNode]:
+static func read_nodes(data: Dictionary, source: String = "") -> Array[WeavlyModel.WeavlyNode]:
 	var nodes_data: Variant = get_required(data, KEY_NODES, Variant.Type.TYPE_ARRAY, source)
 	var source_name: Variant = get_required(data, KEY_SOURCE, Variant.Type.TYPE_STRING, source)
 	var nodes: Array[WeavlyModel.WeavlyNode] = []
 	if nodes_data == null or source_name == null:
 		return nodes
-	var compile: Callable = _compile_located.bind(compile_node)
-	_compile_list(nodes_data, _path_root(source, KEY_NODES), compile, nodes, false)
+	var read: Callable = _read_located.bind(read_node)
+	_read_list(nodes_data, _path_root(source, KEY_NODES), read, nodes, false)
 	for node: WeavlyModel.WeavlyNode in nodes:
 		node.source = source_name
 	return nodes
 
 
-static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
+static func read_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-	var body: Variant = compile_body(data, path)
+	var body: Variant = read_body(data, path)
 	var meta: WeavlyModel.NodeMeta = null
 	if data.has(KEY_META):
-		meta = compile_meta(data[KEY_META], _path_join(path, KEY_META))
+		meta = read_meta(data[KEY_META], _path_join(path, KEY_META))
 		if meta == null:
 			return null
 	if id == null or body == null:
@@ -215,7 +215,7 @@ static func compile_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNo
 # =====================
 
 
-static func compile_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
+static func read_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
@@ -228,36 +228,34 @@ static func compile_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
 				"%s must be a Dictionary, got %s" % [entry_path, type_string(typeof(entry))]
 			)
 			return null
-		if not _compile_meta_entry(meta, key, entry, entry_path):
+		if not _read_meta_entry(meta, key, entry, entry_path):
 			return null
 	return meta
 
 
-static func _compile_meta_entry(
+static func _read_meta_entry(
 	meta: WeavlyModel.NodeMeta, key: Variant, entry: Dictionary, path: String
 ) -> bool:
 	if key == KEY_POOL or key == KEY_SLOT:
 		var names_data: Variant = get_required(entry, KEY_VALUE, Variant.Type.TYPE_ARRAY, path)
 		var names: Array[String] = meta.pools if key == KEY_POOL else meta.slots
 		var value_path: String = _path_join(path, KEY_VALUE)
-		return names_data != null and _compile_list(names_data, value_path, _compile_name, names)
+		return names_data != null and _read_list(names_data, value_path, _read_name, names)
 	var line: Variant = _get_required_line(entry, path)
 	if key in TEXT_META_KEYS:
-		var segments: Variant = compile_text(entry, path, KEY_VALUE)
+		var segments: Variant = read_text(entry, path, KEY_VALUE)
 		if line == null or segments == null:
 			return false
 		meta.texts[key] = WeavlyModel.MetaText.new(segments, line)
 		return true
-	var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
-		entry, KEY_VALUE, path
-	)
+	var expression: WeavlyModel.WeavlyExpression = read_required_expression(entry, KEY_VALUE, path)
 	if line == null or expression == null:
 		return false
 	meta.entries[key] = WeavlyModel.MetaExpression.new(expression, line)
 	return true
 
 
-static func _compile_name(data: Variant, path: String) -> Variant:
+static func _read_name(data: Variant, path: String) -> Variant:
 	if data is String:
 		return data
 	push_error("%s must be a String, got %s" % [path, type_string(typeof(data))])
@@ -270,74 +268,74 @@ static func _compile_name(data: Variant, path: String) -> Variant:
 
 
 # Null when the body is missing; a failing statement inside it is dropped.
-static func compile_body(data: Dictionary, path: String) -> Variant:
+static func read_body(data: Dictionary, path: String) -> Variant:
 	var body_data: Variant = get_required(data, KEY_BODY, Variant.Type.TYPE_ARRAY, path)
 	if body_data == null:
 		return null
-	return compile_statements(body_data, _path_join(path, KEY_BODY))
+	return read_statements(body_data, _path_join(path, KEY_BODY))
 
 
-static func compile_statements(data: Array, path: String) -> Array[WeavlyModel.Statement]:
+static func read_statements(data: Array, path: String) -> Array[WeavlyModel.Statement]:
 	var statements: Array[WeavlyModel.Statement] = []
-	var compile: Callable = _compile_located.bind(compile_statement)
-	_compile_list(data, path, compile, statements, false)
+	var read: Callable = _read_located.bind(read_statement)
+	_read_list(data, path, read, statements, false)
 	return statements
 
 
-static func compile_statement(data: Dictionary, path: String) -> WeavlyModel.Statement:
+static func read_statement(data: Dictionary, path: String) -> WeavlyModel.Statement:
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
 	if type == null:
 		return null
 
 	match type:
 		TYPE_NARRATION:
-			return compile_narration_line(data, path)
+			return read_narration_line(data, path)
 		TYPE_CHARACTER:
-			return compile_character_line(data, path)
+			return read_character_line(data, path)
 		TYPE_MATCH:
-			return compile_match_block(data, path)
+			return read_match_block(data, path)
 		TYPE_OPTION:
-			return compile_option_block(data, path)
+			return read_option_block(data, path)
 		TYPE_SET:
-			return compile_set_statement(data, path)
+			return read_set_statement(data, path)
 		TYPE_JUMP:
-			return compile_jump_statement(data, path)
+			return read_jump_statement(data, path)
 		TYPE_DETOUR:
-			return compile_detour_statement(data, path)
+			return read_detour_statement(data, path)
 		TYPE_FINISH:
-			return compile_finish_statement(data, path)
+			return read_finish_statement(data, path)
 		TYPE_COMMAND:
-			return compile_command_statement(data, path)
+			return read_command_statement(data, path)
 		TYPE_RANDOM:
-			return compile_random_block(data, path)
+			return read_random_block(data, path)
 		TYPE_DRAW:
-			return compile_draw_statement(data, path)
+			return read_draw_statement(data, path)
 		_:
 			push_error("Unknown statement type '%s' at %s" % [type, path])
 			return null
 
 
-static func compile_narration_line(data: Dictionary, path: String) -> WeavlyModel.NarrationLine:
-	var segments: Variant = compile_text(data, path)
+static func read_narration_line(data: Dictionary, path: String) -> WeavlyModel.NarrationLine:
+	var segments: Variant = read_text(data, path)
 	if segments == null:
 		return null
 	return WeavlyModel.NarrationLine.new(segments)
 
 
-static func compile_character_line(data: Dictionary, path: String) -> WeavlyModel.CharacterLine:
+static func read_character_line(data: Dictionary, path: String) -> WeavlyModel.CharacterLine:
 	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var name_is_id: Variant = get_required(data, KEY_NAME_IS_ID, Variant.Type.TYPE_BOOL, path)
-	var segments: Variant = compile_text(data, path)
+	var segments: Variant = read_text(data, path)
 	if name == null or name_is_id == null or segments == null:
 		return null
 	return WeavlyModel.CharacterLine.new(name, name_is_id, segments)
 
 
-static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:
+static func read_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
-	var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
+	var expression: WeavlyModel.WeavlyExpression = read_required_expression(
 		data, KEY_EXPRESSION, path
 	)
 	if expression == null:
@@ -345,63 +343,57 @@ static func compile_set_statement(data: Dictionary, path: String) -> WeavlyModel
 	return WeavlyModel.SetStatement.new(id, expression)
 
 
-static func compile_jump_statement(data: Dictionary, path: String) -> WeavlyModel.JumpStatement:
+static func read_jump_statement(data: Dictionary, path: String) -> WeavlyModel.JumpStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
 	return WeavlyModel.JumpStatement.new(id)
 
 
-static func compile_detour_statement(
-	data: Dictionary, path: String
-) -> WeavlyModel.DetourStatement:
+static func read_detour_statement(data: Dictionary, path: String) -> WeavlyModel.DetourStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	if id == null:
 		return null
 	return WeavlyModel.DetourStatement.new(id)
 
 
-static func compile_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:
+static func read_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:
 	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
 	if pools_data == null:
 		return null
 	var pools: Array[String] = []
-	if not _compile_list(pools_data, _path_join(path, KEY_POOLS), _compile_name, pools):
+	if not _read_list(pools_data, _path_join(path, KEY_POOLS), _read_name, pools):
 		return null
 	return WeavlyModel.DrawStatement.new(pools)
 
 
-static func compile_finish_statement(
-	_data: Dictionary, _path: String
-) -> WeavlyModel.FinishStatement:
+static func read_finish_statement(_data: Dictionary, _path: String) -> WeavlyModel.FinishStatement:
 	return WeavlyModel.FinishStatement.new()
 
 
-static func compile_command_statement(
-	data: Dictionary, path: String
-) -> WeavlyModel.CommandStatement:
+static func read_command_statement(data: Dictionary, path: String) -> WeavlyModel.CommandStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-	var args: Variant = compile_arguments(data, path)
+	var args: Variant = read_arguments(data, path)
 	if id == null or args == null:
 		return null
 	return WeavlyModel.CommandStatement.new(id, args)
 
 
 # Strings are plain text, anything else is an interpolated expression.
-static func compile_text(data: Dictionary, path: String, key: String = KEY_TEXT) -> Variant:
+static func read_text(data: Dictionary, path: String, key: String = KEY_TEXT) -> Variant:
 	var text_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, path)
 	if text_data == null:
 		return null
 	var segments: Array = []
-	if not _compile_list(text_data, _path_join(path, key), _compile_segment, segments):
+	if not _read_list(text_data, _path_join(path, key), _read_segment, segments):
 		return null
 	return segments
 
 
-static func _compile_segment(data: Variant, path: String) -> Variant:
+static func _read_segment(data: Variant, path: String) -> Variant:
 	if data is String:
 		return data
-	return compile_expression(data, path)
+	return read_expression(data, path)
 
 
 # =====================
@@ -409,7 +401,7 @@ static func _compile_segment(data: Variant, path: String) -> Variant:
 # =====================
 
 
-static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.MatchBlock:
+static func read_match_block(data: Dictionary, path: String) -> WeavlyModel.MatchBlock:
 	var modifier_name: Variant = get_required(data, KEY_MODIFIER, Variant.Type.TYPE_STRING, path)
 	var cases_data: Variant = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
 	if modifier_name == null or cases_data == null:
@@ -428,17 +420,17 @@ static func compile_match_block(data: Dictionary, path: String) -> WeavlyModel.M
 			return null
 
 	var cases: Array[WeavlyModel.WhenCase] = []
-	var compile: Callable = _compile_located.bind(compile_when_case)
-	if not _compile_list(cases_data, _path_join(path, KEY_CASES), compile, cases):
+	var read: Callable = _read_located.bind(read_when_case)
+	if not _read_list(cases_data, _path_join(path, KEY_CASES), read, cases):
 		return null
 	return WeavlyModel.MatchBlock.new(modifier, cases)
 
 
-static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.WhenCase:
-	var condition: WeavlyModel.WeavlyExpression = compile_required_expression(
+static func read_when_case(data: Dictionary, path: String) -> WeavlyModel.WhenCase:
+	var condition: WeavlyModel.WeavlyExpression = read_required_expression(
 		data, KEY_CONDITION, path
 	)
-	var body: Variant = compile_body(data, path)
+	var body: Variant = read_body(data, path)
 	if condition == null or body == null:
 		return null
 	return WeavlyModel.WhenCase.new(condition, body)
@@ -449,36 +441,36 @@ static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.Whe
 # =====================
 
 
-static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.OptionBlock:
+static func read_option_block(data: Dictionary, path: String) -> WeavlyModel.OptionBlock:
 	var items_data: Variant = get_required(data, KEY_OPTIONS, Variant.Type.TYPE_ARRAY, path)
 	if items_data == null:
 		return null
 	var items: Array[WeavlyModel.OptionItem] = []
-	var compile: Callable = _compile_located.bind(compile_option_item)
-	if not _compile_list(items_data, _path_join(path, KEY_OPTIONS), compile, items):
+	var read: Callable = _read_located.bind(read_option_item)
+	if not _read_list(items_data, _path_join(path, KEY_OPTIONS), read, items):
 		return null
 	return WeavlyModel.OptionBlock.new(items)
 
 
-static func compile_option_item(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
+static func read_option_item(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
 	match type:
 		null:
 			return null
 		TYPE_INLINE:
-			return _compile_inline_option(data, path)
+			return _read_inline_option(data, path)
 		TYPE_NODE:
 			var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 			return null if id == null else WeavlyModel.NodeOptionItem.new(id)
 		TYPE_POOL:
-			return _compile_pool_option(data, path)
+			return _read_pool_option(data, path)
 	push_error("Unknown option type '%s' at %s" % [type, path])
 	return null
 
 
-static func _compile_inline_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
+static func _read_inline_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var meta: Variant = get_required(data, KEY_META, Variant.Type.TYPE_DICTIONARY, path)
-	var body: Variant = compile_body(data, path)
+	var body: Variant = read_body(data, path)
 	if meta == null or body == null:
 		return null
 	var meta_path: String = _path_join(path, KEY_META)
@@ -489,24 +481,22 @@ static func _compile_inline_option(data: Dictionary, path: String) -> WeavlyMode
 	var label: Variant = get_required(meta, KEY_LABEL, Variant.Type.TYPE_DICTIONARY, meta_path)
 	if label == null:
 		return null
-	var segments: Variant = compile_text(label, _path_join(meta_path, KEY_LABEL), KEY_VALUE)
+	var segments: Variant = read_text(label, _path_join(meta_path, KEY_LABEL), KEY_VALUE)
 	var condition: WeavlyModel.WeavlyExpression = WeavlyModel.TrueExpression.new()
 	if meta.has(KEY_WHEN):
 		var entry: Variant = get_required(meta, KEY_WHEN, Variant.Type.TYPE_DICTIONARY, meta_path)
 		if entry == null:
 			return null
-		condition = compile_required_expression(entry, KEY_VALUE, _path_join(meta_path, KEY_WHEN))
+		condition = read_required_expression(entry, KEY_VALUE, _path_join(meta_path, KEY_WHEN))
 	if segments == null or condition == null:
 		return null
 	return WeavlyModel.InlineOptionItem.new(condition, segments, body)
 
 
-static func _compile_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
+static func _read_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
 	var locked_name: Variant = get_required(data, KEY_LOCKED, Variant.Type.TYPE_STRING, path)
-	var shuffle: WeavlyModel.WeavlyExpression = compile_required_expression(
-		data, KEY_SHUFFLE, path
-	)
+	var shuffle: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_SHUFFLE, path)
 	if pools_data == null or locked_name == null or shuffle == null:
 		return null
 	if not data.has(KEY_LIMIT):
@@ -514,14 +504,14 @@ static func _compile_pool_option(data: Dictionary, path: String) -> WeavlyModel.
 		return null
 	var limit: WeavlyModel.WeavlyExpression = null
 	if data[KEY_LIMIT] != null:
-		limit = compile_expression(data[KEY_LIMIT], _path_join(path, KEY_LIMIT))
+		limit = read_expression(data[KEY_LIMIT], _path_join(path, KEY_LIMIT))
 		if limit == null:
 			return null
 	if locked_name not in LOCKED_MODES:
 		push_error("Unknown locked mode '%s' at %s" % [locked_name, path])
 		return null
 	var pools: Array[String] = []
-	if not _compile_list(pools_data, _path_join(path, KEY_POOLS), _compile_name, pools):
+	if not _read_list(pools_data, _path_join(path, KEY_POOLS), _read_name, pools):
 		return null
 	return WeavlyModel.PoolOptionItem.new(pools, limit, shuffle, LOCKED_MODES[locked_name])
 
@@ -531,23 +521,23 @@ static func _compile_pool_option(data: Dictionary, path: String) -> WeavlyModel.
 # =====================
 
 
-static func compile_random_block(data: Dictionary, path: String) -> WeavlyModel.RandomBlock:
+static func read_random_block(data: Dictionary, path: String) -> WeavlyModel.RandomBlock:
 	var cases_data: Variant = get_required(data, KEY_CASES, Variant.Type.TYPE_ARRAY, path)
 	if cases_data == null:
 		return null
 	var cases: Array[WeavlyModel.RandomCase] = []
-	var compile: Callable = _compile_located.bind(compile_random_case)
-	if not _compile_list(cases_data, _path_join(path, KEY_CASES), compile, cases):
+	var read: Callable = _read_located.bind(read_random_case)
+	if not _read_list(cases_data, _path_join(path, KEY_CASES), read, cases):
 		return null
 	return WeavlyModel.RandomBlock.new(cases)
 
 
-static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.RandomCase:
-	var condition: WeavlyModel.WeavlyExpression = compile_required_expression(
+static func read_random_case(data: Dictionary, path: String) -> WeavlyModel.RandomCase:
+	var condition: WeavlyModel.WeavlyExpression = read_required_expression(
 		data, KEY_CONDITION, path
 	)
-	var weight: WeavlyModel.WeavlyExpression = compile_required_expression(data, KEY_WEIGHT, path)
-	var body: Variant = compile_body(data, path)
+	var weight: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_WEIGHT, path)
+	var body: Variant = read_body(data, path)
 	if condition == null or weight == null or body == null:
 		return null
 	return WeavlyModel.RandomCase.new(condition, weight, body)
@@ -559,27 +549,27 @@ static func compile_random_case(data: Dictionary, path: String) -> WeavlyModel.R
 
 
 # Null when the field is missing or its expression fails; either is reported once.
-static func compile_required_expression(
+static func read_required_expression(
 	data: Dictionary, key: String, path: String
 ) -> WeavlyModel.WeavlyExpression:
 	var expression_data: Variant = get_required(data, key, Variant.Type.TYPE_NIL, path)
 	if expression_data == null:
 		return null
-	return compile_expression(expression_data, _path_join(path, key))
+	return read_expression(expression_data, _path_join(path, key))
 
 
 # Null when args is missing or any argument fails.
-static func compile_arguments(data: Dictionary, path: String) -> Variant:
+static func read_arguments(data: Dictionary, path: String) -> Variant:
 	var args_data: Variant = get_required(data, KEY_ARGS, Variant.Type.TYPE_ARRAY, path)
 	if args_data == null:
 		return null
 	var args: Array[WeavlyModel.WeavlyExpression] = []
-	if not _compile_list(args_data, _path_join(path, KEY_ARGS), compile_expression, args):
+	if not _read_list(args_data, _path_join(path, KEY_ARGS), read_expression, args):
 		return null
 	return args
 
 
-static func compile_expression(data: Variant, path: String) -> WeavlyModel.WeavlyExpression:
+static func read_expression(data: Variant, path: String) -> WeavlyModel.WeavlyExpression:
 	if data is bool:
 		return WeavlyModel.TrueExpression.new() if data else WeavlyModel.FalseExpression.new()
 
@@ -590,7 +580,7 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 		return WeavlyModel.StringLiteral.new(String(data))
 
 	if data is Dictionary and data.has(KEY_CALL):
-		return compile_call(data, path)
+		return read_call(data, path)
 
 	if data is Dictionary and data.has(KEY_VARIABLE):
 		var variable: Variant = get_required(data, KEY_VARIABLE, Variant.Type.TYPE_STRING, path)
@@ -602,7 +592,7 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 		var op: Variant = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
 		if op == null:
 			return null
-		var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
+		var expression: WeavlyModel.WeavlyExpression = read_required_expression(
 			data, KEY_EXPRESSION, path
 		)
 		if expression == null:
@@ -613,10 +603,8 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 		var op: Variant = get_required(data, KEY_OP, Variant.Type.TYPE_STRING, path)
 		if op == null:
 			return null
-		var left: WeavlyModel.WeavlyExpression = compile_required_expression(data, KEY_LEFT, path)
-		var right: WeavlyModel.WeavlyExpression = compile_required_expression(
-			data, KEY_RIGHT, path
-		)
+		var left: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_LEFT, path)
+		var right: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_RIGHT, path)
 		if left == null or right == null:
 			return null
 		return WeavlyModel.BinaryExpression.new(op, left, right)
@@ -625,16 +613,16 @@ static func compile_expression(data: Variant, path: String) -> WeavlyModel.Weavl
 	return null
 
 
-static func compile_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyExpression:
+static func read_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyExpression:
 	var name: Variant = get_required(data, KEY_CALL, Variant.Type.TYPE_STRING, path)
 	if name == null:
 		return null
 	if WeavlyExpressionEvaluator.is_number_function(name):
-		return _compile_number_call(name, data, path)
+		return _read_number_call(name, data, path)
 	if name == WeavlyExpressionEvaluator.META:
-		return _compile_meta_call(data, path)
+		return _read_meta_call(data, path)
 	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
-		var args: Variant = compile_arguments(data, path)
+		var args: Variant = read_arguments(data, path)
 		return null if args == null else WeavlyModel.Call.new(name, "", args)
 	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
 	if node_id == null:
@@ -642,7 +630,7 @@ static func compile_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyEx
 	return WeavlyModel.Call.new(name, node_id)
 
 
-static func _compile_meta_call(data: Dictionary, path: String) -> WeavlyModel.MetaCall:
+static func _read_meta_call(data: Dictionary, path: String) -> WeavlyModel.MetaCall:
 	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
 	var key: Variant = get_required(data, KEY_KEY, Variant.Type.TYPE_STRING, path)
 	if node_id == null or key == null:
@@ -650,7 +638,7 @@ static func _compile_meta_call(data: Dictionary, path: String) -> WeavlyModel.Me
 	return WeavlyModel.MetaCall.new(node_id, key)
 
 
-static func _compile_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
+static func _read_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
 	var args_data: Variant = get_required(data, KEY_ARGS, Variant.Type.TYPE_ARRAY, path)
 	if args_data == null:
 		return null
@@ -660,7 +648,7 @@ static func _compile_number_call(name: String, data: Dictionary, path: String) -
 	if count_error != "":
 		push_error("%s at %s" % [count_error, path])
 		return null
-	var args: Variant = compile_arguments(data, path)
+	var args: Variant = read_arguments(data, path)
 	if args == null:
 		return null
 	return WeavlyModel.Call.new(name, "", args)
@@ -671,7 +659,7 @@ static func _compile_number_call(name: String, data: Dictionary, path: String) -
 # =====================
 
 
-static func compile_variable_declarations(
+static func read_variable_declarations(
 	data: Variant, source: String = ""
 ) -> Array[WeavlyModel.Variable]:
 	var variables: Array[WeavlyModel.Variable] = []
@@ -681,37 +669,35 @@ static func compile_variable_declarations(
 	if declarations == null:
 		return variables
 	var path: String = _path_root(source, KEY_DECLARATIONS)
-	_compile_list(declarations, path, compile_variable, variables, false)
+	_read_list(declarations, path, read_variable, variables, false)
 	return variables
 
 
 # The pool names declared in env.json.
-static func compile_pool_names(data: Dictionary, source: String = "") -> Array[String]:
-	return _compile_names(data, KEY_POOLS, source)
+static func read_pool_names(data: Dictionary, source: String = "") -> Array[String]:
+	return _read_names(data, KEY_POOLS, source)
 
 
 # The slot names declared in env.json.
-static func compile_slot_names(data: Dictionary, source: String = "") -> Array[String]:
-	return _compile_names(data, KEY_SLOTS, source)
+static func read_slot_names(data: Dictionary, source: String = "") -> Array[String]:
+	return _read_names(data, KEY_SLOTS, source)
 
 
 # The declared custom meta keys in env.json, each with its default.
-static func compile_meta_keys(
-	data: Dictionary, source: String = ""
-) -> Dictionary[String, Variant]:
+static func read_meta_keys(data: Dictionary, source: String = "") -> Dictionary[String, Variant]:
 	var keys: Dictionary[String, Variant] = {}
 	var keys_data: Variant = get_required(data, KEY_META_KEYS, Variant.Type.TYPE_ARRAY, source)
 	if keys_data == null:
 		return keys
 	var declared: Array = []
-	_compile_list(keys_data, _path_root(source, KEY_META_KEYS), _compile_meta_key, declared, false)
+	_read_list(keys_data, _path_root(source, KEY_META_KEYS), _read_meta_key, declared, false)
 	for key: Array in declared:
 		keys[key[0]] = key[1]
 	return keys
 
 
 # [name, default], or null.
-static func _compile_meta_key(data: Variant, path: String) -> Variant:
+static func _read_meta_key(data: Variant, path: String) -> Variant:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
@@ -730,33 +716,27 @@ static func _compile_meta_key(data: Variant, path: String) -> Variant:
 
 
 # The declared functions in env.json.
-static func compile_functions(
-	data: Dictionary, source: String = ""
-) -> Array[WeavlyModel.Signature]:
-	return _compile_signatures(data, KEY_FUNCTIONS, source)
+static func read_functions(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
+	return _read_signatures(data, KEY_FUNCTIONS, source)
 
 
 # The declared commands in env.json.
-static func compile_commands(
-	data: Dictionary, source: String = ""
-) -> Array[WeavlyModel.Signature]:
-	return _compile_signatures(data, KEY_COMMANDS, source)
+static func read_commands(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
+	return _read_signatures(data, KEY_COMMANDS, source)
 
 
-static func _compile_signatures(
+static func _read_signatures(
 	data: Dictionary, key: String, source: String
 ) -> Array[WeavlyModel.Signature]:
 	var signatures: Array[WeavlyModel.Signature] = []
 	var signatures_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, source)
 	if signatures_data != null:
-		var compile: Callable = _compile_signature.bind(key == KEY_FUNCTIONS)
-		_compile_list(signatures_data, _path_root(source, key), compile, signatures, false)
+		var read: Callable = _read_signature.bind(key == KEY_FUNCTIONS)
+		_read_list(signatures_data, _path_root(source, key), read, signatures, false)
 	return signatures
 
 
-static func _compile_signature(
-	data: Variant, path: String, returns: bool
-) -> WeavlyModel.Signature:
+static func _read_signature(data: Variant, path: String, returns: bool) -> WeavlyModel.Signature:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
@@ -768,14 +748,14 @@ static func _compile_signature(
 	if name == null or params == null or return_type == null:
 		return null
 	var param_types: Array[String] = []
-	if not _compile_list(params, _path_join(path, KEY_PARAMS), _compile_param_type, param_types):
+	if not _read_list(params, _path_join(path, KEY_PARAMS), _read_param_type, param_types):
 		return null
 	if returns and not _is_value_type(return_type, _path_join(path, KEY_RETURNS)):
 		return null
 	return WeavlyModel.Signature.new(name, param_types, return_type)
 
 
-static func _compile_param_type(data: Variant, path: String) -> Variant:
+static func _read_param_type(data: Variant, path: String) -> Variant:
 	if data is not Dictionary:
 		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
 		return null
@@ -790,15 +770,15 @@ static func _is_value_type(type: String, path: String) -> bool:
 	return false
 
 
-static func _compile_names(data: Dictionary, key: String, source: String) -> Array[String]:
+static func _read_names(data: Dictionary, key: String, source: String) -> Array[String]:
 	var names: Array[String] = []
 	var names_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, source)
 	if names_data != null:
-		_compile_list(names_data, _path_root(source, key), _compile_name, names, false)
+		_read_list(names_data, _path_root(source, key), _read_name, names, false)
 	return names
 
 
-static func compile_variable(data: Variant, path: String = "") -> WeavlyModel.Variable:
+static func read_variable(data: Variant, path: String = "") -> WeavlyModel.Variable:
 	if path == "":
 		path = "<root>"
 

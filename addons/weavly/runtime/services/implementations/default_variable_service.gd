@@ -22,10 +22,10 @@ func get_declaration(id: String) -> WeavlyModel.Variable:
 	return _variables.get(id)
 
 
-func get_variable(id: String, default: Variant = null) -> Variant:
+func get_variable(id: String) -> Variant:
 	if not _variable_states.has(id):
-		push_warning(MISSING_ID % [TYPE, id, default])
-	return _variable_states.get(id, default)
+		push_warning(MISSING_ID % [TYPE, id])
+	return _variable_states.get(id)
 
 
 func set_variable(id: String, value: Variant) -> void:

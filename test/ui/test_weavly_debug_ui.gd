@@ -14,9 +14,6 @@ var _ui: WeavlyDebugUI
 func before_test() -> void:
 	_engine = WeavlyDefaultEngine.new()
 	_engine.dialogue_path = FIXTURE + "/build"
-	_engine.video_path = FIXTURE + "/build"
-	_engine.image_path = FIXTURE + "/build"
-	_engine.character_path = FIXTURE + "/build"
 	add_child(auto_free(_engine))
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
@@ -337,6 +334,12 @@ func test_meta_values_arent_read_on_other_tabs() -> void:
 func test_pools_show_what_list_pool_would_return() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "owl"])
+
+
+func test_pools_list_a_declared_pool_without_nodes() -> void:
+	_engine.node_service.add_pool("harbor")
+	_show_tab(WeavlyDebugUI.POOLS_TAB)
+	assert_array(_pools()).is_equal(["city", "bob, ann", "harbor", "(none)", "night", "owl"])
 
 
 func test_pools_follow_variable_changes() -> void:

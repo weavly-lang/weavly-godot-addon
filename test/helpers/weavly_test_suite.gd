@@ -18,7 +18,7 @@ func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 func inline_option(
 	text: String, body: Array[WeavlyModel.Statement] = [], condition: Variant = true
 ) -> WeavlyModel.Option:
-	var expression: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+	var expression: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
 		condition, ""
 	)
 	var option: WeavlyModel.Option = WeavlyModel.Option.new()

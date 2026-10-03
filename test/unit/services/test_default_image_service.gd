@@ -22,13 +22,12 @@ func test_add_and_get_image() -> void:
 	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
 
 
-func test_get_missing_id_returns_provided_default() -> void:
-	var fallback: ImageTexture = ImageTexture.new()
-	assert_that(_service.get_image("missing", fallback)).is_equal(fallback)
+func test_get_missing_id_returns_null() -> void:
+	assert_that(_service.get_image("missing")).is_null()
 	assert_logged(["Image with id 'missing' doesn't exist"])
 
 
-func test_failed_load_returns_default() -> void:
+func test_failed_load_returns_null() -> void:
 	_service.add_media("broken", "res://test/fixtures/nonexistent.png")
 	assert_that(_service.get_image("broken")).is_null()
 	assert_logged(
@@ -58,7 +57,7 @@ func test_get_image_loads_a_file_outside_res() -> void:
 	assert_object(_service.get_image("splash")).is_instanceof(Texture2D)
 
 
-func test_get_image_returns_default_for_a_missing_external_file() -> void:
+func test_get_image_returns_null_for_a_missing_external_file() -> void:
 	var path: String = create_temp_dir("image_external_missing").path_join("nope.png")
 	_service.add_media("broken", path)
 	assert_that(_service.get_image("broken")).is_null()

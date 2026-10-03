@@ -16,7 +16,7 @@ func add_character(character: WeavlyCharacter) -> void:
 	_character_index[character.id] = character
 
 
-func get_character(id: String, default: WeavlyCharacter = null) -> WeavlyCharacter:
+func get_character(id: String) -> WeavlyCharacter:
 	if not _character_index.has(id):
-		push_error(MISSING_ID % [TYPE, id, default])
-	return _character_index.get(id, default)
+		push_error(MISSING_ID % [TYPE, id])
+	return _character_index.get(id)

@@ -211,6 +211,18 @@ func clear_location() -> void:
 	current_line = 0
 
 
+# Calls evaluate with errors pointing to line in source, then restores the location.
+func evaluate_at(source: String, line: int, evaluate: Callable) -> Variant:
+	var left_source: String = current_source
+	var left_line: int = current_line
+	current_source = source
+	current_line = line
+	var value: Variant = evaluate.call()
+	current_source = left_source
+	current_line = left_line
+	return value
+
+
 func _locate(message: String) -> String:
 	if current_source != "" and current_line > 0:
 		return "%s:%d: error: %s" % [current_source, current_line, message]

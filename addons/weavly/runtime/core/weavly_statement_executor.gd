@@ -26,7 +26,7 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 	elif statement is WeavlyModel.OptionBlock:
 		execute_option_block(statement, engine)
 	elif statement is WeavlyModel.RandomBlock:
-		execute_random_block(statement, engine, engine.rng.randf)
+		execute_random_block(statement, engine)
 	elif statement is WeavlyModel.DrawStatement:
 		execute_draw_statement(statement, engine)
 	else:
@@ -169,17 +169,16 @@ static func execute_option_block(
 
 
 static func execute_random_block(
-	random_block: WeavlyModel.RandomBlock,
-	engine: WeavlyEngine,
-	rng: Callable,
+	random_block: WeavlyModel.RandomBlock, engine: WeavlyEngine
 ) -> void:
 	var possible_cases: Array[WeavlyModel.RandomCase] = []
 	var evaluated_weights: Array[float] = []
 	var total_weight: float = 0
 	for case: WeavlyModel.RandomCase in random_block.cases:
-		var condition: bool = _condition_holds(case.line, case.condition, engine)
+		if not _condition_holds(case.line, case.condition, engine):
+			continue
 		var weight: float = _evaluate_weight(case.weight, engine)
-		if condition and weight > 0:
+		if weight > 0:
 			possible_cases.append(case)
 			evaluated_weights.append(weight)
 			total_weight += weight
@@ -187,7 +186,7 @@ static func execute_random_block(
 	if possible_cases.is_empty() or total_weight <= 0:
 		return
 
-	var random: float = rng.call() * total_weight
+	var random: float = engine.rng.randf() * total_weight
 	var current: float = 0.0
 	for i: int in possible_cases.size():
 		current += evaluated_weights[i]

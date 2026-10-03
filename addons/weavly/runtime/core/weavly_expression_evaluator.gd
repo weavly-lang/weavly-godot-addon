@@ -166,10 +166,6 @@ static func _evaluate_declared_call(call: WeavlyModel.Call, engine: WeavlyEngine
 
 
 static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
-	var count_error: String = argument_count_error(call.name, call.args.size())
-	if count_error != "":
-		engine.report_error(count_error + ".")
-		return ERROR
 	var values: Array[float] = []
 	for arg: WeavlyModel.WeavlyExpression in call.args:
 		var value: Variant = evaluate_expression(arg, engine)
@@ -275,14 +271,10 @@ static func evaluate_math_expression(
 			return left - right
 		MUL:
 			return left * right
-		DIV:
-			if right == 0:
-				engine.report_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
-				return DEFAULT_DIVISION_BY_ZERO_RETURN
-			return left / right
-
-	engine.report_error(UNKNOWN_OPERATOR % op)
-	return ERROR
+	if right == 0:
+		engine.report_error(DIVISION_BY_ZERO % DEFAULT_DIVISION_BY_ZERO_RETURN)
+		return DEFAULT_DIVISION_BY_ZERO_RETURN
+	return left / right
 
 
 static func evaluate_compare_expression(
@@ -305,11 +297,7 @@ static func evaluate_compare_expression(
 			return left < right or equal
 		GREATER:
 			return left > right and not equal
-		GREATER_EQ:
-			return left > right or equal
-
-	engine.report_error(UNKNOWN_OPERATOR % op)
-	return ERROR
+	return left > right or equal
 
 
 # Tighter than is_equal_approx, which treats 1000000 and 1000001 as equal.

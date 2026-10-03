@@ -22,13 +22,12 @@ func test_add_and_get_video() -> void:
 	assert_object(_service.get_video("intro")).is_instanceof(VideoStream)
 
 
-func test_get_missing_id_returns_provided_default() -> void:
-	var fallback: VideoStreamTheora = VideoStreamTheora.new()
-	assert_that(_service.get_video("missing", fallback)).is_equal(fallback)
+func test_get_missing_id_returns_null() -> void:
+	assert_that(_service.get_video("missing")).is_null()
 	assert_logged(["Video with id 'missing' doesn't exist"])
 
 
-func test_failed_load_returns_default() -> void:
+func test_failed_load_returns_null() -> void:
 	_service.add_media("broken", "res://test/fixtures/nonexistent.ogv")
 	assert_that(_service.get_video("broken")).is_null()
 	assert_logged(
@@ -60,7 +59,7 @@ func test_get_video_streams_a_file_outside_res() -> void:
 	assert_str(stream.file).is_equal(path)
 
 
-func test_get_video_returns_default_for_a_missing_external_file() -> void:
+func test_get_video_returns_null_for_a_missing_external_file() -> void:
 	var path: String = create_temp_dir("video_external_missing").path_join("nope.ogv")
 	_service.add_media("broken", path)
 	assert_that(_service.get_video("broken")).is_null()

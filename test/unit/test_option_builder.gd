@@ -12,7 +12,7 @@ func before_test() -> void:
 
 
 func _block(text: Array, line: int) -> WeavlyModel.OptionBlock:
-	var segments: Array = WeavlyDeserializer.compile_text({"text": text}, "test")
+	var segments: Array = WeavlyDeserializer.read_text({"text": text}, "test")
 	var body: Array[WeavlyModel.Statement] = []
 	var item: WeavlyModel.InlineOptionItem = WeavlyModel.InlineOptionItem.new(
 		WeavlyModel.TrueExpression.new(), segments, body

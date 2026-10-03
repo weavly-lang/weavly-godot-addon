@@ -37,7 +37,7 @@ func test_add_and_get_flag_variable() -> void:
 	assert_that(_service.get_variable("active")).is_equal(false)
 
 
-func test_get_missing_returns_default() -> void:
+func test_get_missing_returns_null() -> void:
 	assert_that(_service.get_variable("missing")).is_null()
 	assert_logged([], ["Variable with id 'missing' doesn't exist"])
 

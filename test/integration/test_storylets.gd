@@ -9,9 +9,6 @@ const FIXTURE = "res://test/fixtures/integration/storylets/build"
 func _make_engine(random_seed: int = 1) -> WeavlyDefaultEngine:
 	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
 	engine.dialogue_path = FIXTURE
-	engine.video_path = FIXTURE
-	engine.image_path = FIXTURE
-	engine.character_path = FIXTURE
 	engine.random_seed = random_seed
 	add_child(auto_free(engine))
 	return engine

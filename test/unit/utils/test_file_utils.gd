@@ -7,6 +7,7 @@ const DefaultImageService = preload(
 )
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
+const BUILD_DIR = FIXTURE_DIR + "/build"
 const PLAIN_PATH = FIXTURE_DIR + "/plain.json"
 const INVALID_PATH = FIXTURE_DIR + "/invalid.json"
 const MISSING_PATH = FIXTURE_DIR + "/does_not_exist.json"
@@ -90,19 +91,31 @@ func test_load_json_returns_null_on_missing_file() -> void:
 
 
 # =====================
-# load_dialogue: malformed input (issue #38)
+# load_dialogue
 # =====================
 
 
-func test_load_dialogue_skips_malformed_files_without_crashing() -> void:
-	# FIXTURE_DIR mixes an unparseable file, an array-root file, and dictionaries
-	# without a "nodes" key alongside valid nodes and declarations. A single bad
-	# file must not crash startup.
+func test_load_dialogue_reads_env_json_and_every_wvl_json() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	WeavlyFileUtils.load_dialogue(engine, FIXTURE_DIR)
-	assert_bool(engine.node_service.has("start")).is_true()
+	WeavlyFileUtils.load_dialogue(engine, BUILD_DIR)
 	assert_that(engine.variable_service.get_variable("score")).is_equal(0.0)
-	assert_logged(["JSON parse error in res://test/fixtures/file_utils/invalid.json at line 0"])
+	assert_bool(engine.node_service.has("start")).is_true()
+	assert_bool(engine.node_service.has("more")).is_true()
+	assert_bool(engine.node_service.has("ignored")).is_false()
+	assert_logged(["JSON parse error in %s/broken.wvl.json" % BUILD_DIR])
+
+
+func test_load_dialogue_without_env_json_is_an_error() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	WeavlyFileUtils.load_dialogue(engine, FIXTURE_DIR + "/sub")
+	assert_logged(
+		[
+			(
+				"Can't load '%s/sub' without env.json; check dialogue_path or build the project."
+				% FIXTURE_DIR
+			)
+		]
+	)
 
 
 # =====================

@@ -24,14 +24,8 @@ func test_add_and_get() -> void:
 	assert_that(_service.get_character("hero")).is_equal(character)
 
 
-func test_get_missing_returns_default() -> void:
+func test_get_missing_returns_null() -> void:
 	assert_that(_service.get_character("missing")).is_null()
-	assert_logged(["Character with id 'missing' doesn't exist"])
-
-
-func test_get_missing_returns_provided_default() -> void:
-	var fallback: WeavlyCharacter = WeavlyCharacter.new()
-	assert_that(_service.get_character("missing", fallback)).is_equal(fallback)
 	assert_logged(["Character with id 'missing' doesn't exist"])
 
 

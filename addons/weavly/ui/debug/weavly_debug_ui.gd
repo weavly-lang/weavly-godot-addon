@@ -353,13 +353,7 @@ func _jump(node_id: String) -> void:
 func _refresh_pools() -> void:
 	_pools_dirty = false
 	free_children(_pool_list)
-	var pools: Array[String] = []
-	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
-		if node.meta == null:
-			continue
-		for pool: String in node.meta.pools:
-			if pool not in pools:
-				pools.append(pool)
+	var pools: Array[String] = engine.node_service.get_all_pools()
 	pools.sort()
 	for pool: String in pools:
 		_pool_list.add_child(_create_label(pool, &"WeavlyDebugHeading"))

@@ -451,28 +451,6 @@ func test_function_with_a_failing_argument_reports_once() -> void:
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
-func test_function_with_the_wrong_argument_count_returns_error() -> void:
-	var result: Variant = _call("clamp", [1.0, 2.0])
-	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
-	assert_logged(["clamp() takes 3 arguments, got 2."])
-
-
-func test_functions_with_a_fixed_argument_count_reject_one_more_or_less() -> void:
-	var counts: Dictionary[String, int] = {
-		"random": 2, "clamp": 3, "round": 1, "floor": 1, "ceil": 1, "abs": 1
-	}
-	for function_name: String in counts:
-		var expected: int = counts[function_name]
-		var noun: String = "argument" if expected == 1 else "arguments"
-		for count: int in [expected - 1, expected + 1]:
-			var values: Array = []
-			values.resize(count)
-			values.fill(1.0)
-			var result: Variant = _call(function_name, values)
-			assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
-			assert_logged(["%s() takes %d %s, got %d." % [function_name, expected, noun, count]])
-
-
 func test_reading_an_undefined_extern_names_it_extern() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new("brave", false)
