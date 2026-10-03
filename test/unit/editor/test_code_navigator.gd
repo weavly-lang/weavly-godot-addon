@@ -245,3 +245,7 @@ func test_resting_the_mouse_on_a_name_shows_its_tooltip() -> void:
 
 func test_resting_the_mouse_past_the_end_of_a_line_shows_none() -> void:
 	assert_str(await _tooltip_at_position(1, 8, Vector2(500, 0))).is_empty()
+
+
+func test_an_empty_tooltip_shows_nothing() -> void:
+	assert_object(_panel._code_edit._make_custom_tooltip("")).is_null()

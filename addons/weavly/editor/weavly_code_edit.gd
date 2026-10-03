@@ -18,6 +18,8 @@ func _get_tooltip(at_position: Vector2) -> String:
 
 # Tooltips show source, so they use the code font.
 func _make_custom_tooltip(for_text: String) -> Object:
+	if for_text.is_empty():
+		return null
 	var label: Label = Label.new()
 	label.text = for_text
 	label.add_theme_font_override("font", get_theme_font("font"))
