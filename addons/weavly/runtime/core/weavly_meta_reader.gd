@@ -39,14 +39,11 @@ static func _read_text(
 ) -> String:
 	if text == null:
 		return ""
-	var source: String = engine.current_source
-	var line: int = engine.current_line
-	engine.current_source = node.source
-	engine.current_line = text.line
-	var filled: String = WeavlyTextUtils.fill_text(text.segments, engine)
-	engine.current_source = source
-	engine.current_line = line
-	return filled
+	return engine.evaluate_at(
+		node.source,
+		text.line,
+		func() -> String: return WeavlyTextUtils.fill_text(text.segments, engine)
+	)
 
 
 # Errors point to the entry, in the node's source; the location is restored afterwards.
@@ -70,14 +67,22 @@ static func read_node(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, key: S
 	var entry: WeavlyModel.MetaExpression = meta.entries.get(key)
 	if entry == null:
 		return default
-	var source: String = engine.current_source
-	var line: int = engine.current_line
-	engine.current_source = node.source
-	engine.current_line = entry.line
+	return engine.evaluate_at(
+		node.source,
+		entry.line,
+		func() -> Variant: return _evaluate(engine, node.id, key, entry, default)
+	)
+
+
+static func _evaluate(
+	engine: WeavlyEngine,
+	node_id: String,
+	key: String,
+	entry: WeavlyModel.MetaExpression,
+	default: Variant,
+) -> Variant:
 	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(entry.expression, engine)
 	if not WeavlyExpressionEvaluator.is_error(value) and typeof(value) != typeof(default):
-		engine.report_error(WRONG_TYPE % [key, node.id, type_string(typeof(value))])
-		value = WeavlyExpressionEvaluator.ERROR
-	engine.current_source = source
-	engine.current_line = line
+		engine.report_error(WRONG_TYPE % [key, node_id, type_string(typeof(value))])
+		return WeavlyExpressionEvaluator.ERROR
 	return value
