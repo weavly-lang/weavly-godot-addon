@@ -336,6 +336,12 @@ func test_pools_show_what_list_pool_would_return() -> void:
 	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "owl"])
 
 
+func test_pools_list_a_declared_pool_without_nodes() -> void:
+	_engine.node_service.add_pool("harbor")
+	_show_tab(WeavlyDebugUI.POOLS_TAB)
+	assert_array(_pools()).is_equal(["city", "bob, ann", "harbor", "(none)", "night", "owl"])
+
+
 func test_pools_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	_engine.variable_service.set_variable("gold", 1.0)
