@@ -33,3 +33,31 @@ You go left.
 @node right
 You go right.
 @endnode
+
+@env
+var has_code: flag = false
+@endenv
+
+@node gated
+@options
+@option node(vault)
+@option "Leave"
+    Bye.
+@endoptions
+@endnode
+
+@node sealed
+@options
+@option node(vault)
+@endoptions
+You walk on.
+@endnode
+
+@node vault
+@meta
+label: "Open the vault"
+label_unavailable: "The vault is sealed"
+available: $has_code
+@endmeta
+Opened.
+@endnode

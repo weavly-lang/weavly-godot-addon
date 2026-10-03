@@ -34,3 +34,18 @@ It's late.
 @option "[i]Wave[/i]" -> sleep
 @endoptions
 @endnode
+
+@node locked
+@options
+@option node(closed)
+@endoptions
+>mara: moving on
+@endnode
+
+@node closed
+@meta
+label: "open the door"
+label_unavailable: "the door is locked"
+available: false
+@endmeta
+@endnode

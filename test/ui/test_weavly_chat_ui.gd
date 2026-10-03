@@ -280,3 +280,24 @@ func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
 	_wait_out()
 	assert_array(_describe()).is_equal(["left Mara: Hello [b]world[/b]."])
 	assert_str(_replies()[0].text).is_equal("[i]Wave[/i]")
+
+
+func test_a_reply_bar_where_nothing_can_be_chosen_waits_for_continue() -> void:
+	_engine.start("locked")
+	var continue_button: Button = _ui.get_node("%Continue")
+	assert_str(_replies()[0].text).is_equal("the door is locked")
+	assert_bool(_replies()[0].disabled).is_true()
+	assert_bool(continue_button.visible).is_true()
+	continue_button.pressed.emit()
+	assert_bool(continue_button.visible).is_false()
+	assert_array(_replies()).is_empty()
+	_wait_out()
+	assert_array(_describe()).is_equal(["left Mara: moving on"])
+
+
+func test_continue_stays_hidden_while_a_reply_can_be_chosen() -> void:
+	_engine.start("start")
+	for i: int in 4:
+		_wait_out()
+	assert_int(_replies().size()).is_equal(2)
+	assert_bool((_ui.get_node("%Continue") as Button).visible).is_false()

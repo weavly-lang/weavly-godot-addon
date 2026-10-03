@@ -135,6 +135,13 @@ func _on_engine_attached() -> void:
 	pass
 
 
+# Offered options changed in place; every choice list in the UI shows them again.
+func _on_options_refreshed() -> void:
+	for child: Node in find_children("*", "", true, false):
+		if child is WeavlyChoiceList:
+			child.refresh()
+
+
 func _on_engine_detached() -> void:
 	pass
 
@@ -170,6 +177,8 @@ func _attach() -> void:
 	_attached = true
 	for pair: Array in _engine_signals():
 		(pair[0] as Signal).connect(pair[1])
+	if engine.option_service != null:
+		engine.option_service.options_refreshed.connect(_on_options_refreshed)
 	_on_engine_attached()
 
 
@@ -182,4 +191,6 @@ func _detach() -> void:
 		_attached = false
 		for pair: Array in _engine_signals():
 			(pair[0] as Signal).disconnect(pair[1])
+		if engine.option_service != null:
+			engine.option_service.options_refreshed.disconnect(_on_options_refreshed)
 		_on_engine_detached()

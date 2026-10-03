@@ -85,3 +85,24 @@ pool: styled
 @option "[i]Wave[/i]" -> let_go
 @endoptions
 @endnode
+
+@env
+pool teased
+@endenv
+
+@node teased_storylet
+@meta
+pool: teased
+label: "A door"
+label_teaser: "A closed door"
+when: false
+@endmeta
+Behind the door.
+@endnode
+
+@node open_storylet
+@meta
+pool: teased
+@endmeta
+An open square.
+@endnode
