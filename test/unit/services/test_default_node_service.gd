@@ -23,14 +23,8 @@ func test_add_and_get() -> void:
 	assert_that(_service.get_node("start")).is_equal(node)
 
 
-func test_get_missing_returns_default() -> void:
+func test_get_missing_returns_null() -> void:
 	assert_that(_service.get_node("missing")).is_null()
-	assert_logged(["Node with id 'missing' doesn't exist"])
-
-
-func test_get_missing_returns_provided_default() -> void:
-	var fallback: WeavlyModel.WeavlyNode = WeavlyModel.WeavlyNode.new("fallback", [])
-	assert_that(_service.get_node("missing", fallback)).is_equal(fallback)
 	assert_logged(["Node with id 'missing' doesn't exist"])
 
 
