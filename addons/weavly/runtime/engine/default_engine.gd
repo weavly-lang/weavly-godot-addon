@@ -46,9 +46,12 @@ static var _service_types: Dictionary[String, Array] = {
 }
 
 @export var dialogue_path: String = "res://dialogue/build"
-@export var video_path: String = "res://media/videos"
-@export var image_path: String = "res://media/images"
-@export var character_path: String = "res://characters"
+## Empty means the game has no videos.
+@export var video_path: String = ""
+## Empty means the game has no images.
+@export var image_path: String = ""
+## Empty means the game has no character resources.
+@export var character_path: String = ""
 @export var image_group_pattern: String = ""
 @export var video_group_pattern: String = ""
 @export var image_extensions: PackedStringArray = [".png", ".jpg"]
@@ -104,9 +107,12 @@ func _ready() -> void:
 
 	variable_service.variable_changed.connect(_on_variable_changed)
 	WeavlyFileUtils.load_dialogue(self, dialogue_path)
-	WeavlyFileUtils.index_media_from_files(video_service, video_path)
-	WeavlyFileUtils.index_media_from_files(image_service, image_path)
-	WeavlyFileUtils.index_characters_from_resources(self, character_path)
+	if not video_path.is_empty():
+		WeavlyFileUtils.index_media_from_files(video_service, video_path)
+	if not image_path.is_empty():
+		WeavlyFileUtils.index_media_from_files(image_service, image_path)
+	if not character_path.is_empty():
+		WeavlyFileUtils.index_characters_from_resources(self, character_path)
 	_initial_state = get_state()
 	if random_seed == 0:
 		_initial_state.erase(KEY_RNG)

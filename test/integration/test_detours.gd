@@ -13,9 +13,6 @@ func before_test() -> void:
 	_events = []
 	_engine = WeavlyDefaultEngine.new()
 	_engine.dialogue_path = FIXTURE
-	_engine.video_path = FIXTURE
-	_engine.image_path = FIXTURE
-	_engine.character_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.entered_node.connect(func(id: String) -> void: _events.append("enter:" + id))
 	_engine.left_node.connect(func(id: String) -> void: _events.append("leave:" + id))

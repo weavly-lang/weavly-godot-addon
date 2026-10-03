@@ -39,10 +39,7 @@ func before_test() -> void:
 	_command_log = []
 
 
-# Build a WeavlyDefaultEngine pointed at a fixture dir. All asset paths point at the
-# same dir; non-dialogue asset lookups simply find no matching extensions, which
-# avoids needing an extra empty fixture dir on disk. The @export paths are set
-# before add_child so they are in place when _ready runs.
+# The @export paths are set before add_child so they are in place when _ready runs.
 func _make_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 	var engine: WeavlyDefaultEngine = _new_engine(fixture_dir)
 	add_child(auto_free(engine))
@@ -53,9 +50,6 @@ func _make_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
 	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
 	engine.dialogue_path = fixture_dir
-	engine.video_path = fixture_dir
-	engine.image_path = fixture_dir
-	engine.character_path = fixture_dir
 	return engine
 
 
@@ -461,6 +455,25 @@ func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
 		. override_failure_message("node should be entered exactly three times")
 		. is_equal(3)
 	)
+
+
+# =====================
+# Media and character folders
+# =====================
+
+
+func test_media_and_character_folders_are_unused_by_default() -> void:
+	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	assert_str(engine.image_path).is_empty()
+	assert_str(engine.video_path).is_empty()
+	assert_str(engine.character_path).is_empty()
+
+
+func test_a_set_folder_that_doesnt_exist_is_an_error() -> void:
+	var engine: WeavlyDefaultEngine = _new_engine(LINEAR_FIXTURE)
+	engine.character_path = "res://does_not_exist"
+	add_child(auto_free(engine))
+	assert_logged(["Failed to open directory: res://does_not_exist"])
 
 
 # =====================

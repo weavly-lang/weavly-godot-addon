@@ -26,8 +26,6 @@ func before_test() -> void:
 	_events = []
 	_engine = WeavlyDefaultEngine.new()
 	_engine.dialogue_path = FIXTURE + "/build"
-	_engine.video_path = FIXTURE + "/build"
-	_engine.image_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))
 	_ui = auto_free(SCENE.instantiate())

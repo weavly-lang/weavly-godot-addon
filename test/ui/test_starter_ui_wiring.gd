@@ -19,9 +19,6 @@ const SCENES: Array[PackedScene] = [
 func _make_engine() -> WeavlyDefaultEngine:
 	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
 	engine.dialogue_path = FIXTURE
-	engine.video_path = FIXTURE
-	engine.image_path = FIXTURE
-	engine.character_path = FIXTURE
 	add_child(auto_free(engine))
 	return engine
 
