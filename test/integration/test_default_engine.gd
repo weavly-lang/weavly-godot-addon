@@ -787,7 +787,7 @@ func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -
 
 func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
-	engine.set_state({"version": 2, "node": "gone", "services": {"variable": {"gold": 3.0}}})
+	engine.set_state({"version": 3, "node": "gone", "services": {"variable": {"gold": 3.0}}})
 	assert_logged(["Can't resume at node 'gone' because it no longer exists."])
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(3.0)
 	assert_bool(engine.is_running()).is_false()
@@ -795,8 +795,8 @@ func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
 
 func test_a_state_of_an_unknown_version_restores_nothing() -> void:
 	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
-	engine.set_state({"version": 3, "services": {"variable": {"gold": 3.0}}})
-	assert_logged(["Can't load a state of version '3', expected version 2."])
+	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
+	assert_logged(["Can't load a state of version '2', expected version 3."])
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
 
 
@@ -817,7 +817,7 @@ func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
 	engine.variable_service.variable_changed.connect(
 		func(id: String, _value: Variant, _old_value: Variant) -> void: events.append(id)
 	)
-	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
+	engine.set_state({"version": 3, "services": {"variable": {"gold": 3.0}}})
 	assert_that(events).is_equal(["state_loaded"])
 
 

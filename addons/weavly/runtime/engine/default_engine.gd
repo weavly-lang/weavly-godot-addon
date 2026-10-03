@@ -13,12 +13,11 @@ const CHOOSE_IN_PROGRESS = "Dialogue is already in progress, can't choose option
 const NOT_RENDERED = "Can't choose option '%s' because it wasn't rendered."
 const LOCKED_OPTION = "Can't choose option '%s' because it's locked."
 
-const STATE_VERSION = 2
+const STATE_VERSION = 3
 const KEY_VERSION = "version"
 const KEY_NODE = "node"
 const KEY_SERVICES = "services"
 const KEY_RNG = "rng"
-const KEY_RENDERED = "rendered"
 
 const DEFAULTS_PATH = "res://addons/weavly/runtime/services/implementations/"
 const DEFAULT_CHARACTER_SERVICE = preload(DEFAULTS_PATH + "default_character_service.gd")
@@ -191,7 +190,6 @@ func _begin_render() -> void:
 	clear_location()
 
 
-# A render keeps the checkpoint of the last node it entered, marked so loading doesn't start it.
 func _end_render() -> Array[WeavlyModel.Statement]:
 	var output: Array[WeavlyModel.Statement] = _render_output
 	_rendering = false
@@ -202,8 +200,6 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 	_meta_snapshots.clear()
 	clear_location()
 	statement_service.clear_statements()
-	if not _checkpoint.is_empty():
-		_checkpoint[KEY_RENDERED] = true
 	_refresh_stale_options()
 	return output
 
@@ -275,12 +271,13 @@ func _enter_pending_node() -> void:
 	if not detoured:
 		_location_stack.clear()
 		statement_service.clear_statements()
-		_checkpoint = {
-			KEY_VERSION: STATE_VERSION,
-			KEY_NODE: node_id,
-			KEY_SERVICES: _collect_service_states(),
-			KEY_RNG: str(rng.state),
-		}
+		if not _rendering:
+			_checkpoint = {
+				KEY_VERSION: STATE_VERSION,
+				KEY_NODE: node_id,
+				KEY_SERVICES: _collect_service_states(),
+				KEY_RNG: str(rng.state),
+			}
 	elif _location_stack.size() >= max_detour_depth:
 		report_error(DETOUR_TOO_DEEP % [node_id, max_detour_depth])
 		finish()
@@ -324,7 +321,6 @@ func is_running() -> bool:
 
 
 # While a dialogue runs, the state as its current node was entered, so loading replays that node.
-# After a render, the state as its last node was entered, marked as rendered.
 func get_state() -> Dictionary:
 	if not _checkpoint.is_empty():
 		return _checkpoint.duplicate(true)
@@ -353,7 +349,7 @@ func set_state(state: Dictionary) -> void:
 	state_loaded.emit()
 
 	var node_id: Variant = state.get(KEY_NODE)
-	if node_id is not String or state.get(KEY_RENDERED) == true:
+	if node_id is not String:
 		return
 	if not node_service.has(node_id):
 		push_error(MISSING_SAVED_NODE % node_id)

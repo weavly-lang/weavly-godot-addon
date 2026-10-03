@@ -64,6 +64,10 @@ func _option(entries: Array[WeavlyModel.Statement], text: String) -> WeavlyModel
 	return null
 
 
+func _saved(engine: WeavlyEngine) -> Dictionary:
+	return JSON.parse_string(JSON.stringify(engine.get_state()))
+
+
 # =====================
 # render
 # =====================
@@ -236,18 +240,39 @@ func test_options_of_several_renders_can_be_chosen() -> void:
 # =====================
 
 
-func test_a_save_after_a_render_loads_without_starting_and_renders_the_same() -> void:
+func test_a_save_after_renders_holds_every_rendered_node() -> void:
 	var engine: WeavlyEngine = _make_engine()
+	engine.render("tavern")
+	engine.render("tavern")
+	var state: Dictionary = _saved(engine)
+	assert_bool(state.has("node")).is_false()
+	assert_that(state["services"]["variable"]["gold"]).is_equal(10.0)
+	assert_that(state["services"]["node"]["visits"]["tavern"]).is_equal(2.0)
+
+
+func test_a_save_after_render_option_holds_the_choice() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.render_option(_option(engine.render("tavern"), "Leave"))
+	assert_bool(_saved(engine)["services"]["variable"]["left"]).is_true()
+
+
+func test_a_save_after_a_render_holds_later_game_changes() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.render("tavern")
+	engine.variable_service.set_variable("drinks", 7.0)
+	assert_that(_saved(engine)["services"]["variable"]["drinks"]).is_equal(7.0)
+
+
+func test_a_save_after_a_render_loads_without_starting_anything() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.render("lucky")
+	var state: Dictionary = _saved(engine)
 	var rendered: Array = _describe(engine.render("lucky"))
 	var gold: float = engine.variable_service.get_variable("gold")
-	var state: Dictionary = JSON.parse_string(JSON.stringify(engine.get_state()))
-	assert_that(state["node"]).is_equal("lucky")
-	assert_bool(state["rendered"]).is_true()
-	engine.render("lucky")
 	_events.clear()
 	engine.set_state(state)
 	assert_array(_events).is_empty()
 	assert_bool(engine.is_running()).is_false()
-	assert_int(engine.node_service.get_visit_count("lucky")).is_equal(0)
+	assert_int(engine.node_service.get_visit_count("lucky")).is_equal(1)
 	assert_array(_describe(engine.render("lucky"))).is_equal(rendered)
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(gold)
