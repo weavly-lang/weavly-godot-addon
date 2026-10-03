@@ -1,0 +1,81 @@
+@env
+var energy: number = 5
+var price: number = 3
+var paid: number = 0
+var found: flag = false
+meta cost: number = 1
+func lucky(): flag
+pool camp
+@endenv
+
+@node camp
+Night falls.
+@options
+@option [not $found] "Search"
+    You search.
+@option [visited()] "Again"
+    Again.
+@option node(hack)
+@option pool(camp, limit: 2, shuffle: false)
+@endoptions
+Morning.
+@endnode
+
+@node hack
+@meta
+label: "Hack (-{meta(cost)} energy)"
+label_unavailable: "Hack (needs {meta(cost)} energy)"
+label_teaser: "Something blinks"
+when: $found
+available: $energy >= meta(cost)
+cost: $price
+@endmeta
+@set $price = 10
+@set $energy = $energy - meta(cost)
+@set $paid = meta(cost)
+Hacked.
+@endnode
+
+@node stargaze
+@meta
+pool: camp
+label: "Stargaze"
+when: $found
+priority: 5
+@endmeta
+Stars.
+@endnode
+
+@node cook
+@meta
+pool: camp
+label: "Cook"
+@endmeta
+You cook.
+@endnode
+
+@node scout
+@meta
+pool: camp
+label: "Scout"
+once: true
+@endmeta
+You scout.
+@endnode
+
+@node sing
+@meta
+pool: camp
+label: "Sing"
+@endmeta
+You sing.
+@endnode
+
+@node gamble
+@meta
+label: "Gamble"
+label_unavailable: "No luck"
+available: lucky()
+@endmeta
+You win.
+@endnode

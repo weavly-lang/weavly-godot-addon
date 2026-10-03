@@ -299,6 +299,15 @@ func test_an_escaped_brace_is_text() -> void:
 	assert_array(_spans("Write \\{visited(x)} here", FUNCTION)).is_empty()
 
 
+func test_node_and_pool_options_are_functions_with_keyword_parameters() -> void:
+	assert_array(_spans("@option node(hack)", FUNCTION)).contains_exactly(["node"])
+	var line: String = "@option pool(camp, limit: 3, shuffle: false, locked: extra)"
+	assert_array(_spans(line, FUNCTION)).contains_exactly(["pool"])
+	assert_array(_spans(line, KEYWORD)).contains_exactly(
+		["limit", "shuffle", "false", "locked", "extra"]
+	)
+
+
 func test_an_interpolation_in_option_text_is_an_expression() -> void:
 	var line: String = '@option [not $poor] "Buy for {max($price, 1)}" -> shop'
 	assert_array(_spans(line, FUNCTION)).contains_exactly(["max"])

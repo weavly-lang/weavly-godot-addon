@@ -45,11 +45,16 @@ const KEY_WHEN = "when"
 const KEY_PRIORITY = "priority"
 const KEY_AVAILABLE = "available"
 const KEY_LABEL = "label"
-const TEXT_META_KEYS = [KEY_LABEL, "label_unavailable", "label_teaser"]
+const KEY_LABEL_UNAVAILABLE = "label_unavailable"
+const KEY_LABEL_TEASER = "label_teaser"
+const TEXT_META_KEYS = [KEY_LABEL, KEY_LABEL_UNAVAILABLE, KEY_LABEL_TEASER]
 
 # Block keys
 const KEY_CASES = "cases"
 const KEY_OPTIONS = "items"
+const KEY_LIMIT = "limit"
+const KEY_SHUFFLE = "shuffle"
+const KEY_LOCKED = "locked"
 
 # Variable keys
 const KEY_NAME = "name"
@@ -79,6 +84,12 @@ const TYPE_SLOT = "slot"
 const TYPE_RANDOM = "random"
 const TYPE_DRAW = "draw"
 const TYPE_INLINE = "inline"
+
+const LOCKED_MODES: Dictionary[String, WeavlyEngine.Locked] = {
+	"show": WeavlyEngine.Locked.SHOW,
+	"extra": WeavlyEngine.Locked.EXTRA,
+	"hide": WeavlyEngine.Locked.HIDE,
+}
 
 # Variable type -> value an extern starts with; its type is the declared value's type.
 const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
@@ -230,10 +241,13 @@ static func _compile_meta_entry(
 		var names: Array[String] = meta.pools if key == KEY_POOL else meta.slots
 		var value_path: String = _path_join(path, KEY_VALUE)
 		return names_data != null and _compile_list(names_data, value_path, _compile_name, names)
-	if key in TEXT_META_KEYS:
-		push_error("Unknown meta key '%s' at %s" % [key, path])
-		return false
 	var line: Variant = _get_required_line(entry, path)
+	if key in TEXT_META_KEYS:
+		var segments: Variant = compile_text(entry, path, KEY_VALUE)
+		if line == null or segments == null:
+			return false
+		meta.texts[key] = WeavlyModel.MetaText.new(segments, line)
+		return true
 	var expression: WeavlyModel.WeavlyExpression = compile_required_expression(
 		entry, KEY_VALUE, path
 	)
@@ -436,23 +450,33 @@ static func compile_when_case(data: Dictionary, path: String) -> WeavlyModel.Whe
 
 
 static func compile_option_block(data: Dictionary, path: String) -> WeavlyModel.OptionBlock:
-	var options_data: Variant = get_required(data, KEY_OPTIONS, Variant.Type.TYPE_ARRAY, path)
-	if options_data == null:
+	var items_data: Variant = get_required(data, KEY_OPTIONS, Variant.Type.TYPE_ARRAY, path)
+	if items_data == null:
 		return null
-	var options: Array[WeavlyModel.Option] = []
-	var compile: Callable = _compile_located.bind(compile_option)
-	if not _compile_list(options_data, _path_join(path, KEY_OPTIONS), compile, options):
+	var items: Array[WeavlyModel.OptionItem] = []
+	var compile: Callable = _compile_located.bind(compile_option_item)
+	if not _compile_list(items_data, _path_join(path, KEY_OPTIONS), compile, items):
 		return null
-	return WeavlyModel.OptionBlock.new(options)
+	return WeavlyModel.OptionBlock.new(items)
 
 
-static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option:
+static func compile_option_item(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
-	if type == null:
-		return null
-	if type != TYPE_INLINE:
-		push_error("Unknown option type '%s' at %s" % [type, path])
-		return null
+	match type:
+		null:
+			return null
+		TYPE_INLINE:
+			return _compile_inline_option(data, path)
+		TYPE_NODE:
+			var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
+			return null if id == null else WeavlyModel.NodeOptionItem.new(id)
+		TYPE_POOL:
+			return _compile_pool_option(data, path)
+	push_error("Unknown option type '%s' at %s" % [type, path])
+	return null
+
+
+static func _compile_inline_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
 	var meta: Variant = get_required(data, KEY_META, Variant.Type.TYPE_DICTIONARY, path)
 	var body: Variant = compile_body(data, path)
 	if meta == null or body == null:
@@ -474,7 +498,32 @@ static func compile_option(data: Dictionary, path: String) -> WeavlyModel.Option
 		condition = compile_required_expression(entry, KEY_VALUE, _path_join(meta_path, KEY_WHEN))
 	if segments == null or condition == null:
 		return null
-	return WeavlyModel.Option.new(condition, segments, body)
+	return WeavlyModel.InlineOptionItem.new(condition, segments, body)
+
+
+static func _compile_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
+	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
+	var locked_name: Variant = get_required(data, KEY_LOCKED, Variant.Type.TYPE_STRING, path)
+	var shuffle: WeavlyModel.WeavlyExpression = compile_required_expression(
+		data, KEY_SHUFFLE, path
+	)
+	if pools_data == null or locked_name == null or shuffle == null:
+		return null
+	if not data.has(KEY_LIMIT):
+		push_error("Missing required field '%s' at %s" % [KEY_LIMIT, path])
+		return null
+	var limit: WeavlyModel.WeavlyExpression = null
+	if data[KEY_LIMIT] != null:
+		limit = compile_expression(data[KEY_LIMIT], _path_join(path, KEY_LIMIT))
+		if limit == null:
+			return null
+	if locked_name not in LOCKED_MODES:
+		push_error("Unknown locked mode '%s' at %s" % [locked_name, path])
+		return null
+	var pools: Array[String] = []
+	if not _compile_list(pools_data, _path_join(path, KEY_POOLS), _compile_name, pools):
+		return null
+	return WeavlyModel.PoolOptionItem.new(pools, limit, shuffle, LOCKED_MODES[locked_name])
 
 
 # =====================

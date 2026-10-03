@@ -25,8 +25,9 @@ class NodeMeta:
 	extends RefCounted
 	var pools: Array[String] = []
 	var slots: Array[String] = []
-	# Every other key, built-in or custom.
+	# Every other key, built-in or custom, except the label keys.
 	var entries: Dictionary[String, MetaExpression] = {}
+	var texts: Dictionary[String, MetaText] = {}
 
 
 class MetaExpression:
@@ -36,6 +37,17 @@ class MetaExpression:
 
 	func _init(expression: WeavlyExpression, line: int):
 		self.expression = expression
+		self.line = line
+
+
+# A label key: segments like a line's.
+class MetaText:
+	extends RefCounted
+	var segments: Array
+	var line: int
+
+	func _init(segments: Array, line: int):
+		self.segments = segments
 		self.line = line
 
 
@@ -161,24 +173,78 @@ class WhenCase:
 
 class OptionBlock:
 	extends Statement
-	var options: Array[Option]
+	var items: Array[OptionItem]
+	# The offered options, set on rendered copies.
+	var options: Array[Option] = []
 
-	func _init(options: Array[Option]):
-		self.options = options
+	func _init(items: Array[OptionItem]):
+		self.items = items
 
 
-class Option:
+class OptionItem:
 	extends RefCounted
+	var line: int = 0
+
+
+# An anonymous node: no id, meta, visits or once.
+class InlineOptionItem:
+	extends OptionItem
 	var condition: WeavlyExpression
 	var segments: Array
-	var text: String = ""
 	var body: Array[Statement]
-	var line: int = 0
 
 	func _init(condition: WeavlyExpression, segments: Array, body: Array[Statement]):
 		self.condition = condition
 		self.segments = segments
 		self.body = body
+
+
+class NodeOptionItem:
+	extends OptionItem
+	var node_id: String
+
+	func _init(node_id: String):
+		self.node_id = node_id
+
+
+# limit is null for no limit.
+class PoolOptionItem:
+	extends OptionItem
+	var pools: Array[String]
+	var limit: WeavlyExpression
+	var shuffle: WeavlyExpression
+	var locked: WeavlyEngine.Locked
+
+	func _init(
+		pools: Array[String],
+		limit: WeavlyExpression,
+		shuffle: WeavlyExpression,
+		locked: WeavlyEngine.Locked
+	):
+		self.pools = pools
+		self.limit = limit
+		self.shuffle = shuffle
+		self.locked = locked
+
+
+# An option as offered; a refresh updates it in place.
+class Option:
+	extends RefCounted
+	enum State { AVAILABLE, UNAVAILABLE, TEASER }
+
+	var text: String = ""
+	var state: State = State.AVAILABLE
+	# Set once a refresh finds the display rule hides it.
+	var hidden: bool = false
+	# Empty for an inline option.
+	var node_id: String = ""
+	var line: int = 0
+	# The inline option's item and the source of its node; unset for node options.
+	var item: InlineOptionItem = null
+	var source: String = ""
+
+	func is_choosable() -> bool:
+		return not hidden and state == State.AVAILABLE
 
 
 # =====================

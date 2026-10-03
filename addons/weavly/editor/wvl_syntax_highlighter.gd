@@ -30,6 +30,13 @@ var _type_regex: RegEx = RegEx.create_from_string(
 var _flag_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _block_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]+)")
 var _meta_key_regex: RegEx = RegEx.create_from_string("^[ \\t]*([A-Za-z_]\\w*)[ \\t]*:")
+var _option_call_regex: RegEx = RegEx.create_from_string("^[ \\t]*@option[ \\t]+(node|pool)\\(")
+var _pool_parameter_regex: RegEx = RegEx.create_from_string(
+	"(?<![\\w$])(limit|shuffle|locked)(?=[ \\t]*:)"
+)
+var _locked_value_regex: RegEx = RegEx.create_from_string(
+	"locked[ \\t]*:[ \\t]*(show|extra|hide)(?!\\w)"
+)
 var _text_directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*@(option|continue)\\b")
 var _interpolation_regex: RegEx = RegEx.create_from_string("(?<!\\\\)\\{[^{}\\n]*\\}")
 
@@ -81,9 +88,15 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 			text_start = length
 		_:
 			if text.strip_edges(true, false).begins_with("@"):
-				var end: int = _expression_end(text)
-				_paint_expression_words(colors, text, 0, end)
-				text_start = 0 if _text_directive_regex.search(text) != null else end
+				if _option_call_regex.search(text) != null:
+					_paint_expression_words(colors, text, 0, length)
+					_paint(colors, text, _pool_parameter_regex, KEYWORD_COLOR, 1)
+					_paint(colors, text, _locked_value_regex, KEYWORD_COLOR, 1)
+					text_start = length
+				else:
+					var end: int = _expression_end(text)
+					_paint_expression_words(colors, text, 0, end)
+					text_start = 0 if _text_directive_regex.search(text) != null else end
 	_paint(colors, text, _string_regex, STRING_COLOR)
 	_paint(colors, text, _character_regex, CHARACTER_COLOR)
 	_paint(colors, text, _directive_regex, DIRECTIVE_COLOR)

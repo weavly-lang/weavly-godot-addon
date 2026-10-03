@@ -11,6 +11,7 @@ const MISSING_SAVED_NODE = "Can't resume at node '%s' because it no longer exist
 const RENDER_IN_PROGRESS = "Dialogue is already in progress, can't render node '%s'."
 const CHOOSE_IN_PROGRESS = "Dialogue is already in progress, can't choose option '%s'."
 const NOT_RENDERED = "Can't choose option '%s' because it wasn't rendered."
+const LOCKED_OPTION = "Can't choose option '%s' because it's locked."
 
 const STATE_VERSION = 2
 const KEY_VERSION = "version"
@@ -82,6 +83,8 @@ var _holds: int = 0
 var _hold_interrupted_step: bool = false
 
 var _checkpoint: Dictionary = {}
+# A variable changed during a step or render; offered options refresh once it ends.
+var _options_stale: bool = false
 var _initial_state: Dictionary = {}
 
 
@@ -101,6 +104,7 @@ func _ready() -> void:
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
+	variable_service.variable_changed.connect(_on_variable_changed)
 	WeavlyFileUtils.load_dialogue(self, dialogue_path, variable_path)
 	WeavlyFileUtils.index_media_from_files(video_service, video_path)
 	WeavlyFileUtils.index_media_from_files(image_service, image_path)
@@ -133,44 +137,50 @@ func render(node_id: String) -> Array[WeavlyModel.Statement]:
 	return _end_render()
 
 
-# Runs a rendered option's action like render(), following jumps into other nodes.
+# Runs a chosen option like render(), following jumps into other nodes.
 func render_option(option: WeavlyModel.Option) -> Array[WeavlyModel.Statement]:
-	var source: Variant = _take_rendered_option(option)
-	if source == null:
+	if not _accept_choice(option):
 		return []
 	_begin_render()
-	_run_option(option, source)
+	_run_choice(option)
 	return _end_render()
 
 
-# Starts a dialogue that runs only a rendered option's action; the rest of its node already ran.
+# Starts a dialogue with a rendered option or one from get_option. An inline option runs only
+# its action, since the rest of its node already ran; a node option runs its node.
 func choose(option: WeavlyModel.Option) -> void:
-	var source: Variant = _take_rendered_option(option)
-	if source == null:
+	if not _accept_choice(option):
 		return
 	_finished = false
 	started_dialogue.emit()
-	_run_option(option, source)
+	_run_choice(option)
 
 
-# The source of the option's node, or null when it can't be chosen.
-func _take_rendered_option(option: WeavlyModel.Option) -> Variant:
+# Checks the option again; a locked one is refused.
+func _accept_choice(option: WeavlyModel.Option) -> bool:
 	if not _finished:
 		push_warning(CHOOSE_IN_PROGRESS % option.text)
-		return null
-	if not _rendered_options.has(option):
+		return false
+	if option.item != null and not _rendered_options.has(option):
 		push_warning(NOT_RENDERED % option.text)
-		return null
-	var source: String = _rendered_options[option]
+		return false
+	WeavlyOptionBuilder.refresh(option, self)
+	if not option.is_choosable():
+		push_warning(LOCKED_OPTION % option.text)
+		return false
 	_rendered_options.clear()
-	return source
+	return true
 
 
-func _run_option(option: WeavlyModel.Option, source: String) -> void:
-	current_source = source
+func _run_choice(option: WeavlyModel.Option) -> void:
+	if option.item == null:
+		snapshot_meta(option.node_id)
+		enter_node(option.node_id)
+		return
+	current_source = option.source
 	current_line = option.line
 	statement_service.clear_statements()
-	statement_service.add_statements(option.body)
+	statement_service.add_statements(option.item.body)
 	next()
 
 
@@ -189,10 +199,12 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 	_finished = true
 	_pending_node_id = null
 	_location_stack.clear()
+	_meta_snapshots.clear()
 	clear_location()
 	statement_service.clear_statements()
 	if not _checkpoint.is_empty():
 		_checkpoint[KEY_RENDERED] = true
+	_refresh_stale_options()
 	return output
 
 
@@ -214,6 +226,13 @@ func next() -> void:
 	if _holds > 0:
 		return
 	_in_next = true
+	if (
+		option_service.has_options()
+		and not option_service.get_options().any(
+			func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
+		)
+	):
+		option_service.clear_options()
 	statement_service.resume()
 	var node_entries: int = 0
 	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
@@ -227,6 +246,20 @@ func next() -> void:
 		else:
 			statement_service.advance_statements()
 	_in_next = false
+	_refresh_stale_options()
+
+
+func _on_variable_changed(_id: String, _value: Variant) -> void:
+	if _in_next or _rendering:
+		_options_stale = true
+	else:
+		refresh_options()
+
+
+func _refresh_stale_options() -> void:
+	if _options_stale:
+		_options_stale = false
+		refresh_options()
 
 
 func _enter_pending_node() -> void:
@@ -276,6 +309,7 @@ func _stop() -> void:
 	_pending_detour = false
 	_checkpoint = {}
 	_location_stack.clear()
+	_meta_snapshots.clear()
 	clear_location()
 	statement_service.clear_statements()
 	option_service.clear_options()

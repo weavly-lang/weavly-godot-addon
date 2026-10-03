@@ -45,6 +45,9 @@ class _SpyOptionService:
 	func has_options() -> bool:
 		return false
 
+	func get_options() -> Array[WeavlyModel.Option]:
+		return []
+
 	func add_options(options: Array[WeavlyModel.Option]) -> void:
 		add_options_calls.append(options)
 
@@ -359,31 +362,34 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 # =====================
 
 
-func test_option_block_filters_options_by_condition() -> void:
-	var keep_a: WeavlyModel.Option = WeavlyModel.Option.new(_bool_expr(true), ["a"], _body("a"))
-	var drop: WeavlyModel.Option = WeavlyModel.Option.new(_bool_expr(false), ["b"], _body("b"))
-	var keep_c: WeavlyModel.Option = WeavlyModel.Option.new(_bool_expr(true), ["c"], _body("c"))
-	var options: Array[WeavlyModel.Option] = [keep_a, drop, keep_c]
-	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(options)
-	WeavlyStatementExecutor.execute_option_block(block, _engine)
+func _inline_item(condition: bool, text: String) -> WeavlyModel.InlineOptionItem:
+	return WeavlyModel.InlineOptionItem.new(_bool_expr(condition), [text], _body(text))
+
+
+func test_option_block_offers_the_inline_options_whose_condition_holds() -> void:
+	var keep_a: WeavlyModel.InlineOptionItem = _inline_item(true, "a")
+	var keep_c: WeavlyModel.InlineOptionItem = _inline_item(true, "c")
+	var items: Array[WeavlyModel.OptionItem] = [keep_a, _inline_item(false, "b"), keep_c]
+	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
 	assert_that(_option.add_options_calls.size()).is_equal(1)
 	var passed: Array = _option.add_options_calls[0]
-	assert_that(passed.size()).is_equal(2)
-	assert_that(passed[0]).is_same(keep_a)
-	assert_that(passed[1]).is_same(keep_c)
+	(
+		assert_array(passed.map(func(option: WeavlyModel.Option) -> String: return option.text))
+		. is_equal(["a", "c"])
+	)
+	assert_that(passed[0].item).is_same(keep_a)
+	assert_that(passed[1].item).is_same(keep_c)
 
 
 func test_option_block_with_no_passing_options_does_not_add_options() -> void:
-	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(
-		[WeavlyModel.Option.new(_bool_expr(false), ["a"], _body("a"))]
-	)
-	WeavlyStatementExecutor.execute_option_block(block, _engine)
+	var items: Array[WeavlyModel.OptionItem] = [_inline_item(false, "a")]
+	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
 	assert_that(_option.add_options_calls).is_empty()
 
 
 func test_option_block_without_options_does_not_add_options() -> void:
-	var options: Array[WeavlyModel.Option] = []
-	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(options), _engine)
+	var items: Array[WeavlyModel.OptionItem] = []
+	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
 	assert_that(_option.add_options_calls).is_empty()
 
 

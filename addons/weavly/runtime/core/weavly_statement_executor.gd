@@ -157,20 +157,16 @@ static func _condition_holds(
 static func execute_option_block(
 	option_block: WeavlyModel.OptionBlock, engine: WeavlyEngine
 ) -> void:
-	var possible_options: Array[WeavlyModel.Option] = []
-	for option: WeavlyModel.Option in option_block.options:
-		if _condition_holds(option.line, option.condition, engine):
-			possible_options.append(option)
-
-	if possible_options.is_empty():
+	var options: Array[WeavlyModel.Option] = WeavlyOptionBuilder.offer(option_block, engine)
+	if options.is_empty():
 		return
-
 	if engine.is_rendering():
-		var rendered: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(possible_options)
+		var rendered: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(option_block.items)
 		rendered.line = option_block.line
-		engine.add_rendered(WeavlyTextUtils.fill_option_block(rendered, engine))
+		rendered.options = options
+		engine.add_rendered(rendered)
 	else:
-		engine.option_service.add_options(possible_options)
+		engine.option_service.add_options(options)
 
 
 static func execute_random_block(

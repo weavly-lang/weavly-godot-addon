@@ -144,48 +144,6 @@ func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> vo
 	assert_logged(["Variable 'speaker' isn't defined."])
 
 
-func test_fill_option_copies_with_filled_text() -> void:
-	var body: Array[WeavlyModel.Statement] = []
-	var option: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), _segments(["Ask ", {"variable": "name"}]), body
-	)
-	option.line = 6
-	var filled: WeavlyModel.Option = WeavlyTextUtils.fill_option(option, _engine_with_name())
-	assert_that(filled.text).is_equal("Ask Ada")
-	assert_that(filled.body).is_same(option.body)
-	assert_int(filled.line).is_equal(6)
-
-
-func test_fill_options_reports_a_failing_interpolation_at_the_option_line() -> void:
-	var engine: WeavlyEngine = _make_engine()
-	var lines: Array[int] = []
-	engine.runtime_error.connect(
-		func(_message: String, _source: String, line: int) -> void: lines.append(line)
-	)
-	var body: Array[WeavlyModel.Statement] = []
-	var option: WeavlyModel.Option = WeavlyModel.Option.new(
-		WeavlyModel.TrueExpression.new(), _segments([{"variable": "missing"}]), body
-	)
-	option.line = 9
-	var options: Array[WeavlyModel.Option] = [option]
-	WeavlyTextUtils.fill_options(options, engine)
-	assert_that(lines).is_equal([9])
-	assert_logged(["Variable 'missing' isn't defined."])
-
-
-func test_fill_option_block_copies_with_filled_options() -> void:
-	var body: Array[WeavlyModel.Statement] = []
-	var options: Array[WeavlyModel.Option] = [
-		WeavlyModel.Option.new(WeavlyModel.TrueExpression.new(), _segments(["Hi"]), body)
-	]
-	var block: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(options)
-	block.line = 7
-	var filled: WeavlyModel.OptionBlock = WeavlyTextUtils.fill_option_block(block, _make_engine())
-	assert_that(filled).is_not_same(block)
-	assert_int(filled.line).is_equal(7)
-	assert_that(filled.options[0].text).is_equal("Hi")
-
-
 func test_fill_command_copies_with_evaluated_values() -> void:
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"), WeavlyModel.Identifier.new("name")

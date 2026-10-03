@@ -144,5 +144,6 @@ func test_a_failing_meta_in_a_script_fails_its_condition() -> void:
 	assert_logged(["mood"])
 
 
+# shop costs more than the gold there is and has no label_unavailable, so it's hidden.
 func test_the_selector_reads_meta_values() -> void:
-	assert_array(_engine.list_pool(["market"])).is_equal(["stall", "shop"])
+	assert_array(_engine.list_pool(["market"])).is_equal(["stall"])

@@ -307,10 +307,33 @@ func test_option_block_in_the_old_shape_is_dropped() -> void:
 
 
 func test_option_block_with_an_unknown_option_type_is_dropped() -> void:
-	var items: Array = [{"type": "node", "line": 3.0, "id": "camp"}]
+	var items: Array = [{"type": "bogus", "line": 3.0, "id": "camp"}]
 	var body: Array = _body_of({"type": "option", "items": items})
 	assert_that(body.size()).is_equal(1)
-	assert_logged(["Unknown option type 'node' at nodes[0].body[0].items[0]"])
+	assert_logged(["Unknown option type 'bogus' at nodes[0].body[0].items[0]"])
+
+
+func test_a_pool_option_with_an_unknown_locked_mode_is_dropped() -> void:
+	var item: Dictionary = {
+		"type": "pool",
+		"line": 3.0,
+		"pools": ["camp"],
+		"limit": null,
+		"shuffle": true,
+		"locked": "x"
+	}
+	var body: Array = _body_of({"type": "option", "items": [item]})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Unknown locked mode 'x' at nodes[0].body[0].items[0]"])
+
+
+func test_a_pool_option_without_limit_is_dropped() -> void:
+	var item: Dictionary = {
+		"type": "pool", "line": 3.0, "pools": ["camp"], "shuffle": true, "locked": "show"
+	}
+	var body: Array = _body_of({"type": "option", "items": [item]})
+	assert_that(body.size()).is_equal(1)
+	assert_logged(["Missing required field 'limit' at nodes[0].body[0].items[0]"])
 
 
 func test_inline_option_with_an_unknown_meta_key_is_dropped() -> void:
@@ -389,10 +412,10 @@ func _node_with_meta(meta: Variant) -> Dictionary:
 	return node_data
 
 
-func test_a_text_meta_key_drops_the_node() -> void:
+func test_a_label_that_is_not_text_drops_the_node() -> void:
 	var data: Dictionary = _build([_node_with_meta({"label": {"line": 2.0, "value": "Bob"}})])
 	assert_array(WeavlyDeserializer.compile_nodes(data)).is_empty()
-	assert_logged(["Unknown meta key 'label' at nodes[0].meta.label"])
+	assert_logged(["Required field 'value' has wrong type at nodes[0].meta.label"])
 
 
 func test_a_pool_name_that_is_not_a_string_drops_the_node() -> void:

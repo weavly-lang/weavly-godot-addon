@@ -14,6 +14,19 @@ func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 	engine.variable_service.add_variable(variable)
 
 
+# An inline option as a block offers it.
+func inline_option(
+	text: String, body: Array[WeavlyModel.Statement] = [], condition: Variant = true
+) -> WeavlyModel.Option:
+	var expression: WeavlyModel.WeavlyExpression = WeavlyDeserializer.compile_expression(
+		condition, ""
+	)
+	var option: WeavlyModel.Option = WeavlyModel.Option.new()
+	option.item = WeavlyModel.InlineOptionItem.new(expression, [text], body)
+	option.text = text
+	return option
+
+
 func mouse_button(button: MouseButton, pressed: bool = true) -> InputEventMouseButton:
 	var event: InputEventMouseButton = InputEventMouseButton.new()
 	event.button_index = button

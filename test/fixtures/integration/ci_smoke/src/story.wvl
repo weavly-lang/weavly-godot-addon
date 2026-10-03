@@ -109,3 +109,29 @@ The plaza is quiet.
         Two of all.
 @endmatch
 @endnode
+
+@node camp_menu
+@options
+@option node(campfire)
+@option pool(camp, limit: 1, shuffle: false, locked: show)
+@endoptions
+@endnode
+
+@node campfire
+@meta
+label: "Sit by the fire"
+available: not $has_key
+label_unavailable: "The fire is out"
+@endmeta
+The fire crackles.
+@endnode
+
+@node tent
+@meta
+pool: camp
+label: "Sleep in the tent"
+label_teaser: "A closed tent"
+when: $has_key
+@endmeta
+You sleep.
+@endnode
