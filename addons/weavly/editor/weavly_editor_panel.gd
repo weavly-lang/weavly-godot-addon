@@ -29,7 +29,7 @@ const _COLOR_INFO = Color(0.66, 0.74, 0.88)
 var _path_label: Label
 var _node_outline: WeavlyNodeOutline
 var _status_label: Label
-var _code_edit: CodeEdit
+var _code_edit: WeavlyCodeEdit
 var _compile_on_save: CheckButton
 var _line_wrap: CheckButton
 var _save_button: Button

@@ -226,3 +226,22 @@ func test_tooltips_use_the_code_font() -> void:
 	var label: Label = auto_free(_panel._code_edit._make_custom_tooltip("@node market"))
 	assert_str(label.text).is_equal("@node market")
 	assert_object(label.get_theme_font("font")).is_same(_panel._code_edit.get_theme_font("font"))
+
+
+# The viewport asks get_tooltip with the mouse position once the mouse rests.
+func _tooltip_at_position(line: int, column: int, offset: Vector2 = Vector2.ZERO) -> String:
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_panel.size = Vector2(800, 600)
+	await await_idle_frame()
+	var rect: Rect2i = _panel._code_edit.get_rect_at_line_column(line, column)
+	return _panel._code_edit.get_tooltip(Vector2(rect.get_center()) + offset)
+
+
+func test_resting_the_mouse_on_a_name_shows_its_tooltip() -> void:
+	assert_str(await _tooltip_at_position(1, 8)).is_equal(
+		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta"
+	)
+
+
+func test_resting_the_mouse_past_the_end_of_a_line_shows_none() -> void:
+	assert_str(await _tooltip_at_position(1, 8, Vector2(500, 0))).is_empty()

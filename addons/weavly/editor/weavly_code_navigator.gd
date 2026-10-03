@@ -35,7 +35,7 @@ class Location:
 
 var index: WeavlyProjectIndex = WeavlyProjectIndex.new()
 var _panel: WeavlyEditorPanel
-var _code_edit: CodeEdit
+var _code_edit: WeavlyCodeEdit
 var _indexed_path: String = ""
 var _buffer_stale: bool = true
 # Popup item id -> its definition.
@@ -44,7 +44,7 @@ var _back: Array[Location] = []
 var _forward: Array[Location] = []
 
 
-func _init(panel: WeavlyEditorPanel, code_edit: CodeEdit) -> void:
+func _init(panel: WeavlyEditorPanel, code_edit: WeavlyCodeEdit) -> void:
 	_panel = panel
 	_code_edit = code_edit
 	_code_edit.symbol_lookup_on_click = true
@@ -52,7 +52,7 @@ func _init(panel: WeavlyEditorPanel, code_edit: CodeEdit) -> void:
 	_code_edit.symbol_lookup.connect(_on_symbol_lookup)
 	_code_edit.text_changed.connect(_on_text_changed)
 	_code_edit.gui_input.connect(_on_code_edit_input)
-	_code_edit.set_tooltip_request_func(_on_tooltip_requested)
+	_code_edit.tooltip_source = tooltip_at
 	id_pressed.connect(_on_listed_pressed)
 
 
@@ -200,13 +200,6 @@ func _on_symbol_validate(_symbol: String) -> void:
 		Vector2i(_code_edit.get_local_mouse_position())
 	)
 	_code_edit.set_symbol_lookup_word_as_valid(not sections_at(at.y, at.x).is_empty())
-
-
-func _on_tooltip_requested(_word: String) -> String:
-	var at: Vector2i = _code_edit.get_line_column_at_pos(
-		Vector2i(_code_edit.get_local_mouse_position())
-	)
-	return tooltip_at(at.y, at.x)
 
 
 func _on_symbol_lookup(_symbol: String, line: int, column: int) -> void:
