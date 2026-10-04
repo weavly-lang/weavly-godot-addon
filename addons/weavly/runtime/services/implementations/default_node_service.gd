@@ -1,4 +1,5 @@
 # gdlint:ignore = max-public-methods
+class_name WeavlyDefaultNodeService
 extends WeavlyNodeService
 
 const TYPE = "Node"

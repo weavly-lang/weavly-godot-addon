@@ -16,8 +16,8 @@ const SCENES: Array[PackedScene] = [
 ]
 
 
-func _make_engine() -> WeavlyDefaultEngine:
-	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
+func _make_engine() -> WeavlyEngine:
+	var engine: WeavlyEngine = WeavlyEngine.new()
 	engine.dialogue_path = FIXTURE
 	add_child(auto_free(engine))
 	return engine
@@ -41,7 +41,7 @@ func _connections_into(ui: Node, engine: WeavlyEngine) -> Array[String]:
 
 func test_every_starter_ui_disconnects_everything_from_an_engine_it_leaves() -> void:
 	for scene: PackedScene in SCENES:
-		var engine: WeavlyDefaultEngine = _make_engine()
+		var engine: WeavlyEngine = _make_engine()
 		var ui: WeavlyUI = auto_free(scene.instantiate())
 		ui.engine = engine
 		add_child(ui)

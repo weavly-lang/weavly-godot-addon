@@ -7,7 +7,7 @@ Godot addon that runs Weavly programs at runtime by consuming JSON emitted by th
 - Runtime: `addons/weavly/runtime/`, everything a game needs.
 - Editor tooling: `addons/weavly/editor/`, only runs inside the Godot editor.
 - Starter UIs: `addons/weavly/ui/`, optional scenes on top of the runtime that use only its public API. Showcase projects live in the separate godot-demos repo, not here.
-- Engine scene: `addons/weavly/runtime/weavly_engine.tscn` — the instantiable `WeavlyEngine` node, scripted with `WeavlyDefaultEngine`.
+- Engine scene: `addons/weavly/runtime/weavly_engine.tscn` — the instantiable `WeavlyEngine` node.
 - `dialogue/` is a gitignored folder of scratch Weavly projects (the starter-UI playtests, `editor_test`) for trying things by hand, so it is absent from a fresh clone. Create one with `weavly init dialogue/<name>`. The editor builds and indexes the open file's project: the parent of the nearest `src` folder above it.
 
 ## Relationship to the compiler
@@ -24,7 +24,7 @@ CI guards that shape: every fixture folder with a `src/` folder is a real Weavly
 
 ```
 addons/weavly/runtime/
-  weavly_engine.tscn                # instantiable WeavlyEngine node, scripted with WeavlyDefaultEngine
+  weavly_engine.tscn                # instantiable WeavlyEngine node
   core/
     weavly_deserializer.gd          # JSON dict -> WeavlyModel.* objects (KEY_*/TYPE_* constants)
     weavly_statement_executor.gd    # dispatch Statement to the right service
@@ -33,8 +33,7 @@ addons/weavly/runtime/
     weavly_meta_reader.gd           # get_node_meta and meta(): a node's meta value or the key's default
     weavly_option_builder.gd        # offered options: the display rule, pool(...) items, refresh
   engine/
-    weavly_engine.gd                # WeavlyEngine: @abstract base — signals + service refs
-    default_engine.gd               # WeavlyDefaultEngine: runtime control flow, service setup
+    weavly_engine.gd                # WeavlyEngine: signals, control flow, service setup, saving
   models/
     weavly_model.gd                 # all model types as inner classes (WeavlyModel.NarrationLine, .MatchBlock, ...)
   services/
@@ -65,7 +64,7 @@ tools/mutation/                     # mutate.py: mutation testing, see its docst
 ### Conventions
 
 - One outer `class_name` per file, matching the filename. Exception: `WeavlyModel` holds every model type as an inner class — reference as `WeavlyModel.NarrationLine` etc.
-- Services use interface/implementation split. `WeavlyDefaultEngine` auto-instantiates default services in `_ready()`; override per-service via its `*_service_script` `@export` vars in the inspector.
+- Services use interface/implementation split. `WeavlyEngine` creates the default services (`WeavlyDefault*Service`) in `_ready()`; scripts in its `custom_services` export replace the service they extend.
 - `.gd.uid` files are Godot-generated, never edit by hand.
 - JSON field names and statement type strings live as `KEY_*` / `TYPE_*` constants at the top of [core/weavly_deserializer.gd](addons/weavly/runtime/core/weavly_deserializer.gd). Must mirror the Python compiler's emitted shape.
 
@@ -98,6 +97,6 @@ Never commit directly to `main`. Never use the branch slug as a commit message.
 
 ## Status
 
-`WeavlyEngine` ([engine/weavly_engine.gd](addons/weavly/runtime/engine/weavly_engine.gd)) is `@abstract`; runtime control flow lives in `WeavlyDefaultEngine` ([engine/default_engine.gd](addons/weavly/runtime/engine/default_engine.gd)). Every statement type the compiler emits is deserialized, executed and covered by tests, and the editor tooling is wired.
+`WeavlyEngine` ([engine/weavly_engine.gd](addons/weavly/runtime/engine/weavly_engine.gd)) is one concrete class; games customize it through services or by subclassing it. Every statement type the compiler emits is deserialized, executed and covered by tests, and the editor tooling is wired.
 
 Releases are tag-driven from `plugin.cfg`; see CONTRIBUTING.

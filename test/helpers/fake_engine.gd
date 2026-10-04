@@ -1,21 +1,5 @@
 extends WeavlyEngine
 
-const DefaultVariableService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_variable_service.gd"
-)
-const DefaultStatementService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_statement_service.gd"
-)
-const DefaultNodeService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_node_service.gd"
-)
-const DefaultFunctionService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_function_service.gd"
-)
-const DefaultOptionService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_option_service.gd"
-)
-
 var did_finish: bool = false
 var did_next: bool = false
 var holds: int = 0
@@ -24,16 +8,20 @@ var last_detoured_node: String = ""
 
 
 func _init() -> void:
-	variable_service = DefaultVariableService.new()
+	variable_service = WeavlyDefaultVariableService.new()
 	variable_service.initialize(self)
-	statement_service = DefaultStatementService.new()
+	statement_service = WeavlyDefaultStatementService.new()
 	statement_service.initialize(self)
-	node_service = DefaultNodeService.new()
+	node_service = WeavlyDefaultNodeService.new()
 	node_service.initialize(self)
-	function_service = DefaultFunctionService.new()
+	function_service = WeavlyDefaultFunctionService.new()
 	function_service.initialize(self)
-	option_service = DefaultOptionService.new()
+	option_service = WeavlyDefaultOptionService.new()
 	option_service.initialize(self)
+
+
+func _ready() -> void:
+	pass
 
 
 func start(_node_id: String) -> void:

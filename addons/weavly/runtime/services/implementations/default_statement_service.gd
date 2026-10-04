@@ -1,3 +1,4 @@
+class_name WeavlyDefaultStatementService
 extends WeavlyStatementService
 
 var _stack: Array[Frame] = []

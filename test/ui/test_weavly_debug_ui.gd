@@ -7,12 +7,12 @@ const FIXTURE = "res://test/fixtures/ui/debug"
 const SCENE = preload("res://addons/weavly/ui/debug/weavly_debug_ui.tscn")
 const TOGGLE = &"weavly_test_toggle_debug"
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _ui: WeavlyDebugUI
 
 
 func before_test() -> void:
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE + "/build"
 	add_child(auto_free(_engine))
 	_ui = auto_free(SCENE.instantiate())

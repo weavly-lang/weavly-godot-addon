@@ -1,3 +1,4 @@
+class_name WeavlyDefaultCharacterService
 extends WeavlyCharacterService
 
 const TYPE = "Character"

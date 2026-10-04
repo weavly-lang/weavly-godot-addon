@@ -4,13 +4,13 @@ extends WeavlyTestSuite
 
 const FIXTURE = "res://test/fixtures/integration/meta/build"
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _errors: Array[String]
 
 
 func before_test() -> void:
 	_errors = []
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE
 	_engine.random_seed = 3
 	add_child(auto_free(_engine))

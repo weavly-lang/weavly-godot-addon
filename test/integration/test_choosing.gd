@@ -13,8 +13,8 @@ func before_test() -> void:
 	_door_open = true
 
 
-func _make_engine(fixture_dir: String) -> WeavlyDefaultEngine:
-	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
+func _make_engine(fixture_dir: String) -> WeavlyEngine:
+	var engine: WeavlyEngine = WeavlyEngine.new()
 	engine.dialogue_path = fixture_dir
 	add_child(auto_free(engine))
 	if "open" in engine.function_service.get_unregistered():
@@ -30,7 +30,7 @@ func _door_option(engine: WeavlyEngine, text: String) -> WeavlyModel.Option:
 
 
 func test_the_engine_signals_lines_offered_options_and_the_chosen_option() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	var events: Array[String] = []
 	engine.line_reached.connect(
 		func(line: WeavlyModel.LineStatement) -> void: events.append("line:" + line.text)
@@ -48,7 +48,7 @@ func test_the_engine_signals_lines_offered_options_and_the_chosen_option() -> vo
 
 
 func test_line_reached_carries_narration_and_character_lines() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	var lines: Array[WeavlyModel.LineStatement] = []
 	engine.line_reached.connect(func(line: WeavlyModel.LineStatement) -> void: lines.append(line))
 	engine.start("start")
@@ -59,7 +59,7 @@ func test_line_reached_carries_narration_and_character_lines() -> void:
 
 
 func test_the_engine_forwards_variable_changes() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	var changes: Array[Array] = []
 	engine.variable_changed.connect(
 		func(id: String, value: Variant, old_value: Variant) -> void:
@@ -70,7 +70,7 @@ func test_the_engine_forwards_variable_changes() -> void:
 
 
 func test_a_refused_choice_returns_false_and_changes_nothing() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	var chosen: Array[WeavlyModel.Option] = []
 	engine.option_chosen.connect(func(option: WeavlyModel.Option) -> void: chosen.append(option))
 	engine.start("door")
@@ -85,7 +85,7 @@ func test_a_refused_choice_returns_false_and_changes_nothing() -> void:
 
 
 func test_can_choose_checks_again_without_a_warning() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("door")
 	var option: WeavlyModel.Option = _door_option(engine, "Open")
 	assert_bool(engine.can_choose(option)).is_true()
@@ -95,7 +95,7 @@ func test_can_choose_checks_again_without_a_warning() -> void:
 
 
 func test_checking_a_choice_leaves_the_random_number_generator_as_it_was() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("door")
 	var state: int = engine.rng.state
 	engine.can_choose(_door_option(engine, "Roll"))

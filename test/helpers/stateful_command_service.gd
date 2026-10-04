@@ -1,4 +1,4 @@
-extends "res://addons/weavly/runtime/services/implementations/default_command_service.gd"
+extends WeavlyDefaultCommandService
 
 var restored: Dictionary = {}
 

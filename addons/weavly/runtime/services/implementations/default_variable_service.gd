@@ -1,3 +1,4 @@
+class_name WeavlyDefaultVariableService
 extends WeavlyVariableService
 
 const TYPE = "Variable"

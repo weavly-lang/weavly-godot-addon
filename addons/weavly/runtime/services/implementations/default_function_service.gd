@@ -1,3 +1,4 @@
+class_name WeavlyDefaultFunctionService
 extends WeavlyFunctionService
 
 const KIND = "function"

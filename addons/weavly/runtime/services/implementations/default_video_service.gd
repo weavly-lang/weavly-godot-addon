@@ -1,3 +1,4 @@
+class_name WeavlyDefaultVideoService
 extends WeavlyVideoService
 
 const TYPE = "Video"
