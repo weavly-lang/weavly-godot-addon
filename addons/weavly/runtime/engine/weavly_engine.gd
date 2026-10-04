@@ -289,17 +289,20 @@ func detour(node_id: String) -> void:
 		next()
 
 
+# Called from a handler while a step runs, it lets that step continue.
 func next() -> void:
 	if _holds > 0:
 		return
-	_in_next = true
 	if not _pending_options.any(
 		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
 	):
 		_pending_options.clear()
 	_paused = false
+	if _in_next:
+		return
+	_in_next = true
 	var node_entries: int = 0
-	while not _paused and _pending_options.is_empty() and not _finished:
+	while not _paused and _holds == 0 and _pending_options.is_empty() and not _finished:
 		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
@@ -467,7 +470,6 @@ func hold() -> void:
 	if _holds == 0:
 		_hold_interrupted_step = _in_next
 	_holds += 1
-	_paused = true
 
 
 # The last release continues only a step the hold interrupted; a line on screen keeps waiting.
@@ -479,9 +481,7 @@ func release() -> void:
 	if _holds > 0 or not _hold_interrupted_step:
 		return
 	_hold_interrupted_step = false
-	if _in_next:
-		_paused = false
-	else:
+	if not _in_next and not _paused:
 		next()
 
 

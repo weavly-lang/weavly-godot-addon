@@ -60,3 +60,29 @@ func test_lines_a_line_service_doesnt_wait_on_are_passed_on_without_pausing() ->
 	engine.start("start")
 	assert_array(_lines).is_equal(["Welcome", "Hello", "Goodbye"])
 	assert_bool(engine.is_running()).is_false()
+
+
+func test_a_hold_released_inside_line_reached_keeps_the_line_waiting() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.line_reached.connect(
+		func(_line: WeavlyModel.LineStatement) -> void:
+			engine.hold()
+			engine.release()
+	)
+	engine.start("start")
+	assert_array(_lines).is_equal(["Welcome"])
+	assert_bool(engine.is_running()).is_true()
+
+
+func test_a_line_held_on_line_reached_waits_for_next_after_release() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line.text == "Welcome":
+				engine.hold()
+	)
+	engine.start("start")
+	engine.release()
+	assert_array(_lines).is_equal(["Welcome"])
+	engine.next()
+	assert_array(_lines).is_equal(["Welcome", "Hello"])
