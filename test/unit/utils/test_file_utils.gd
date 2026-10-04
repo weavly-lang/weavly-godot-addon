@@ -60,6 +60,13 @@ func test_find_returns_empty_for_missing_directory() -> void:
 	assert_logged(["Failed to open directory: res://test/fixtures/does_not_exist"])
 
 
+func test_find_ignores_the_case_of_the_extension() -> void:
+	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
+		FIXTURE_DIR, ".JSON"
+	)
+	assert_array(results).contains([FIXTURE_DIR + "/plain.json"])
+
+
 func test_find_returns_empty_when_no_matching_extension() -> void:
 	var results: PackedStringArray = WeavlyFileUtils.find_all_files_with_extension(
 		FIXTURE_DIR, ".xyz"
