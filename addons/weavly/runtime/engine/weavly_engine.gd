@@ -153,19 +153,8 @@ func _ready() -> void:
 	else:
 		rng.randomize()
 	_create_services()
-	image_service.set_group_pattern(image_group_pattern)
-	image_service.set_supported_extensions(image_extensions)
-	video_service.set_group_pattern(video_group_pattern)
-	video_service.set_supported_extensions(video_extensions)
-
 	WeavlyFileUtils.load_dialogue(self, dialogue_path)
 	_check_variables()
-	if not video_path.is_empty():
-		WeavlyFileUtils.index_media_from_files(video_service, video_path)
-	if not image_path.is_empty():
-		WeavlyFileUtils.index_media_from_files(image_service, image_path)
-	if not character_path.is_empty():
-		WeavlyFileUtils.index_characters_from_resources(self, character_path)
 	_initial_state = get_state()
 	if random_seed == 0:
 		_initial_state.erase(KEY_RNG)

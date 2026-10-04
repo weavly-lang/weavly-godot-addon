@@ -8,13 +8,14 @@ const Service = preload(
 
 # Saved as a .tres (native resource) so no import step is needed in headless/CI runs.
 const _FIXTURE_PATH = "res://test/fixtures/test_video.tres"
+const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _service: Service
 
 
 func before_test() -> void:
 	_service = Service.new()
-	_service.initialize(null)
+	_service.initialize(auto_free(FakeEngine.new()))
 
 
 func test_add_and_get_video() -> void:

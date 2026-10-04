@@ -1,4 +1,4 @@
 @abstract class_name WeavlyVideoService
-extends WeavlyMediaService
+extends WeavlyService
 
 @abstract func get_video(id: String) -> VideoStream

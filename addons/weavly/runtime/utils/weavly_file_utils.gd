@@ -108,20 +108,14 @@ static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> v
 		engine.story.add_command(command)
 
 
-static func index_media_from_files(service: WeavlyMediaService, dir: String) -> void:
-	for file_path: String in find_all_files_with_extensions(dir, service.supported_extensions):
-		service.add_media(media_id(dir, file_path), file_path)
+static func index_media(
+	index: WeavlyMediaIndex, dir: String, extensions: PackedStringArray
+) -> void:
+	for file_path: String in find_all_files_with_extensions(dir, extensions):
+		index.add(media_id(dir, file_path), file_path)
 
 
 # The path relative to dir without extension, so dir/alice/icon.png is alice/icon.
 static func media_id(dir: String, file_path: String) -> String:
 	var relative: String = file_path.trim_prefix(dir).replace("\\", "/").trim_prefix("/")
 	return relative.get_basename()
-
-
-static func index_characters_from_resources(engine: WeavlyEngine, dir: String) -> void:
-	var file_paths: PackedStringArray = find_all_files_with_extension(dir, ".tres")
-	for file_path: String in file_paths:
-		var resource: Resource = load(file_path)
-		if resource is WeavlyCharacter:
-			engine.character_service.add_character(resource)

@@ -3,13 +3,14 @@ extends WeavlyTestSuite
 const Service = preload(
 	"res://addons/weavly/runtime/services/implementations/default_character_service.gd"
 )
+const FakeEngine = preload("res://test/helpers/fake_engine.gd")
 
 var _service: Service
 
 
 func before_test() -> void:
 	_service = Service.new()
-	_service.initialize(null)
+	_service.initialize(auto_free(FakeEngine.new()))
 
 
 # =====================

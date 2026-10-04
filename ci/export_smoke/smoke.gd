@@ -66,7 +66,7 @@ func _check_external_media(engine: WeavlyEngine, external_base: String) -> void:
 		await _check_video_decodes(stream)
 
 	var banner_path: String = external_base.path_join("images/banner.png")
-	engine.image_service.add_media("banner", banner_path)
+	(engine.image_service as WeavlyDefaultImageService).add_media("banner", banner_path)
 	var banner: Texture2D = engine.image_service.get_image("banner")
 	_expect(banner != null, "external image did not load from %s" % banner_path)
 

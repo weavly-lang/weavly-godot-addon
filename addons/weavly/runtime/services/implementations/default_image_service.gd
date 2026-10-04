@@ -6,6 +6,14 @@ const TYPE = "Image"
 var image_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE)
 
 
+# Indexes the files in the engine's image_path, grouped by its image_group_pattern.
+func initialize(engine: WeavlyEngine) -> void:
+	super(engine)
+	set_group_pattern(engine.image_group_pattern)
+	if not engine.image_path.is_empty():
+		WeavlyFileUtils.index_media(image_index, engine.image_path, engine.image_extensions)
+
+
 func set_group_pattern(pattern: String) -> void:
 	image_index.set_group_pattern(pattern)
 

@@ -157,18 +157,15 @@ func test_an_extern_is_declared_without_a_value() -> void:
 
 
 # =====================
-# index_media_from_files
+# index_media
 # =====================
 
 
-func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
-	var engine: WeavlyEngine = _make_engine()
-	engine.image_service = WeavlyDefaultImageService.new()
-	engine.image_service.initialize(engine)
-	engine.image_service.set_group_pattern(group_pattern)
-	engine.image_service.set_supported_extensions([".png", ".jpg"])
-	WeavlyFileUtils.index_media_from_files(engine.image_service, dir)
-	return engine
+func _index_images(dir: String, group_pattern: String) -> WeavlyMediaIndex:
+	var index: WeavlyMediaIndex = WeavlyMediaIndex.new("Image")
+	index.set_group_pattern(group_pattern)
+	WeavlyFileUtils.index_media(index, dir, [".png", ".jpg"])
+	return index
 
 
 func _save_images(dir: String, files: Array[String]) -> void:
@@ -178,15 +175,15 @@ func _save_images(dir: String, files: Array[String]) -> void:
 		image.save_png(dir.path_join(file))
 
 
-func _image_ids(engine: WeavlyEngine) -> Array:
-	return engine.image_service.image_index.paths.keys()
+func _image_ids(index: WeavlyMediaIndex) -> Array:
+	return index.paths.keys()
 
 
 func test_an_image_id_is_its_path_relative_to_the_folder() -> void:
 	var dir: String = create_temp_dir("index_ids")
 	_save_images(dir, ["splash.png", "backgrounds/bob.png", "characters/bob.png"])
-	var engine: WeavlyEngine = _index_images(dir, "")
-	assert_array(_image_ids(engine)).contains_exactly_in_any_order(
+	var index: WeavlyMediaIndex = _index_images(dir, "")
+	assert_array(_image_ids(index)).contains_exactly_in_any_order(
 		["splash", "backgrounds/bob", "characters/bob"]
 	)
 
@@ -194,8 +191,8 @@ func test_an_image_id_is_its_path_relative_to_the_folder() -> void:
 func test_a_trailing_slash_on_the_folder_gives_the_same_ids() -> void:
 	var dir: String = create_temp_dir("index_trailing_slash")
 	_save_images(dir, ["alice/icon.png"])
-	var engine: WeavlyEngine = _index_images(dir + "/", "")
-	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon"])
+	var index: WeavlyMediaIndex = _index_images(dir + "/", "")
+	assert_array(_image_ids(index)).contains_exactly_in_any_order(["alice/icon"])
 
 
 func test_files_that_differ_only_in_extension_report_both_paths() -> void:
@@ -212,6 +209,6 @@ func test_files_that_differ_only_in_extension_report_both_paths() -> void:
 func test_a_group_pattern_groups_numbered_files_per_folder() -> void:
 	var dir: String = create_temp_dir("index_grouped")
 	_save_images(dir, ["alice/icon_1.png", "alice/icon_2.png", "bob/icon_3.png"])
-	var engine: WeavlyEngine = _index_images(dir, "_\\d+$")
-	assert_array(_image_ids(engine)).contains_exactly_in_any_order(["alice/icon", "bob/icon"])
-	assert_array(engine.image_service.image_index.paths["alice/icon"]).has_size(2)
+	var index: WeavlyMediaIndex = _index_images(dir, "_\\d+$")
+	assert_array(_image_ids(index)).contains_exactly_in_any_order(["alice/icon", "bob/icon"])
+	assert_array(index.paths["alice/icon"]).has_size(2)
