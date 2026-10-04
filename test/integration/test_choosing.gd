@@ -47,6 +47,38 @@ func test_the_engine_signals_lines_offered_options_and_the_chosen_option() -> vo
 	assert_array(events).is_equal(["offered:3", "chosen:Open", "line:The door opens."])
 
 
+func test_next_inside_line_reached_continues_to_the_next_line() -> void:
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
+	var lines: Array[String] = []
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			lines.append(line.text)
+			if line is WeavlyModel.NarrationLine:
+				engine.next()
+	)
+	engine.start("start")
+	assert_array(lines).is_equal(["Welcome", "Hello"])
+	engine.next()
+	assert_array(lines).is_equal(["Welcome", "Hello", "Goodbye"])
+	assert_bool(engine.is_running()).is_false()
+
+
+func test_choosing_inside_options_offered_runs_the_option_once() -> void:
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
+	var events: Array[String] = []
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void: events.append("line:" + line.text)
+	)
+	engine.options_offered.connect(
+		func(options: Array[WeavlyModel.Option]) -> void:
+			events.append("offered")
+			if events.size() == 1:
+				engine.choose(options[0])
+	)
+	engine.start("stay")
+	assert_array(events).is_equal(["offered", "line:Stayed"])
+
+
 func test_line_reached_carries_narration_and_character_lines() -> void:
 	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	var lines: Array[WeavlyModel.LineStatement] = []

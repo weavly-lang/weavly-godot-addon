@@ -29,3 +29,11 @@ func open(): flag
 @option "Leave" -> after
 @endoptions
 @endnode
+
+@node stay
+@options
+@option "Stay"
+@endoptions
+Stayed
+@finish
+@endnode
