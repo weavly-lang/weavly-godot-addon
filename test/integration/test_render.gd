@@ -21,14 +21,18 @@ func _make_engine() -> WeavlyEngine:
 	engine.entered_node.connect(
 		func(node_id: String) -> void: _events.append("entered:" + node_id)
 	)
-	engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: _events.append("narration:" + line.text)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				_events.append("narration:" + line.text)
 	)
-	engine.line_service.executed_character_line.connect(
-		func(line: WeavlyModel.CharacterLine) -> void: _events.append("character:" + line.text)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.CharacterLine:
+				_events.append("character:" + line.text)
 	)
-	engine.option_service.options_added.connect(
-		func(_options: Array[WeavlyModel.Option]) -> void: _events.append("options_added")
+	engine.options_offered.connect(
+		func(_options: Array[WeavlyModel.Option]) -> void: _events.append("options_offered")
 	)
 	engine.register_command(
 		"header", func(_title: String, _gold: float) -> void: _events.append("command:header")

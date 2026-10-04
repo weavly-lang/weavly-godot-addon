@@ -6,6 +6,7 @@ const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead.
 
 static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEngine) -> void:
 	engine.current_line = statement.line
+	engine.statement_reached.emit(statement)
 	if statement is WeavlyModel.NarrationLine:
 		execute_narration_line(statement, engine)
 	elif statement is WeavlyModel.CharacterLine:
@@ -35,19 +36,20 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 static func execute_narration_line(
 	narration_line: WeavlyModel.NarrationLine, engine: WeavlyEngine
 ) -> void:
-	if engine.is_rendering():
-		engine.add_rendered(WeavlyTextUtils.fill_narration_line(narration_line, engine))
-	else:
-		engine.line_service.execute_narration_line(narration_line)
+	_pass_line(WeavlyTextUtils.fill_narration_line(narration_line, engine), engine)
 
 
 static func execute_character_line(
 	character_line: WeavlyModel.CharacterLine, engine: WeavlyEngine
 ) -> void:
+	_pass_line(WeavlyTextUtils.fill_character_line(character_line, engine), engine)
+
+
+static func _pass_line(filled: WeavlyModel.LineStatement, engine: WeavlyEngine) -> void:
 	if engine.is_rendering():
-		engine.add_rendered(WeavlyTextUtils.fill_character_line(character_line, engine))
+		engine.add_rendered(filled)
 	else:
-		engine.line_service.execute_character_line(character_line)
+		engine.reach_line(filled)
 
 
 static func execute_set_statement(
@@ -119,7 +121,7 @@ static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: Wea
 static func _execute_first_case(cases: Array[WeavlyModel.WhenCase], engine: WeavlyEngine) -> void:
 	for case: WeavlyModel.WhenCase in cases:
 		if _condition_holds(case.line, case.condition, engine):
-			engine.statement_service.add_statements(case.body)
+			engine.add_statements(case.body)
 			return
 
 
@@ -128,7 +130,7 @@ static func _execute_all_cases(cases: Array[WeavlyModel.WhenCase], engine: Weavl
 	for case: WeavlyModel.WhenCase in cases:
 		if _condition_holds(case.line, case.condition, engine):
 			valid_case_bodies.append(case.body)
-	engine.statement_service.add_statement_groups(valid_case_bodies)
+	engine.add_statement_groups(valid_case_bodies)
 
 
 # Errors in the condition are reported at the case's line.
@@ -151,7 +153,7 @@ static func execute_option_block(
 		rendered.options = options
 		engine.add_rendered(rendered)
 	else:
-		engine.option_service.add_options(options)
+		engine.offer_options(options)
 
 
 static func execute_random_block(
@@ -177,7 +179,7 @@ static func execute_random_block(
 	for i: int in possible_cases.size():
 		current += evaluated_weights[i]
 		if random <= current:
-			engine.statement_service.add_statements(possible_cases[i].body)
+			engine.add_statements(possible_cases[i].body)
 			return
 
 

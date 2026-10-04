@@ -22,8 +22,10 @@ func before_test() -> void:
 
 func _narration() -> Array[String]:
 	var texts: Array[String] = []
-	_engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: texts.append(line.text)
+	_engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				texts.append(line.text)
 	)
 	return texts
 

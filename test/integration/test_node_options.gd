@@ -20,15 +20,17 @@ func before_test() -> void:
 	_engine.dialogue_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.register_function("lucky", func() -> bool: return _lucky)
-	_engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: _events.append(line.text)
+	_engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				_events.append(line.text)
 	)
 	_engine.entered_node.connect(func(id: String) -> void: _events.append("enter:" + id))
 	_engine.left_node.connect(func(id: String) -> void: _events.append("leave:" + id))
 
 
 func _offered() -> Array[WeavlyModel.Option]:
-	return _engine.option_service.get_options()
+	return _engine.get_pending_options()
 
 
 func _texts(options: Array[WeavlyModel.Option]) -> Array[String]:
@@ -48,13 +50,13 @@ func _option(text: String) -> WeavlyModel.Option:
 # Runs until the next option block, choosing nothing.
 func _run_to_options(node_id: String) -> void:
 	_engine.start(node_id)
-	while _engine.is_running() and not _engine.option_service.has_options():
+	while _engine.is_running() and _engine.get_pending_options().is_empty():
 		_engine.next()
 
 
 func _choose(text: String) -> void:
 	_engine.choose(_option(text))
-	while _engine.is_running() and not _engine.option_service.has_options():
+	while _engine.is_running() and _engine.get_pending_options().is_empty():
 		_engine.next()
 
 
@@ -142,7 +144,7 @@ func test_choosing_a_locked_option_is_refused() -> void:
 	_run_to_options("camp")
 	_engine.choose(_option("Something blinks"))
 	assert_logged([], ["Can't choose option 'Something blinks' because it's locked."])
-	assert_bool(_engine.option_service.has_options()).is_true()
+	assert_array(_engine.get_pending_options()).is_not_empty()
 
 
 func test_the_choice_is_checked_again() -> void:

@@ -80,8 +80,10 @@ func _command_logger(id: String, count: int) -> Callable:
 
 
 func _connect_content_log(engine: WeavlyEngine) -> void:
-	engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: _narration_log.append(line.text)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				_narration_log.append(line.text)
 	)
 
 
@@ -166,9 +168,9 @@ func test_finish_twice_emits_finished_dialogue_once() -> void:
 func test_finish_while_options_are_showing_lets_the_next_start_run() -> void:
 	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
-	assert_bool(engine.option_service.has_options()).is_true()
+	assert_array(engine.get_pending_options()).is_not_empty()
 	engine.finish()
-	assert_bool(engine.option_service.has_options()).is_false()
+	assert_array(engine.get_pending_options()).is_empty()
 	engine.start("after")
 	var expected_signals: Array[String] = [
 		"started_dialogue",
@@ -184,7 +186,7 @@ func test_finish_while_options_are_showing_lets_the_next_start_run() -> void:
 func test_choosing_an_option_after_finish_is_ignored() -> void:
 	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
-	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	var option: WeavlyModel.Option = engine.get_pending_options()[0]
 	engine.finish()
 	var log_after_finish: Array[String] = _signal_log.duplicate()
 	engine.choose(option)
@@ -219,7 +221,7 @@ func test_start_from_finished_dialogue_after_finish_statement() -> void:
 func test_double_choose_runs_the_option_once() -> void:
 	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
-	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	var option: WeavlyModel.Option = engine.get_pending_options()[0]
 	engine.choose(option)
 	engine.choose(option)
 	assert_logged([], ["Can't choose option 'Go on' because it isn't offered right now."])
@@ -275,8 +277,8 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	engine.next()  # option block -> options registered, loop exits
 
 	# We should now be sitting on the options at choices.
-	assert_bool(engine.option_service.has_options()).is_true()
-	var options: Array = engine.option_service.pending_options
+	assert_array(engine.get_pending_options()).is_not_empty()
+	var options: Array = engine.get_pending_options()
 	# has_key was set to false, so only "Roll the dice" should pass the filter.
 	assert_that(options.size()).is_equal(1)
 	assert_that(options[0].text).is_equal("Roll the dice")
@@ -307,8 +309,10 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
 	var character_lines: Array[String] = []
-	engine.line_service.executed_character_line.connect(
-		func(line: WeavlyModel.CharacterLine) -> void: character_lines.append(line.text)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.CharacterLine:
+				character_lines.append(line.text)
 	)
 	engine.start("arrival")
 	assert_that(_narration_log.back()).is_equal("You arrive with 1 points, written as {score}.")
@@ -335,7 +339,7 @@ func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("camp_menu")
-	var options: Array[WeavlyModel.Option] = engine.option_service.get_options()
+	var options: Array[WeavlyModel.Option] = engine.get_pending_options()
 	(
 		assert_that(options.map(func(option: WeavlyModel.Option) -> String: return option.text))
 		. is_equal(["Sit by the fire", "A closed tent"])
@@ -628,11 +632,15 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 	var engine: WeavlyEngine = _make_engine(TEXT_FIXTURE)
 	var narration: Array[WeavlyModel.NarrationLine] = []
 	var characters: Array[WeavlyModel.CharacterLine] = []
-	engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: narration.append(line)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				narration.append(line)
 	)
-	engine.line_service.executed_character_line.connect(
-		func(line: WeavlyModel.CharacterLine) -> void: characters.append(line)
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.CharacterLine:
+				characters.append(line)
 	)
 	engine.start("start")
 	engine.next()
@@ -640,7 +648,7 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 	assert_that(narration[0].text).is_equal("Hi Ada, you have 3 coins.")
 	assert_that(characters[0].name).is_equal("Ada")
 	assert_that(characters[0].text).is_equal("I am Ada.")
-	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
+	var option: WeavlyModel.Option = engine.get_pending_options()[0]
 	assert_that(option.text).is_equal("Pay 3")
 	engine.choose(option)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")

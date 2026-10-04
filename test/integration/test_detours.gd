@@ -16,8 +16,10 @@ func before_test() -> void:
 	add_child(auto_free(_engine))
 	_engine.entered_node.connect(func(id: String) -> void: _events.append("enter:" + id))
 	_engine.left_node.connect(func(id: String) -> void: _events.append("leave:" + id))
-	_engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: _events.append(line.text)
+	_engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				_events.append(line.text)
 	)
 	_engine.finished_dialogue.connect(func() -> void: _events.append("finished"))
 

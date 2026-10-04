@@ -4,7 +4,7 @@ extends WeavlyTestSuite
 
 const FIXTURE = "res://test/fixtures/ui/debug/build"
 const SERVICES: Array[String] = [
-	"character", "command", "count", "image", "line", "option", "statement", "variable", "video"
+	"character", "command", "count", "image", "line", "variable", "video"
 ]
 const SCENES: Array[PackedScene] = [
 	preload("res://addons/weavly/ui/novel/weavly_novel_ui.tscn"),

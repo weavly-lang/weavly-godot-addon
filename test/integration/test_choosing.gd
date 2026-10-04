@@ -23,7 +23,7 @@ func _make_engine(fixture_dir: String) -> WeavlyEngine:
 
 
 func _door_option(engine: WeavlyEngine, text: String) -> WeavlyModel.Option:
-	for option: WeavlyModel.Option in engine.option_service.get_options():
+	for option: WeavlyModel.Option in engine.get_pending_options():
 		if option.text.begins_with(text):
 			return option
 	return null
@@ -79,7 +79,7 @@ func test_a_refused_choice_returns_false_and_changes_nothing() -> void:
 	assert_bool(engine.choose(option)).is_false()
 	assert_logged([], ["Can't choose option 'Open' because it's locked."])
 	assert_array(chosen).is_empty()
-	assert_bool(engine.option_service.has_options()).is_true()
+	assert_array(engine.get_pending_options()).is_not_empty()
 	assert_bool(engine.is_running()).is_true()
 	assert_bool(option.is_choosable()).is_false()
 
@@ -91,7 +91,7 @@ func test_can_choose_checks_again_without_a_warning() -> void:
 	assert_bool(engine.can_choose(option)).is_true()
 	_door_open = false
 	assert_bool(engine.can_choose(option)).is_false()
-	assert_bool(engine.option_service.has_options()).is_true()
+	assert_array(engine.get_pending_options()).is_not_empty()
 
 
 func test_checking_a_choice_leaves_the_random_number_generator_as_it_was() -> void:
