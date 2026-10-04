@@ -1,4 +1,4 @@
 @abstract class_name WeavlyImageService
-extends WeavlyMediaService
+extends WeavlyService
 
 @abstract func get_image(id: String) -> Texture2D

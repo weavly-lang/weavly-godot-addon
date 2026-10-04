@@ -6,6 +6,14 @@ const TYPE = "Video"
 var video_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE)
 
 
+# Indexes the files in the engine's video_path, grouped by its video_group_pattern.
+func initialize(engine: WeavlyEngine) -> void:
+	super(engine)
+	set_group_pattern(engine.video_group_pattern)
+	if not engine.video_path.is_empty():
+		WeavlyFileUtils.index_media(video_index, engine.video_path, engine.video_extensions)
+
+
 func set_group_pattern(pattern: String) -> void:
 	video_index.set_group_pattern(pattern)
 

@@ -6,6 +6,19 @@ const TYPE = "Character"
 var _character_index: Dictionary[String, WeavlyCharacter] = {}
 
 
+# Adds the WeavlyCharacter resources in the engine's character_path.
+func initialize(engine: WeavlyEngine) -> void:
+	super(engine)
+	if engine.character_path.is_empty():
+		return
+	for path: String in WeavlyFileUtils.find_all_files_with_extension(
+		engine.character_path, ".tres"
+	):
+		var resource: Resource = load(path)
+		if resource is WeavlyCharacter:
+			add_character(resource)
+
+
 func has(id: String) -> bool:
 	return _character_index.has(id)
 
