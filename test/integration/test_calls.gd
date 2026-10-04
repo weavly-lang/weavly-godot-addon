@@ -15,8 +15,10 @@ func before_test() -> void:
 	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE
 	add_child(auto_free(_engine))
-	_engine.line_service.executed_narration_line.connect(
-		func(line: WeavlyModel.NarrationLine) -> void: _events.append(line.text)
+	_engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void:
+			if line is WeavlyModel.NarrationLine:
+				_events.append(line.text)
 	)
 	_engine.runtime_error.connect(
 		func(message: String, _source: String, line: int) -> void:

@@ -8,7 +8,9 @@ signal left_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
-# A line is waiting for next(); its text is filled in.
+# A statement is about to run, in play and in renders; hold() pauses the dialogue after it.
+signal statement_reached(statement: WeavlyModel.Statement)
+# A line in play, its text filled in; it waits for next() unless the line service says not to.
 signal line_reached(line: WeavlyModel.LineStatement)
 signal options_offered(options: Array[WeavlyModel.Option])
 signal option_chosen(option: WeavlyModel.Option)
@@ -61,8 +63,6 @@ static var _default_services: Dictionary[Script, Script] = {
 	WeavlyFunctionService: WeavlyDefaultFunctionService,
 	WeavlyImageService: WeavlyDefaultImageService,
 	WeavlyLineService: WeavlyDefaultLineService,
-	WeavlyOptionService: WeavlyDefaultOptionService,
-	WeavlyStatementService: WeavlyDefaultStatementService,
 	WeavlyVariableService: WeavlyDefaultVariableService,
 	WeavlyVideoService: WeavlyDefaultVideoService,
 }
@@ -102,8 +102,6 @@ var count_service: WeavlyCountService
 var function_service: WeavlyFunctionService
 var image_service: WeavlyImageService
 var line_service: WeavlyLineService
-var option_service: WeavlyOptionService
-var statement_service: WeavlyStatementService
 var variable_service: WeavlyVariableService
 var video_service: WeavlyVideoService
 
@@ -128,6 +126,11 @@ var _listed_options: Array[WeakRef] = []
 var _registrations_checked: bool = false
 # Node id -> meta values taken when it was chosen; meta reads use them while it runs.
 var _meta_snapshots: Dictionary[String, Dictionary] = {}
+# The running statement lists, bottom to top: node bodies and the blocks inside them.
+var _frames: Array[Frame] = []
+var _paused: bool = false
+var _pending_options: Array[WeavlyModel.Option] = []
+
 # Null when no node is waiting to be entered.
 var _pending_node_id: Variant = null
 var _pending_detour: bool = false
@@ -155,9 +158,6 @@ func _ready() -> void:
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
-	line_service.executed_narration_line.connect(line_reached.emit)
-	line_service.executed_character_line.connect(line_reached.emit)
-	option_service.options_added.connect(options_offered.emit)
 	WeavlyFileUtils.load_dialogue(self, dialogue_path)
 	_check_variables()
 	if not video_path.is_empty():
@@ -216,11 +216,11 @@ func choose(option: WeavlyModel.Option) -> bool:
 	if refusal != "":
 		push_warning(refusal)
 		return false
-	if option_service.get_options().has(option):
-		option_service.clear_options()
+	if _pending_options.has(option):
+		_pending_options.clear()
 		option_chosen.emit(option)
 		if option.item != null:
-			statement_service.add_statements(option.item.body)
+			add_statements(option.item.body)
 			next()
 		else:
 			snapshot_meta(option.node_id)
@@ -243,7 +243,7 @@ func can_choose(option: WeavlyModel.Option) -> bool:
 func _refusal(option: WeavlyModel.Option) -> String:
 	if not _offered_options().has(option):
 		return NOT_OFFERED % option.text
-	if not _finished and not option_service.get_options().has(option):
+	if not _finished and not _pending_options.has(option):
 		return CHOOSE_IN_PROGRESS % option.text
 	var rng_state: int = rng.state
 	WeavlyOptionBuilder.refresh(option, self)
@@ -260,8 +260,8 @@ func _run_choice(option: WeavlyModel.Option) -> void:
 		return
 	current_source = option.source
 	current_line = option.line
-	statement_service.clear_statements()
-	statement_service.add_statements(option.item.body)
+	_frames.clear()
+	add_statements(option.item.body)
 	next()
 
 
@@ -281,7 +281,7 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 	_location_stack.clear()
 	_meta_snapshots.clear()
 	clear_location()
-	statement_service.clear_statements()
+	_frames.clear()
 	_refresh_stale_options()
 	return output
 
@@ -304,16 +304,13 @@ func next() -> void:
 	if _holds > 0:
 		return
 	_in_next = true
-	if (
-		option_service.has_options()
-		and not option_service.get_options().any(
-			func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
-		)
+	if not _pending_options.any(
+		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
 	):
-		option_service.clear_options()
-	statement_service.resume()
+		_pending_options.clear()
+	_paused = false
 	var node_entries: int = 0
-	while not statement_service.is_paused() and not option_service.has_options() and not _finished:
+	while not _paused and _pending_options.is_empty() and not _finished:
 		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
@@ -322,9 +319,24 @@ func next() -> void:
 				break
 			_enter_pending_node()
 		else:
-			statement_service.advance_statements()
+			_advance()
 	_in_next = false
 	_refresh_stale_options()
+
+
+# Runs the top frame's next statement, or leaves the frame once it ran out.
+func _advance() -> void:
+	if _frames.is_empty():
+		finish()
+		return
+	var frame: Frame = _frames.back()
+	if not frame.has_next():
+		_frames.pop_back()
+		if frame.ends_node:
+			leave_current_node()
+		return
+	WeavlyStatementExecutor.execute_statement(frame.get_current_statement(), self)
+	frame.increase_counter()
 
 
 func _refresh_stale_options() -> void:
@@ -345,7 +357,7 @@ func _enter_pending_node() -> void:
 	var node: WeavlyModel.WeavlyNode = story.get_node(node_id)
 	if not detoured:
 		_location_stack.clear()
-		statement_service.clear_statements()
+		_frames.clear()
 		if not _rendering:
 			_checkpoint = {
 				KEY_VERSION: STATE_VERSION,
@@ -359,7 +371,9 @@ func _enter_pending_node() -> void:
 		return
 	_location_stack.push_back(node_id)
 	set_location(node)
-	statement_service.add_node_statements(node.body)
+	var frame: Frame = Frame.new(node.body)
+	frame.ends_node = true
+	_frames.push_back(frame)
 	entered_node.emit(node_id)
 
 
@@ -387,8 +401,8 @@ func _stop() -> void:
 	_location_stack.clear()
 	_meta_snapshots.clear()
 	clear_location()
-	statement_service.clear_statements()
-	option_service.clear_options()
+	_frames.clear()
+	_pending_options.clear()
 
 
 func is_running() -> bool:
@@ -445,8 +459,6 @@ func _services() -> Dictionary[String, WeavlyService]:
 		"function": function_service,
 		"image": image_service,
 		"line": line_service,
-		"option": option_service,
-		"statement": statement_service,
 		"variable": variable_service,
 		"video": video_service,
 	}
@@ -466,7 +478,7 @@ func hold() -> void:
 	if _holds == 0:
 		_hold_interrupted_step = _in_next
 	_holds += 1
-	statement_service.pause()
+	_paused = true
 
 
 # The last release continues only a step the hold interrupted; a line on screen keeps waiting.
@@ -479,7 +491,7 @@ func release() -> void:
 		return
 	_hold_interrupted_step = false
 	if _in_next:
-		statement_service.resume()
+		_paused = false
 	else:
 		next()
 
@@ -494,6 +506,35 @@ func add_rendered(statement: WeavlyModel.Statement) -> void:
 	if statement is WeavlyModel.OptionBlock:
 		for option: WeavlyModel.Option in statement.options:
 			_rendered_options[option] = true
+
+
+# Runs the statements before the rest of the current ones.
+func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
+	_frames.push_back(Frame.new(statements))
+
+
+# Runs the groups one after another, first to last, before the rest of the current statements.
+func add_statement_groups(groups: Array[Array]) -> void:
+	for i: int in range(groups.size() - 1, -1, -1):
+		add_statements(groups[i])
+
+
+# A filled line in play: it waits for next() when the line service says so.
+func reach_line(line: WeavlyModel.LineStatement) -> void:
+	if line_service.waits(line):
+		_paused = true
+	line_reached.emit(line)
+
+
+# The dialogue waits for one of the options to be chosen.
+func offer_options(options: Array[WeavlyModel.Option]) -> void:
+	_pending_options = options
+	options_offered.emit(options)
+
+
+# The options the dialogue waits on, as options_offered passed them.
+func get_pending_options() -> Array[WeavlyModel.Option]:
+	return _pending_options.duplicate()
 
 
 # The value, checked against the declaration; null once an error is reported.
@@ -604,7 +645,7 @@ func refresh_options() -> void:
 
 
 func _offered_options() -> Array[WeavlyModel.Option]:
-	var options: Array[WeavlyModel.Option] = option_service.get_options()
+	var options: Array[WeavlyModel.Option] = get_pending_options()
 	options.append_array(_rendered_options.keys())
 	for held: WeakRef in _listed_options:
 		var option: WeavlyModel.Option = held.get_ref()
@@ -737,8 +778,6 @@ func _create_services() -> void:
 	function_service = _new_service(scripts, WeavlyFunctionService)
 	image_service = _new_service(scripts, WeavlyImageService)
 	line_service = _new_service(scripts, WeavlyLineService)
-	option_service = _new_service(scripts, WeavlyOptionService)
-	statement_service = _new_service(scripts, WeavlyStatementService)
 	variable_service = _new_service(scripts, WeavlyVariableService)
 	video_service = _new_service(scripts, WeavlyVideoService)
 
@@ -787,3 +826,22 @@ func _check_variables() -> void:
 
 static func _same(a: Variant, b: Variant) -> bool:
 	return typeof(a) == typeof(b) and a == b
+
+
+class Frame:
+	extends RefCounted
+	var ends_node: bool = false
+	var _statements: Array[WeavlyModel.Statement]
+	var _counter: int = 0
+
+	func _init(statements: Array[WeavlyModel.Statement]) -> void:
+		_statements = statements
+
+	func has_next() -> bool:
+		return _counter < _statements.size()
+
+	func get_current_statement() -> WeavlyModel.Statement:
+		return _statements[_counter]
+
+	func increase_counter() -> void:
+		_counter += 1

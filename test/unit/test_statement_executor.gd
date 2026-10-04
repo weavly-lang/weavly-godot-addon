@@ -2,23 +2,9 @@
 
 extends WeavlyTestSuite
 
-const FakeEngine = preload("res://test/helpers/fake_engine.gd")
-
 # =====================
-# Spy services
+# Spies
 # =====================
-
-
-class _SpyLineService:
-	extends WeavlyLineService
-	var narration_calls: Array[WeavlyModel.NarrationLine] = []
-	var character_calls: Array[WeavlyModel.CharacterLine] = []
-
-	func execute_narration_line(line: WeavlyModel.NarrationLine) -> void:
-		narration_calls.append(line)
-
-	func execute_character_line(line: WeavlyModel.CharacterLine) -> void:
-		character_calls.append(line)
 
 
 class _SpyCommandService:
@@ -35,79 +21,40 @@ class _SpyCommandService:
 		return []
 
 
-class _SpyOptionService:
-	extends WeavlyOptionService
-	var add_options_calls: Array[Array] = []
-
-	func has_options() -> bool:
-		return false
-
-	func get_options() -> Array[WeavlyModel.Option]:
-		return []
-
-	func add_options(options: Array[WeavlyModel.Option]) -> void:
-		add_options_calls.append(options)
-
-	func clear_options() -> void:
-		pass
-
-
-class _SpyStatementService:
-	extends WeavlyStatementService
-	var add_statements_calls: Array[Array] = []
-	var add_statement_groups_calls: Array[Array] = []
+class _RecordingEngine:
+	extends "res://test/helpers/fake_engine.gd"
+	var added_statements: Array[Array] = []
+	var added_groups: Array[Array] = []
+	var offered: Array[Array] = []
+	var reached_lines: Array[WeavlyModel.LineStatement] = []
 
 	func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
-		add_statements_calls.append(statements)
-
-	func add_node_statements(_statements: Array[WeavlyModel.Statement]) -> void:
-		pass
+		added_statements.append(statements)
 
 	func add_statement_groups(groups: Array[Array]) -> void:
-		add_statement_groups_calls.append(groups)
+		added_groups.append(groups)
 
-	func pause() -> void:
-		pass
+	func offer_options(options: Array[WeavlyModel.Option]) -> void:
+		offered.append(options)
 
-	func resume() -> void:
-		pass
-
-	func is_paused() -> bool:
-		return false
-
-	func clear_statements() -> void:
-		pass
-
-	func advance_statements() -> void:
-		pass
+	func reach_line(line: WeavlyModel.LineStatement) -> void:
+		reached_lines.append(line)
 
 
 # =====================
 # Setup
 # =====================
 
-var _engine: WeavlyEngine
-var _line: _SpyLineService
+var _engine: _RecordingEngine
 var _command: _SpyCommandService
-var _option: _SpyOptionService
-var _statement: _SpyStatementService
 
 
 func before_test() -> void:
-	_engine = auto_free(FakeEngine.new())
+	_engine = auto_free(_RecordingEngine.new())
 	add_child(_engine)
-	_line = _SpyLineService.new()
-	_line.initialize(_engine)
-	_engine.line_service = _line
 	_command = _SpyCommandService.new()
 	_command.initialize(_engine)
 	_engine.command_service = _command
-	_option = _SpyOptionService.new()
-	_option.initialize(_engine)
-	_engine.option_service = _option
-	_statement = _SpyStatementService.new()
-	_statement.initialize(_engine)
-	_engine.statement_service = _statement
 
 
 # =====================
@@ -142,18 +89,32 @@ func test_an_unknown_statement_is_reported() -> void:
 # =====================
 
 
-func test_narration_line_delegates_to_line_service() -> void:
+func test_a_statement_is_reached_at_its_line_before_it_runs() -> void:
+	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(["hello"])
+	line.line = 7
+	var reached: Array[Array] = []
+	_engine.statement_reached.connect(
+		func(statement: WeavlyModel.Statement) -> void:
+			reached.append([statement, _engine.current_line, _engine.reached_lines.size()])
+	)
+	WeavlyStatementExecutor.execute_statement(line, _engine)
+	assert_array(reached).is_equal([[line, 7, 0]])
+
+
+func test_a_narration_line_is_passed_on_filled() -> void:
 	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(["hello"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
-	assert_that(_line.narration_calls.size()).is_equal(1)
-	assert_that(_line.narration_calls[0]).is_same(line)
+	assert_that(_engine.reached_lines.size()).is_equal(1)
+	assert_that(_engine.reached_lines[0]).is_not_same(line)
+	assert_str(_engine.reached_lines[0].text).is_equal("hello")
 
 
-func test_character_line_delegates_to_line_service() -> void:
+func test_a_character_line_is_passed_on_filled() -> void:
 	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
 	WeavlyStatementExecutor.execute_statement(line, _engine)
-	assert_that(_line.character_calls.size()).is_equal(1)
-	assert_that(_line.character_calls[0]).is_same(line)
+	assert_that(_engine.reached_lines.size()).is_equal(1)
+	assert_str(_engine.reached_lines[0].name).is_equal("Alice")
+	assert_str(_engine.reached_lines[0].text).is_equal("hi")
 
 
 # =====================
@@ -250,8 +211,8 @@ func test_match_first_picks_first_matching_case() -> void:
 		WeavlyModel.MatchModifier.FIRST, cases
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(first)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(first)
 
 
 func test_match_first_no_match_does_nothing() -> void:
@@ -263,7 +224,7 @@ func test_match_first_no_match_does_nothing() -> void:
 		WeavlyModel.MatchModifier.FIRST, cases
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(0)
+	assert_that(_engine.added_statements.size()).is_equal(0)
 
 
 # =====================
@@ -283,8 +244,8 @@ func test_match_last_picks_last_matching_case() -> void:
 		WeavlyModel.MatchModifier.LAST, cases
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(last)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(last)
 
 
 func test_match_last_does_not_reorder_the_blocks_cases() -> void:
@@ -309,7 +270,7 @@ func test_match_block_can_run_twice_with_the_same_result() -> void:
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statements_calls[0]).is_same(_statement.add_statements_calls[1])
+	assert_that(_engine.added_statements[0]).is_same(_engine.added_statements[1])
 
 
 # =====================
@@ -329,8 +290,8 @@ func test_match_all_collects_matching_cases_as_groups() -> void:
 		WeavlyModel.MatchModifier.ALL, cases
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statement_groups_calls.size()).is_equal(1)
-	var groups: Array = _statement.add_statement_groups_calls[0]
+	assert_that(_engine.added_groups.size()).is_equal(1)
+	var groups: Array = _engine.added_groups[0]
 	assert_that(groups.size()).is_equal(2)
 	assert_that(groups[0]).is_same(a)
 	assert_that(groups[1]).is_same(b)
@@ -345,8 +306,8 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 		WeavlyModel.MatchModifier.ALL, cases
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
-	assert_that(_statement.add_statement_groups_calls.size()).is_equal(1)
-	assert_that((_statement.add_statement_groups_calls[0] as Array).size()).is_equal(0)
+	assert_that(_engine.added_groups.size()).is_equal(1)
+	assert_that((_engine.added_groups[0] as Array).size()).is_equal(0)
 
 
 # =====================
@@ -363,8 +324,8 @@ func test_option_block_offers_the_inline_options_whose_condition_holds() -> void
 	var keep_c: WeavlyModel.InlineOptionItem = _inline_item(true, "c")
 	var items: Array[WeavlyModel.OptionItem] = [keep_a, _inline_item(false, "b"), keep_c]
 	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
-	assert_that(_option.add_options_calls.size()).is_equal(1)
-	var passed: Array = _option.add_options_calls[0]
+	assert_that(_engine.offered.size()).is_equal(1)
+	var passed: Array = _engine.offered[0]
 	(
 		assert_array(passed.map(func(option: WeavlyModel.Option) -> String: return option.text))
 		. is_equal(["a", "c"])
@@ -376,13 +337,13 @@ func test_option_block_offers_the_inline_options_whose_condition_holds() -> void
 func test_option_block_with_no_passing_options_does_not_add_options() -> void:
 	var items: Array[WeavlyModel.OptionItem] = [_inline_item(false, "a")]
 	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
-	assert_that(_option.add_options_calls).is_empty()
+	assert_that(_engine.offered).is_empty()
 
 
 func test_option_block_without_options_does_not_add_options() -> void:
 	var items: Array[WeavlyModel.OptionItem] = []
 	WeavlyStatementExecutor.execute_option_block(WeavlyModel.OptionBlock.new(items), _engine)
-	assert_that(_option.add_options_calls).is_empty()
+	assert_that(_engine.offered).is_empty()
 
 
 # =====================
@@ -419,8 +380,8 @@ func test_random_block_picks_case_based_on_rng() -> void:
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	_roll_between(0.0, 0.1)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(a)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(a)
 
 
 func test_random_block_rng_in_middle_bucket() -> void:
@@ -435,8 +396,8 @@ func test_random_block_rng_in_middle_bucket() -> void:
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	_roll_between(0.1, 0.4)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(b)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(b)
 
 
 func test_random_block_rng_in_last_bucket() -> void:
@@ -451,8 +412,8 @@ func test_random_block_rng_in_last_bucket() -> void:
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	_roll_between(0.4, 1.0)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(c)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(c)
 
 
 func test_random_block_filters_out_false_conditions() -> void:
@@ -464,8 +425,8 @@ func test_random_block_filters_out_false_conditions() -> void:
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 func test_random_block_excludes_zero_weight_cases() -> void:
@@ -477,8 +438,8 @@ func test_random_block_excludes_zero_weight_cases() -> void:
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(1)
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements.size()).is_equal(1)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 func test_random_block_no_eligible_cases_does_nothing() -> void:
@@ -488,7 +449,7 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls.size()).is_equal(0)
+	assert_that(_engine.added_statements.size()).is_equal(0)
 
 
 # =====================
@@ -543,7 +504,7 @@ func test_random_weight_that_fails_counts_as_zero() -> void:
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 func test_random_weight_of_a_case_whose_condition_is_false_is_not_evaluated() -> void:
@@ -555,7 +516,7 @@ func test_random_weight_of_a_case_whose_condition_is_false_is_not_evaluated() ->
 	]
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 func test_random_weight_that_is_not_a_number_counts_as_zero() -> void:
@@ -568,7 +529,7 @@ func test_random_weight_that_is_not_a_number_counts_as_zero() -> void:
 	var block: WeavlyModel.RandomBlock = WeavlyModel.RandomBlock.new(cases)
 	WeavlyStatementExecutor.execute_random_block(block, _engine)
 	assert_logged(["Random weight can't be of type 'String', using 0 instead."])
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 func test_case_condition_that_fails_counts_as_false() -> void:
@@ -582,7 +543,7 @@ func test_case_condition_that_fails_counts_as_false() -> void:
 	)
 	WeavlyStatementExecutor.execute_match_block(block, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
-	assert_that(_statement.add_statements_calls[0]).is_same(picked)
+	assert_that(_engine.added_statements[0]).is_same(picked)
 
 
 # =====================
