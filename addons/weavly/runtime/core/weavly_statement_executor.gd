@@ -1,7 +1,6 @@
 class_name WeavlyStatementExecutor
 
 const UNKNOWN_STATEMENT = "Can't execute an unknown statement."
-const UNDEFINED_SET_TARGET = "Can't set variable '%s' because it isn't defined."
 const WRONG_WEIGHT_TYPE = "Random weight can't be of type '%s', using 0 instead."
 
 
@@ -54,24 +53,11 @@ static func execute_character_line(
 static func execute_set_statement(
 	set_statement: WeavlyModel.SetStatement, engine: WeavlyEngine
 ) -> void:
-	var declared: WeavlyModel.Variable = engine.variable_service.get_declaration(set_statement.id)
-	if declared == null:
-		engine.report_error(UNDEFINED_SET_TARGET % set_statement.id)
-		return
 	var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(
 		set_statement.expression, engine
 	)
-	if WeavlyExpressionEvaluator.is_error(value):
-		return
-	if typeof(value) != typeof(declared.value):
-		engine.report_error(
-			(
-				WeavlyVariableService.WRONG_TYPE
-				% [set_statement.id, type_string(typeof(value)), declared.get_type_name()]
-			)
-		)
-		return
-	engine.variable_service.set_variable(set_statement.id, value)
+	if not WeavlyExpressionEvaluator.is_error(value):
+		engine.set_variable(set_statement.id, value)
 
 
 static func execute_jump_statement(

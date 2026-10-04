@@ -31,7 +31,7 @@ func _run(node_id: String) -> void:
 func _visits(ids: Array[String]) -> Array[int]:
 	var counts: Array[int] = []
 	for id: String in ids:
-		counts.append(_engine.node_service.get_visit_count(id))
+		counts.append(_engine.count_service.get_visit_count(id))
 	return counts
 
 

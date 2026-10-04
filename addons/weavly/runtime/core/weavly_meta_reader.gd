@@ -14,10 +14,10 @@ const BUILT_IN_DEFAULTS: Dictionary[String, Variant] = {
 
 # The node's value for the key, else the key's default; ERROR once a failure is reported.
 static func read(engine: WeavlyEngine, node_id: String, key: String) -> Variant:
-	if not engine.node_service.has(node_id):
+	if not engine.story.has_node(node_id):
 		engine.report_error(UNKNOWN_NODE % [key, node_id])
 		return WeavlyExpressionEvaluator.ERROR
-	return read_node(engine, engine.node_service.get_node(node_id), key)
+	return read_node(engine, engine.story.get_node(node_id), key)
 
 
 # Every key the node writes, evaluated once; a failing one is left out.
@@ -59,8 +59,8 @@ static func read_node(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, key: S
 	if key in WeavlyDeserializer.TEXT_META_KEYS:
 		return _read_text(engine, node, meta.texts.get(key))
 	var default: Variant = BUILT_IN_DEFAULTS.get(key)
-	if default == null and engine.node_service.has_meta_key(key):
-		default = engine.node_service.get_meta_default(key)
+	if default == null and engine.story.has_meta_key(key):
+		default = engine.story.get_meta_default(key)
 	if default == null:
 		engine.report_error(UNDECLARED_KEY % [key, node.id])
 		return WeavlyExpressionEvaluator.ERROR

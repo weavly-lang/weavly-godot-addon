@@ -115,7 +115,7 @@ func test_following_a_link_into_the_next_node() -> void:
 	_ui.show_passage("tavern")
 	_link("Buy a drink").pressed.emit()
 	assert_array(_describe()).is_equal([["The drink is cold.", "The barkeep nods.", ["Back"]]])
-	assert_float(_engine.variable_service.get_variable("gold")).is_equal(1.0)
+	assert_float(_engine.get_variable("gold")).is_equal(1.0)
 
 
 func test_a_link_from_a_later_option_block() -> void:
@@ -224,4 +224,4 @@ func test_a_refused_link_keeps_the_passage_and_shows_the_change() -> void:
 	assert_bool(_link("Open").visible).is_false()
 	assert_bool(_link("Stay").visible).is_true()
 	assert_array(_events).is_empty()
-	assert_int(_engine.node_service.get_visit_count("street")).is_equal(0)
+	assert_int(_engine.count_service.get_visit_count("street")).is_equal(0)

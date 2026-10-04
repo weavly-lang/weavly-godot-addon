@@ -65,7 +65,7 @@ func test_the_engine_forwards_variable_changes() -> void:
 		func(id: String, value: Variant, old_value: Variant) -> void:
 			changes.append([id, value, old_value])
 	)
-	engine.variable_service.set_variable("counter", 2.0)
+	engine.set_variable("counter", 2.0)
 	assert_array(changes).is_equal([["counter", 2.0, 0.0]])
 
 

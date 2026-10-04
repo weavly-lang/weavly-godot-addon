@@ -115,7 +115,7 @@ func test_deals_the_first_cards_in_selection_order() -> void:
 
 func test_cards_past_the_hand_size_count_as_skipped() -> void:
 	_ui.deal(["city"])
-	assert_int(_engine.node_service.get_skip_count("well")).is_equal(1)
+	assert_int(_engine.count_service.get_skip_count("well")).is_equal(1)
 
 
 func test_fewer_eligible_storylets_than_the_hand_size() -> void:
@@ -156,7 +156,7 @@ func test_every_card_is_chosen_through_its_option_buttons() -> void:
 	assert_int(join.focus_mode).is_equal(Control.FOCUS_ALL)
 	join.pressed.emit()
 	assert_array(_outcome()).is_equal(["You win 5 gold at cards."])
-	assert_float(_engine.variable_service.get_variable("gold")).is_equal(5.0)
+	assert_float(_engine.get_variable("gold")).is_equal(5.0)
 	assert_bool(_ui.get_node("%Continue").visible).is_true()
 	assert_array(_cards()).is_empty()
 
@@ -262,4 +262,4 @@ func test_a_refused_option_keeps_the_card_and_shows_the_change() -> void:
 	assert_int(_cards().size()).is_equal(1)
 	assert_bool(_button(_cards()[0], "Open").visible).is_false()
 	assert_bool(_ui.get_node("%Outcome").visible).is_false()
-	assert_int(_engine.node_service.get_visit_count("let_go")).is_equal(0)
+	assert_int(_engine.count_service.get_visit_count("let_go")).is_equal(0)

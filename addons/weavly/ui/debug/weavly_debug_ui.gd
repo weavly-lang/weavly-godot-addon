@@ -158,11 +158,9 @@ func _refresh_status() -> void:
 
 
 func _build_variables() -> void:
-	var ids: Array = engine.variable_service.get_all_ids()
-	ids.sort()
-	for id: String in ids:
-		var declaration: WeavlyModel.Variable = engine.variable_service.get_declaration(id)
-		var type_name: String = declaration.get_type_name() if declaration != null else ""
+	for id: String in _variable_ids():
+		var declaration: WeavlyModel.Variable = engine.story.get_variable(id)
+		var type_name: String = declaration.get_type_name()
 		_variable_grid.add_child(_create_label(id))
 		_variable_grid.add_child(_create_label(type_name, &"WeavlyDebugMuted"))
 		var editor: Control = _create_variable_editor(id, declaration)
@@ -176,7 +174,7 @@ func _create_variable_editor(id: String, declaration: WeavlyModel.Variable) -> C
 		check.focus_mode = Control.FOCUS_NONE
 		check.toggled.connect(
 			func(pressed: bool) -> void:
-				engine.variable_service.set_variable(id, pressed)
+				engine.set_variable(id, pressed)
 				refresh()
 		)
 		return check
@@ -187,7 +185,7 @@ func _create_variable_editor(id: String, declaration: WeavlyModel.Variable) -> C
 			names.add_item(declared)
 		names.item_selected.connect(
 			func(index: int) -> void:
-				engine.variable_service.set_variable(id, names.get_item_text(index))
+				engine.set_variable(id, names.get_item_text(index))
 				refresh()
 		)
 		return names
@@ -202,20 +200,20 @@ func _create_variable_editor(id: String, declaration: WeavlyModel.Variable) -> C
 func _commit_variable(id: String, edit: LineEdit, declaration: WeavlyModel.Variable) -> void:
 	if declaration is WeavlyModel.NumberVariable:
 		if edit.text.strip_edges().is_valid_float():
-			engine.variable_service.set_variable(id, edit.text.strip_edges().to_float())
+			engine.set_variable(id, edit.text.strip_edges().to_float())
 	else:
-		engine.variable_service.set_variable(id, edit.text)
+		engine.set_variable(id, edit.text)
 	refresh()
 
 
 # An extern variable joins the list once the game gives it a value.
 func _refresh_variables() -> void:
-	if engine.variable_service.get_all_ids().size() != _variable_editors.size():
+	if _variable_ids().size() != _variable_editors.size():
 		free_children(_variable_grid)
 		_variable_editors.clear()
 		_build_variables()
 	for id: String in _variable_editors:
-		var value: Variant = engine.variable_service.get_variable(id)
+		var value: Variant = engine.get_variable(id)
 		var editor: Control = _variable_editors[id]
 		if editor is CheckBox:
 			editor.set_pressed_no_signal(bool(value))
@@ -226,16 +224,24 @@ func _refresh_variables() -> void:
 			editor.text = _format(value)
 
 
+# The declared variables with a value, sorted.
+func _variable_ids() -> Array[String]:
+	var ids: Array[String] = []
+	ids.assign(engine.story.get_variable_ids().filter(engine.variable_service.has))
+	ids.sort()
+	return ids
+
+
 func _declared_names(type: String) -> Array[String]:
 	var names: Array[String] = []
 	match type:
 		WeavlyDeserializer.TYPE_NODE:
-			for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
+			for node: WeavlyModel.WeavlyNode in engine.story.get_nodes():
 				names.append(node.id)
 		WeavlyDeserializer.TYPE_POOL:
-			names = engine.node_service.get_all_pools()
+			names = engine.story.get_pools()
 		WeavlyDeserializer.TYPE_SLOT:
-			names = engine.node_service.get_all_slots()
+			names = engine.story.get_slots()
 	names.sort()
 	return names
 
@@ -256,7 +262,7 @@ func _format(value: Variant) -> String:
 
 
 func _build_nodes() -> void:
-	var nodes: Array[WeavlyModel.WeavlyNode] = engine.node_service.get_all_nodes()
+	var nodes: Array[WeavlyModel.WeavlyNode] = engine.story.get_nodes()
 	nodes.sort_custom(
 		func(a: WeavlyModel.WeavlyNode, b: WeavlyModel.WeavlyNode) -> bool: return a.id < b.id
 	)
@@ -283,8 +289,8 @@ func _refresh_nodes() -> void:
 	var counts: PackedInt32Array = []
 	for id: String in _node_rows:
 		var row: Array = _node_rows[id]
-		var visits: int = engine.node_service.get_visit_count(id)
-		var skips: int = engine.node_service.get_skip_count(id)
+		var visits: int = engine.count_service.get_visit_count(id)
+		var skips: int = engine.count_service.get_skip_count(id)
 		counts.append_array([visits, skips])
 		(row[2] as Label).text = "%d visits" % visits
 		(row[3] as Label).text = "%d skips" % skips
@@ -300,7 +306,7 @@ func _refresh_nodes() -> void:
 func _refresh_meta() -> void:
 	_meta_dirty = false
 	for id: String in _node_rows:
-		var meta: WeavlyModel.NodeMeta = engine.node_service.get_node(id).meta
+		var meta: WeavlyModel.NodeMeta = engine.story.get_node(id).meta
 		if meta == null:
 			continue
 		var keys: Array[String] = []
@@ -353,7 +359,7 @@ func _jump(node_id: String) -> void:
 func _refresh_pools() -> void:
 	_pools_dirty = false
 	free_children(_pool_list)
-	var pools: Array[String] = engine.node_service.get_all_pools()
+	var pools: Array[String] = engine.story.get_pools()
 	pools.sort()
 	for pool: String in pools:
 		_pool_list.add_child(_create_label(pool, &"WeavlyDebugHeading"))

@@ -277,7 +277,7 @@ func test_a_locked_option_shows_disabled_and_unlocks_when_its_state_changes() ->
 	_engine.start("gated")
 	assert_str(_choices()[0].text).is_equal("The vault is sealed")
 	assert_bool(_choices()[0].disabled).is_true()
-	_engine.variable_service.set_variable("has_code", true)
+	_engine.set_variable("has_code", true)
 	assert_str(_choices()[0].text).is_equal("Open the vault")
 	assert_bool(_choices()[0].disabled).is_false()
 	_choices()[0].pressed.emit()

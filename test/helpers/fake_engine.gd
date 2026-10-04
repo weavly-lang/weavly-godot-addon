@@ -8,16 +8,7 @@ var last_detoured_node: String = ""
 
 
 func _init() -> void:
-	variable_service = WeavlyDefaultVariableService.new()
-	variable_service.initialize(self)
-	statement_service = WeavlyDefaultStatementService.new()
-	statement_service.initialize(self)
-	node_service = WeavlyDefaultNodeService.new()
-	node_service.initialize(self)
-	function_service = WeavlyDefaultFunctionService.new()
-	function_service.initialize(self)
-	option_service = WeavlyDefaultOptionService.new()
-	option_service.initialize(self)
+	_create_services()
 
 
 func _ready() -> void:
@@ -70,15 +61,3 @@ func hold() -> void:
 
 func release() -> void:
 	holds -= 1
-
-
-func get_state() -> Dictionary:
-	return {}
-
-
-func set_state(_state: Dictionary) -> void:
-	pass
-
-
-func reset_state() -> void:
-	pass

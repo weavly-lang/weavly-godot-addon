@@ -47,7 +47,7 @@ func _on_option_pressed(option: WeavlyModel.Option) -> void:
     engine.choose(option)
 ```
 
-Values your game owns, like the player's gold, are declared `extern var` in `@env` and set with `engine.variable_service.set_variable()`. Stories can change them too, and Weavly only checks their type, so your game keeps them in range. `engine.get_state()` leaves them out, so save them with your game's own data.
+Values your game owns, like the player's gold, are declared `extern var` in `@env` and set with `engine.set_variable()`. Stories can change them too, and Weavly only checks their type, so your game keeps them in range. `engine.get_state()` leaves them out, so save them with your game's own data.
 
 The engine loads compiled dialogue from `res://dialogue/build` by default. For exports, add `*.json` to *Filters to export non-resource files* in your export preset.
 

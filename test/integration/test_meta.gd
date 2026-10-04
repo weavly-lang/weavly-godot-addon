@@ -31,7 +31,7 @@ func _narration() -> Array[String]:
 func test_a_custom_key_returns_its_evaluated_value() -> void:
 	assert_that(_engine.get_node_meta("shop", "cost")).is_equal(7.0)
 	assert_that(_engine.get_node_meta("stall", "tag")).is_equal("fresh")
-	_engine.variable_service.set_variable("gold", 1.0)
+	_engine.set_variable("gold", 1.0)
 	assert_that(_engine.get_node_meta("shop", "cost")).is_equal(3.0)
 
 
@@ -99,7 +99,7 @@ func test_a_failure_in_a_read_meta_value_points_to_the_innermost_entry() -> void
 
 
 func test_a_value_of_the_wrong_type_reports_and_returns_null() -> void:
-	var meta: WeavlyModel.NodeMeta = _engine.node_service.get_node("stall").meta
+	var meta: WeavlyModel.NodeMeta = _engine.story.get_node("stall").meta
 	meta.entries["tag"].expression = WeavlyModel.Number.new(2.0)
 	assert_object(_engine.get_node_meta("stall", "tag")).is_null()
 	assert_array(_errors).is_equal(
@@ -118,7 +118,7 @@ func test_get_node_meta_leaves_the_generator_as_it_was() -> void:
 func test_meta_in_a_script_reads_the_value() -> void:
 	var texts: Array[String] = _narration()
 	_engine.start("shop")
-	assert_that(_engine.variable_service.get_variable("paid")).is_equal(7.0)
+	assert_that(_engine.get_variable("paid")).is_equal(7.0)
 	assert_array(texts).is_equal(["Fresh."])
 
 
@@ -126,7 +126,7 @@ func test_meta_in_a_script_uses_the_generator() -> void:
 	var state: int = _engine.rng.state
 	var expected: Variant = _engine.get_node_meta("lucky", "cost")
 	_engine.start("lucky")
-	assert_that(_engine.variable_service.get_variable("rolled")).is_equal(expected)
+	assert_that(_engine.get_variable("rolled")).is_equal(expected)
 	assert_int(_engine.rng.state).is_not_equal(state)
 
 

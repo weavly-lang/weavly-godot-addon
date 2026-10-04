@@ -87,25 +87,25 @@ static func load_dialogue(engine: WeavlyEngine, dialogue_dir: String) -> void:
 		var data: Variant = load_json_file(file_path)
 		if data is Dictionary:
 			for node: WeavlyModel.WeavlyNode in WeavlyDeserializer.read_nodes(data, file_path):
-				engine.node_service.add_node(node)
+				engine.story.add_node(node)
 
 
 static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> void:
 	for variable: WeavlyModel.Variable in WeavlyDeserializer.read_variable_declarations(
 		data, path
 	):
-		engine.variable_service.add_variable(variable)
+		engine.story.add_variable(variable)
 	for pool: String in WeavlyDeserializer.read_pool_names(data, path):
-		engine.node_service.add_pool(pool)
+		engine.story.add_pool(pool)
 	for slot: String in WeavlyDeserializer.read_slot_names(data, path):
-		engine.node_service.add_slot(slot)
+		engine.story.add_slot(slot)
 	var meta_keys: Dictionary[String, Variant] = WeavlyDeserializer.read_meta_keys(data, path)
 	for key: String in meta_keys:
-		engine.node_service.add_meta_key(key, meta_keys[key])
+		engine.story.add_meta_key(key, meta_keys[key])
 	for function: WeavlyModel.Signature in WeavlyDeserializer.read_functions(data, path):
-		engine.function_service.add_declaration(function)
+		engine.story.add_function(function)
 	for command: WeavlyModel.Signature in WeavlyDeserializer.read_commands(data, path):
-		engine.command_service.add_declaration(command)
+		engine.story.add_command(command)
 
 
 static func index_media_from_files(service: WeavlyMediaService, dir: String) -> void:
