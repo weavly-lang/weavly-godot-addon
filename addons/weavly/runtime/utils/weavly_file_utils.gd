@@ -30,7 +30,7 @@ static func find_all_files_with_extensions(
 			continue
 
 		for extension: String in extensions:
-			if entry.to_lower().ends_with(extension):
+			if entry.to_lower().ends_with(extension.to_lower()):
 				results.append(dir_path.path_join(entry))
 				break
 
