@@ -11,7 +11,14 @@ func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 		variable = WeavlyModel.StringVariable.new(id, value)
 	else:
 		variable = WeavlyModel.FlagVariable.new(id, value)
-	engine.variable_service.add_variable(variable)
+	declare(engine, variable)
+
+
+# Adds the declaration and, as loading does, the default of a variable the story owns.
+func declare(engine: WeavlyEngine, variable: WeavlyModel.Variable) -> void:
+	engine.story.add_variable(variable)
+	if not variable.extern:
+		engine.variable_service.set_value(variable.id, variable.value)
 
 
 # An inline option as a block offers it.

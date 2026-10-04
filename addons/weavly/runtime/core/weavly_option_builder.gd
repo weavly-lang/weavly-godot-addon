@@ -36,10 +36,10 @@ static func offer(
 
 # The node as an option, or null when the display rule hides it.
 static func offer_node(engine: WeavlyEngine, node_id: String) -> WeavlyModel.Option:
-	if not engine.node_service.has(node_id):
+	if not engine.story.has_node(node_id):
 		engine.report_error(UNKNOWN_NODE % node_id)
 		return null
-	var node: WeavlyModel.WeavlyNode = engine.node_service.get_node(node_id)
+	var node: WeavlyModel.WeavlyNode = engine.story.get_node(node_id)
 	var display: WeavlyStoryletSelector.Display = WeavlyStoryletSelector.display_of(engine, node)
 	if not STATES.has(display):
 		return null
@@ -53,10 +53,10 @@ static func refresh(option: WeavlyModel.Option, engine: WeavlyEngine) -> void:
 		if not option.hidden:
 			option.text = _inline_text(option, engine)
 		return
-	if not engine.node_service.has(option.node_id):
+	if not engine.story.has_node(option.node_id):
 		option.hidden = true
 		return
-	var node: WeavlyModel.WeavlyNode = engine.node_service.get_node(option.node_id)
+	var node: WeavlyModel.WeavlyNode = engine.story.get_node(option.node_id)
 	var display: WeavlyStoryletSelector.Display = WeavlyStoryletSelector.display_of(engine, node)
 	option.hidden = not STATES.has(display)
 	if not option.hidden:
@@ -133,7 +133,7 @@ static func _offer_pool(
 		engine, item.pools, limit, shuffle == true, item.locked
 	)
 	for candidate: WeavlyStoryletSelector.Candidate in candidates:
-		var node: WeavlyModel.WeavlyNode = engine.node_service.get_node(candidate.id)
+		var node: WeavlyModel.WeavlyNode = engine.story.get_node(candidate.id)
 		var option: WeavlyModel.Option = _node_option(engine, node, candidate.display)
 		option.line = item.line
 		options.append(option)

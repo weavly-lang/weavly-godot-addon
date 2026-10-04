@@ -59,7 +59,7 @@ func _choose(text: String) -> void:
 
 
 func _set_variable(id: String, value: Variant) -> void:
-	_engine.variable_service.set_variable(id, value)
+	_engine.set_variable(id, value)
 
 
 # =====================
@@ -109,7 +109,7 @@ func test_a_chosen_node_runs_like_a_detour_and_the_block_continues() -> void:
 	assert_array(_events).is_equal(
 		["enter:cook", "You cook.", "leave:cook", "Morning.", "leave:camp"]
 	)
-	assert_int(_engine.node_service.get_visit_count("cook")).is_equal(1)
+	assert_int(_engine.count_service.get_visit_count("cook")).is_equal(1)
 
 
 func test_a_jump_in_a_chosen_node_leaves_for_good() -> void:
@@ -185,10 +185,10 @@ func test_a_pool_option_uses_its_parameters() -> void:
 
 
 func test_locked_nodes_dont_take_slots_and_teasers_keep_their_skip_count() -> void:
-	_engine.node_service.set_skip_count("fire_tease", 4)
+	_engine.count_service.set_skip_count("fire_tease", 4)
 	assert_array(_engine.list_pool(["fire_test"], -1, false)).is_equal(["fire_tease", "fire_cook"])
-	assert_int(_engine.node_service.get_skip_count("fire_tease")).is_equal(4)
-	assert_int(_engine.node_service.get_skip_count("fire_dance")).is_equal(1)
+	assert_int(_engine.count_service.get_skip_count("fire_tease")).is_equal(4)
+	assert_int(_engine.count_service.get_skip_count("fire_dance")).is_equal(1)
 
 
 # =====================
@@ -238,8 +238,8 @@ func test_the_chosen_node_reads_its_meta_values_as_they_were_at_the_choice() -> 
 	_run_to_options("camp")
 	_engine.choose(_option("Hack (-3 energy)"))
 	assert_str(_events.back()).is_equal("Hacked.")
-	assert_that(_engine.variable_service.get_variable("energy")).is_equal(2.0)
-	assert_that(_engine.variable_service.get_variable("paid")).is_equal(3.0)
+	assert_that(_engine.get_variable("energy")).is_equal(2.0)
+	assert_that(_engine.get_variable("paid")).is_equal(3.0)
 	assert_that(_engine.get_node_meta("hack", "cost")).is_equal(3.0)
 	_engine.next()
 	assert_that(_engine.get_node_meta("hack", "cost")).is_equal(10.0)
@@ -257,7 +257,7 @@ func test_get_option_is_live_and_choose_runs_it_as_a_dialogue() -> void:
 	assert_int(hack.state).is_equal(AVAILABLE)
 	_engine.choose(hack)
 	assert_bool(_engine.is_running()).is_true()
-	assert_that(_engine.variable_service.get_variable("paid")).is_equal(3.0)
+	assert_that(_engine.get_variable("paid")).is_equal(3.0)
 
 
 func test_choose_refuses_a_locked_option_from_get_option() -> void:

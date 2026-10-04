@@ -1,20 +1,13 @@
 class_name WeavlyDefaultCommandService
 extends WeavlyCommandService
 
-const KIND = "command"
 const MISSING_HANDLER = "Can't run command '%s' because no handler is registered for it."
 
-var _declarations: Dictionary[String, WeavlyModel.Signature] = {}
 var _handlers: Dictionary[String, Callable] = {}
 
 
-func add_declaration(signature: WeavlyModel.Signature) -> void:
-	_declarations[signature.name] = signature
-
-
 func register_command(name: String, callable: Callable) -> void:
-	if WeavlyModel.Signature.can_register(KIND, name, callable, _declarations):
-		_handlers[name] = callable
+	_handlers[name] = callable
 
 
 func execute_command(command: WeavlyModel.CommandStatement) -> void:
@@ -27,7 +20,7 @@ func execute_command(command: WeavlyModel.CommandStatement) -> void:
 
 func get_unregistered() -> Array[String]:
 	var names: Array[String] = []
-	for name: String in _declarations:
+	for name: String in engine.story.get_command_names():
 		if not _handlers.has(name):
 			names.append(name)
 	return names

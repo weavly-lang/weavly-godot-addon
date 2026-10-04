@@ -25,9 +25,6 @@ class _SpyCommandService:
 	extends WeavlyCommandService
 	var command_calls: Array[WeavlyModel.CommandStatement] = []
 
-	func add_declaration(_signature: WeavlyModel.Signature) -> void:
-		pass
-
 	func register_command(_name: String, _callable: Callable) -> void:
 		pass
 
@@ -176,9 +173,7 @@ func test_command_statement_delegates_a_filled_copy_to_command_service() -> void
 
 
 func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
-	_engine.variable_service.add_variable(
-		WeavlyModel.NumberVariable.new("volume", 0.8, null, null)
-	)
+	declare(_engine, WeavlyModel.NumberVariable.new("volume", 0.8, null, null))
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"),
 		WeavlyModel.BinaryExpression.new(
@@ -192,7 +187,7 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 		"play_sound", args
 	)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
-	_engine.variable_service.set_variable("volume", 0.2)
+	_engine.set_variable("volume", 0.2)
 	WeavlyStatementExecutor.execute_statement(command, _engine)
 	assert_that(_command.command_calls[0].values).is_equal(["door", 0.4, 2.0])
 	assert_that(_command.command_calls[1].values).is_equal(["door", 0.1, 2.0])
@@ -502,9 +497,7 @@ func test_random_block_no_eligible_cases_does_nothing() -> void:
 
 
 func _add_score() -> void:
-	_engine.variable_service.add_variable(
-		WeavlyModel.NumberVariable.new("score", 10.0, 0.0, 100.0)
-	)
+	declare(_engine, WeavlyModel.NumberVariable.new("score", 10.0, 0.0, 100.0))
 
 
 func _run_set(id: String, expression: WeavlyModel.WeavlyExpression) -> void:
@@ -520,7 +513,7 @@ func test_set_with_an_undefined_variable_in_the_expression_keeps_the_value() -> 
 	)
 	_run_set("score", expression)
 	assert_logged(["Variable 'scroe' isn't defined."])
-	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+	assert_that(_engine.get_variable("score")).is_equal(10.0)
 
 
 func test_set_with_a_value_of_the_wrong_type_keeps_the_value() -> void:
@@ -529,15 +522,15 @@ func test_set_with_a_value_of_the_wrong_type_keeps_the_value() -> void:
 	assert_logged(
 		["Can't set variable 'score' to a value of type 'String' because it's a number."]
 	)
-	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+	assert_that(_engine.get_variable("score")).is_equal(10.0)
 
 
 func test_set_of_an_undefined_variable_creates_nothing() -> void:
 	_add_score()
 	_run_set("scroe", WeavlyModel.Number.new(5.0))
-	assert_logged(["Can't set variable 'scroe' because it isn't defined."])
+	assert_logged(["Can't set variable 'scroe' because it isn't declared."])
 	assert_bool(_engine.variable_service.has("scroe")).is_false()
-	assert_that(_engine.variable_service.get_variable("score")).is_equal(10.0)
+	assert_that(_engine.get_variable("score")).is_equal(10.0)
 
 
 func test_random_weight_that_fails_counts_as_zero() -> void:
@@ -601,15 +594,15 @@ func test_case_condition_that_fails_counts_as_false() -> void:
 func _run_in_a_detour(statement: WeavlyModel.Statement) -> void:
 	var body: Array[WeavlyModel.Statement] = []
 	for id: String in ["below", "here"]:
-		_engine.node_service.add_node(WeavlyModel.WeavlyNode.new(id, body))
+		_engine.story.add_node(WeavlyModel.WeavlyNode.new(id, body))
 	_engine._location_stack.assign(["below", "here"])
 	WeavlyStatementExecutor.execute_statement(statement, _engine)
 
 
 func test_jump_records_a_visit_to_every_running_node() -> void:
 	_run_in_a_detour(WeavlyModel.JumpStatement.new("there"))
-	assert_int(_engine.node_service.get_visit_count("here")).is_equal(1)
-	assert_int(_engine.node_service.get_visit_count("below")).is_equal(1)
+	assert_int(_engine.count_service.get_visit_count("here")).is_equal(1)
+	assert_int(_engine.count_service.get_visit_count("below")).is_equal(1)
 	assert_that(_engine.get_location_stack()).is_empty()
 
 
@@ -618,6 +611,6 @@ func test_set_defines_an_undefined_extern() -> void:
 		"reputation", 0.0, null, null
 	)
 	variable.extern = true
-	_engine.variable_service.add_variable(variable)
+	declare(_engine, variable)
 	_run_set("reputation", WeavlyModel.Number.new(2.0))
-	assert_that(_engine.variable_service.get_variable("reputation")).is_equal(2.0)
+	assert_that(_engine.get_variable("reputation")).is_equal(2.0)

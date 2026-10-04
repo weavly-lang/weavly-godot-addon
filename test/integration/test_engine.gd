@@ -116,7 +116,7 @@ func test_enter_node_emits_entered_node_without_counting_a_visit() -> void:
 	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	assert_bool(_signal_log.has("entered_node:start")).is_true()
-	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
+	assert_int(engine.count_service.get_visit_count("start")).is_equal(0)
 
 
 func test_start_with_unknown_id_reports_once_and_finishes() -> void:
@@ -249,9 +249,9 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 	assert_that(_signal_log).is_equal(expected_signals)
 
 	# start is left by its jump, end by its @finish.
-	assert_that(engine.variable_service.get_variable("counter")).is_equal(7.0)
-	assert_int(engine.node_service.get_visit_count("start")).is_equal(1)
-	assert_int(engine.node_service.get_visit_count("end")).is_equal(1)
+	assert_that(engine.get_variable("counter")).is_equal(7.0)
+	assert_int(engine.count_service.get_visit_count("start")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("end")).is_equal(1)
 
 
 # =====================
@@ -264,7 +264,7 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	# reputation is declared extern, so the game defines it.
-	engine.variable_service.set_variable("reputation", 3.0)
+	engine.set_variable("reputation", 3.0)
 	engine.start("start")
 	# start node: narration pauses immediately. Drive past the character line,
 	# the chain of set/match statements (which jump to choices), the character
@@ -290,15 +290,15 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	# to false by the last set statement, and end read the visits and reputation.
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	for node_id: String in ["start", "choices", "random_node", "match_node", "tally", "end"]:
-		assert_int(engine.node_service.get_visit_count(node_id)).is_equal(1)
-	assert_that(engine.variable_service.get_variable("choice_visits")).is_equal(1.0)
-	assert_bool(engine.variable_service.get_variable("been_to_start")).is_true()
-	assert_that(engine.variable_service.get_variable("score")).is_equal(20.0)
-	assert_that(engine.variable_service.get_variable("last_scene")).is_equal("end")
-	assert_that(engine.variable_service.get_variable("region")).is_equal("night")
-	assert_bool(engine.variable_service.get_variable("names_match")).is_true()
+		assert_int(engine.count_service.get_visit_count(node_id)).is_equal(1)
+	assert_that(engine.get_variable("choice_visits")).is_equal(1.0)
+	assert_bool(engine.get_variable("been_to_start")).is_true()
+	assert_that(engine.get_variable("score")).is_equal(20.0)
+	assert_that(engine.get_variable("last_scene")).is_equal("end")
+	assert_that(engine.get_variable("region")).is_equal("night")
+	assert_bool(engine.get_variable("names_match")).is_true()
 	assert_that(_command_log.back()).is_equal("log:3.0,2.0")
-	assert_bool(engine.variable_service.get_variable("has_key")).is_false()
+	assert_bool(engine.get_variable("has_key")).is_false()
 
 
 # arrival: a narration with {} and an escaped brace, @draw from the empty pool falls
@@ -319,15 +319,15 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	engine.next()
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 	assert_bool(_signal_log.has("entered_node:night_market")).is_false()
-	assert_int(engine.node_service.get_skip_count("plaza")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("plaza")).is_equal(1)
 	assert_that(engine.get_node_meta("night_market", "toll")).is_equal(3.0)
 	assert_that(engine.get_node_meta("plaza", "toll")).is_equal(1.0)
 
 	var peeked: Array[String] = engine.peek_pool(["city", "night"])
 	assert_array(peeked).is_equal(["night_market", "plaza"])
-	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("night_market")).is_equal(1)
 	assert_array(engine.list_pool(["city", "night"])).is_equal(peeked)
-	assert_int(engine.node_service.get_skip_count("night_market")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("night_market")).is_equal(0)
 
 
 # camp_menu: a node option and a pool option whose only node shows as a teaser.
@@ -341,14 +341,14 @@ func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 		. is_equal(["Sit by the fire", "A closed tent"])
 	)
 	assert_int(options[1].state).is_equal(WeavlyModel.Option.State.TEASER)
-	engine.variable_service.set_variable("has_key", true)
+	engine.set_variable("has_key", true)
 	assert_str(options[0].text).is_equal("The fire is out")
 	assert_str(options[1].text).is_equal("Sleep in the tent")
 	engine.choose(options[1])
 	assert_that(_narration_log.back()).is_equal("You sleep.")
-	assert_int(engine.node_service.get_visit_count("tent")).is_equal(0)
+	assert_int(engine.count_service.get_visit_count("tent")).is_equal(0)
 	engine.next()
-	assert_int(engine.node_service.get_visit_count("tent")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("tent")).is_equal(1)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 
 
@@ -382,7 +382,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	var ids: Array[String] = []
-	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
+	for node: WeavlyModel.WeavlyNode in engine.story.get_nodes():
 		ids.append(node.id)
 	ids.sort()
 	(
@@ -409,7 +409,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 	assert_bool(engine.variable_service.has("score")).is_true()
 	assert_bool(engine.variable_service.has("player_name")).is_true()
 	assert_bool(engine.variable_service.has("has_key")).is_true()
-	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
+	assert_bool(engine.story.get_variable("reputation").extern).is_true()
 
 
 # =====================
@@ -452,7 +452,7 @@ func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
 	engine.max_node_entries_per_step = 3
 	engine.start("countdown")
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
-	assert_that(engine.variable_service.get_variable("i")).is_equal(0.0)
+	assert_that(engine.get_variable("i")).is_equal(0.0)
 	(
 		assert_that(_signal_log.count("entered_node:countdown"))
 		. override_failure_message("node should be entered exactly three times")
@@ -536,8 +536,8 @@ func test_visits_count_on_leaving_a_node_and_its_own_jump() -> void:
 	engine.next()
 	assert_that(_narration_log).is_equal(["First time", "Back again", "Back again", "Done"])
 	# Two jumps into hub, then the end of its body.
-	assert_int(engine.node_service.get_visit_count("hub")).is_equal(3)
-	assert_that(engine.variable_service.get_variable("count")).is_equal(2.0)
+	assert_int(engine.count_service.get_visit_count("hub")).is_equal(3)
+	assert_that(engine.get_variable("count")).is_equal(2.0)
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 
 
@@ -545,19 +545,19 @@ func test_finish_statement_counts_a_visit() -> void:
 	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	engine.start("finisher")
 	engine.next()
-	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("finisher")).is_equal(1)
 
 
 func test_game_calling_finish_counts_the_visit() -> void:
 	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	engine.start("finisher")
 	engine.finish()
-	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("finisher")).is_equal(1)
 
 
 func test_nodes_create_no_variables() -> void:
 	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
-	assert_that(engine.variable_service.get_all_ids()).is_equal(["count"])
+	assert_that(engine.story.get_variable_ids()).is_equal(["count"])
 
 
 # =====================
@@ -568,8 +568,8 @@ func test_nodes_create_no_variables() -> void:
 func test_built_in_functions_run_inside_set_statements() -> void:
 	var engine: WeavlyEngine = _make_engine(FUNCTIONS_FIXTURE)
 	engine.start("start")
-	assert_that(engine.variable_service.get_variable("hp")).is_equal(0.0)
-	var roll: float = engine.variable_service.get_variable("roll")
+	assert_that(engine.get_variable("hp")).is_equal(0.0)
+	var roll: float = engine.get_variable("roll")
 	assert_bool(roll >= 1.0 and roll <= 6.0 and roll == roundf(roll)).is_true()
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 
@@ -759,9 +759,9 @@ func test_a_save_taken_mid_node_replays_that_node_without_applying_it_twice() ->
 	engine.set_state(state)
 	assert_bool(engine.is_running()).is_true()
 	assert_that(_narration_log.back()).is_equal("In shop")
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(6.0)
-	assert_int(engine.node_service.get_visit_count("start")).is_equal(1)
-	assert_int(engine.node_service.get_visit_count("shop")).is_equal(0)
+	assert_that(engine.get_variable("gold")).is_equal(6.0)
+	assert_int(engine.count_service.get_visit_count("start")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("shop")).is_equal(0)
 
 
 func test_visited_of_the_current_node_is_the_same_after_a_load() -> void:
@@ -769,7 +769,7 @@ func test_visited_of_the_current_node_is_the_same_after_a_load() -> void:
 	var state: Dictionary = _save_in_shop(engine)
 	engine.next()
 	engine.set_state(state)
-	assert_bool(engine.variable_service.get_variable("seen_shop")).is_false()
+	assert_bool(engine.get_variable("seen_shop")).is_false()
 
 
 func test_get_state_outside_a_dialogue_has_no_node() -> void:
@@ -797,22 +797,22 @@ func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -
 	engine.set_state(idle)
 	assert_bool(engine.is_running()).is_false()
 	assert_bool(_signal_log.has("finished_dialogue")).is_false()
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
+	assert_that(engine.get_variable("gold")).is_equal(0.0)
 
 
 func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
 	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
-	engine.set_state({"version": 3, "node": "gone", "services": {"variable": {"gold": 3.0}}})
+	engine.set_state({"version": 4, "node": "gone", "services": {"variable": {"gold": 3.0}}})
 	assert_logged(["Can't resume at node 'gone' because it no longer exists."])
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(3.0)
+	assert_that(engine.get_variable("gold")).is_equal(3.0)
 	assert_bool(engine.is_running()).is_false()
 
 
 func test_a_state_of_an_unknown_version_restores_nothing() -> void:
 	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
-	assert_logged(["Can't load a state of version '2', expected version 3."])
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
+	assert_logged(["Can't load a state of version '2', expected version 4."])
+	assert_that(engine.get_variable("gold")).is_equal(0.0)
 
 
 func test_reset_state_starts_a_new_game() -> void:
@@ -820,35 +820,35 @@ func test_reset_state_starts_a_new_game() -> void:
 	_save_in_shop(engine)
 	engine.next()
 	engine.reset_state()
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
-	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
+	assert_that(engine.get_variable("gold")).is_equal(0.0)
+	assert_int(engine.count_service.get_visit_count("start")).is_equal(0)
 	assert_bool(engine.is_running()).is_false()
 
 
 func test_a_save_holds_no_externs() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
-	engine.variable_service.set_variable("reputation", 3.0)
+	engine.set_variable("reputation", 3.0)
 	assert_bool(engine.get_state()["services"]["variable"].has("reputation")).is_false()
 
 
 func test_an_extern_keeps_its_value_through_reset_state_and_set_state() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	var state: Dictionary = _through_json(engine.get_state())
-	engine.variable_service.set_variable("reputation", 3.0)
+	engine.set_variable("reputation", 3.0)
 	engine.reset_state()
-	assert_that(engine.variable_service.get_variable("reputation")).is_equal(3.0)
+	assert_that(engine.get_variable("reputation")).is_equal(3.0)
 	engine.set_state(state)
-	assert_that(engine.variable_service.get_variable("reputation")).is_equal(3.0)
+	assert_that(engine.get_variable("reputation")).is_equal(3.0)
 
 
 func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
 	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	var events: Array[String] = []
 	engine.state_loaded.connect(func() -> void: events.append("state_loaded"))
-	engine.variable_service.variable_changed.connect(
+	engine.variable_changed.connect(
 		func(id: String, _value: Variant, _old_value: Variant) -> void: events.append(id)
 	)
-	engine.set_state({"version": 3, "services": {"variable": {"gold": 3.0}}})
+	engine.set_state({"version": 4, "services": {"variable": {"gold": 3.0}}})
 	assert_that(events).is_equal(["state_loaded"])
 
 
@@ -873,7 +873,7 @@ func test_a_custom_service_replaces_the_default_it_extends() -> void:
 	add_child(auto_free(engine))
 	assert_that(engine.command_service.get_script()).is_equal(load(STATEFUL_COMMAND_SERVICE))
 	assert_that(engine.command_service.engine).is_equal(engine)
-	assert_bool(engine.node_service is WeavlyDefaultNodeService).is_true()
+	assert_bool(engine.count_service is WeavlyDefaultCountService).is_true()
 
 
 func test_a_script_that_extends_no_service_is_reported_and_not_used() -> void:
@@ -921,7 +921,7 @@ func test_a_block_without_an_available_option_is_skipped() -> void:
 
 # start: roll = random(1, 1000000), then @random picks one of the lines A to D.
 func _roll(engine: WeavlyEngine) -> Array:
-	return [engine.variable_service.get_variable("roll"), _narration_log.back()]
+	return [engine.get_variable("roll"), _narration_log.back()]
 
 
 func _seeded_engine(random_seed: int) -> WeavlyEngine:

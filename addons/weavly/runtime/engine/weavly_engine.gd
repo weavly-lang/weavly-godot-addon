@@ -37,8 +37,18 @@ const NOT_OFFERED = "Can't choose option '%s' because it isn't offered right now
 const LOCKED_OPTION = "Can't choose option '%s' because it's locked."
 const NOT_A_SERVICE = "Custom service '%s' doesn't extend a service, so it isn't used."
 const DUPLICATE_SERVICE = "Custom services '%s' and '%s' both replace %s; only the first is used."
+const UNDEFINED_VARIABLE = "Variable '%s' isn't defined."
+const UNDEFINED_EXTERN = "Variable '%s' is declared extern but was never defined."
+const MISSING_VALUE = "Variable '%s' has no value."
+const WRONG_STORED_TYPE = "Variable '%s' holds a value of type '%s' instead of a %s."
+const UNKNOWN_STORED_NAME = "Variable '%s' holds '%s', but no %s has that name."
+const UNDECLARED_VARIABLE = "Can't set variable '%s' because it isn't declared."
+const WRONG_TYPE = "Can't set variable '%s' to a value of type '%s' because it's a %s."
+const UNKNOWN_NAME = "Can't set variable '%s' to '%s' because no %s has that name."
+const WRONG_SAVED_TYPE = "Saved variable '%s' is skipped because it holds a '%s' instead of a %s."
+const UNKNOWN_SAVED_NAME = "Saved variable '%s' is skipped because %s '%s' no longer exists."
 
-const STATE_VERSION = 3
+const STATE_VERSION = 4
 const KEY_VERSION = "version"
 const KEY_NODE = "node"
 const KEY_SERVICES = "services"
@@ -47,10 +57,10 @@ const KEY_RNG = "rng"
 static var _default_services: Dictionary[Script, Script] = {
 	WeavlyCharacterService: WeavlyDefaultCharacterService,
 	WeavlyCommandService: WeavlyDefaultCommandService,
+	WeavlyCountService: WeavlyDefaultCountService,
 	WeavlyFunctionService: WeavlyDefaultFunctionService,
 	WeavlyImageService: WeavlyDefaultImageService,
 	WeavlyLineService: WeavlyDefaultLineService,
-	WeavlyNodeService: WeavlyDefaultNodeService,
 	WeavlyOptionService: WeavlyDefaultOptionService,
 	WeavlyStatementService: WeavlyDefaultStatementService,
 	WeavlyVariableService: WeavlyDefaultVariableService,
@@ -83,12 +93,15 @@ static var _default_services: Dictionary[Script, Script] = {
 ## How many nodes can run at once through detours, drawn and chosen nodes.
 @export var max_detour_depth: int = 64
 
+# The compiled story; services read it, and only loading adds to it.
+var story: WeavlyStory = WeavlyStory.new()
+
 var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService
+var count_service: WeavlyCountService
 var function_service: WeavlyFunctionService
 var image_service: WeavlyImageService
 var line_service: WeavlyLineService
-var node_service: WeavlyNodeService
 var option_service: WeavlyOptionService
 var statement_service: WeavlyStatementService
 var variable_service: WeavlyVariableService
@@ -142,12 +155,11 @@ func _ready() -> void:
 	video_service.set_group_pattern(video_group_pattern)
 	video_service.set_supported_extensions(video_extensions)
 
-	variable_service.variable_changed.connect(_on_variable_changed)
-	variable_service.variable_changed.connect(variable_changed.emit)
 	line_service.executed_narration_line.connect(line_reached.emit)
 	line_service.executed_character_line.connect(line_reached.emit)
 	option_service.options_added.connect(options_offered.emit)
 	WeavlyFileUtils.load_dialogue(self, dialogue_path)
+	_check_variables()
 	if not video_path.is_empty():
 		WeavlyFileUtils.index_media_from_files(video_service, video_path)
 	if not image_path.is_empty():
@@ -315,13 +327,6 @@ func next() -> void:
 	_refresh_stale_options()
 
 
-func _on_variable_changed(_id: String, _value: Variant, _old_value: Variant) -> void:
-	if _in_next or _rendering:
-		_options_stale = true
-	else:
-		refresh_options()
-
-
 func _refresh_stale_options() -> void:
 	if _options_stale:
 		_options_stale = false
@@ -333,11 +338,11 @@ func _enter_pending_node() -> void:
 	var detoured: bool = _pending_detour
 	_pending_node_id = null
 	_pending_detour = false
-	if not node_service.has(node_id):
+	if not story.has_node(node_id):
 		report_error(MISSING_NODE % node_id)
 		finish()
 		return
-	var node: WeavlyModel.WeavlyNode = node_service.get_node(node_id)
+	var node: WeavlyModel.WeavlyNode = story.get_node(node_id)
 	if not detoured:
 		_location_stack.clear()
 		statement_service.clear_statements()
@@ -413,6 +418,7 @@ func set_state(state: Dictionary) -> void:
 	for slot: String in services:
 		var service_state: Variant = service_states.get(slot, {})
 		services[slot].set_state(service_state if service_state is Dictionary else {})
+	_check_variables()
 	var rng_state: Variant = state.get(KEY_RNG)
 	if rng_state is String:
 		rng.state = rng_state.to_int()
@@ -421,7 +427,7 @@ func set_state(state: Dictionary) -> void:
 	var node_id: Variant = state.get(KEY_NODE)
 	if node_id is not String:
 		return
-	if not node_service.has(node_id):
+	if not story.has_node(node_id):
 		push_error(MISSING_SAVED_NODE % node_id)
 		return
 	start(node_id)
@@ -435,10 +441,10 @@ func _services() -> Dictionary[String, WeavlyService]:
 	return {
 		"character": character_service,
 		"command": command_service,
+		"count": count_service,
 		"function": function_service,
 		"image": image_service,
 		"line": line_service,
-		"node": node_service,
 		"option": option_service,
 		"statement": statement_service,
 		"variable": variable_service,
@@ -490,15 +496,61 @@ func add_rendered(statement: WeavlyModel.Statement) -> void:
 			_rendered_options[option] = true
 
 
+# The value, checked against the declaration; null once an error is reported.
+func get_variable(id: String) -> Variant:
+	var variable: WeavlyModel.Variable = story.get_variable(id)
+	if variable == null:
+		report_error(UNDEFINED_VARIABLE % id)
+		return null
+	if not variable_service.has(id):
+		report_error((UNDEFINED_EXTERN if variable.extern else MISSING_VALUE) % id)
+		return null
+	var value: Variant = WeavlyExpressionEvaluator.fit(
+		variable_service.get_value(id),
+		variable.get_type_name(),
+		id,
+		WRONG_STORED_TYPE,
+		UNKNOWN_STORED_NAME,
+		self
+	)
+	return null if WeavlyExpressionEvaluator.is_error(value) else value
+
+
+# Checked against the declaration: the type, a declared name and a number's range.
+func set_variable(id: String, value: Variant) -> void:
+	var variable: WeavlyModel.Variable = story.get_variable(id)
+	if variable == null:
+		report_error(UNDECLARED_VARIABLE % id)
+		return
+	value = WeavlyExpressionEvaluator.fit(
+		value, variable.get_type_name(), id, WRONG_TYPE, UNKNOWN_NAME, self
+	)
+	if WeavlyExpressionEvaluator.is_error(value):
+		return
+	if variable is WeavlyModel.NumberVariable:
+		value = variable.clamp_value(value)
+	var old_value: Variant = variable_service.get_value(id) if variable_service.has(id) else null
+	variable_service.set_value(id, value)
+	if _same(value, old_value):
+		return
+	variable_changed.emit(id, value, old_value)
+	if _in_next or _rendering:
+		_options_stale = true
+	else:
+		refresh_options()
+
+
 # The callable gets the arguments in declaration order, and must not change state:
 # conditions are evaluated often and in no fixed order.
 func register_function(name: String, callable: Callable) -> void:
-	function_service.register_function(name, callable)
+	if WeavlyModel.Signature.can_register("function", name, callable, story.get_function(name)):
+		function_service.register_function(name, callable)
 
 
 # The handler gets the arguments in declaration order; to wait, it calls hold() and release().
 func register_command(name: String, callable: Callable) -> void:
-	command_service.register_command(name, callable)
+	if WeavlyModel.Signature.can_register("command", name, callable, story.get_command(name)):
+		command_service.register_command(name, callable)
 
 
 # Runs a rendered command through its handler.
@@ -634,7 +686,7 @@ func get_meta_snapshot(node_id: String) -> Dictionary:
 
 # Freezes the chosen node's meta values for as long as it runs.
 func snapshot_meta(node_id: String) -> void:
-	_meta_snapshots[node_id] = WeavlyMetaReader.snapshot(self, node_service.get_node(node_id))
+	_meta_snapshots[node_id] = WeavlyMetaReader.snapshot(self, story.get_node(node_id))
 
 
 func get_location_stack() -> Array[String]:
@@ -647,9 +699,9 @@ func leave_current_node() -> void:
 		return
 	var node_id: String = _location_stack.pop_back()
 	_meta_snapshots.erase(node_id)
-	node_service.record_visit(node_id)
+	count_service.record_visit(node_id)
 	if not _location_stack.is_empty():
-		set_location(node_service.get_node(current_node_id))
+		set_location(story.get_node(current_node_id))
 	left_node.emit(node_id)
 
 
@@ -681,10 +733,10 @@ func _create_services() -> void:
 			scripts[service] = script
 	character_service = _new_service(scripts, WeavlyCharacterService)
 	command_service = _new_service(scripts, WeavlyCommandService)
+	count_service = _new_service(scripts, WeavlyCountService)
 	function_service = _new_service(scripts, WeavlyFunctionService)
 	image_service = _new_service(scripts, WeavlyImageService)
 	line_service = _new_service(scripts, WeavlyLineService)
-	node_service = _new_service(scripts, WeavlyNodeService)
 	option_service = _new_service(scripts, WeavlyOptionService)
 	statement_service = _new_service(scripts, WeavlyStatementService)
 	variable_service = _new_service(scripts, WeavlyVariableService)
@@ -703,3 +755,35 @@ static func _service_of(script: Script) -> Script:
 	while base != null and not _default_services.has(base):
 		base = base.get_base_script()
 	return base
+
+
+# Gives every story-owned variable a value that fits its declaration: the default when it has
+# none or a saved one doesn't fit, and a number clamped to its range.
+func _check_variables() -> void:
+	for id: String in story.get_variable_ids():
+		var variable: WeavlyModel.Variable = story.get_variable(id)
+		if variable.extern:
+			continue
+		if not variable_service.has(id):
+			variable_service.set_value(id, variable.value)
+			continue
+		var stored: Variant = variable_service.get_value(id)
+		var value: Variant = stored
+		if variable is WeavlyModel.NumberVariable and value is int:
+			value = float(value)
+		var type: String = variable.get_type_name()
+		match story.fit(type, value):
+			WeavlyStory.Fit.WRONG_TYPE:
+				push_warning(WRONG_SAVED_TYPE % [id, type_string(typeof(value)), type])
+				value = variable.value
+			WeavlyStory.Fit.UNKNOWN_NAME:
+				push_warning(UNKNOWN_SAVED_NAME % [id, type, value])
+				value = variable.value
+		if variable is WeavlyModel.NumberVariable:
+			value = variable.clamp_value(value)
+		if not _same(value, stored):
+			variable_service.set_value(id, value)
+
+
+static func _same(a: Variant, b: Variant) -> bool:
+	return typeof(a) == typeof(b) and a == b

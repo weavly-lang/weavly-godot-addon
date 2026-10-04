@@ -208,7 +208,7 @@ func test_fill_text_reads_values_when_filled() -> void:
 	var engine: WeavlyEngine = _engine_with_name()
 	var segments: Array = _segments([{"variable": "name"}])
 	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Ada")
-	engine.variable_service.set_variable("name", "Bo")
+	engine.set_variable("name", "Bo")
 	assert_that(WeavlyTextUtils.fill_text(segments, engine)).is_equal("Bo")
 
 

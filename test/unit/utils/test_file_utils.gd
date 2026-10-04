@@ -95,10 +95,10 @@ func test_load_json_returns_null_on_missing_file() -> void:
 func test_load_dialogue_reads_env_json_and_every_wvl_json() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_dialogue(engine, BUILD_DIR)
-	assert_that(engine.variable_service.get_variable("score")).is_equal(0.0)
-	assert_bool(engine.node_service.has("start")).is_true()
-	assert_bool(engine.node_service.has("more")).is_true()
-	assert_bool(engine.node_service.has("ignored")).is_false()
+	assert_that(engine.story.get_variable("score").value).is_equal(0.0)
+	assert_bool(engine.story.has_node("start")).is_true()
+	assert_bool(engine.story.has_node("more")).is_true()
+	assert_bool(engine.story.has_node("ignored")).is_false()
 	assert_logged(["JSON parse error in %s/broken.wvl.json" % BUILD_DIR])
 
 
@@ -153,7 +153,7 @@ func test_an_extern_is_declared_without_a_value() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	WeavlyFileUtils.load_dialogue(engine, VARIABLES_DIR + "/extern_dialogue")
 	assert_bool(engine.variable_service.has("reputation")).is_false()
-	assert_bool(engine.variable_service.get_declaration("reputation").extern).is_true()
+	assert_bool(engine.story.get_variable("reputation").extern).is_true()
 
 
 # =====================

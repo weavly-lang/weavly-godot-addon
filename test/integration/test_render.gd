@@ -91,16 +91,16 @@ func test_render_returns_filled_lines_commands_and_option_blocks_in_order() -> v
 func test_render_changes_state_and_visits_like_normal_play() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(5.0)
-	assert_int(engine.node_service.get_visit_count("tavern")).is_equal(1)
+	assert_that(engine.get_variable("gold")).is_equal(5.0)
+	assert_int(engine.count_service.get_visit_count("tavern")).is_equal(1)
 	assert_bool(engine.is_running()).is_false()
 
 
 func test_render_runs_no_option_action_and_hands_nothing_to_the_services() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
-	assert_that(engine.variable_service.get_variable("drinks")).is_equal(0.0)
-	assert_bool(engine.variable_service.get_variable("left")).is_false()
+	assert_that(engine.get_variable("drinks")).is_equal(0.0)
+	assert_bool(engine.get_variable("left")).is_false()
 	assert_array(_events).is_equal(["entered:tavern"])
 
 
@@ -140,7 +140,7 @@ func test_render_during_a_dialogue_warns_and_does_nothing() -> void:
 	engine.start("bar")
 	assert_array(engine.render("tavern")).is_empty()
 	assert_logged([], ["Dialogue is already in progress, can't render node 'tavern'."])
-	assert_int(engine.node_service.get_visit_count("tavern")).is_equal(0)
+	assert_int(engine.count_service.get_visit_count("tavern")).is_equal(0)
 	assert_that(engine.current_node_id).is_equal("bar")
 
 
@@ -154,9 +154,9 @@ func test_choose_runs_only_the_action_and_ends_without_a_jump() -> void:
 	var entries: Array[WeavlyModel.Statement] = engine.render("tavern")
 	_events.clear()
 	engine.choose(_option(entries, "Leave"))
-	assert_bool(engine.variable_service.get_variable("left")).is_true()
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(5.0)
-	assert_int(engine.node_service.get_visit_count("tavern")).is_equal(1)
+	assert_bool(engine.get_variable("left")).is_true()
+	assert_that(engine.get_variable("gold")).is_equal(5.0)
+	assert_int(engine.count_service.get_visit_count("tavern")).is_equal(1)
 	assert_array(_events).is_equal(["started_dialogue", "finished_dialogue"])
 
 
@@ -177,7 +177,7 @@ func test_choose_rejects_an_option_that_was_not_rendered() -> void:
 	engine.choose(inline_option("Leave"))
 	assert_logged([], ["Can't choose option 'Leave' because it isn't offered right now."])
 	assert_bool(engine.is_running()).is_false()
-	assert_bool(engine.variable_service.get_variable("left")).is_false()
+	assert_bool(engine.get_variable("left")).is_false()
 
 
 # =====================
@@ -206,7 +206,7 @@ func test_render_option_follows_a_jump_into_the_next_node() -> void:
 		["The drink is cold.", "1 drinks so far.", ["Another"]]
 	)
 	assert_bool(engine.is_running()).is_false()
-	assert_int(engine.node_service.get_visit_count("bar")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("bar")).is_equal(1)
 
 
 func test_render_option_replaces_the_options_that_can_be_chosen() -> void:
@@ -228,7 +228,7 @@ func test_options_of_several_renders_can_be_chosen() -> void:
 	var tavern: Array[WeavlyModel.Statement] = engine.render("tavern")
 	engine.render("bar")
 	engine.choose(_option(tavern, "Leave"))
-	assert_bool(engine.variable_service.get_variable("left")).is_true()
+	assert_bool(engine.get_variable("left")).is_true()
 
 
 # =====================
@@ -243,7 +243,7 @@ func test_a_save_after_renders_holds_every_rendered_node() -> void:
 	var state: Dictionary = _saved(engine)
 	assert_bool(state.has("node")).is_false()
 	assert_that(state["services"]["variable"]["gold"]).is_equal(10.0)
-	assert_that(state["services"]["node"]["visits"]["tavern"]).is_equal(2.0)
+	assert_that(state["services"]["count"]["visits"]["tavern"]).is_equal(2.0)
 
 
 func test_a_save_after_render_option_holds_the_choice() -> void:
@@ -255,7 +255,7 @@ func test_a_save_after_render_option_holds_the_choice() -> void:
 func test_a_save_after_a_render_holds_later_game_changes() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
-	engine.variable_service.set_variable("drinks", 7.0)
+	engine.set_variable("drinks", 7.0)
 	assert_that(_saved(engine)["services"]["variable"]["drinks"]).is_equal(7.0)
 
 
@@ -264,11 +264,11 @@ func test_a_save_after_a_render_loads_without_starting_anything() -> void:
 	engine.render("lucky")
 	var state: Dictionary = _saved(engine)
 	var rendered: Array = _describe(engine.render("lucky"))
-	var gold: float = engine.variable_service.get_variable("gold")
+	var gold: float = engine.get_variable("gold")
 	_events.clear()
 	engine.set_state(state)
 	assert_array(_events).is_empty()
 	assert_bool(engine.is_running()).is_false()
-	assert_int(engine.node_service.get_visit_count("lucky")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("lucky")).is_equal(1)
 	assert_array(_describe(engine.render("lucky"))).is_equal(rendered)
-	assert_that(engine.variable_service.get_variable("gold")).is_equal(gold)
+	assert_that(engine.get_variable("gold")).is_equal(gold)

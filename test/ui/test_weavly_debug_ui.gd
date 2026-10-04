@@ -124,7 +124,7 @@ func test_only_the_toggle_action_toggles_and_it_doesnt_reach_the_game() -> void:
 
 func test_showing_the_overlay_refreshes_it() -> void:
 	_ui.visible = false
-	_engine.variable_service.set_variable("gold", 9.0)
+	_engine.set_variable("gold", 9.0)
 	_ui.visible = true
 	assert_str((_variable_editor("gold") as LineEdit).text).is_equal("9")
 
@@ -162,7 +162,7 @@ func test_variables_show_sorted_with_their_types_and_values() -> void:
 
 
 func test_an_extern_variable_shows_once_it_has_a_value() -> void:
-	_engine.variable_service.set_variable("secret", 42.0)
+	_engine.set_variable("secret", 42.0)
 	_ui.refresh()
 	(
 		assert_array(_rows("%VariableGrid", 3).map(func(row: Array) -> String: return row[0]))
@@ -179,7 +179,7 @@ func test_variables_follow_the_dialogue() -> void:
 
 
 func test_numbers_show_exactly() -> void:
-	_engine.variable_service.set_variable("gold", 1.0 / 3.0)
+	_engine.set_variable("gold", 1.0 / 3.0)
 	_ui.refresh()
 	assert_str((_variable_editor("gold") as LineEdit).text).is_equal(str(1.0 / 3.0))
 
@@ -188,7 +188,7 @@ func test_editing_a_number_sets_it() -> void:
 	var edit: LineEdit = _variable_editor("gold")
 	edit.text = " 7.5 "
 	edit.focus_exited.emit()
-	assert_float(_engine.variable_service.get_variable("gold")).is_equal(7.5)
+	assert_float(_engine.get_variable("gold")).is_equal(7.5)
 	assert_str(edit.text).is_equal("7.5")
 
 
@@ -198,14 +198,14 @@ func test_submitting_an_edit_sets_it() -> void:
 	edit.text = "8"
 	edit.text_submitted.emit(edit.text)
 	assert_bool(edit.has_focus()).is_false()
-	assert_float(_engine.variable_service.get_variable("gold")).is_equal(8.0)
+	assert_float(_engine.get_variable("gold")).is_equal(8.0)
 
 
 func test_editing_a_number_with_text_keeps_the_value() -> void:
 	var edit: LineEdit = _variable_editor("gold")
 	edit.text = "lots"
 	edit.focus_exited.emit()
-	assert_float(_engine.variable_service.get_variable("gold")).is_equal(3.0)
+	assert_float(_engine.get_variable("gold")).is_equal(3.0)
 	assert_str(edit.text).is_equal("3")
 
 
@@ -213,7 +213,7 @@ func test_editing_a_string_sets_it() -> void:
 	var edit: LineEdit = _variable_editor("name")
 	edit.text = "Sam"
 	edit.focus_exited.emit()
-	assert_str(_engine.variable_service.get_variable("name")).is_equal("Sam")
+	assert_str(_engine.get_variable("name")).is_equal("Sam")
 
 
 func _items(names: OptionButton) -> Array[String]:
@@ -236,12 +236,12 @@ func test_choosing_a_name_sets_it() -> void:
 	var index: int = _items(names).find("start")
 	names.select(index)
 	names.item_selected.emit(index)
-	assert_str(_engine.variable_service.get_variable("target")).is_equal("start")
+	assert_str(_engine.get_variable("target")).is_equal("start")
 	assert_str(names.text).is_equal("start")
 
 
 func test_name_variables_follow_the_dialogue() -> void:
-	_engine.variable_service.set_variable("target", "bob")
+	_engine.set_variable("target", "bob")
 	_ui.refresh()
 	assert_str((_variable_editor("target") as OptionButton).text).is_equal("bob")
 
@@ -250,7 +250,7 @@ func test_toggling_a_flag_sets_it() -> void:
 	var check: CheckBox = _variable_editor("brave")
 	assert_str(check.text).is_equal("false")
 	check.button_pressed = true
-	assert_bool(_engine.variable_service.get_variable("brave")).is_true()
+	assert_bool(_engine.get_variable("brave")).is_true()
 	assert_str(check.text).is_equal("true")
 
 
@@ -315,7 +315,7 @@ func test_nodes_show_the_meta_keys_they_write() -> void:
 
 func test_meta_values_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
-	_engine.variable_service.set_variable("gold", 1.0)
+	_engine.set_variable("gold", 1.0)
 	assert_str(_meta("bob")).is_equal("pool: city; when: false; priority: 1")
 	assert_logged(["secret", "secret"])
 
@@ -337,14 +337,14 @@ func test_pools_show_what_list_pool_would_return() -> void:
 
 
 func test_pools_list_a_declared_pool_without_nodes() -> void:
-	_engine.node_service.add_pool("harbor")
+	_engine.story.add_pool("harbor")
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	assert_array(_pools()).is_equal(["city", "bob, ann", "harbor", "(none)", "night", "owl"])
 
 
 func test_pools_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
-	_engine.variable_service.set_variable("gold", 1.0)
+	_engine.set_variable("gold", 1.0)
 	assert_array(_pools()).is_equal(["city", "ann", "night", "owl"])
 
 
@@ -376,11 +376,11 @@ func test_pools_follow_a_visit_in_a_render() -> void:
 func test_peeking_doesnt_change_skip_counts() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	_ui.refresh()
-	assert_int(_engine.node_service.get_skip_count("ann")).is_equal(0)
+	assert_int(_engine.count_service.get_skip_count("ann")).is_equal(0)
 
 
 func test_pools_arent_peeked_on_other_tabs() -> void:
-	_engine.variable_service.set_variable("gold", 1.0)
+	_engine.set_variable("gold", 1.0)
 	assert_array(_pools()).is_empty()
 
 

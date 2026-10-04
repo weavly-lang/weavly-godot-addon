@@ -380,14 +380,14 @@ class Signature:
 		self.param_types = param_types
 		self.return_type = return_type
 
-	# Pushes an error and returns false when the callable doesn't fit a declaration of the name.
+	# Pushes an error and returns false when the callable doesn't fit the name's declaration.
 	static func can_register(
-		kind: String, name: String, callable: Callable, declarations: Dictionary
+		kind: String, name: String, callable: Callable, signature: Signature
 	) -> bool:
-		if not declarations.has(name):
+		if signature == null:
 			push_error(UNDECLARED % [kind, name])
 			return false
-		var expected: int = (declarations[name] as Signature).param_types.size()
+		var expected: int = signature.param_types.size()
 		var count: int = callable.get_argument_count()
 		if count != expected:
 			push_error(WRONG_ARGUMENT_COUNT % [kind, name, count, expected])

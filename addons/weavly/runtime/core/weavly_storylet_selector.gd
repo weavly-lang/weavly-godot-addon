@@ -105,16 +105,16 @@ static func _rank(
 	var ids: Array[String] = []
 	for pool: Variant in pools:
 		var pool_name: String = str(pool)
-		if not engine.node_service.has_pool(pool_name):
+		if not engine.story.has_pool(pool_name):
 			engine.report_error(UNDECLARED_POOL % pool_name)
 			continue
-		for id: String in engine.node_service.get_pool_members(pool_name):
+		for id: String in engine.story.get_pool_members(pool_name):
 			if id not in ids:
 				ids.append(id)
 
 	var candidates: Array[Candidate] = []
 	for id: String in ids:
-		var node: WeavlyModel.WeavlyNode = engine.node_service.get_node(id)
+		var node: WeavlyModel.WeavlyNode = engine.story.get_node(id)
 		var candidate: Candidate = _evaluate(node, engine, shuffle, options)
 		if candidate != null:
 			candidates.append(candidate)
@@ -178,8 +178,8 @@ static func _count_skips(
 			continue
 		var skips: int = 0
 		if candidate not in taken:
-			skips = engine.node_service.get_skip_count(candidate.id) + 1
-		engine.node_service.set_skip_count(candidate.id, skips)
+			skips = engine.count_service.get_skip_count(candidate.id) + 1
+		engine.count_service.set_skip_count(candidate.id, skips)
 
 
 # Locked nodes don't take slots, but a taken slot leaves them out too. With EXTRA they don't

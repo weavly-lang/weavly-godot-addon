@@ -30,10 +30,9 @@ static func fill_character_line(
 ) -> WeavlyModel.CharacterLine:
 	var name: String = character_line.name
 	if character_line.name_is_id:
-		if engine.variable_service.has(name):
-			name = str(engine.variable_service.get_variable(name))
-		else:
-			WeavlyExpressionEvaluator.report_undefined_variable(name, engine)
+		var value: Variant = engine.get_variable(name)
+		if value != null:
+			name = str(value)
 	var filled: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
 		name, character_line.name_is_id, character_line.segments
 	)

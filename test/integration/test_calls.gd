@@ -50,7 +50,7 @@ func _run(node_id: String) -> void:
 
 
 func _variable(id: String) -> Variant:
-	return _engine.variable_service.get_variable(id)
+	return _engine.get_variable(id)
 
 
 func test_functions_get_their_arguments_and_their_results_are_used() -> void:

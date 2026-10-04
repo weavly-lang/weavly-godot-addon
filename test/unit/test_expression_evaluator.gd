@@ -327,7 +327,7 @@ func test_null_expression_returns_error() -> void:
 
 func _engine_with_node(id: String) -> WeavlyEngine:
 	var engine: WeavlyEngine = _make_engine()
-	engine.node_service.add_node(WeavlyModel.WeavlyNode.new(id, []))
+	engine.story.add_node(WeavlyModel.WeavlyNode.new(id, []))
 	return engine
 
 
@@ -338,20 +338,20 @@ func test_visited_is_false_before_a_visit() -> void:
 
 func test_visited_is_true_after_a_visit() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
-	engine.node_service.record_visit("shop")
+	engine.count_service.record_visit("shop")
 	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(true)
 
 
 func test_skip_count_is_a_number() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
-	engine.node_service.set_skip_count("shop", 2)
+	engine.count_service.set_skip_count("shop", 2)
 	assert_that(_eval(WeavlyModel.Call.new("skip_count", "shop"), engine)).is_equal(2.0)
 
 
 func test_visit_count_is_a_number() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
-	engine.node_service.record_visit("shop")
-	engine.node_service.record_visit("shop")
+	engine.count_service.record_visit("shop")
+	engine.count_service.record_visit("shop")
 	assert_that(_eval(WeavlyModel.Call.new("visit_count", "shop"), engine)).is_equal(2.0)
 
 
@@ -455,7 +455,7 @@ func test_reading_an_undefined_extern_names_it_extern() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new("brave", false)
 	variable.extern = true
-	engine.variable_service.add_variable(variable)
+	declare(engine, variable)
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id("brave"), engine))).is_true()
 	assert_logged(["Variable 'brave' is declared extern but was never defined."])
 
