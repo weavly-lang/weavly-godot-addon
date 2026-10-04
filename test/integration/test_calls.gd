@@ -4,7 +4,7 @@ extends WeavlyTestSuite
 
 const FIXTURE = "res://test/fixtures/integration/calls/build"
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _events: Array[String]
 var _errors: Array[String]
 
@@ -12,7 +12,7 @@ var _errors: Array[String]
 func before_test() -> void:
 	_events = []
 	_errors = []
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.line_service.executed_narration_line.connect(

@@ -2,9 +2,6 @@
 extends WeavlyTestSuite
 
 const FakeEngine = preload("res://test/helpers/fake_engine.gd")
-const DefaultImageService = preload(
-	"res://addons/weavly/runtime/services/implementations/default_image_service.gd"
-)
 
 const FIXTURE_DIR = "res://test/fixtures/file_utils"
 const BUILD_DIR = FIXTURE_DIR + "/build"
@@ -166,7 +163,7 @@ func test_an_extern_is_declared_without_a_value() -> void:
 
 func _index_images(dir: String, group_pattern: String) -> WeavlyEngine:
 	var engine: WeavlyEngine = _make_engine()
-	engine.image_service = DefaultImageService.new()
+	engine.image_service = WeavlyDefaultImageService.new()
 	engine.image_service.initialize(engine)
 	engine.image_service.set_group_pattern(group_pattern)
 	engine.image_service.set_supported_extensions([".png", ".jpg"])

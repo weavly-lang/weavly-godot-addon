@@ -1,7 +1,7 @@
 # gdlint:ignore = max-public-methods
 extends WeavlyTestSuite
 
-# End-to-end tests for WeavlyDefaultEngine. Loads fixture JSON dialogues, drives the
+# End-to-end tests for WeavlyEngine. Loads fixture JSON dialogues, drives the
 # real compiler -> executor -> service pipeline, and asserts on signals and
 # final variable state.
 
@@ -19,6 +19,7 @@ const HOLD_FIXTURE = "res://test/fixtures/integration/hold/build"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save/build"
 const RANDOM_FIXTURE = "res://test/fixtures/integration/random/build"
 const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
+const NOT_A_SERVICE = "res://test/helpers/fake_engine.gd"
 # The commands the fixtures declare; each is logged unless a test handles it.
 const COMMAND_ARGUMENT_COUNTS: Dictionary[String, int] = {
 	"fade_in": 0, "play_sound": 1, "log": 2, "shake": 0
@@ -40,15 +41,15 @@ func before_test() -> void:
 
 
 # The @export paths are set before add_child so they are in place when _ready runs.
-func _make_engine(fixture_dir: String) -> WeavlyDefaultEngine:
-	var engine: WeavlyDefaultEngine = _new_engine(fixture_dir)
+func _make_engine(fixture_dir: String) -> WeavlyEngine:
+	var engine: WeavlyEngine = _new_engine(fixture_dir)
 	add_child(auto_free(engine))
 	_connect_signal_log(engine)
 	return engine
 
 
-func _new_engine(fixture_dir: String) -> WeavlyDefaultEngine:
-	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
+func _new_engine(fixture_dir: String) -> WeavlyEngine:
+	var engine: WeavlyEngine = WeavlyEngine.new()
 	engine.dialogue_path = fixture_dir
 	return engine
 
@@ -90,14 +91,14 @@ func _connect_content_log(engine: WeavlyEngine) -> void:
 
 
 func test_start_on_idle_emits_started_dialogue_and_enters_first_node() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	assert_that(_signal_log[0]).is_equal("started_dialogue")
 	assert_that(_signal_log[1]).is_equal("entered_node:start")
 
 
 func test_start_on_running_dialogue_warns_and_does_nothing() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	var log_after_first_start: Array[String] = _signal_log.duplicate()
 	engine.start("start")
@@ -112,14 +113,14 @@ func test_start_on_running_dialogue_warns_and_does_nothing() -> void:
 
 
 func test_enter_node_emits_entered_node_without_counting_a_visit() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	assert_bool(_signal_log.has("entered_node:start")).is_true()
 	assert_int(engine.node_service.get_visit_count("start")).is_equal(0)
 
 
 func test_start_with_unknown_id_reports_once_and_finishes() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("typo")
 	assert_logged(["Can't enter node 'typo' because it doesn't exist, finishing the dialogue."])
 	assert_that(_signal_log).is_equal(["started_dialogue", "finished_dialogue"])
@@ -127,7 +128,7 @@ func test_start_with_unknown_id_reports_once_and_finishes() -> void:
 
 
 func test_enter_node_with_unknown_id_reports_once_and_finishes() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	var log_before: int = _signal_log.size()
 	engine.enter_node("does_not_exist")
@@ -143,7 +144,7 @@ func test_enter_node_with_unknown_id_reports_once_and_finishes() -> void:
 
 
 func test_finish_emits_finished_dialogue_and_allows_restart() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	engine.finish()
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
@@ -155,7 +156,7 @@ func test_finish_emits_finished_dialogue_and_allows_restart() -> void:
 
 
 func test_finish_twice_emits_finished_dialogue_once() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	engine.finish()
 	engine.finish()
@@ -163,7 +164,7 @@ func test_finish_twice_emits_finished_dialogue_once() -> void:
 
 
 func test_finish_while_options_are_showing_lets_the_next_start_run() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
 	assert_bool(engine.option_service.has_options()).is_true()
 	engine.finish()
@@ -181,7 +182,7 @@ func test_finish_while_options_are_showing_lets_the_next_start_run() -> void:
 
 
 func test_choosing_an_option_after_finish_is_ignored() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
 	engine.finish()
@@ -192,7 +193,7 @@ func test_choosing_an_option_after_finish_is_ignored() -> void:
 
 
 func test_start_from_finished_dialogue_after_game_calls_finish() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
 	engine.finished_dialogue.connect(func() -> void: engine.start("after"), CONNECT_ONE_SHOT)
 	engine.finish()
@@ -203,7 +204,7 @@ func test_start_from_finished_dialogue_after_game_calls_finish() -> void:
 
 
 func test_start_from_finished_dialogue_after_finish_statement() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.finished_dialogue.connect(func() -> void: engine.start("start"), CONNECT_ONE_SHOT)
 	engine.start("start")
 	engine.next()
@@ -216,7 +217,7 @@ func test_start_from_finished_dialogue_after_finish_statement() -> void:
 
 
 func test_double_choose_runs_the_option_once() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	engine.start("menu")
 	var option: WeavlyModel.Option = engine.option_service.pending_options[0]
 	engine.choose(option)
@@ -231,7 +232,7 @@ func test_double_choose_runs_the_option_once() -> void:
 
 
 func test_full_linear_dialogue_run_signals_and_final_state() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	engine.start("start")
 	# start node body: narration, character, set, jump
 	# Narration pauses, so drive forward with next() until the dialogue finishes.
@@ -261,7 +262,7 @@ func test_full_linear_dialogue_run_signals_and_final_state() -> void:
 # Smoke-test dialogue covering every statement type. CI rebuilds build/ from src/ with
 # the published compiler, so this also guards the emitted JSON shape.
 func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	# reputation is declared extern, so the game defines it.
 	engine.variable_service.set_variable("reputation", 3.0)
 	engine.start("start")
@@ -303,7 +304,7 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 # arrival: a narration with {} and an escaped brace, @draw from the empty pool falls
 # through, then @draw city, night plays bob_greets (priority 2, once).
 func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
 	var character_lines: Array[String] = []
 	engine.line_service.executed_character_line.connect(
@@ -331,7 +332,7 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 
 # camp_menu: a node option and a pool option whose only node shows as a teaser.
 func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("camp_menu")
 	var options: Array[WeavlyModel.Option] = engine.option_service.get_options()
@@ -353,7 +354,7 @@ func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 
 # modifiers: @match last plays only its last true case, @match all plays every true case.
 func test_ci_smoke_fixture_match_last_and_all() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("modifiers")
 	for i: int in 3:
@@ -379,7 +380,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 	)
 	assert_that(globals["nodes"]).is_empty()
 
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	var ids: Array[String] = []
 	for node: WeavlyModel.WeavlyNode in engine.node_service.get_all_nodes():
 		ids.append(node.id)
@@ -417,7 +418,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 
 
 func test_self_referencing_jump_aborts_via_error_not_crash() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(JUMP_CYCLE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(JUMP_CYCLE_FIXTURE)
 	# A node that jumps to itself never pauses. Pre-fix this recursed until stack
 	# overflow; now the flat loop trips the guard and finishes cleanly.
 	engine.max_node_entries_per_step = 5
@@ -431,7 +432,7 @@ func test_self_referencing_jump_aborts_via_error_not_crash() -> void:
 
 
 func test_two_node_jump_cycle_aborts_via_error() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(JUMP_CYCLE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(JUMP_CYCLE_FIXTURE)
 	# Indirect cycle (ping -> pong -> ping) is caught the same way as a self-loop.
 	engine.max_node_entries_per_step = 5
 	engine.start("ping")
@@ -443,7 +444,7 @@ func test_two_node_jump_cycle_aborts_via_error() -> void:
 
 
 func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(BOUNDED_LOOP_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(BOUNDED_LOOP_FIXTURE)
 	# countdown decrements i from 3 and jumps to itself while i > 0, re-entering the
 	# same node three times before finishing. The counter guard allows this; a
 	# naive "node revisited" detector would wrongly abort it. A limit of exactly
@@ -465,14 +466,14 @@ func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
 
 
 func test_media_and_character_folders_are_unused_by_default() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	assert_str(engine.image_path).is_empty()
 	assert_str(engine.video_path).is_empty()
 	assert_str(engine.character_path).is_empty()
 
 
 func test_a_set_folder_that_doesnt_exist_is_an_error() -> void:
-	var engine: WeavlyDefaultEngine = _new_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
 	engine.character_path = "res://does_not_exist"
 	add_child(auto_free(engine))
 	assert_logged(["Failed to open directory: res://does_not_exist"])
@@ -486,7 +487,7 @@ func test_a_set_folder_that_doesnt_exist_is_an_error() -> void:
 func test_engine_indexes_and_loads_images_from_an_external_directory() -> void:
 	var media_dir: String = create_temp_dir("engine_external_media")
 	Image.create(2, 2, false, Image.FORMAT_RGB8).save_png(media_dir.path_join("splash.png"))
-	var engine: WeavlyDefaultEngine = _new_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
 	engine.image_path = media_dir
 	add_child(auto_free(engine))
 	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
@@ -500,7 +501,7 @@ func test_engine_applies_its_group_patterns_and_extensions() -> void:
 	image.save_png(media_dir.path_join("logo.png"))
 	for file_name: String in ["intro_1.webm", "intro_2.webm", "outro.ogv"]:
 		FileAccess.open(media_dir.path_join(file_name), FileAccess.WRITE).store_string("x")
-	var engine: WeavlyDefaultEngine = _new_engine(LINEAR_FIXTURE)
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
 	engine.image_path = media_dir
 	engine.video_path = media_dir
 	engine.image_group_pattern = "_\\d+$"
@@ -526,7 +527,7 @@ func test_engine_applies_its_group_patterns_and_extensions() -> void:
 
 
 func test_visits_count_on_leaving_a_node_and_its_own_jump() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("hub")
 	engine.next()
@@ -541,21 +542,21 @@ func test_visits_count_on_leaving_a_node_and_its_own_jump() -> void:
 
 
 func test_finish_statement_counts_a_visit() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	engine.start("finisher")
 	engine.next()
 	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
 
 
 func test_game_calling_finish_counts_the_visit() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	engine.start("finisher")
 	engine.finish()
 	assert_int(engine.node_service.get_visit_count("finisher")).is_equal(1)
 
 
 func test_nodes_create_no_variables() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(VISITS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(VISITS_FIXTURE)
 	assert_that(engine.variable_service.get_all_ids()).is_equal(["count"])
 
 
@@ -565,7 +566,7 @@ func test_nodes_create_no_variables() -> void:
 
 
 func test_built_in_functions_run_inside_set_statements() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(FUNCTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(FUNCTIONS_FIXTURE)
 	engine.start("start")
 	assert_that(engine.variable_service.get_variable("hp")).is_equal(0.0)
 	var roll: float = engine.variable_service.get_variable("roll")
@@ -588,7 +589,7 @@ func _collect_reports(engine: WeavlyEngine) -> Array[Array]:
 
 
 func test_runtime_errors_name_the_file_and_line_of_the_statement_or_case() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LOCATIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LOCATIONS_FIXTURE)
 	var reports: Array[Array] = _collect_reports(engine)
 	engine.start("start")
 	assert_logged(
@@ -609,7 +610,7 @@ func test_runtime_errors_name_the_file_and_line_of_the_statement_or_case() -> vo
 
 
 func test_an_error_before_any_node_is_entered_has_no_location() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(LOCATIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(LOCATIONS_FIXTURE)
 	var reports: Array[Array] = _collect_reports(engine)
 	engine.start("typo")
 	assert_logged(["Can't enter node 'typo' because it doesn't exist, finishing the dialogue."])
@@ -624,7 +625,7 @@ func test_an_error_before_any_node_is_entered_has_no_location() -> void:
 
 
 func test_lines_and_options_arrive_with_variables_filled_in() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(TEXT_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(TEXT_FIXTURE)
 	var narration: Array[WeavlyModel.NarrationLine] = []
 	var characters: Array[WeavlyModel.CharacterLine] = []
 	engine.line_service.executed_narration_line.connect(
@@ -651,7 +652,7 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 
 
 func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
-	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	engine.register_command(
 		"shake",
@@ -687,7 +688,7 @@ func test_two_holds_need_two_releases() -> void:
 
 
 func test_releasing_inside_the_handler_continues_the_same_step() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	engine.register_command(
 		"shake",
@@ -711,7 +712,7 @@ func test_a_hold_while_a_line_waits_does_not_advance_on_release() -> void:
 
 
 func test_finish_clears_holds() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	var held: Array[bool] = [false]
 	engine.register_command(
@@ -728,7 +729,7 @@ func test_finish_clears_holds() -> void:
 
 
 func test_release_without_a_hold_warns() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(HOLD_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	engine.release()
 	assert_logged([], ["release() was called without a matching hold()."])
 
@@ -750,7 +751,7 @@ func _save_in_shop(engine: WeavlyEngine) -> Dictionary:
 
 
 func test_a_save_taken_mid_node_replays_that_node_without_applying_it_twice() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	_connect_content_log(engine)
 	var state: Dictionary = _save_in_shop(engine)
 	assert_that(state["node"]).is_equal("shop")
@@ -764,7 +765,7 @@ func test_a_save_taken_mid_node_replays_that_node_without_applying_it_twice() ->
 
 
 func test_visited_of_the_current_node_is_the_same_after_a_load() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	var state: Dictionary = _save_in_shop(engine)
 	engine.next()
 	engine.set_state(state)
@@ -772,14 +773,14 @@ func test_visited_of_the_current_node_is_the_same_after_a_load() -> void:
 
 
 func test_get_state_outside_a_dialogue_has_no_node() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	var state: Dictionary = engine.get_state()
 	assert_bool(state.has("node")).is_false()
 	assert_that(state["services"]["variable"]["gold"]).is_equal(0.0)
 
 
 func test_get_state_after_the_dialogue_finishes_has_no_node() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	engine.start("start")
 	engine.next()
 	engine.next()
@@ -790,7 +791,7 @@ func test_get_state_after_the_dialogue_finishes_has_no_node() -> void:
 
 
 func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	var idle: Dictionary = engine.get_state()
 	engine.start("start")
 	engine.set_state(idle)
@@ -800,7 +801,7 @@ func test_set_state_while_a_dialogue_runs_stops_it_without_finished_dialogue() -
 
 
 func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	engine.set_state({"version": 3, "node": "gone", "services": {"variable": {"gold": 3.0}}})
 	assert_logged(["Can't resume at node 'gone' because it no longer exists."])
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(3.0)
@@ -808,14 +809,14 @@ func test_a_saved_node_that_no_longer_exists_restores_everything_else() -> void:
 
 
 func test_a_state_of_an_unknown_version_restores_nothing() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	engine.set_state({"version": 2, "services": {"variable": {"gold": 3.0}}})
 	assert_logged(["Can't load a state of version '2', expected version 3."])
 	assert_that(engine.variable_service.get_variable("gold")).is_equal(0.0)
 
 
 func test_reset_state_starts_a_new_game() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	_save_in_shop(engine)
 	engine.next()
 	engine.reset_state()
@@ -825,13 +826,13 @@ func test_reset_state_starts_a_new_game() -> void:
 
 
 func test_a_save_holds_no_externs() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	engine.variable_service.set_variable("reputation", 3.0)
 	assert_bool(engine.get_state()["services"]["variable"].has("reputation")).is_false()
 
 
 func test_an_extern_keeps_its_value_through_reset_state_and_set_state() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(CI_SMOKE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	var state: Dictionary = _through_json(engine.get_state())
 	engine.variable_service.set_variable("reputation", 3.0)
 	engine.reset_state()
@@ -841,7 +842,7 @@ func test_an_extern_keeps_its_value_through_reset_state_and_set_state() -> void:
 
 
 func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(SAVE_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(SAVE_FIXTURE)
 	var events: Array[String] = []
 	engine.state_loaded.connect(func() -> void: events.append("state_loaded"))
 	engine.variable_service.variable_changed.connect(
@@ -852,8 +853,8 @@ func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
 
 
 func test_a_custom_services_state_is_saved_and_restored() -> void:
-	var engine: WeavlyDefaultEngine = _new_engine(SAVE_FIXTURE)
-	engine.command_service_script = load(STATEFUL_COMMAND_SERVICE)
+	var engine: WeavlyEngine = _new_engine(SAVE_FIXTURE)
+	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE)]
 	add_child(auto_free(engine))
 	var state: Dictionary = engine.get_state()
 	assert_that(state["services"]["command"]).is_equal({"volume": 0.5})
@@ -862,12 +863,52 @@ func test_a_custom_services_state_is_saved_and_restored() -> void:
 
 
 # =====================
+# Custom services
+# =====================
+
+
+func test_a_custom_service_replaces_the_default_it_extends() -> void:
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
+	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE)]
+	add_child(auto_free(engine))
+	assert_that(engine.command_service.get_script()).is_equal(load(STATEFUL_COMMAND_SERVICE))
+	assert_that(engine.command_service.engine).is_equal(engine)
+	assert_bool(engine.node_service is WeavlyDefaultNodeService).is_true()
+
+
+func test_a_script_that_extends_no_service_is_reported_and_not_used() -> void:
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
+	engine.custom_services = [load(NOT_A_SERVICE), null]
+	add_child(auto_free(engine))
+	assert_logged(
+		["Custom service '%s' doesn't extend a service, so it isn't used." % NOT_A_SERVICE]
+	)
+	assert_bool(engine.command_service is WeavlyDefaultCommandService).is_true()
+
+
+func test_a_second_script_for_the_same_service_is_reported_and_not_used() -> void:
+	var default_script: Script = WeavlyDefaultCommandService
+	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
+	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE), default_script]
+	add_child(auto_free(engine))
+	assert_logged(
+		[
+			(
+				"Custom services '%s' and '%s' both replace WeavlyCommandService"
+				% [STATEFUL_COMMAND_SERVICE, default_script.resource_path]
+			)
+		]
+	)
+	assert_that(engine.command_service.get_script()).is_equal(load(STATEFUL_COMMAND_SERVICE))
+
+
+# =====================
 # Options without a choice
 # =====================
 
 
 func test_a_block_without_an_available_option_is_skipped() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine(OPTIONS_FIXTURE)
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	_connect_content_log(engine)
 	engine.start("none")
 	assert_that(_narration_log).is_equal(["Nothing to choose"])
@@ -884,7 +925,7 @@ func _roll(engine: WeavlyEngine) -> Array:
 
 
 func _seeded_engine(random_seed: int) -> WeavlyEngine:
-	var engine: WeavlyDefaultEngine = _new_engine(RANDOM_FIXTURE)
+	var engine: WeavlyEngine = _new_engine(RANDOM_FIXTURE)
 	engine.random_seed = random_seed
 	add_child(auto_free(engine))
 	_connect_content_log(engine)

@@ -6,7 +6,7 @@ extends WeavlyTestSuite
 const FIXTURE = "res://test/fixtures/ui/passage"
 const SCENE = preload("res://addons/weavly/ui/passage/weavly_passage_ui.tscn")
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _ui: WeavlyPassageUI
 # What the fixture's open() returns.
 var _door_open: bool
@@ -26,7 +26,7 @@ func after() -> void:
 
 func before_test() -> void:
 	_events = []
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))

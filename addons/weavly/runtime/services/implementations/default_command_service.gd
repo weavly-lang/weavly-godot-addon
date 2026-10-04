@@ -1,3 +1,4 @@
+class_name WeavlyDefaultCommandService
 extends WeavlyCommandService
 
 const KIND = "command"

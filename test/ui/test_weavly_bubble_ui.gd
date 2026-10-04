@@ -6,7 +6,7 @@ extends WeavlyTestSuite
 const FIXTURE = "res://test/fixtures/ui/bubble"
 const SCENE = preload("res://addons/weavly/ui/bubble/weavly_bubble_ui.tscn")
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _ui: WeavlyBubbleUI
 # What the fixture's open() returns.
 var _door_open: bool
@@ -16,7 +16,7 @@ var _world: SubViewport
 
 
 func before_test() -> void:
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE + "/build"
 	_engine.character_path = FIXTURE + "/characters"
 	add_child(auto_free(_engine))

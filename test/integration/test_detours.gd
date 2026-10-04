@@ -5,13 +5,13 @@ extends WeavlyTestSuite
 
 const FIXTURE = "res://test/fixtures/integration/detours/build"
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _events: Array[String]
 
 
 func before_test() -> void:
 	_events = []
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.entered_node.connect(func(id: String) -> void: _events.append("enter:" + id))

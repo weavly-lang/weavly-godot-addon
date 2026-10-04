@@ -1,3 +1,4 @@
+class_name WeavlyDefaultOptionService
 extends WeavlyOptionService
 
 var pending_options: Array[WeavlyModel.Option]

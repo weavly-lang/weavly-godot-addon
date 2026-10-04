@@ -8,7 +8,7 @@ const AVAILABLE = WeavlyModel.Option.State.AVAILABLE
 const UNAVAILABLE = WeavlyModel.Option.State.UNAVAILABLE
 const TEASER = WeavlyModel.Option.State.TEASER
 
-var _engine: WeavlyDefaultEngine
+var _engine: WeavlyEngine
 var _events: Array[String]
 var _lucky: bool = false
 
@@ -16,7 +16,7 @@ var _lucky: bool = false
 func before_test() -> void:
 	_events = []
 	_lucky = false
-	_engine = WeavlyDefaultEngine.new()
+	_engine = WeavlyEngine.new()
 	_engine.dialogue_path = FIXTURE
 	add_child(auto_free(_engine))
 	_engine.register_function("lucky", func() -> bool: return _lucky)

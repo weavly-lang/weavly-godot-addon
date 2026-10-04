@@ -12,8 +12,8 @@ func before_test() -> void:
 	_events = []
 
 
-func _make_engine() -> WeavlyDefaultEngine:
-	var engine: WeavlyDefaultEngine = WeavlyDefaultEngine.new()
+func _make_engine() -> WeavlyEngine:
+	var engine: WeavlyEngine = WeavlyEngine.new()
 	engine.dialogue_path = FIXTURE
 	add_child(auto_free(engine))
 	engine.started_dialogue.connect(func() -> void: _events.append("started_dialogue"))
@@ -116,7 +116,7 @@ func test_finish_ends_the_render() -> void:
 
 
 func test_render_leaves_the_engine_idle() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	engine.render("tavern")
 	assert_bool(engine.is_running()).is_false()
 	assert_that(engine.current_node_id).is_empty()
@@ -186,7 +186,7 @@ func test_choose_rejects_an_option_that_was_not_rendered() -> void:
 
 
 func test_an_error_in_a_chosen_option_names_its_file_and_line() -> void:
-	var engine: WeavlyDefaultEngine = _make_engine()
+	var engine: WeavlyEngine = _make_engine()
 	var reports: Array[Array] = []
 	engine.runtime_error.connect(
 		func(_message: String, source: String, line: int) -> void: reports.append([source, line])
