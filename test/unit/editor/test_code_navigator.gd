@@ -146,6 +146,32 @@ func test_unsaved_text_of_the_open_file_is_used() -> void:
 	assert_str(_where()).is_equal("story.wvl:7")
 
 
+func test_reopening_the_open_file_indexes_its_new_text() -> void:
+	assert_array(_panel._navigator.sections_at(1, 7)).is_not_empty()
+	_write_file("src/story.wvl", "@node hub\n@jump fresh\n@endnode\n@node fresh\n@endnode\n")
+	_panel.open_file(_story)
+	_look_up(1, "fresh")
+	assert_str(_where()).is_equal("story.wvl:3")
+
+
+func test_a_file_just_switched_away_from_is_still_indexed() -> void:
+	_look_up(1, "market")
+	_panel._navigator.back()
+	_look_up(1, "market")
+	assert_str(_where()).is_equal("city.wvl:0")
+
+
+func test_files_on_disk_are_read_again_after_the_rescan_interval() -> void:
+	assert_array(_panel._navigator.sections_at(1, 7)).is_not_empty()
+	_write_file("src/docks.wvl", "@node nowhere\n@endnode\n")
+	var column: int = _panel._code_edit.get_line(5).find("nowhere")
+	assert_array(_panel._navigator.sections_at(5, column)).is_empty()
+	var scanned_at: int = _panel._navigator._scanned_at
+	while Time.get_ticks_msec() - scanned_at < WeavlyCodeNavigator.RESCAN_INTERVAL_MS:
+		await await_idle_frame()
+	assert_array(_panel._navigator.sections_at(5, column)).is_not_empty()
+
+
 func test_back_and_forward_retrace_the_jumps() -> void:
 	_panel._code_edit.set_caret_line(1)
 	_look_up(1, "market")

@@ -2,6 +2,8 @@
 class_name WeavlyCodeNavigator
 extends PopupMenu
 
+# Other files are read from disk again at most this often while hovering.
+const RESCAN_INTERVAL_MS = 1000
 const KIND_NAMES: Dictionary[WeavlyProjectIndex.Kind, String] = {
 	WeavlyProjectIndex.Kind.NODE: "node",
 	WeavlyProjectIndex.Kind.POOL: "pool",
@@ -38,6 +40,9 @@ var _panel: WeavlyEditorPanel
 var _code_edit: WeavlyCodeEdit
 var _indexed_path: String = ""
 var _buffer_stale: bool = true
+var _lines: PackedStringArray = []
+var _lines_stale: bool = true
+var _scanned_at: int = -RESCAN_INTERVAL_MS
 # Popup item id -> its definition.
 var _listed: Array[WeavlyProjectIndex.Definition] = []
 var _back: Array[Location] = []
@@ -51,6 +56,7 @@ func _init(panel: WeavlyEditorPanel, code_edit: WeavlyCodeEdit) -> void:
 	_code_edit.symbol_validate.connect(_on_symbol_validate)
 	_code_edit.symbol_lookup.connect(_on_symbol_lookup)
 	_code_edit.text_changed.connect(_on_text_changed)
+	_code_edit.text_set.connect(_on_text_changed)
 	_code_edit.gui_input.connect(_on_code_edit_input)
 	_code_edit.tooltip_source = tooltip_at
 	id_pressed.connect(_on_listed_pressed)
@@ -172,9 +178,10 @@ func _move_to(location: Location) -> bool:
 
 
 func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
-	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
-		_code_edit.text.split("\n"), line, column
-	)
+	if _lines_stale:
+		_lines = _code_edit.text.split("\n")
+		_lines_stale = false
+	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(_lines, line, column)
 	if symbol != null:
 		_update_index()
 	return symbol
@@ -183,11 +190,15 @@ func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
 # The open file comes first, so a file just switched away from is read from disk again.
 func _update_index() -> void:
 	var path: String = _panel.get_current_path()
-	if _buffer_stale or path != _indexed_path:
+	var switched: bool = path != _indexed_path
+	if _buffer_stale or switched:
 		index.set_open_file(path, _code_edit.text)
 		_indexed_path = path
 		_buffer_stale = false
-	index.scan(_panel.get_project_dir())
+	var now: int = Time.get_ticks_msec()
+	if switched or now - _scanned_at >= RESCAN_INTERVAL_MS:
+		index.scan(_panel.get_project_dir())
+		_scanned_at = now
 
 
 func _display_path(path: String) -> String:
@@ -210,6 +221,7 @@ func _on_symbol_lookup(_symbol: String, line: int, column: int) -> void:
 
 func _on_text_changed() -> void:
 	_buffer_stale = true
+	_lines_stale = true
 
 
 func _on_code_edit_input(event: InputEvent) -> void:
