@@ -3,15 +3,15 @@ extends WeavlyVideoService
 
 const TYPE = "Video"
 
-var video_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE)
+var video_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE, &"VideoStream")
 
 
 # Indexes the files in the engine's video_path, grouped by its video_group_pattern.
 func initialize(engine: WeavlyEngine) -> void:
 	super(engine)
-	set_group_pattern(engine.video_group_pattern)
-	if not engine.video_path.is_empty():
-		WeavlyFileUtils.index_media(video_index, engine.video_path, engine.video_extensions)
+	video_index.index_folder(
+		engine.video_path, engine.video_group_pattern, engine.video_extensions
+	)
 
 
 func set_group_pattern(pattern: String) -> void:
@@ -23,17 +23,10 @@ func add_media(id: String, path: String) -> void:
 
 
 func get_video(id: String) -> VideoStream:
-	return video_index.load_media(id, _load_video)
+	return video_index.load_media(id, _read_file)
 
 
-# Paths outside res:// are not in the resource system, so the stream reads the
-# file straight from disk (see #57).
-func _load_video(path: String) -> VideoStream:
-	if path.begins_with("res://"):
-		return load(path) as VideoStream
-
-	if not FileAccess.file_exists(path):
-		return null
+static func _read_file(path: String) -> VideoStream:
 	var stream: VideoStreamTheora = VideoStreamTheora.new()
 	stream.file = path
 	return stream

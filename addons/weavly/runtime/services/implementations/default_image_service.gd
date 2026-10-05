@@ -3,15 +3,15 @@ extends WeavlyImageService
 
 const TYPE = "Image"
 
-var image_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE)
+var image_index: WeavlyMediaIndex = WeavlyMediaIndex.new(TYPE, &"Texture2D")
 
 
 # Indexes the files in the engine's image_path, grouped by its image_group_pattern.
 func initialize(engine: WeavlyEngine) -> void:
 	super(engine)
-	set_group_pattern(engine.image_group_pattern)
-	if not engine.image_path.is_empty():
-		WeavlyFileUtils.index_media(image_index, engine.image_path, engine.image_extensions)
+	image_index.index_folder(
+		engine.image_path, engine.image_group_pattern, engine.image_extensions
+	)
 
 
 func set_group_pattern(pattern: String) -> void:
@@ -23,18 +23,9 @@ func add_media(id: String, path: String) -> void:
 
 
 func get_image(id: String) -> Texture2D:
-	return image_index.load_media(id, _load_texture)
+	return image_index.load_media(id, _read_file)
 
 
-# Paths outside res:// are not in the resource system, so they are read straight
-# from disk (see #57).
-func _load_texture(path: String) -> Texture2D:
-	if path.begins_with("res://"):
-		return load(path) as Texture2D
-
-	if not FileAccess.file_exists(path):
-		return null
+static func _read_file(path: String) -> Texture2D:
 	var image: Image = Image.load_from_file(path)
-	if image == null:
-		return null
-	return ImageTexture.create_from_image(image)
+	return ImageTexture.create_from_image(image) if image != null else null

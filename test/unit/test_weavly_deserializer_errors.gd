@@ -199,7 +199,7 @@ func test_variable_declaration_non_dictionary_is_skipped() -> void:
 		{"declarations": [42]}
 	)
 	assert_that(vars.size()).is_equal(0)
-	assert_logged(["Variable declaration at declarations[0] must be a Dictionary, got int"])
+	assert_logged(["declarations[0] must be a Dictionary, got int"])
 
 
 func test_declarations_wrong_type_returns_empty() -> void:

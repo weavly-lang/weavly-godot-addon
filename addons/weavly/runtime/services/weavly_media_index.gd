@@ -7,12 +7,22 @@ const DUPLICATE_ID = "%s id '%s' is used by both %s and %s, using %s."
 var paths: Dictionary[String, Array] = {}
 
 var _type: String
+var _resource_class: StringName
 var _regex: RegEx = null
 var _sources: Dictionary[String, String] = {}
 
 
-func _init(type: String) -> void:
+# resource_class is the class a res:// file must load as.
+func _init(type: String, resource_class: StringName) -> void:
 	_type = type
+	_resource_class = resource_class
+
+
+# An empty dir adds no files.
+func index_folder(dir: String, group_pattern: String, extensions: PackedStringArray) -> void:
+	set_group_pattern(group_pattern)
+	if not dir.is_empty():
+		WeavlyFileUtils.index_media(self, dir, extensions)
 
 
 func set_group_pattern(pattern: String) -> void:
@@ -60,13 +70,23 @@ func pick(id: String) -> String:
 	return paths[id].pick_random()
 
 
-# Loads a picked path with loader, which returns null on failure; both failures return null.
-func load_media(id: String, loader: Callable) -> Variant:
+# Loads a picked path, or returns null on failure. Paths outside res:// aren't in the resource
+# system, so read_file reads them from disk and returns null on failure (see #57).
+func load_media(id: String, read_file: Callable) -> Variant:
 	var path: String = pick(id)
 	if path == "":
 		push_error(WeavlyService.MISSING_ID % [_type, id])
 		return null
-	var media: Variant = loader.call(path)
+	var media: Variant = _load(path, read_file)
 	if media == null:
 		push_error(WeavlyService.FAILED_LOADING % [_type, path, id])
 	return media
+
+
+func _load(path: String, read_file: Callable) -> Variant:
+	if path.begins_with("res://"):
+		var resource: Resource = load(path)
+		return resource if resource != null and resource.is_class(_resource_class) else null
+	if not FileAccess.file_exists(path):
+		return null
+	return read_file.call(path)
