@@ -36,13 +36,8 @@ var _locked_value_regex: RegEx = RegEx.create_from_string(
 	"locked[ \\t]*:[ \\t]*(show|extra|hide)(?!\\w)"
 )
 
-# Each line's WeavlyLineScanner.Block.
-var _blocks: PackedInt32Array = []
-var _blocks_stale: bool = true
-
 
 func _update_cache() -> void:
-	_blocks_stale = true
 	var editor: TextEdit = get_text_edit()
 	if editor != null and not editor.lines_edited_from.is_connected(_on_lines_edited):
 		editor.lines_edited_from.connect(_on_lines_edited)
@@ -50,12 +45,11 @@ func _update_cache() -> void:
 
 # A line's colors depend on the lines above it once it's inside an env or meta block.
 func _on_lines_edited(_from_line: int, _to_line: int) -> void:
-	_blocks_stale = true
 	clear_highlighting_cache()
 
 
 func _get_line_syntax_highlighting(line: int) -> Dictionary:
-	var editor: TextEdit = get_text_edit()
+	var editor: WeavlyCodeEdit = get_text_edit() as WeavlyCodeEdit
 	if editor == null:
 		return {}
 
@@ -68,7 +62,10 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 	colors.resize(length)
 	colors.fill(TEXT_COLOR)
 
-	var block: WeavlyLineScanner.Block = _block_at(editor, line)
+	var blocks: PackedInt32Array = editor.get_blocks()
+	var block: WeavlyLineScanner.Block = (
+		blocks[line] if line < blocks.size() else WeavlyLineScanner.Block.NONE
+	)
 	_paint_numbers(colors, text)
 	_paint(colors, text, _variable_regex, VARIABLE_COLOR)
 	match block:
@@ -118,16 +115,6 @@ func _paint_parts(colors: PackedColorArray, parts: PackedByteArray) -> void:
 				colors[i] = STRING_COLOR
 			WeavlyLineScanner.Part.COMMENT:
 				colors[i] = COMMENT_COLOR
-
-
-func _block_at(editor: TextEdit, line: int) -> WeavlyLineScanner.Block:
-	if _blocks_stale:
-		_blocks_stale = false
-		var lines: PackedStringArray = []
-		for i: int in editor.get_line_count():
-			lines.append(editor.get_line(i))
-		_blocks = WeavlyLineScanner.blocks(lines)
-	return _blocks[line] if line < _blocks.size() else WeavlyLineScanner.Block.NONE
 
 
 func _paint_numbers(colors: PackedColorArray, text: String) -> void:

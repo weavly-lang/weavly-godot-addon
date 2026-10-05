@@ -5,6 +5,36 @@ extends CodeEdit
 # Takes a line and column and returns the tooltip there; empty shows none.
 var tooltip_source: Callable
 
+var _lines: PackedStringArray = []
+# Each line's WeavlyLineScanner.Block.
+var _blocks: PackedInt32Array = []
+var _scanned: bool = false
+
+
+func _init() -> void:
+	lines_edited_from.connect(func(_from_line: int, _to_line: int) -> void: _scanned = false)
+
+
+# Collected once per text change, shared by the outline and the highlighter.
+func get_lines() -> PackedStringArray:
+	_scan()
+	return _lines
+
+
+func get_blocks() -> PackedInt32Array:
+	_scan()
+	return _blocks
+
+
+func _scan() -> void:
+	if _scanned:
+		return
+	_scanned = true
+	_lines.resize(get_line_count())
+	for line: int in _lines.size():
+		_lines[line] = get_line(line)
+	_blocks = WeavlyLineScanner.blocks(_lines)
+
 
 func _get_tooltip(at_position: Vector2) -> String:
 	var at: Vector2i = get_line_column_at_pos(Vector2i(at_position), false)
