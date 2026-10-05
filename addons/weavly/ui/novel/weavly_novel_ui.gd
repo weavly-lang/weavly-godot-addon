@@ -8,7 +8,6 @@ extends WeavlyUI
 
 var _revealing: bool = false
 var _revealed: float = 0.0
-var _awaiting_choice: bool = false
 
 @onready var _textbox: Control = %Textbox
 @onready var _nameplate: Label = %Nameplate
@@ -36,22 +35,13 @@ func _gui_input(event: InputEvent) -> void:
 		advance()
 
 
-# Menus open with nothing selected; the first key press selects an option.
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	var advancing: bool = is_pressed(event, advance_action)
-	var navigating: bool = is_navigation(event)
-	if _awaiting_choice and (advancing or navigating) and _choices.focus_first():
-		get_viewport().set_input_as_handled()
-	elif advancing:
-		get_viewport().set_input_as_handled()
-		advance()
+	_handle_advance_input(event, _choices, advance_action, advance)
 
 
 ## Completes a line that's still revealing, otherwise continues the dialogue.
 func advance() -> void:
-	if not visible or _awaiting_choice:
+	if not visible or _choices.has_choosable():
 		return
 	if _revealing:
 		_complete_reveal()
@@ -98,30 +88,15 @@ func _show_speaker(line: WeavlyModel.CharacterLine) -> void:
 
 func _on_options_offered(options: Array[WeavlyModel.Option]) -> void:
 	_choices.show_options(options)
-	_awaiting_choice = _choices.has_choosable()
 	visible = true
-
-
-# A block where nothing can be chosen any more lets the player continue past it.
-func _on_options_refreshed() -> void:
-	super()
-	if _choices.get_child_count() > 0:
-		_awaiting_choice = _choices.has_choosable()
 
 
 func _on_option_chosen(_option: WeavlyModel.Option) -> void:
 	_choices.clear()
-	_awaiting_choice = false
-
-
-func _choose(option: WeavlyModel.Option) -> void:
-	if not engine.choose(option):
-		_on_options_refreshed()
 
 
 func _show_text(text: String) -> void:
 	_choices.clear()
-	_awaiting_choice = false
 	_text.text = text
 	_textbox.visible = true
 	visible = true
@@ -144,6 +119,5 @@ func _clear() -> void:
 	visible = false
 	_textbox.visible = false
 	_text.text = ""
-	_awaiting_choice = false
 	_complete_reveal()
 	_choices.clear()
