@@ -119,8 +119,8 @@ var current_line: int = 0
 var _location_stack: Array[String] = []
 var _rendering: bool = false
 var _render_output: Array[WeavlyModel.Statement] = []
-# The options of the last renders, which choose() and render_option() accept.
-var _rendered_options: Dictionary[WeavlyModel.Option, bool] = {}
+# The live options of the last renders, which choose() and render_option() accept.
+var _rendered_options: Array[WeakRef] = []
 # get_option's results, refreshed while the game holds them.
 var _listed_options: Array[WeakRef] = []
 var _registrations_checked: bool = false
@@ -494,7 +494,7 @@ func add_rendered(statement: WeavlyModel.Statement) -> void:
 	_render_output.append(statement)
 	if statement is WeavlyModel.OptionBlock:
 		for option: WeavlyModel.Option in statement.options:
-			_rendered_options[option] = true
+			_rendered_options.append(weakref(option))
 
 
 # Runs the statements before the rest of the current ones.
@@ -635,7 +635,11 @@ func refresh_options() -> void:
 
 func _offered_options() -> Array[WeavlyModel.Option]:
 	var options: Array[WeavlyModel.Option] = get_pending_options()
-	options.append_array(_rendered_options.keys())
+	_rendered_options = _rendered_options.filter(
+		func(held: WeakRef) -> bool: return held.get_ref() != null
+	)
+	for held: WeakRef in _rendered_options:
+		options.append(held.get_ref())
 	for held: WeakRef in _listed_options:
 		var option: WeavlyModel.Option = held.get_ref()
 		if option != null:

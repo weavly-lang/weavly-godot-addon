@@ -235,6 +235,16 @@ func test_options_of_several_renders_can_be_chosen() -> void:
 	assert_bool(engine.get_variable("left")).is_true()
 
 
+func test_rendered_options_are_released_when_the_game_drops_them() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entries: Array[WeavlyModel.Statement] = engine.render("tavern")
+	var option: WeavlyModel.Option = _option(entries, "Leave")
+	var held: WeakRef = weakref(option)
+	entries.clear()
+	option = null
+	assert_object(held.get_ref()).is_null()
+
+
 # =====================
 # Save and load
 # =====================
