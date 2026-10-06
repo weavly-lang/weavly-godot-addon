@@ -16,7 +16,6 @@ var _speaker: WeavlySpeaker = null
 var _in_bubble: bool = false
 var _sized: bool = false
 var _tail_tip: Vector2 = Vector2.ZERO
-var _awaiting_choice: bool = false
 var _auto_left: float = 0.0
 
 @onready var _bubble: PanelContainer = %Bubble
@@ -61,22 +60,13 @@ func _draw() -> void:
 	)
 
 
-# Options open with nothing selected; the first key press selects one.
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	var advancing: bool = is_pressed(event, advance_action)
-	var navigating: bool = is_navigation(event)
-	if _awaiting_choice and (advancing or navigating) and _choices.focus_first():
-		get_viewport().set_input_as_handled()
-	elif advancing:
-		get_viewport().set_input_as_handled()
-		advance()
+	_handle_advance_input(event, _choices, advance_action, advance)
 
 
 ## Continues the dialogue, unless it waits for an option.
 func advance() -> void:
-	if not visible or _awaiting_choice:
+	if not visible or _choices.has_choosable():
 		return
 	_auto_left = 0.0
 	engine.next()
@@ -100,7 +90,6 @@ func _on_engine_detached() -> void:
 func _on_line(line: WeavlyModel.LineStatement) -> void:
 	_clear_line()
 	visible = true
-	_awaiting_choice = false
 	_auto_left = auto_advance
 	_line = line
 	if line is WeavlyModel.CharacterLine:
@@ -118,27 +107,13 @@ func _on_line(line: WeavlyModel.LineStatement) -> void:
 func _on_options_offered(options: Array[WeavlyModel.Option]) -> void:
 	_auto_left = 0.0
 	_choices.show_options(options)
-	_awaiting_choice = _choices.has_choosable()
 	_bar.visible = true
 	visible = true
 
 
-# A block where nothing can be chosen any more lets the player continue past it.
-func _on_options_refreshed() -> void:
-	super()
-	if _choices.get_child_count() > 0:
-		_awaiting_choice = _choices.has_choosable()
-
-
 func _on_option_chosen(_option: WeavlyModel.Option) -> void:
 	_choices.clear()
-	_awaiting_choice = false
 	_bar.visible = _bar_text.visible
-
-
-func _choose(option: WeavlyModel.Option) -> void:
-	if not engine.choose(option):
-		_on_options_refreshed()
 
 
 func _show_in_bar(line: WeavlyModel.LineStatement) -> void:
@@ -224,6 +199,5 @@ func _clear_line() -> void:
 
 func _clear() -> void:
 	visible = false
-	_awaiting_choice = false
 	_auto_left = 0.0
 	_clear_line()

@@ -68,6 +68,10 @@ func _saved(engine: WeavlyEngine) -> Dictionary:
 	return JSON.parse_string(JSON.stringify(engine.get_state()))
 
 
+func _render_and_drop(engine: WeavlyEngine, node_id: String) -> void:
+	engine.render(node_id)
+
+
 # =====================
 # render
 # =====================
@@ -233,6 +237,25 @@ func test_options_of_several_renders_can_be_chosen() -> void:
 	engine.render("bar")
 	engine.choose(_option(tavern, "Leave"))
 	assert_bool(engine.get_variable("left")).is_true()
+
+
+func test_options_the_game_holds_are_refreshed() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var held: Array[WeavlyModel.Statement] = engine.render("tavern")
+	var refreshed: Array[int] = [0]
+	engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
+	engine.set_variable("drinks", 3.0)
+	assert_int(refreshed[0]).is_equal(1)
+	assert_array(held).is_not_empty()
+
+
+func test_options_the_game_dropped_are_let_go() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	_render_and_drop(engine, "tavern")
+	var refreshed: Array[int] = [0]
+	engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
+	engine.set_variable("drinks", 3.0)
+	assert_int(refreshed[0]).is_equal(0)
 
 
 # =====================

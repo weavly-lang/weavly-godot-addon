@@ -146,6 +146,12 @@ func _on_engine_detached() -> void:
 	pass
 
 
+# Chooses an option the dialogue offered; a refused one shows the options as they are now.
+func _choose(option: WeavlyModel.Option) -> void:
+	if not engine.choose(option):
+		_on_options_refreshed()
+
+
 # False while detached or while a dialogue runs, which a render can't interrupt.
 func _can_render(warning: String) -> bool:
 	if not _attached:
@@ -154,6 +160,30 @@ func _can_render(warning: String) -> bool:
 		push_warning(warning)
 		return false
 	return true
+
+
+# Like _can_render, and false for a refused option, which shows the options as they are now.
+func _can_render_choice(option: WeavlyModel.Option, warning: String) -> bool:
+	if not _can_render(warning):
+		return false
+	if engine.can_choose(option):
+		return true
+	_on_options_refreshed()
+	return false
+
+
+# Options open with nothing selected: the first key press selects one, else action advances.
+func _handle_advance_input(
+	event: InputEvent, choices: WeavlyChoiceList, action: StringName, advance: Callable
+) -> void:
+	if not is_visible_in_tree():
+		return
+	var advancing: bool = is_pressed(event, action)
+	if choices.has_choosable() and (advancing or is_navigation(event)) and choices.focus_first():
+		get_viewport().set_input_as_handled()
+	elif advancing:
+		get_viewport().set_input_as_handled()
+		advance.call()
 
 
 func _find_autoload() -> WeavlyEngine:

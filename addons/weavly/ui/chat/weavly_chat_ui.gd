@@ -124,11 +124,6 @@ func _on_option_chosen(option: WeavlyModel.Option) -> void:
 	_add_bubble(option.text, null, true)
 
 
-func _choose(option: WeavlyModel.Option) -> void:
-	if not engine.choose(option):
-		_on_options_refreshed()
-
-
 func _start_wait(seconds: float, typing: bool) -> void:
 	_waiting = true
 	_wait_left = seconds
