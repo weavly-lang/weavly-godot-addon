@@ -102,15 +102,14 @@ static func _ids(candidates: Array[Candidate]) -> Array[String]:
 static func _rank(
 	engine: WeavlyEngine, pools: Array, shuffle: bool, options: bool
 ) -> Array[Candidate]:
-	var ids: Array[String] = []
+	var ids: Dictionary[String, bool] = {}
 	for pool: Variant in pools:
 		var pool_name: String = str(pool)
 		if not engine.story.has_pool(pool_name):
 			engine.report_error(UNDECLARED_POOL % pool_name)
 			continue
 		for id: String in engine.story.get_pool_members(pool_name):
-			if id not in ids:
-				ids.append(id)
+			ids[id] = true
 
 	var candidates: Array[Candidate] = []
 	for id: String in ids:
@@ -173,11 +172,14 @@ static func _evaluate(
 static func _count_skips(
 	candidates: Array[Candidate], taken: Array[Candidate], engine: WeavlyEngine
 ) -> void:
+	var taken_ids: Dictionary[String, bool] = {}
+	for candidate: Candidate in taken:
+		taken_ids[candidate.id] = true
 	for candidate: Candidate in candidates:
 		if not candidate.is_eligible():
 			continue
 		var skips: int = 0
-		if candidate not in taken:
+		if not taken_ids.has(candidate.id):
 			skips = engine.count_service.get_skip_count(candidate.id) + 1
 		engine.count_service.set_skip_count(candidate.id, skips)
 

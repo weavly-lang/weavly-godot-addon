@@ -6,13 +6,13 @@ const STRIP_COLORS: Array[Color] = [Color(0.35, 0.56, 0.88), Color(0.88, 0.67, 0
 const STRIP_WIDTH = 4
 const STRIP_GAP = 6
 
-var _code_edit: CodeEdit
+var _code_edit: WeavlyCodeEdit
 var _node_lines: PackedInt32Array = []
 # Each line's index into _node_lines, -1 outside a node.
 var _line_nodes: PackedInt32Array = []
 
 
-func _init(code_edit: CodeEdit) -> void:
+func _init(code_edit: WeavlyCodeEdit) -> void:
 	_code_edit = code_edit
 	tooltip_text = "Go to node"
 	item_selected.connect(_on_node_selected)
@@ -29,11 +29,9 @@ func _init(code_edit: CodeEdit) -> void:
 func refresh() -> void:
 	_node_lines.clear()
 	clear()
-	_line_nodes.resize(_code_edit.get_line_count())
-	var lines: PackedStringArray = []
-	for line: int in _code_edit.get_line_count():
-		lines.append(_code_edit.get_line(line))
-	var blocks: PackedInt32Array = WeavlyLineScanner.blocks(lines)
+	var lines: PackedStringArray = _code_edit.get_lines()
+	var blocks: PackedInt32Array = _code_edit.get_blocks()
+	_line_nodes.resize(lines.size())
 	var node: int = -1
 	for line: int in lines.size():
 		var name: String = WeavlyLineScanner.node_name(lines[line])

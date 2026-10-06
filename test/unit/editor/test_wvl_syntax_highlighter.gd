@@ -4,12 +4,12 @@ extends GdUnitTestSuite
 const KEYWORD = WvlSyntaxHighlighter.KEYWORD_COLOR
 const FUNCTION = WvlSyntaxHighlighter.FUNCTION_COLOR
 
-var _edit: TextEdit
+var _edit: WeavlyCodeEdit
 var _highlighter: WvlSyntaxHighlighter
 
 
 func before_test() -> void:
-	_edit = auto_free(TextEdit.new())
+	_edit = auto_free(WeavlyCodeEdit.new())
 	_highlighter = WvlSyntaxHighlighter.new()
 	_edit.syntax_highlighter = _highlighter
 	add_child(_edit)
