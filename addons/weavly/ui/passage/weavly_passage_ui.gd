@@ -57,12 +57,8 @@ func _on_engine_detached() -> void:
 
 
 func _choose(option: WeavlyModel.Option) -> void:
-	if not _can_render(DIALOGUE_RUNNING):
-		return
-	if not engine.can_choose(option):
-		_on_options_refreshed()
-		return
-	_show(engine.render_option(option), option.text)
+	if _can_render_choice(option, DIALOGUE_RUNNING):
+		_show(engine.render_option(option), option.text)
 
 
 func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
