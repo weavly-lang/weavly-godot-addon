@@ -169,7 +169,7 @@ func test_an_extern_is_declared_without_a_value() -> void:
 
 
 func _index_images(dir: String, group_pattern: String) -> WeavlyMediaIndex:
-	var index: WeavlyMediaIndex = WeavlyMediaIndex.new("Image")
+	var index: WeavlyMediaIndex = WeavlyMediaIndex.new("Image", &"Texture2D")
 	index.set_group_pattern(group_pattern)
 	WeavlyFileUtils.index_media(index, dir, [".png", ".jpg"])
 	return index

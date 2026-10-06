@@ -1,10 +1,17 @@
 extends WeavlyTestSuite
 
+const IMAGE_FIXTURE = "res://test/fixtures/test_image.tres"
+
 var _index: WeavlyMediaIndex
 
 
 func before_test() -> void:
-	_index = WeavlyMediaIndex.new("Image")
+	_index = WeavlyMediaIndex.new("Image", &"Texture2D")
+
+
+func _not_read(_file: String) -> Variant:
+	fail("read_file was called")
+	return null
 
 
 # =====================
@@ -112,20 +119,42 @@ func test_invalid_group_pattern_falls_back_to_no_grouping() -> void:
 # =====================
 
 
-func test_load_media_returns_what_the_loader_loads() -> void:
-	_index.add("splash", "res://splash.png")
-	var loader: Callable = func(path: String) -> Variant: return "loaded " + path
-	assert_that(_index.load_media("splash", loader)).is_equal("loaded res://splash.png")
+func test_load_media_loads_a_res_file_as_a_resource() -> void:
+	_index.add("splash", IMAGE_FIXTURE)
+	assert_object(_index.load_media("splash", _not_read)).is_instanceof(Texture2D)
+
+
+func test_load_media_of_a_res_file_of_another_class_returns_null() -> void:
+	var videos: WeavlyMediaIndex = WeavlyMediaIndex.new("Video", &"VideoStream")
+	videos.add("splash", IMAGE_FIXTURE)
+	assert_that(videos.load_media("splash", _not_read)).is_null()
+	assert_logged(["Failed to load Video at path '%s' for id 'splash'" % IMAGE_FIXTURE])
+
+
+func test_load_media_reads_a_file_outside_res_with_read_file() -> void:
+	var path: String = create_temp_dir("media_index_external").path_join("splash.png")
+	FileAccess.open(path, FileAccess.WRITE).close()
+	_index.add("splash", path)
+	var read_file: Callable = func(file: String) -> Variant: return "read " + file
+	assert_that(_index.load_media("splash", read_file)).is_equal("read " + path)
+
+
+func test_load_media_of_a_missing_file_outside_res_returns_null() -> void:
+	var path: String = create_temp_dir("media_index_missing").path_join("nope.png")
+	_index.add("broken", path)
+	assert_that(_index.load_media("broken", _not_read)).is_null()
+	assert_logged(["Failed to load Image at path '%s' for id 'broken'" % path])
 
 
 func test_load_media_of_an_unknown_id_returns_null() -> void:
-	var loader: Callable = func(_path: String) -> Variant: return "loaded"
-	assert_that(_index.load_media("missing", loader)).is_null()
+	assert_that(_index.load_media("missing", _not_read)).is_null()
 	assert_logged(["Image with id 'missing' doesn't exist."])
 
 
-func test_load_media_that_fails_to_load_returns_null() -> void:
-	_index.add("broken", "res://broken.png")
-	var loader: Callable = func(_path: String) -> Variant: return null
-	assert_that(_index.load_media("broken", loader)).is_null()
-	assert_logged(["Failed to load Image at path 'res://broken.png' for id 'broken'"])
+func test_load_media_that_fails_to_read_returns_null() -> void:
+	var path: String = create_temp_dir("media_index_unreadable").path_join("broken.png")
+	FileAccess.open(path, FileAccess.WRITE).close()
+	_index.add("broken", path)
+	var read_file: Callable = func(_file: String) -> Variant: return null
+	assert_that(_index.load_media("broken", read_file)).is_null()
+	assert_logged(["Failed to load Image at path '%s' for id 'broken'" % path])

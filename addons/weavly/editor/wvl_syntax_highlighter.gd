@@ -96,15 +96,9 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 
 
 func _paint(
-	colors: PackedColorArray,
-	text: String,
-	regex: RegEx,
-	color: Color,
-	group: int = 0,
-	start: int = 0,
-	end: int = -1,
+	colors: PackedColorArray, text: String, regex: RegEx, color: Color, group: int = 0
 ) -> void:
-	for regex_match: RegExMatch in regex.search_all(text, start, end):
+	for regex_match: RegExMatch in regex.search_all(text):
 		for i: int in range(regex_match.get_start(group), regex_match.get_end(group)):
 			colors[i] = color
 

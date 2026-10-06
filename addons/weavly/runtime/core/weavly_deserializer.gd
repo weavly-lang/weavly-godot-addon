@@ -164,10 +164,17 @@ static func _read_list(
 	return true
 
 
+# Reports anything but a Dictionary at path.
+static func _is_dictionary(data: Variant, path: String) -> bool:
+	if data is Dictionary:
+		return true
+	push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	return false
+
+
 # For items read from a Dictionary that carries a line.
 static func _read_located(data: Variant, path: String, read: Callable) -> Variant:
-	if data is not Dictionary:
-		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	if not _is_dictionary(data, path):
 		return null
 	var line: Variant = _get_required_line(data, path)
 	var item: Variant = read.call(data, path)
@@ -216,17 +223,13 @@ static func read_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:
 
 
 static func read_meta(data: Variant, path: String) -> WeavlyModel.NodeMeta:
-	if data is not Dictionary:
-		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	if not _is_dictionary(data, path):
 		return null
 	var meta: WeavlyModel.NodeMeta = WeavlyModel.NodeMeta.new()
 	for key: Variant in data:
 		var entry_path: String = _path_join(path, str(key))
 		var entry: Variant = data[key]
-		if entry is not Dictionary:
-			push_error(
-				"%s must be a Dictionary, got %s" % [entry_path, type_string(typeof(entry))]
-			)
+		if not _is_dictionary(entry, entry_path):
 			return null
 		if not _read_meta_entry(meta, key, entry, entry_path):
 			return null
@@ -639,17 +642,12 @@ static func _read_meta_call(data: Dictionary, path: String) -> WeavlyModel.MetaC
 
 
 static func _read_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
-	var args_data: Variant = get_required(data, KEY_ARGS, Variant.Type.TYPE_ARRAY, path)
-	if args_data == null:
-		return null
-	var count_error: String = WeavlyExpressionEvaluator.argument_count_error(
-		name, args_data.size()
-	)
-	if count_error != "":
-		push_error("%s at %s" % [count_error, path])
-		return null
 	var args: Variant = read_arguments(data, path)
 	if args == null:
+		return null
+	var count_error: String = WeavlyExpressionEvaluator.argument_count_error(name, args.size())
+	if count_error != "":
+		push_error("%s at %s" % [count_error, path])
 		return null
 	return WeavlyModel.Call.new(name, "", args)
 
@@ -698,8 +696,7 @@ static func read_meta_keys(data: Dictionary, source: String = "") -> Dictionary[
 
 # [name, default], or null.
 static func _read_meta_key(data: Variant, path: String) -> Variant:
-	if data is not Dictionary:
-		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	if not _is_dictionary(data, path):
 		return null
 	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
@@ -737,8 +734,7 @@ static func _read_signatures(
 
 
 static func _read_signature(data: Variant, path: String, returns: bool) -> WeavlyModel.Signature:
-	if data is not Dictionary:
-		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	if not _is_dictionary(data, path):
 		return null
 	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var params: Variant = get_required(data, KEY_PARAMS, Variant.Type.TYPE_ARRAY, path)
@@ -756,8 +752,7 @@ static func _read_signature(data: Variant, path: String, returns: bool) -> Weavl
 
 
 static func _read_param_type(data: Variant, path: String) -> Variant:
-	if data is not Dictionary:
-		push_error("%s must be a Dictionary, got %s" % [path, type_string(typeof(data))])
+	if not _is_dictionary(data, path):
 		return null
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
 	return type if type != null and _is_value_type(type, path) else null
@@ -782,13 +777,7 @@ static func read_variable(data: Variant, path: String = "") -> WeavlyModel.Varia
 	if path == "":
 		path = "<root>"
 
-	if data is not Dictionary:
-		push_error(
-			(
-				"Variable declaration at %s must be a Dictionary, got %s"
-				% [path, type_string(typeof(data))]
-			)
-		)
+	if not _is_dictionary(data, path):
 		return null
 
 	var id: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
