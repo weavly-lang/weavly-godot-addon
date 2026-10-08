@@ -25,9 +25,8 @@ class NodeMeta:
 	extends RefCounted
 	var pools: Array[String] = []
 	var slots: Array[String] = []
-	# Every other key, built-in or custom, except the label keys.
+	# Every other key, built-in or custom.
 	var entries: Dictionary[String, MetaExpression] = {}
-	var texts: Dictionary[String, MetaText] = {}
 
 
 class MetaExpression:
@@ -37,17 +36,6 @@ class MetaExpression:
 
 	func _init(expression: WeavlyExpression, line: int):
 		self.expression = expression
-		self.line = line
-
-
-# A label key: segments like a line's.
-class MetaText:
-	extends RefCounted
-	var segments: Array
-	var line: int
-
-	func _init(segments: Array, line: int):
-		self.segments = segments
 		self.line = line
 
 
@@ -124,7 +112,7 @@ class DrawStatement:
 		self.pools = pools
 
 
-class CommandStatement:
+class DoStatement:
 	extends Statement
 	var id: String
 	var args: Array[WeavlyExpression]
@@ -188,12 +176,12 @@ class OptionItem:
 class InlineOptionItem:
 	extends OptionItem
 	var condition: WeavlyExpression
-	var segments: Array
+	var label: WeavlyExpression
 	var body: Array[Statement]
 
-	func _init(condition: WeavlyExpression, segments: Array, body: Array[Statement]):
+	func _init(condition: WeavlyExpression, label: WeavlyExpression, body: Array[Statement]):
 		self.condition = condition
-		self.segments = segments
+		self.label = label
 		self.body = body
 
 
@@ -330,6 +318,15 @@ class StringLiteral:
 		self.value = value
 
 
+# A quoted string with {} expressions; segments like a line's.
+class TextExpression:
+	extends WeavlyExpression
+	var segments: Array
+
+	func _init(segments: Array):
+		self.segments = segments
+
+
 class Call:
 	extends WeavlyExpression
 	var name: String
@@ -365,11 +362,13 @@ class MetaCall:
 # =====================
 
 
-# A declared function or command; a command has no return type.
+# A declared function; return_type is empty for one without a result.
 class Signature:
 	extends RefCounted
-	const UNDECLARED = "Can't register %s '%s' because it isn't declared."
-	const WRONG_ARGUMENT_COUNT = "Can't register %s '%s' because it takes %d instead of %d arguments."
+	const UNDECLARED = "Can't register function '%s' because it isn't declared."
+	const WRONG_ARGUMENT_COUNT = (
+		"Can't register function '%s' because it takes " + "%d instead of %d arguments."
+	)
 
 	var name: String
 	var param_types: Array[String]
@@ -381,16 +380,14 @@ class Signature:
 		self.return_type = return_type
 
 	# Pushes an error and returns false when the callable doesn't fit the name's declaration.
-	static func can_register(
-		kind: String, name: String, callable: Callable, signature: Signature
-	) -> bool:
+	static func can_register(name: String, callable: Callable, signature: Signature) -> bool:
 		if signature == null:
-			push_error(UNDECLARED % [kind, name])
+			push_error(UNDECLARED % name)
 			return false
 		var expected: int = signature.param_types.size()
 		var count: int = callable.get_argument_count()
 		if count != expected:
-			push_error(WRONG_ARGUMENT_COUNT % [kind, name, count, expected])
+			push_error(WRONG_ARGUMENT_COUNT % [name, count, expected])
 			return false
 		return true
 
@@ -442,7 +439,7 @@ class StringVariable:
 		return "string"
 
 
-class FlagVariable:
+class BoolVariable:
 	extends Variable
 	var value: bool
 
@@ -451,7 +448,7 @@ class FlagVariable:
 		self.value = value
 
 	func get_type_name() -> String:
-		return "flag"
+		return "bool"
 
 
 # A node, pool or slot variable; its value names a declared one of that type.

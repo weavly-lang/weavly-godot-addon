@@ -1,6 +1,6 @@
 @env
 var gold: number = 0
-var seen_shop: flag = false
+var seen_shop: bool = false
 @endenv
 
 @node start

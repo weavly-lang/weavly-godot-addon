@@ -62,7 +62,7 @@ static func node_name(text: String) -> String:
 
 
 # Each character's Part. Env and meta lines are code; other lines are text unless they start
-# with a directive, a jump arrow or a variable.
+# with a directive or a variable.
 static func parts(text: String, block: Block) -> PackedByteArray:
 	var result: PackedByteArray = []
 	result.resize(text.length())
@@ -82,7 +82,7 @@ static func _scan_line(text: String, from: int, result: PackedByteArray) -> void
 		return
 	if text[i] == "#":
 		_mark(result, i, text.length(), Part.COMMENT)
-	elif text[i] == "@" or text.substr(i, 2) == "->":
+	elif text[i] == "@":
 		var colon: int = _scan_code(text, i, result, true)
 		if colon >= 0:
 			_scan_line(text, colon + 1, result)

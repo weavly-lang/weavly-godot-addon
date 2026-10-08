@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const KEYWORD = WvlSyntaxHighlighter.KEYWORD_COLOR
 const FUNCTION = WvlSyntaxHighlighter.FUNCTION_COLOR
+const META = WvlSyntaxHighlighter.META_COLOR
 
 var _edit: WeavlyCodeEdit
 var _highlighter: WvlSyntaxHighlighter
@@ -132,17 +133,17 @@ func test_extern_var_and_its_type_are_keywords_in_an_env_block() -> void:
 	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["extern var", "number"])
 
 
-func test_types_and_flag_values_are_keywords_in_an_env_block() -> void:
-	var text: String = '@env\n  var name: string = "and"\n  var seen: flag = true\n@endenv'
+func test_types_and_bool_values_are_keywords_in_an_env_block() -> void:
+	var text: String = '@env\n  var name: string = "and"\n  var seen: bool = true\n@endenv'
 	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["var", "string"])
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "flag", "true"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "bool", "true"])
 
 
 func test_a_variable_named_like_a_type_is_not_a_keyword() -> void:
-	var text: String = "@env\nvar number: number = 1\nvar variable: flag\n@endenv"
+	var text: String = "@env\nvar number: number = 1\nvar variable: bool\n@endenv"
 	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["var", "number"])
 	assert_str(_spans_at(text, 1, WvlSyntaxHighlighter.TEXT_COLOR)[0]).is_equal(" number: ")
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "flag"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["var", "bool"])
 
 
 func test_type_names_outside_an_env_block_are_text() -> void:
@@ -236,14 +237,17 @@ func test_meta_and_draw_are_directives() -> void:
 	assert_array(_spans_at(text, 3, directive)).contains_exactly(["@draw"])
 
 
-func test_meta_keys_are_keywords_and_their_values_expressions() -> void:
+func test_meta_keys_have_the_meta_color_and_their_values_are_expressions() -> void:
 	var text: String = (
 		"@node a\n@meta\npool: city\nwhen: $gold > 2 and visited(x)\nonce: true\n" + "@endmeta"
 	)
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["pool"])
-	assert_array(_spans_at(text, 3, KEYWORD)).contains_exactly(["when", "and"])
+	assert_array(_spans_at(text, 2, META)).contains_exactly(["pool"])
+	assert_array(_spans_at(text, 2, KEYWORD)).is_empty()
+	assert_array(_spans_at(text, 3, META)).contains_exactly(["when"])
+	assert_array(_spans_at(text, 3, KEYWORD)).contains_exactly(["and"])
 	assert_array(_spans_at(text, 3, FUNCTION)).contains_exactly(["visited"])
-	assert_array(_spans_at(text, 4, KEYWORD)).contains_exactly(["once", "true"])
+	assert_array(_spans_at(text, 4, META)).contains_exactly(["once"])
+	assert_array(_spans_at(text, 4, KEYWORD)).contains_exactly(["true"])
 
 
 func test_meta_declarations_are_keywords_in_an_env_block() -> void:
@@ -252,21 +256,33 @@ func test_meta_declarations_are_keywords_in_an_env_block() -> void:
 	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["meta", "pool"])
 
 
-func test_function_and_command_declarations_are_keywords_in_an_env_block() -> void:
+func test_function_declarations_are_keywords_in_an_env_block() -> void:
 	var text: String = (
-		"@env\nfunc trust(from: string, to: node): number\n"
-		+ "command shake(power: number)\n@endenv"
+		"@env\nfunc trust(from: string, to: node): number\n" + "func shake(power: number)\n@endenv"
 	)
 	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(
 		["func", "string", "node", "number"]
 	)
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["command", "number"])
+	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["func", "number"])
 
 
-func test_custom_meta_keys_are_keywords_and_meta_a_function() -> void:
-	var text: String = "@node a\n@meta\ncost: meta(b, cost) + 1\n@endmeta\n@endnode"
-	assert_array(_spans_at(text, 2, KEYWORD)).contains_exactly(["cost"])
-	assert_array(_spans_at(text, 2, FUNCTION)).contains_exactly(["meta"])
+func test_a_meta_key_looks_the_same_where_it_is_written_and_read() -> void:
+	var text: String = "@node a\n@meta\ncost: b.cost + .bonus\n@endmeta\n@endnode"
+	assert_array(_spans_at(text, 2, META)).contains_exactly(["cost", ".cost", ".bonus"])
+	assert_array(_spans_at(text, 2, KEYWORD)).is_empty()
+
+
+func test_meta_reads_have_the_meta_color_in_expressions_and_interpolations() -> void:
+	assert_array(_spans("@set $x = .cost + shop.cost", META)).contains_exactly([".cost", ".cost"])
+	assert_array(_spans("You pay {shop.cost}.", META)).contains_exactly([".cost"])
+	assert_array(_spans('@option "Pay {.cost}": @jump shop', META)).contains_exactly([".cost"])
+
+
+func test_a_number_or_text_with_a_dot_is_not_a_meta_read() -> void:
+	var line: String = "@set $x = .5 + 1.5"
+	assert_array(_spans(line, META)).is_empty()
+	assert_array(_spans(line, WvlSyntaxHighlighter.NUMBER_COLOR)).contains_exactly(["5", "1.5"])
+	assert_array(_spans("Wait.then go", META)).is_empty()
 
 
 func test_meta_keys_after_the_meta_block_are_text() -> void:
@@ -318,7 +334,7 @@ func test_node_and_pool_options_are_functions_with_keyword_parameters() -> void:
 
 
 func test_an_interpolation_in_option_text_is_an_expression() -> void:
-	var line: String = '@option [not $poor] "Buy for {max($price, 1)}" -> shop'
+	var line: String = '@option [not $poor] "Buy for {max($price, 1)}": @jump shop'
 	assert_array(_spans(line, FUNCTION)).contains_exactly(["max"])
 	assert_array(_spans(line, KEYWORD)).contains_exactly(["not"])
 	var strings: Array[String] = _spans(line, WvlSyntaxHighlighter.STRING_COLOR)

@@ -135,25 +135,23 @@ func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> vo
 	assert_logged(["Variable 'speaker' isn't defined."])
 
 
-func test_fill_command_copies_with_evaluated_values() -> void:
+func test_fill_do_copies_with_evaluated_values() -> void:
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"), WeavlyModel.Identifier.new("name")
 	]
-	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("sound", args)
-	command.line = 3
-	var filled: WeavlyModel.CommandStatement = WeavlyTextUtils.fill_command(
-		command, _engine_with_name()
-	)
+	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("sound", args)
+	do.line = 3
+	var filled: WeavlyModel.DoStatement = WeavlyTextUtils.fill_do(do, _engine_with_name())
 	assert_that(filled.values).is_equal(["door", "Ada"])
-	assert_that(filled.args).is_same(command.args)
+	assert_that(filled.args).is_same(do.args)
 	assert_int(filled.line).is_equal(3)
-	assert_that(command.values).is_empty()
+	assert_that(do.values).is_empty()
 
 
-func test_fill_command_with_a_failing_argument_is_null() -> void:
+func test_fill_do_with_a_failing_argument_is_null() -> void:
 	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
-	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("sound", args)
-	assert_object(WeavlyTextUtils.fill_command(command, _make_engine())).is_null()
+	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("sound", args)
+	assert_object(WeavlyTextUtils.fill_do(do, _make_engine())).is_null()
 	assert_logged(["Variable 'missing' isn't defined."])
 
 

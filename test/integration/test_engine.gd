@@ -18,10 +18,10 @@ const TEXT_FIXTURE = "res://test/fixtures/integration/text/build"
 const HOLD_FIXTURE = "res://test/fixtures/integration/hold/build"
 const SAVE_FIXTURE = "res://test/fixtures/integration/save/build"
 const RANDOM_FIXTURE = "res://test/fixtures/integration/random/build"
-const STATEFUL_COMMAND_SERVICE = "res://test/helpers/stateful_command_service.gd"
+const STATEFUL_FUNCTION_SERVICE = "res://test/helpers/stateful_function_service.gd"
 const NOT_A_SERVICE = "res://test/helpers/fake_engine.gd"
-# The commands the fixtures declare; each is logged unless a test handles it.
-const COMMAND_ARGUMENT_COUNTS: Dictionary[String, int] = {
+# The functions without a result the fixtures declare; each is logged unless a test handles it.
+const DO_ARGUMENT_COUNTS: Dictionary[String, int] = {
 	"fade_in": 0, "play_sound": 1, "log": 2, "shake": 0
 }
 
@@ -31,13 +31,13 @@ const COMMAND_ARGUMENT_COUNTS: Dictionary[String, int] = {
 
 var _signal_log: Array[String]
 var _narration_log: Array[String]
-var _command_log: Array[String]
+var _do_log: Array[String]
 
 
 func before_test() -> void:
 	_signal_log = []
 	_narration_log = []
-	_command_log = []
+	_do_log = []
 
 
 # The @export paths are set before add_child so they are in place when _ready runs.
@@ -60,17 +60,18 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 		func(node_id: String) -> void: _signal_log.append("entered_node:%s" % node_id)
 	)
 	engine.finished_dialogue.connect(func() -> void: _signal_log.append("finished_dialogue"))
-	for id: String in engine.command_service.get_unregistered():
-		engine.register_command(id, _command_logger(id, COMMAND_ARGUMENT_COUNTS[id]))
+	for id: String in engine.function_service.get_unregistered():
+		if DO_ARGUMENT_COUNTS.has(id):
+			engine.register_function(id, _do_logger(id, DO_ARGUMENT_COUNTS[id]))
 	if "bonus" in engine.function_service.get_unregistered():
 		engine.register_function("bonus", func(points: float) -> float: return points * 2.0)
 	if "open" in engine.function_service.get_unregistered():
 		engine.register_function("open", func() -> bool: return true)
 
 
-func _command_logger(id: String, count: int) -> Callable:
+func _do_logger(id: String, count: int) -> Callable:
 	var record: Callable = func(values: Array) -> void:
-		_command_log.append("%s:%s" % [id, ",".join(values.map(str))])
+		_do_log.append("%s:%s" % [id, ",".join(values.map(str))])
 	match count:
 		0:
 			return func() -> void: record.call([])
@@ -271,8 +272,8 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	# start node: narration pauses immediately. Drive past the character line,
 	# the chain of set/match statements (which jump to choices), the character
 	# line at choices, and finally land on the option block.
-	engine.next()  # commands, then character "Let the test begin." -> pause
-	assert_that(_command_log).is_equal(["fade_in:", "play_sound:chime.ogg"])
+	engine.next()  # do statements, then character "Let the test begin." -> pause
+	assert_that(_do_log).is_equal(["fade_in:", "play_sound:chime_0.ogg"])
 	engine.next()  # sets + match (-> jump choices) + character "Which path?" -> pause
 	engine.next()  # option block -> options registered, loop exits
 
@@ -299,7 +300,7 @@ func test_ci_smoke_fixture_runs_to_completion_via_random_path() -> void:
 	assert_that(engine.get_variable("last_scene")).is_equal("end")
 	assert_that(engine.get_variable("region")).is_equal("night")
 	assert_bool(engine.get_variable("names_match")).is_true()
-	assert_that(_command_log.back()).is_equal("log:3.0,2.0")
+	assert_that(_do_log.back()).is_equal("log:3.0,2.0")
 	assert_bool(engine.get_variable("has_key")).is_false()
 
 
@@ -395,6 +396,7 @@ func test_declarations_from_a_node_less_file_merge_without_adding_nodes() -> voi
 			[
 				"arrival",
 				"bob_greets",
+				"calls",
 				"camp_menu",
 				"campfire",
 				"choices",
@@ -618,7 +620,7 @@ func test_lines_and_options_arrive_with_variables_filled_in() -> void:
 func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
 	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
-	engine.register_command(
+	engine.register_function(
 		"shake",
 		func() -> void:
 			for i: int in holds:
@@ -627,7 +629,7 @@ func _make_holding_engine(holds: int = 1) -> WeavlyEngine:
 	return engine
 
 
-func test_a_hold_in_the_command_handler_stops_the_dialogue_until_released() -> void:
+func test_a_hold_in_a_do_function_stops_the_dialogue_until_released() -> void:
 	var engine: WeavlyEngine = _make_holding_engine()
 	engine.start("start")
 	assert_that(_narration_log).is_empty()
@@ -651,10 +653,10 @@ func test_two_holds_need_two_releases() -> void:
 	assert_that(_narration_log).is_equal(["After"])
 
 
-func test_releasing_inside_the_handler_continues_the_same_step() -> void:
+func test_releasing_inside_the_function_continues_the_same_step() -> void:
 	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
-	engine.register_command(
+	engine.register_function(
 		"shake",
 		func() -> void:
 			engine.hold()
@@ -679,7 +681,7 @@ func test_finish_clears_holds() -> void:
 	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
 	var held: Array[bool] = [false]
-	engine.register_command(
+	engine.register_function(
 		"shake",
 		func() -> void:
 			if not held[0]:
@@ -818,12 +820,12 @@ func test_state_loaded_fires_once_and_variable_changed_does_not() -> void:
 
 func test_a_custom_services_state_is_saved_and_restored() -> void:
 	var engine: WeavlyEngine = _new_engine(SAVE_FIXTURE)
-	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE)]
+	engine.custom_services = [load(STATEFUL_FUNCTION_SERVICE)]
 	add_child(auto_free(engine))
 	var state: Dictionary = engine.get_state()
-	assert_that(state["services"]["command"]).is_equal({"volume": 0.5})
+	assert_that(state["services"]["function"]).is_equal({"volume": 0.5})
 	engine.set_state(_through_json(state))
-	assert_that(engine.command_service.restored).is_equal({"volume": 0.5})
+	assert_that(engine.function_service.restored).is_equal({"volume": 0.5})
 
 
 # =====================
@@ -833,10 +835,10 @@ func test_a_custom_services_state_is_saved_and_restored() -> void:
 
 func test_a_custom_service_replaces_the_default_it_extends() -> void:
 	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
-	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE)]
+	engine.custom_services = [load(STATEFUL_FUNCTION_SERVICE)]
 	add_child(auto_free(engine))
-	assert_that(engine.command_service.get_script()).is_equal(load(STATEFUL_COMMAND_SERVICE))
-	assert_that(engine.command_service.engine).is_equal(engine)
+	assert_that(engine.function_service.get_script()).is_equal(load(STATEFUL_FUNCTION_SERVICE))
+	assert_that(engine.function_service.engine).is_equal(engine)
 	assert_bool(engine.count_service is WeavlyDefaultCountService).is_true()
 
 
@@ -847,23 +849,23 @@ func test_a_script_that_extends_no_service_is_reported_and_not_used() -> void:
 	assert_logged(
 		["Custom service '%s' doesn't extend a service, so it isn't used." % NOT_A_SERVICE]
 	)
-	assert_bool(engine.command_service is WeavlyDefaultCommandService).is_true()
+	assert_bool(engine.function_service is WeavlyDefaultFunctionService).is_true()
 
 
 func test_a_second_script_for_the_same_service_is_reported_and_not_used() -> void:
-	var default_script: Script = WeavlyDefaultCommandService
+	var default_script: Script = WeavlyDefaultFunctionService
 	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
-	engine.custom_services = [load(STATEFUL_COMMAND_SERVICE), default_script]
+	engine.custom_services = [load(STATEFUL_FUNCTION_SERVICE), default_script]
 	add_child(auto_free(engine))
 	assert_logged(
 		[
 			(
-				"Custom services '%s' and '%s' both replace WeavlyCommandService"
-				% [STATEFUL_COMMAND_SERVICE, default_script.resource_path]
+				"Custom services '%s' and '%s' both replace WeavlyFunctionService"
+				% [STATEFUL_FUNCTION_SERVICE, default_script.resource_path]
 			)
 		]
 	)
-	assert_that(engine.command_service.get_script()).is_equal(load(STATEFUL_COMMAND_SERVICE))
+	assert_that(engine.function_service.get_script()).is_equal(load(STATEFUL_FUNCTION_SERVICE))
 
 
 # =====================

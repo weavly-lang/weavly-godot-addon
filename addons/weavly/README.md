@@ -16,7 +16,7 @@ func _ready() -> void:
 
 By default the engine loads compiled dialogue from `res://dialogue/build`. For exports, add `*.json` to *Filters to export non-resource files* in your export preset.
 
-For the editor tooling you also need the Weavly compiler 0.5.x: `uv tool install "weavly==0.5.*"`.
+For the editor tooling you also need the Weavly compiler 0.6.x: `uv tool install "weavly==0.6.*"`.
 
 Documentation: <https://weavly-lang.github.io/weavly-docs/>
 

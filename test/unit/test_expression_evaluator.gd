@@ -76,6 +76,23 @@ func test_string_literal() -> void:
 	assert_that(_eval(_slit("hello"))).is_equal("hello")
 
 
+func test_text_expression_fills_its_segments_like_a_line() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	declare_variable(engine, "score", 3.0)
+	var text: WeavlyModel.TextExpression = WeavlyModel.TextExpression.new(
+		["chime_", _id("score"), ".ogg"]
+	)
+	assert_that(_eval(text, engine)).is_equal("chime_3.ogg")
+
+
+func test_text_expression_leaves_out_a_failing_segment() -> void:
+	var text: WeavlyModel.TextExpression = WeavlyModel.TextExpression.new(
+		["Hi ", _id("missing"), "!"]
+	)
+	assert_that(_eval(text)).is_equal("Hi !")
+	assert_logged(["Variable 'missing' isn't defined."])
+
+
 # =====================
 # Identifier lookup
 # =====================
@@ -93,7 +110,7 @@ func test_identifier_string_variable() -> void:
 	assert_that(_eval(_id("name"), engine)).is_equal("Alice")
 
 
-func test_identifier_flag_variable() -> void:
+func test_identifier_bool_variable() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	declare_variable(engine, "active", true)
 	assert_that(_eval(_id("active"), engine)).is_equal(true)
@@ -453,7 +470,7 @@ func test_function_with_a_failing_argument_reports_once() -> void:
 
 func test_reading_an_undefined_extern_names_it_extern() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	var variable: WeavlyModel.FlagVariable = WeavlyModel.FlagVariable.new("brave", false)
+	var variable: WeavlyModel.BoolVariable = WeavlyModel.BoolVariable.new("brave", false)
 	variable.extern = true
 	declare(engine, variable)
 	assert_bool(WeavlyExpressionEvaluator.is_error(_eval(_id("brave"), engine))).is_true()
@@ -485,7 +502,7 @@ func test_false_or_evaluates_the_right_side() -> void:
 	assert_logged(["Variable 'missing' isn't defined."])
 
 
-func test_a_left_side_that_is_not_a_flag_is_reported_before_the_right_side_runs() -> void:
+func test_a_left_side_that_is_not_a_bool_is_reported_before_the_right_side_runs() -> void:
 	var result: Variant = _eval(_bin("or", _num(1.0), _id("missing")))
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Can't use operator 'or' on value of type 'float'."])

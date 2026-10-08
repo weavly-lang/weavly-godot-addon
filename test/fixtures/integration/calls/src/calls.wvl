@@ -1,12 +1,12 @@
 @env
 func trust(from: string, to: node): number
-func mood(): flag
+func mood(): bool
 func greeting(name: string): string
 func next_scene(): node
 func region(): pool
 func partner(): slot
-command shout(text: string, volume: number)
-command wave()
+func shout(text: string, volume: number)
+func wave()
 meta cost: number = 1
 var score: number = 0
 var scene: node = start
@@ -27,11 +27,12 @@ cost: trust("ann", start) + 1
 Happy.
 @endif
 {greeting("Ann")} is here.
-@shout "hey", $score
-@wave
+@do shout("hey", $score)
+@do wave()
 @set $scene = next_scene()
 @set $area = region()
 @set $seat = partner()
+@do mood()
 Done.
 @endnode
 

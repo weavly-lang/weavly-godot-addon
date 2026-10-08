@@ -4,8 +4,8 @@
 It's 21:04.
 >stranger: hello?
 @options
-@option "what happened?" -> happened
-@option "going to sleep" -> sleep
+@option "what happened?": @jump happened
+@option "going to sleep": @jump sleep
 @endoptions
 @endnode
 
@@ -31,7 +31,7 @@ It's late.
 @node formatted
 >mara: Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]" -> sleep
+@option "[i]Wave[/i]": @jump sleep
 @endoptions
 @endnode
 
@@ -51,12 +51,12 @@ available: false
 @endnode
 
 @env
-func open(): flag
+func open(): bool
 @endenv
 
 @node door
 @options
-@option [ open() ] "Open" -> sleep
-@option "Stay" -> sleep
+@option [ open() ] "Open": @jump sleep
+@option "Stay": @jump sleep
 @endoptions
 @endnode

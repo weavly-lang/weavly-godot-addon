@@ -1,24 +1,24 @@
 @env
 var gold: number = 0
 var drinks: number = 0
-var left: flag = false
-command header(title: string, gold: number)
+var left: bool = false
+func header(title: string, gold: number)
 @endenv
 
 @node tavern
 >Innkeeper: Welcome, you have {$gold} gold.
-@header "Tavern", $gold + 1
+@do header("Tavern", $gold + 1)
 @increase $gold 5
 @options
 @option "Buy a drink"
     @increase $drinks
     The drink is cold.
     @jump bar
-@option [ $gold > 100 ] "Rent a room" -> room
+@option [ $gold > 100 ] "Rent a room": @jump room
 @endoptions
 The fire crackles.
 @options
-@option "Leave": @setflag $left
+@option "Leave": @set $left = true
 @endoptions
 @continue "Look around"
 @endnode
@@ -26,7 +26,7 @@ The fire crackles.
 @node bar
 >Barkeep: {$drinks} drinks so far.
 @options
-@option "Another" -> bar
+@option "Another": @jump bar
 @endoptions
 @endnode
 

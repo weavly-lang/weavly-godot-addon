@@ -1,11 +1,11 @@
 @env
 meta cost: number = 1
 meta tag: string = "plain"
-meta urgent: flag = false
+meta urgent: bool = false
 var gold: number = 5
 var paid: number = 0
 var rolled: number = 0
-extern var mood: flag
+extern var mood: bool
 extern var bonus: number
 pool market
 slot table
@@ -16,10 +16,10 @@ slot table
 pool: market
 slot: table
 cost: 2 + $gold
-available: $gold >= meta(cost)
+available: $gold >= .cost
 @endmeta
-@set $paid = meta(cost)
-@if meta(stall, tag) == "fresh"
+@set $paid = .cost
+@if stall.tag == "fresh"
 Fresh.
 @endif
 @endnode
@@ -32,7 +32,7 @@ Plain.
 @meta
 cost: random(1, 1000)
 @endmeta
-@set $rolled = meta(cost)
+@set $rolled = .cost
 @endnode
 
 @node once_only

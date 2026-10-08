@@ -2,7 +2,7 @@
 class_name WeavlyProjectIndex
 extends RefCounted
 
-enum Kind { NODE, POOL, SLOT, VARIABLE, META_KEY, FUNCTION, COMMAND }
+enum Kind { NODE, POOL, SLOT, VARIABLE, META_KEY, FUNCTION }
 
 const _DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"var": Kind.VARIABLE,
@@ -10,11 +10,10 @@ const _DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"slot": Kind.SLOT,
 	"meta": Kind.META_KEY,
 	"func": Kind.FUNCTION,
-	"command": Kind.COMMAND,
 }
 
 static var _declaration_regex: RegEx = RegEx.create_from_string(
-	"^\\s*(?:extern\\s+)?(var|pool|slot|meta|func|command)\\s+([A-Za-z_]\\w*)"
+	"^\\s*(?:extern\\s+)?(var|pool|slot|meta|func)\\s+([A-Za-z_]\\w*)"
 )
 static var _group_entry_regex: RegEx = RegEx.create_from_string("^\\s*(pool|slot)\\s*:([^#]*)")
 static var _id_regex: RegEx = RegEx.create_from_string("^[A-Za-z_]\\w*$")

@@ -2,9 +2,9 @@
 var energy: number = 5
 var price: number = 3
 var paid: number = 0
-var found: flag = false
+var found: bool = false
 meta cost: number = 1
-func lucky(): flag
+func lucky(): bool
 pool camp
 @endenv
 
@@ -23,16 +23,16 @@ Morning.
 
 @node hack
 @meta
-label: "Hack (-{meta(cost)} energy)"
-label_unavailable: "Hack (needs {meta(cost)} energy)"
+label: "Hack (-{.cost} energy)"
+label_unavailable: "Hack (needs {.cost} energy)"
 label_teaser: "Something blinks"
 when: $found
-available: $energy >= meta(cost)
+available: $energy >= .cost
 cost: $price
 @endmeta
 @set $price = 10
-@set $energy = $energy - meta(cost)
-@set $paid = meta(cost)
+@set $energy = $energy - .cost
+@set $paid = .cost
 Hacked.
 @endnode
 

@@ -1,6 +1,6 @@
 @node menu
 @options
-@option "Go on" -> after
+@option "Go on": @jump after
 @endoptions
 @endnode
 
@@ -18,15 +18,15 @@ Nothing to choose
 @endnode
 
 @env
-func open(): flag
+func open(): bool
 @endenv
 
 @node door
 @options
 @option [ open() ] "Open"
     The door opens.
-@option "Roll {random(1, 6)}" -> after
-@option "Leave" -> after
+@option "Roll {random(1, 6)}": @jump after
+@option "Leave": @jump after
 @endoptions
 @endnode
 

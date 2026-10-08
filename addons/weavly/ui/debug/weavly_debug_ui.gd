@@ -169,7 +169,7 @@ func _build_variables() -> void:
 
 
 func _create_variable_editor(id: String, declaration: WeavlyModel.Variable) -> Control:
-	if declaration is WeavlyModel.FlagVariable:
+	if declaration is WeavlyModel.BoolVariable:
 		var check: CheckBox = CheckBox.new()
 		check.focus_mode = Control.FOCUS_NONE
 		check.toggled.connect(

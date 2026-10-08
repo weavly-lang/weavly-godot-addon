@@ -34,8 +34,8 @@ func before_test() -> void:
 	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
-	_engine.register_command(
-		"header", func(title: String) -> void: _events.append("command:header %s" % str([title]))
+	_engine.register_function(
+		"header", func(title: String) -> void: _events.append("do:header %s" % str([title]))
 	)
 	_ui.hand_empty.connect(func() -> void: _events.append("hand_empty"))
 	add_child(_ui)
@@ -143,9 +143,9 @@ func test_an_empty_pool_emits_hand_empty_and_hides() -> void:
 	assert_array(_cards()).is_empty()
 
 
-func test_commands_are_emitted() -> void:
+func test_do_statements_are_emitted() -> void:
 	_ui.deal(["city"])
-	assert_array(_events).is_equal(['command:header ["Market"]'])
+	assert_array(_events).is_equal(['do:header ["Market"]'])
 
 
 func test_every_card_is_chosen_through_its_option_buttons() -> void:

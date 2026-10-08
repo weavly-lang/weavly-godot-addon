@@ -72,11 +72,11 @@ static func peek_pool(
 # label_unavailable, and either is hidden without its label. A failing entry counts as false.
 static func display_of(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode) -> Display:
 	if not _is_true(WeavlyMetaReader.read_node(engine, node, WeavlyDeserializer.KEY_WHEN)):
-		if _has_text(node, WeavlyDeserializer.KEY_LABEL_TEASER):
+		if _writes(node, WeavlyDeserializer.KEY_LABEL_TEASER):
 			return Display.TEASER
 		return Display.HIDDEN_INELIGIBLE
 	if not _is_true(WeavlyMetaReader.read_node(engine, node, WeavlyDeserializer.KEY_AVAILABLE)):
-		if _has_text(node, WeavlyDeserializer.KEY_LABEL_UNAVAILABLE):
+		if _writes(node, WeavlyDeserializer.KEY_LABEL_UNAVAILABLE):
 			return Display.UNAVAILABLE
 		return Display.HIDDEN_UNAVAILABLE
 	return Display.AVAILABLE
@@ -86,8 +86,8 @@ static func _is_true(value: Variant) -> bool:
 	return value is bool and value
 
 
-static func _has_text(node: WeavlyModel.WeavlyNode, key: String) -> bool:
-	return node.meta != null and node.meta.texts.has(key)
+static func _writes(node: WeavlyModel.WeavlyNode, key: String) -> bool:
+	return node.meta != null and node.meta.entries.has(key)
 
 
 static func _ids(candidates: Array[Candidate]) -> Array[String]:

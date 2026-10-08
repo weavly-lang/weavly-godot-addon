@@ -1,10 +1,10 @@
 @env
 var score: number = 0
 var player_name: string = "Hero"
-var has_key: flag = false
+var has_key: bool = false
 var choice_visits: number = 0
-var been_to_start: flag = false
-var names_match: flag = false
+var been_to_start: bool = false
+var names_match: bool = false
 var last_scene: node = start
 var region: pool = city
 var partner: slot = bob
@@ -16,7 +16,7 @@ pool camp
 slot bob
 meta toll: number = 1
 func bonus(points: number): number
-command fade_in()
-command play_sound(file: string)
-command log(value: number, count: number)
+func fade_in()
+func play_sound(file: string)
+func log(value: number, count: number)
 @endenv

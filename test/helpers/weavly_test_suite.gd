@@ -10,7 +10,7 @@ func declare_variable(engine: WeavlyEngine, id: String, value: Variant) -> void:
 	elif value is String:
 		variable = WeavlyModel.StringVariable.new(id, value)
 	else:
-		variable = WeavlyModel.FlagVariable.new(id, value)
+		variable = WeavlyModel.BoolVariable.new(id, value)
 	declare(engine, variable)
 
 
@@ -29,7 +29,8 @@ func inline_option(
 		condition, ""
 	)
 	var option: WeavlyModel.Option = WeavlyModel.Option.new()
-	option.item = WeavlyModel.InlineOptionItem.new(expression, [text], body)
+	var label: WeavlyModel.StringLiteral = WeavlyModel.StringLiteral.new(text)
+	option.item = WeavlyModel.InlineOptionItem.new(expression, label, body)
 	option.text = text
 	return option
 

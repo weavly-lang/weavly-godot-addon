@@ -141,9 +141,9 @@ func test_a_wrong_write_reaches_runtime_error() -> void:
 		func(message: String, _source: String, _line: int) -> void: errors.append(message)
 	)
 	_engine.set_variable("has_key", 1.0)
-	assert_logged(["Can't set variable 'has_key' to a value of type 'float' because it's a flag."])
+	assert_logged(["Can't set variable 'has_key' to a value of type 'float' because it's a bool."])
 	assert_array(errors).is_equal(
-		["Can't set variable 'has_key' to a value of type 'float' because it's a flag."]
+		["Can't set variable 'has_key' to a value of type 'float' because it's a bool."]
 	)
 
 
@@ -285,7 +285,7 @@ func test_loading_clamps_numbers_and_resets_values_of_the_wrong_type() -> void:
 	assert_that(_engine.get_variable("score")).is_equal(10.0)
 	assert_that(_engine.get_variable("flag")).is_equal(false)
 	assert_logged(
-		[], ["Saved variable 'flag' is skipped because it holds a 'String' instead of a flag."]
+		[], ["Saved variable 'flag' is skipped because it holds a 'String' instead of a bool."]
 	)
 
 
