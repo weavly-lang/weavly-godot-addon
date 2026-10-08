@@ -15,6 +15,11 @@ func call_function(name: String, args: Array) -> Variant:
 	if not callable.is_valid():
 		engine.report_error(MISSING_CALLABLE % name)
 		return WeavlyExpressionEvaluator.ERROR
+	var signature: WeavlyModel.Signature = engine.story.get_function(name)
+	if signature != null and signature.return_type == "":
+		# Using the result of a function that awaits is a script error.
+		callable.callv(args)
+		return null
 	return callable.callv(args)
 
 

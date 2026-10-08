@@ -666,6 +666,23 @@ func test_releasing_inside_the_function_continues_the_same_step() -> void:
 	assert_that(_narration_log).is_equal(["After"])
 
 
+func test_a_do_function_that_awaits_holds_without_a_script_error() -> void:
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
+	_connect_content_log(engine)
+	engine.register_function(
+		"shake",
+		func() -> void:
+			engine.hold()
+			await get_tree().process_frame
+			engine.release()
+	)
+	engine.start("start")
+	assert_that(_narration_log).is_empty()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_that(_narration_log).is_equal(["After"])
+
+
 func test_a_hold_while_a_line_waits_does_not_advance_on_release() -> void:
 	var engine: WeavlyEngine = _make_holding_engine()
 	engine.start("start")
