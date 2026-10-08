@@ -3,9 +3,7 @@ extends WeavlyTestSuite
 # Engine wiring every starter UI shares, checked across all of them.
 
 const FIXTURE = "res://test/fixtures/ui/debug/build"
-const SERVICES: Array[String] = [
-	"character", "command", "count", "image", "line", "variable", "video"
-]
+const SERVICES: Array[String] = ["character", "command", "count", "line", "variable"]
 const SCENES: Array[PackedScene] = [
 	preload("res://addons/weavly/ui/novel/weavly_novel_ui.tscn"),
 	preload("res://addons/weavly/ui/passage/weavly_passage_ui.tscn"),

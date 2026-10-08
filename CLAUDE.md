@@ -38,7 +38,6 @@ addons/weavly/runtime/
   models/
     weavly_model.gd                 # all model types as inner classes (WeavlyModel.NarrationLine, .MatchBlock, ...)
   services/
-    weavly_media_index.gd           # shared path index + group regex for image/video services
     interfaces/                     # abstract contracts, one per service
     implementations/                # default_* implementations
   resources/                        # Godot Resources: WeavlyCharacter
@@ -57,8 +56,7 @@ addons/weavly/ui/
 
 test/                               # gdUnit4 tests: unit/ mirrors runtime/ and editor/, ui/ covers addons/weavly/ui/, integration/, fixtures/, helpers/
                                     # fixtures with a src/ folder are compiler-built, see above
-ci/                                 # export smoke test: export_smoke/ is a small game CI exports,
-                                    # external_media/ is copied next to the exported binary
+ci/                                 # export smoke test: export_smoke/ is a small game CI exports
 tools/mutation/                     # mutate.py: mutation testing, see its docstring
 ```
 
