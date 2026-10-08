@@ -7,26 +7,13 @@ extends WeavlyTestSuite
 # =====================
 
 
-class _SpyCommandService:
-	extends WeavlyCommandService
-	var command_calls: Array[WeavlyModel.CommandStatement] = []
-
-	func register_command(_name: String, _callable: Callable) -> void:
-		pass
-
-	func execute_command(command: WeavlyModel.CommandStatement) -> void:
-		command_calls.append(command)
-
-	func get_unregistered() -> Array[String]:
-		return []
-
-
 class _RecordingEngine:
 	extends "res://test/helpers/fake_engine.gd"
 	var added_statements: Array[Array] = []
 	var added_groups: Array[Array] = []
 	var offered: Array[Array] = []
 	var reached_lines: Array[WeavlyModel.LineStatement] = []
+	var done: Array[WeavlyModel.DoStatement] = []
 
 	func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 		added_statements.append(statements)
@@ -40,21 +27,20 @@ class _RecordingEngine:
 	func reach_line(line: WeavlyModel.LineStatement) -> void:
 		reached_lines.append(line)
 
+	func run_do(statement: WeavlyModel.DoStatement) -> void:
+		done.append(statement)
+
 
 # =====================
 # Setup
 # =====================
 
 var _engine: _RecordingEngine
-var _command: _SpyCommandService
 
 
 func before_test() -> void:
 	_engine = auto_free(_RecordingEngine.new())
 	add_child(_engine)
-	_command = _SpyCommandService.new()
-	_command.initialize(_engine)
-	_engine.command_service = _command
 
 
 # =====================
@@ -118,22 +104,22 @@ func test_a_character_line_is_passed_on_filled() -> void:
 
 
 # =====================
-# Delegation: command
+# Delegation: do
 # =====================
 
 
-func test_command_statement_delegates_a_filled_copy_to_command_service() -> void:
-	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new("cmd")
-	command.line = 4
-	WeavlyStatementExecutor.execute_statement(command, _engine)
-	assert_that(_command.command_calls.size()).is_equal(1)
-	assert_that(_command.command_calls[0]).is_not_same(command)
-	assert_that(_command.command_calls[0].id).is_equal("cmd")
-	assert_int(_command.command_calls[0].line).is_equal(4)
-	assert_that(_command.command_calls[0].values).is_empty()
+func test_do_statement_runs_a_filled_copy() -> void:
+	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("wave")
+	do.line = 4
+	WeavlyStatementExecutor.execute_statement(do, _engine)
+	assert_that(_engine.done.size()).is_equal(1)
+	assert_that(_engine.done[0]).is_not_same(do)
+	assert_that(_engine.done[0].id).is_equal("wave")
+	assert_int(_engine.done[0].line).is_equal(4)
+	assert_that(_engine.done[0].values).is_empty()
 
 
-func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
+func test_do_arguments_are_evaluated_when_the_statement_runs() -> void:
 	declare(_engine, WeavlyModel.NumberVariable.new("volume", 0.8, null, null))
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"),
@@ -144,25 +130,21 @@ func test_command_arguments_are_evaluated_when_the_command_runs() -> void:
 			"max", "", [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
 		),
 	]
-	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
-		"play_sound", args
-	)
-	WeavlyStatementExecutor.execute_statement(command, _engine)
+	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("play_sound", args)
+	WeavlyStatementExecutor.execute_statement(do, _engine)
 	_engine.set_variable("volume", 0.2)
-	WeavlyStatementExecutor.execute_statement(command, _engine)
-	assert_that(_command.command_calls[0].values).is_equal(["door", 0.4, 2.0])
-	assert_that(_command.command_calls[1].values).is_equal(["door", 0.1, 2.0])
-	assert_that(command.values).is_empty()
+	WeavlyStatementExecutor.execute_statement(do, _engine)
+	assert_that(_engine.done[0].values).is_equal(["door", 0.4, 2.0])
+	assert_that(_engine.done[1].values).is_equal(["door", 0.1, 2.0])
+	assert_that(do.values).is_empty()
 
 
-func test_command_with_a_failing_argument_is_skipped() -> void:
+func test_do_with_a_failing_argument_is_skipped() -> void:
 	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
-	var command: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
-		"play_sound", args
-	)
-	WeavlyStatementExecutor.execute_statement(command, _engine)
+	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("play_sound", args)
+	WeavlyStatementExecutor.execute_statement(do, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
-	assert_that(_command.command_calls).is_empty()
+	assert_that(_engine.done).is_empty()
 
 
 # =====================
@@ -316,7 +298,8 @@ func test_match_all_with_no_matches_passes_empty_groups() -> void:
 
 
 func _inline_item(condition: bool, text: String) -> WeavlyModel.InlineOptionItem:
-	return WeavlyModel.InlineOptionItem.new(_bool_expr(condition), [text], _body(text))
+	var label: WeavlyModel.StringLiteral = WeavlyModel.StringLiteral.new(text)
+	return WeavlyModel.InlineOptionItem.new(_bool_expr(condition), label, _body(text))
 
 
 func test_option_block_offers_the_inline_options_whose_condition_holds() -> void:

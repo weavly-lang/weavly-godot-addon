@@ -11,7 +11,6 @@ const KIND_NAMES: Dictionary[WeavlyProjectIndex.Kind, String] = {
 	WeavlyProjectIndex.Kind.VARIABLE: "variable",
 	WeavlyProjectIndex.Kind.META_KEY: "meta key",
 	WeavlyProjectIndex.Kind.FUNCTION: "function",
-	WeavlyProjectIndex.Kind.COMMAND: "command",
 }
 
 

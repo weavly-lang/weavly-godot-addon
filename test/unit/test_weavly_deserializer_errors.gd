@@ -280,7 +280,7 @@ func _inline(meta: Dictionary) -> Dictionary:
 
 
 func _label(text: String) -> Dictionary:
-	return {"line": 3.0, "value": [text]}
+	return {"line": 3.0, "value": text}
 
 
 func test_option_block_with_a_failing_condition_is_dropped() -> void:
@@ -368,14 +368,14 @@ func test_a_failing_statement_inside_a_case_body_keeps_the_block() -> void:
 	assert_logged(["Unknown statement type 'bogus' at nodes[0].body[0].cases[0].body[0]"])
 
 
-func test_command_with_a_failing_argument_is_dropped() -> void:
-	var body: Array = _body_of({"type": "command", "id": "shake", "args": [1.0, {"bogus": 1}]})
+func test_do_with_a_failing_argument_is_dropped() -> void:
+	var body: Array = _body_of({"type": "do", "id": "shake", "args": [1.0, {"bogus": 1}]})
 	assert_that(body.size()).is_equal(1)
 	assert_logged(["Unknown expression type at nodes[0].body[0].args[1]"])
 
 
-func test_command_without_args_is_dropped() -> void:
-	var body: Array = _body_of({"type": "command", "id": "shake", "text": "strong"})
+func test_do_without_args_is_dropped() -> void:
+	var body: Array = _body_of({"type": "do", "id": "shake", "text": "strong"})
 	assert_that(body.size()).is_equal(1)
 	assert_logged(["Missing required field 'args' at nodes[0].body[0]"])
 
@@ -412,10 +412,12 @@ func _node_with_meta(meta: Variant) -> Dictionary:
 	return node_data
 
 
-func test_a_label_that_is_not_text_drops_the_node() -> void:
-	var data: Dictionary = _build([_node_with_meta({"label": {"line": 2.0, "value": "Bob"}})])
+func test_a_label_with_a_failing_expression_drops_the_node() -> void:
+	var data: Dictionary = _build(
+		[_node_with_meta({"label": {"line": 2.0, "value": {"text": ["a", {"bogus": 1}]}}})]
+	)
 	assert_array(WeavlyDeserializer.read_nodes(data)).is_empty()
-	assert_logged(["Required field 'value' has wrong type at nodes[0].meta.label"])
+	assert_logged(["Unknown expression type at nodes[0].meta.label.value.text[1]"])
 
 
 func test_a_pool_name_that_is_not_a_string_drops_the_node() -> void:
@@ -439,7 +441,7 @@ func test_a_meta_key_with_a_default_of_the_wrong_type_is_skipped() -> void:
 		"meta_keys":
 		[
 			{"type": "number", "name": "cost", "value": "1"},
-			{"type": "flag", "name": "urgent", "value": true},
+			{"type": "bool", "name": "urgent", "value": true},
 		]
 	}
 	assert_dict(WeavlyDeserializer.read_meta_keys(data)).is_equal({"urgent": true})
@@ -464,10 +466,12 @@ func test_a_function_with_an_unknown_return_type_is_skipped() -> void:
 	assert_logged(["Unknown type 'list' at functions[0].returns"])
 
 
-func test_a_command_with_an_unknown_parameter_type_is_skipped() -> void:
-	var data: Dictionary = {"commands": [{"name": "c", "params": [{"name": "x", "type": "list"}]}]}
-	assert_array(WeavlyDeserializer.read_commands(data)).is_empty()
-	assert_logged(["Unknown type 'list' at commands[0].params[0]"])
+func test_a_function_with_an_unknown_parameter_type_is_skipped() -> void:
+	var data: Dictionary = {
+		"functions": [{"name": "f", "params": [{"name": "x", "type": "list"}]}]
+	}
+	assert_array(WeavlyDeserializer.read_functions(data)).is_empty()
+	assert_logged(["Unknown type 'list' at functions[0].params[0]"])
 
 
 func test_env_without_pools_is_reported() -> void:

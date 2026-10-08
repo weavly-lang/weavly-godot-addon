@@ -19,8 +19,8 @@ static func execute_statement(statement: WeavlyModel.Statement, engine: WeavlyEn
 		execute_detour_statement(statement, engine)
 	elif statement is WeavlyModel.FinishStatement:
 		execute_finish_statement(statement, engine)
-	elif statement is WeavlyModel.CommandStatement:
-		execute_command_statement(statement, engine)
+	elif statement is WeavlyModel.DoStatement:
+		execute_do_statement(statement, engine)
 	elif statement is WeavlyModel.MatchBlock:
 		execute_match_block(statement, engine)
 	elif statement is WeavlyModel.OptionBlock:
@@ -91,18 +91,16 @@ static func execute_finish_statement(
 	engine.finish()
 
 
-static func execute_command_statement(
-	command_statement: WeavlyModel.CommandStatement, engine: WeavlyEngine
+static func execute_do_statement(
+	do_statement: WeavlyModel.DoStatement, engine: WeavlyEngine
 ) -> void:
-	var filled: WeavlyModel.CommandStatement = WeavlyTextUtils.fill_command(
-		command_statement, engine
-	)
+	var filled: WeavlyModel.DoStatement = WeavlyTextUtils.fill_do(do_statement, engine)
 	if filled == null:
 		return
 	if engine.is_rendering():
 		engine.add_rendered(filled)
 	else:
-		engine.command_service.execute_command(filled)
+		engine.run_do(filled)
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:

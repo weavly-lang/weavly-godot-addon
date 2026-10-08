@@ -6,7 +6,7 @@ const ANSI_ESCAPE_PATTERN = "\\x1b\\[[0-9;]*m"
 const LOCATION_PATTERN = "(?m)^(\\S.*?):(\\d+)(?::(\\d+))?: %s: (.*)$"
 const VERSION_PATTERN = "(?m)^weavly (\\d+)\\.(\\d+)\\.(\\d+)"
 # In 0.x a minor release can change the output, so only this one is accepted.
-const SUPPORTED_VERSION = "0.5"
+const SUPPORTED_VERSION = "0.6"
 const SOURCE_DIR = "src"
 
 static var _ansi_escape_regex: RegEx = RegEx.create_from_string(ANSI_ESCAPE_PATTERN)

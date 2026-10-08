@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install weavly==0.5.0
+      - run: pip install weavly==0.6.0
       - name: Rebuild the fixtures from their .wvl sources
         run: |
           for src in $(find test/fixtures ci/export_smoke -type d -name src | sort); do

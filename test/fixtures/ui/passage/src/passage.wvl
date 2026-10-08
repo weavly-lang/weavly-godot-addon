@@ -1,29 +1,29 @@
 @env
 var gold: number = 0
-command header(title: string)
-func open(): flag
+func header(title: string)
+func open(): bool
 @endenv
 
 @node tavern
 >guide: Welcome, you have {$gold} gold.
-@header "Tavern"
+@do header("Tavern")
 @options
 @option "Buy a drink"
     @increase $gold 1
     The drink is cold.
     @jump bar
-@option "Leave" -> street
+@option "Leave": @jump street
 @endoptions
 >Stranger: Mind the fire.
 @options
-@option "Warm up" -> fire
+@option "Warm up": @jump fire
 @endoptions
 @endnode
 
 @node bar
 The barkeep nods.
 @options
-@option "Back" -> tavern
+@option "Back": @jump tavern
 @endoptions
 @endnode
 
@@ -38,13 +38,13 @@ You warm up.
 @node formatted
 Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]" -> tavern
+@option "[i]Wave[/i]": @jump tavern
 @endoptions
 @endnode
 
 @node door
 @options
-@option [ open() ] "Open" -> street
-@option "Stay" -> street
+@option [ open() ] "Open": @jump street
+@option "Stay": @jump street
 @endoptions
 @endnode

@@ -63,7 +63,7 @@ static func find_character(
 	return null
 
 
-# Adds a label per line and a choice list per option block, and runs each command.
+# Adds a label per line and a choice list per option block, and runs each do statement.
 static func add_entries(
 	parent: Node,
 	entries: Array[WeavlyModel.Statement],
@@ -74,8 +74,8 @@ static func add_entries(
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.LineStatement:
 			parent.add_child(create_line_label(entry, engine))
-		elif entry is WeavlyModel.CommandStatement:
-			engine.run_command(entry)
+		elif entry is WeavlyModel.DoStatement:
+			engine.run_do(entry)
 		elif entry is WeavlyModel.OptionBlock:
 			var choices: WeavlyChoiceList = WeavlyChoiceList.new()
 			choices.links = links

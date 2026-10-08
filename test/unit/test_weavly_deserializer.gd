@@ -100,7 +100,7 @@ func test_inline_options_read_label_condition_and_body() -> void:
 		"line": 3.0,
 		"meta":
 		{
-			"label": {"line": 3.0, "value": ["Pay ", {"variable": "gold"}]},
+			"label": {"line": 3.0, "value": {"text": ["Pay ", {"variable": "gold"}]}},
 			"when": {"line": 3.0, "value": {"variable": "rich"}},
 		},
 		"body": [{"type": "finish", "line": 3.0}],
@@ -108,17 +108,18 @@ func test_inline_options_read_label_condition_and_body() -> void:
 	var plain: Dictionary = {
 		"type": "inline",
 		"line": 4.0,
-		"meta": {"label": {"line": 4.0, "value": ["Leave"]}},
+		"meta": {"label": {"line": 4.0, "value": "Leave"}},
 		"body": []
 	}
 	var stmt: WeavlyModel.Statement = _read_single({"type": "option", "items": [guarded, plain]})
 	var options: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
 	assert_object(options[0]).is_instanceof(WeavlyModel.InlineOptionItem)
-	assert_that(options[0].segments[0]).is_equal("Pay ")
-	assert_object(options[0].segments[1]).is_instanceof(WeavlyModel.Identifier)
+	var label: WeavlyModel.TextExpression = options[0].label as WeavlyModel.TextExpression
+	assert_that(label.segments[0]).is_equal("Pay ")
+	assert_object(label.segments[1]).is_instanceof(WeavlyModel.Identifier)
 	assert_object(options[0].condition).is_instanceof(WeavlyModel.Identifier)
 	assert_object(options[0].body[0]).is_instanceof(WeavlyModel.FinishStatement)
-	assert_that(options[1].segments).is_equal(["Leave"])
+	assert_str((options[1].label as WeavlyModel.StringLiteral).value).is_equal("Leave")
 	assert_object(options[1].condition).is_instanceof(WeavlyModel.TrueExpression)
 	assert_that(options[1].body).is_empty()
 
@@ -158,24 +159,32 @@ func test_finish_statement() -> void:
 	assert_object(stmt).is_instanceof(WeavlyModel.FinishStatement)
 
 
-func test_command_statement() -> void:
+func test_do_statement() -> void:
 	var data: Dictionary = {
-		"type": "command", "id": "play_sound", "args": ["door", {"variable": "volume"}]
+		"type": "do", "id": "play_sound", "args": ["door", {"variable": "volume"}]
 	}
 	var stmt: WeavlyModel.Statement = _read_single(data)
-	assert_object(stmt).is_instanceof(WeavlyModel.CommandStatement)
-	var cmd: WeavlyModel.CommandStatement = stmt as WeavlyModel.CommandStatement
-	assert_that(cmd.id).is_equal("play_sound")
-	assert_that(cmd.args.size()).is_equal(2)
-	assert_object(cmd.args[0]).is_instanceof(WeavlyModel.StringLiteral)
-	assert_object(cmd.args[1]).is_instanceof(WeavlyModel.Identifier)
+	assert_object(stmt).is_instanceof(WeavlyModel.DoStatement)
+	var do: WeavlyModel.DoStatement = stmt as WeavlyModel.DoStatement
+	assert_that(do.id).is_equal("play_sound")
+	assert_that(do.args.size()).is_equal(2)
+	assert_object(do.args[0]).is_instanceof(WeavlyModel.StringLiteral)
+	assert_object(do.args[1]).is_instanceof(WeavlyModel.Identifier)
 
 
-func test_command_statement_without_arguments() -> void:
-	var stmt: WeavlyModel.Statement = _read_single(
-		{"type": "command", "id": "fade_in", "args": []}
+func test_do_statement_without_arguments() -> void:
+	var stmt: WeavlyModel.Statement = _read_single({"type": "do", "id": "fade_in", "args": []})
+	assert_that((stmt as WeavlyModel.DoStatement).args).is_empty()
+
+
+func test_an_interpolated_string_is_a_text_expression() -> void:
+	var expression: WeavlyModel.WeavlyExpression = WeavlyDeserializer.read_expression(
+		{"text": ["chime_", {"variable": "score"}, ".ogg"]}, "test"
 	)
-	assert_that((stmt as WeavlyModel.CommandStatement).args).is_empty()
+	var text: WeavlyModel.TextExpression = expression as WeavlyModel.TextExpression
+	assert_that(text.segments[0]).is_equal("chime_")
+	assert_object(text.segments[1]).is_instanceof(WeavlyModel.Identifier)
+	assert_that(text.segments[2]).is_equal(".ogg")
 
 
 func test_set_statement() -> void:
@@ -255,14 +264,14 @@ func test_variable_declarations() -> void:
 		[
 			{"name": "score", "type": "number", "value": 0.0},
 			{"name": "greeting", "type": "string", "value": "hello"},
-			{"name": "active", "type": "flag", "value": false},
+			{"name": "active", "type": "bool", "value": false},
 		]
 	}
 	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(data)
 	assert_that(vars.size()).is_equal(3)
 	assert_object(vars[0]).is_instanceof(WeavlyModel.NumberVariable)
 	assert_object(vars[1]).is_instanceof(WeavlyModel.StringVariable)
-	assert_object(vars[2]).is_instanceof(WeavlyModel.FlagVariable)
+	assert_object(vars[2]).is_instanceof(WeavlyModel.BoolVariable)
 
 
 func test_node_pool_and_slot_variables_hold_names() -> void:
@@ -335,7 +344,7 @@ func test_a_declared_function_call_without_args_is_rejected() -> void:
 	assert_logged(["Missing required field 'args' at test"])
 
 
-func test_functions_and_commands_are_read_from_env() -> void:
+func test_functions_are_read_from_env_with_or_without_a_return_type() -> void:
 	var data: Dictionary = {
 		"functions":
 		[
@@ -343,18 +352,17 @@ func test_functions_and_commands_are_read_from_env() -> void:
 				"name": "trust",
 				"params": [{"name": "from", "type": "string"}, {"name": "to", "type": "node"}],
 				"returns": "number",
-			}
+			},
+			{"name": "shake", "params": []},
 		],
-		"commands": [{"name": "shake", "params": []}],
 	}
 	var functions: Array[WeavlyModel.Signature] = WeavlyDeserializer.read_functions(data)
 	assert_str(functions[0].name).is_equal("trust")
 	assert_array(functions[0].param_types).is_equal(["string", "node"])
 	assert_str(functions[0].return_type).is_equal("number")
-	var commands: Array[WeavlyModel.Signature] = WeavlyDeserializer.read_commands(data)
-	assert_str(commands[0].name).is_equal("shake")
-	assert_array(commands[0].param_types).is_empty()
-	assert_str(commands[0].return_type).is_empty()
+	assert_str(functions[1].name).is_equal("shake")
+	assert_array(functions[1].param_types).is_empty()
+	assert_str(functions[1].return_type).is_empty()
 
 
 func test_expression_call_without_node_is_rejected() -> void:
@@ -427,7 +435,7 @@ func test_extern_declarations_start_at_the_default_of_their_type() -> void:
 		[
 			{"type": "number", "name": "gold", "extern": true},
 			{"type": "string", "name": "title", "extern": true},
-			{"type": "flag", "name": "brave", "extern": true},
+			{"type": "bool", "name": "brave", "extern": true},
 		]
 	}
 	var variables: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(
@@ -496,7 +504,7 @@ func test_option_and_random_case_lines_are_read() -> void:
 			{
 				"type": "inline",
 				"line": 5.0,
-				"meta": {"label": {"line": 5.0, "value": ["a"]}},
+				"meta": {"label": {"line": 5.0, "value": "a"}},
 				"body": []
 			}
 		]
@@ -526,12 +534,12 @@ func test_meta_is_read_with_its_lines() -> void:
 		"priority": {"line": 5.0, "value": 2.0},
 		"weight": {"line": 6.0, "value": {"variable": "w"}},
 		"cost": {"line": 7.0, "value": "cheap"},
-		"label": {"line": 8.0, "value": ["Buy ", {"variable": "item"}]},
+		"label": {"line": 8.0, "value": {"text": ["Buy ", {"variable": "item"}]}},
 	}
 	var meta: WeavlyModel.NodeMeta = WeavlyDeserializer.read_nodes(_build([node_data]))[0].meta
 	assert_array(meta.pools).is_equal(["city", "night"])
 	assert_array(meta.slots).is_equal(["bob"])
-	assert_array(meta.entries.keys()).is_equal(["when", "priority", "weight", "cost"])
+	assert_array(meta.entries.keys()).is_equal(["when", "priority", "weight", "cost", "label"])
 	assert_object(meta.entries["when"].expression).is_instanceof(WeavlyModel.TrueExpression)
 	assert_int(meta.entries["when"].line).is_equal(4)
 	assert_that((meta.entries["priority"].expression as WeavlyModel.Number).value).is_equal(2.0)
@@ -540,9 +548,8 @@ func test_meta_is_read_with_its_lines() -> void:
 		"cheap"
 	)
 	assert_int(meta.entries["cost"].line).is_equal(7)
-	assert_array(meta.texts.keys()).is_equal(["label"])
-	assert_that(meta.texts["label"].segments[0]).is_equal("Buy ")
-	assert_int(meta.texts["label"].line).is_equal(8)
+	assert_object(meta.entries["label"].expression).is_instanceof(WeavlyModel.TextExpression)
+	assert_int(meta.entries["label"].line).is_equal(8)
 
 
 func test_an_empty_meta_puts_the_node_in_no_pool() -> void:
@@ -563,7 +570,7 @@ func test_meta_keys_are_read_from_env_with_their_defaults() -> void:
 		[
 			{"type": "number", "name": "cost", "value": 1.0},
 			{"type": "string", "name": "tag", "value": ""},
-			{"type": "flag", "name": "urgent", "value": true},
+			{"type": "bool", "name": "urgent", "value": true},
 			{"type": "node", "name": "next", "value": "shop"},
 		]
 	}

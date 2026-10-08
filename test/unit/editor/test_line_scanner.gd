@@ -36,7 +36,7 @@ func test_meta_outside_a_node_is_not_a_block() -> void:
 
 
 func test_a_missing_endnode_doesnt_hide_the_next_node_or_env() -> void:
-	assert_array(_blocks("@node a\nHi\n@env\nvar b: flag\n@endenv")).is_equal(
+	assert_array(_blocks("@node a\nHi\n@env\nvar b: bool\n@endenv")).is_equal(
 		[NONE, BODY, BODY, ENV, ENV]
 	)
 

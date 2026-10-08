@@ -1,6 +1,6 @@
 extends WeavlyTestSuite
 
-# Declared functions and commands against the compiler-built fixture in calls/src/calls.wvl.
+# Declared functions against the compiler-built fixture in calls/src/calls.wvl.
 
 const FIXTURE = "res://test/fixtures/integration/calls/build"
 
@@ -38,11 +38,11 @@ func _register_all() -> void:
 	_engine.register_function("next_scene", func() -> String: return "other")
 	_engine.register_function("region", func() -> String: return "city")
 	_engine.register_function("partner", func() -> String: return "bob")
-	_engine.register_command(
+	_engine.register_function(
 		"shout",
 		func(text: String, volume: float) -> void: _events.append("shout(%s, %s)" % [text, volume])
 	)
-	_engine.register_command("wave", func() -> void: _events.append("wave"))
+	_engine.register_function("wave", func() -> void: _events.append("wave"))
 
 
 func _run(node_id: String) -> void:
@@ -90,8 +90,8 @@ func test_the_first_use_reports_everything_not_registered_once() -> void:
 				"0: Function 'next_scene' is declared, but no callable is registered for it.",
 				"0: Function 'region' is declared, but no callable is registered for it.",
 				"0: Function 'partner' is declared, but no callable is registered for it.",
-				"0: Command 'shout' is declared, but no handler is registered for it.",
-				"0: Command 'wave' is declared, but no handler is registered for it.",
+				"0: Function 'shout' is declared, but no callable is registered for it.",
+				"0: Function 'wave' is declared, but no callable is registered for it.",
 			]
 		)
 	)
@@ -103,21 +103,46 @@ func test_a_missing_function_fails_its_expression_at_the_call() -> void:
 	_engine.function_service._callables.erase("mood")
 	_run("start")
 	assert_bool(_events.has("Happy.")).is_false()
-	assert_array(_errors).contains(
-		["26: Can't call function 'mood' because no callable is registered for it."]
+	(
+		assert_array(_errors)
+		. contains(
+			[
+				"26: Can't call function 'mood' because no callable is registered for it.",
+				"35: Can't call function 'mood' because no callable is registered for it.",
+			]
+		)
 	)
-	assert_logged(["mood", "mood"])
+	assert_logged(["mood", "mood", "mood"])
 
 
-func test_a_result_of_the_wrong_type_fails_its_expression() -> void:
+func test_a_result_of_the_wrong_type_is_reported_in_an_expression_and_a_do_statement() -> void:
 	_register_all()
 	_engine.register_function("mood", func() -> int: return 1)
 	_run("start")
 	assert_bool(_events.has("Happy.")).is_false()
-	assert_array(_errors).is_equal(
-		["26: Function 'mood' returned a value of type 'int' instead of a flag."]
+	(
+		assert_array(_errors)
+		. is_equal(
+			[
+				"26: Function 'mood' returned a value of type 'int' instead of a bool.",
+				"35: Function 'mood' returned a value of type 'int' instead of a bool.",
+			]
+		)
 	)
-	assert_logged(["mood"])
+	assert_logged(["mood", "mood"])
+
+
+func test_a_value_returned_by_a_function_without_a_result_is_ignored() -> void:
+	_register_all()
+	_engine.register_function(
+		"wave",
+		func() -> int:
+			_events.append("wave")
+			return 1
+	)
+	_run("start")
+	assert_bool(_events.has("wave")).is_true()
+	assert_array(_errors).is_empty()
 
 
 func test_a_result_naming_no_declared_node_is_rejected() -> void:
@@ -131,39 +156,32 @@ func test_a_result_naming_no_declared_node_is_rejected() -> void:
 	assert_logged(["nowhere"])
 
 
-func test_a_command_without_a_handler_is_reported_and_skipped() -> void:
+func test_a_do_statement_without_a_callable_is_reported_and_skipped() -> void:
 	_register_all()
-	_engine.command_service._handlers.erase("wave")
+	_engine.function_service._callables.erase("wave")
 	_run("start")
 	assert_bool(_events.has("wave")).is_false()
 	assert_str(_events.back()).is_equal("Done.")
 	assert_array(_errors).contains(
-		["31: Can't run command 'wave' because no handler is registered for it."]
+		["31: Can't call function 'wave' because no callable is registered for it."]
 	)
 	assert_logged(["wave", "wave"])
 
 
 func test_registering_an_undeclared_name_is_an_error() -> void:
 	_engine.register_function("luck", func() -> float: return 1.0)
-	_engine.register_command("jump", func() -> void: pass)
 	assert_array(_engine.function_service.get_unregistered()).contains(["mood"])
-	assert_logged(
-		[
-			"Can't register function 'luck' because it isn't declared.",
-			"Can't register command 'jump' because it isn't declared.",
-		]
-	)
+	assert_logged(["Can't register function 'luck' because it isn't declared."])
 
 
 func test_registering_a_callable_with_the_wrong_argument_count_is_an_error() -> void:
 	_engine.register_function("trust", func(from: String) -> String: return from)
-	_engine.register_command("wave", func(_how: String) -> void: pass)
-	assert_array(_engine.function_service.get_unregistered()).contains(["trust"])
-	assert_array(_engine.command_service.get_unregistered()).contains(["wave"])
+	_engine.register_function("wave", func(_how: String) -> void: pass)
+	assert_array(_engine.function_service.get_unregistered()).contains(["trust", "wave"])
 	assert_logged(
 		[
 			"Can't register function 'trust' because it takes 1 instead of 2 arguments.",
-			"Can't register command 'wave' because it takes 1 instead of 0 arguments.",
+			"Can't register function 'wave' because it takes 1 instead of 0 arguments.",
 		]
 	)
 
@@ -175,13 +193,13 @@ func test_registering_again_replaces_the_callable() -> void:
 	assert_bool(_events.has("Bye Ann is here.")).is_true()
 
 
-func test_render_returns_commands_and_run_command_runs_them_through_their_handler() -> void:
+func test_render_returns_do_statements_and_run_do_calls_their_function() -> void:
 	_register_all()
 	var entries: Array[WeavlyModel.Statement] = _engine.render("start")
 	assert_bool(_events.has("wave")).is_false()
 	for entry: WeavlyModel.Statement in entries:
-		if entry is WeavlyModel.CommandStatement:
-			_engine.run_command(entry)
+		if entry is WeavlyModel.DoStatement:
+			_engine.run_do(entry)
 	(
 		assert_array(_events.filter(func(event: String) -> bool: return not event.ends_with(".")))
 		. is_equal(["trust(ann, start)", "shout(hey, 3.0)", "wave"])

@@ -103,19 +103,18 @@ func test_has_name_looks_in_the_types_declarations() -> void:
 # =====================
 
 
-func test_variables_functions_and_commands_are_declared_by_name() -> void:
+func test_variables_and_functions_are_declared_by_name() -> void:
 	var gold: WeavlyModel.NumberVariable = WeavlyModel.NumberVariable.new("gold", 0.0, null, null)
 	var bonus: WeavlyModel.Signature = WeavlyModel.Signature.new("bonus", [], "number")
 	var wave: WeavlyModel.Signature = WeavlyModel.Signature.new("wave", [])
 	_story.add_variable(gold)
 	_story.add_function(bonus)
-	_story.add_command(wave)
+	_story.add_function(wave)
 	assert_that(_story.get_variable("gold")).is_equal(gold)
 	assert_array(_story.get_variable_ids()).is_equal(["gold"])
 	assert_that(_story.get_function("bonus")).is_equal(bonus)
-	assert_array(_story.get_function_names()).is_equal(["bonus"])
-	assert_that(_story.get_command("wave")).is_equal(wave)
-	assert_array(_story.get_command_names()).is_equal(["wave"])
+	assert_that(_story.get_function("wave")).is_equal(wave)
+	assert_array(_story.get_function_names()).is_equal(["bonus", "wave"])
 	assert_object(_story.get_variable("missing")).is_null()
 
 
@@ -128,9 +127,9 @@ func test_fit_checks_the_type_and_counts_ints_as_numbers() -> void:
 	assert_int(_story.fit("number", 3)).is_equal(WeavlyStory.Fit.FITS)
 	assert_int(_story.fit("number", 3.5)).is_equal(WeavlyStory.Fit.FITS)
 	assert_int(_story.fit("string", "x")).is_equal(WeavlyStory.Fit.FITS)
-	assert_int(_story.fit("flag", true)).is_equal(WeavlyStory.Fit.FITS)
+	assert_int(_story.fit("bool", true)).is_equal(WeavlyStory.Fit.FITS)
 	assert_int(_story.fit("number", "3")).is_equal(WeavlyStory.Fit.WRONG_TYPE)
-	assert_int(_story.fit("flag", null)).is_equal(WeavlyStory.Fit.WRONG_TYPE)
+	assert_int(_story.fit("bool", null)).is_equal(WeavlyStory.Fit.WRONG_TYPE)
 
 
 func test_fit_needs_a_declared_name_for_a_name_type() -> void:

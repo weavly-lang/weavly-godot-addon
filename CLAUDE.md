@@ -30,7 +30,7 @@ addons/weavly/runtime/
     weavly_statement_executor.gd    # dispatch Statement to the right service
     weavly_expression_evaluator.gd  # evaluate WeavlyExpression trees
     weavly_storylet_selector.gd     # list_pool/peek_pool: pick storylet nodes from pools
-    weavly_meta_reader.gd           # get_node_meta and meta(): a node's meta value or the key's default
+    weavly_meta_reader.gd           # get_node_meta, .key and node.key: a node's meta value or the key's default
     weavly_option_builder.gd        # offered options: the display rule, pool(...) items, refresh
     weavly_story.gd                 # WeavlyStory: the compiled story the engine owns, and type checks
   engine/

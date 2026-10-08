@@ -105,6 +105,8 @@ static func evaluate_expression(
 		return expression.value
 	if expression is WeavlyModel.StringLiteral:
 		return expression.value
+	if expression is WeavlyModel.TextExpression:
+		return WeavlyTextUtils.fill_text(expression.segments, engine)
 	if expression is WeavlyModel.Identifier:
 		return evaluate_identifier(expression, engine)
 	if expression is WeavlyModel.Call:
@@ -166,22 +168,37 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 
 
 static func _evaluate_declared_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
-	var signature: WeavlyModel.Signature = engine.story.get_function(call.name)
-	if signature == null:
-		engine.report_error(UNKNOWN_FUNCTION % call.name)
+	var values: Variant = evaluate_arguments(call.args, engine)
+	if is_error(values):
 		return ERROR
+	return call_function(call.name, values, engine)
+
+
+# The values in order, or ERROR once one fails.
+static func evaluate_arguments(
+	args: Array[WeavlyModel.WeavlyExpression], engine: WeavlyEngine
+) -> Variant:
 	var values: Array = []
-	for arg: WeavlyModel.WeavlyExpression in call.args:
+	for arg: WeavlyModel.WeavlyExpression in args:
 		var value: Variant = evaluate_expression(arg, engine)
 		if is_error(value):
 			return ERROR
 		values.append(value)
-	var result: Variant = engine.function_service.call_function(call.name, values)
+	return values
+
+
+# The result checked against the declaration; a function without a return type gives null.
+static func call_function(name: String, values: Array, engine: WeavlyEngine) -> Variant:
+	var signature: WeavlyModel.Signature = engine.story.get_function(name)
+	if signature == null:
+		engine.report_error(UNKNOWN_FUNCTION % name)
+		return ERROR
+	var result: Variant = engine.function_service.call_function(name, values)
 	if is_error(result):
 		return ERROR
-	return fit(
-		result, signature.return_type, call.name, WRONG_RESULT_TYPE, UNKNOWN_RESULT_NAME, engine
-	)
+	if signature.return_type == "":
+		return null
+	return fit(result, signature.return_type, name, WRONG_RESULT_TYPE, UNKNOWN_RESULT_NAME, engine)
 
 
 static func _evaluate_number_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Variant:
@@ -222,7 +239,7 @@ static func evaluate_unary_expression(
 	if unary_expression.op != NOT:
 		engine.report_error(UNKNOWN_OPERATOR % unary_expression.op)
 		return ERROR
-	if not _is_flag_operand(value, unary_expression.op, engine):
+	if not _is_bool_operand(value, unary_expression.op, engine):
 		return ERROR
 	return not value
 
@@ -255,19 +272,19 @@ static func evaluate_logic_expression(
 ) -> Variant:
 	var op: String = binary_expression.op
 	var left: Variant = evaluate_expression(binary_expression.left, engine)
-	if not _is_flag_operand(left, op, engine):
+	if not _is_bool_operand(left, op, engine):
 		return ERROR
 	if (op == AND and not left) or (op == OR and left):
 		return left
 
 	var right: Variant = evaluate_expression(binary_expression.right, engine)
-	if not _is_flag_operand(right, op, engine):
+	if not _is_bool_operand(right, op, engine):
 		return ERROR
 	return right
 
 
-# False for an error or a value that isn't a flag; a wrong type is reported.
-static func _is_flag_operand(value: Variant, op: String, engine: WeavlyEngine) -> bool:
+# False for an error or a value that isn't a bool; a wrong type is reported.
+static func _is_bool_operand(value: Variant, op: String, engine: WeavlyEngine) -> bool:
 	if is_error(value):
 		return false
 	if value is not bool:

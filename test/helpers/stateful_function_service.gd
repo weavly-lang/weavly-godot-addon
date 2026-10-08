@@ -1,4 +1,4 @@
-extends WeavlyDefaultCommandService
+extends WeavlyDefaultFunctionService
 
 var restored: Dictionary = {}
 

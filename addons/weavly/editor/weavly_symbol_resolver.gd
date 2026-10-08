@@ -9,7 +9,7 @@ const NAME_KINDS: Array[WeavlyProjectIndex.Kind] = [
 static var _meta_entry_regex: RegEx = RegEx.create_from_string("^\\s*([A-Za-z_]\\w*)\\s*:")
 static var _name_value_regex: RegEx = RegEx.create_from_string("\\b(node|pool|slot)\\s*=\\s*$")
 static var _node_target_regex: RegEx = RegEx.create_from_string(
-	"(@jump\\s+|@detour\\s+|->\\s*|@option\\s+node\\s*\\(\\s*)$"
+	"(@jump\\s+|@detour\\s+|@option\\s+node\\s*\\(\\s*)$"
 )
 static var _draw_regex: RegEx = RegEx.create_from_string("@draw\\s+[\\w\\s,]*$")
 static var _pool_option_regex: RegEx = RegEx.create_from_string("@option\\s+pool\\s*\\([^()]*$")
@@ -63,9 +63,11 @@ static func _kinds(
 	if before.ends_with("$"):
 		return [WeavlyProjectIndex.Kind.VARIABLE]
 	if before.ends_with("@"):
-		if block != WeavlyLineScanner.Block.BODY:
-			return []
-		return [WeavlyProjectIndex.Kind.COMMAND]
+		return []
+	if before.ends_with("."):
+		return [WeavlyProjectIndex.Kind.META_KEY]
+	if after.begins_with("."):
+		return [WeavlyProjectIndex.Kind.NODE]
 	if block == WeavlyLineScanner.Block.ENV:
 		var value: RegExMatch = _name_value_regex.search(before)
 		if value == null:

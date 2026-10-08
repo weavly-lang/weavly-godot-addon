@@ -42,20 +42,13 @@ static func fill_character_line(
 
 
 # Null when an argument fails; the evaluator has reported it.
-static func fill_command(
-	command: WeavlyModel.CommandStatement, engine: WeavlyEngine
-) -> WeavlyModel.CommandStatement:
-	var values: Array = []
-	for arg: WeavlyModel.WeavlyExpression in command.args:
-		var value: Variant = WeavlyExpressionEvaluator.evaluate_expression(arg, engine)
-		if WeavlyExpressionEvaluator.is_error(value):
-			return null
-		values.append(value)
-	var filled: WeavlyModel.CommandStatement = WeavlyModel.CommandStatement.new(
-		command.id, command.args
-	)
+static func fill_do(do: WeavlyModel.DoStatement, engine: WeavlyEngine) -> WeavlyModel.DoStatement:
+	var values: Variant = WeavlyExpressionEvaluator.evaluate_arguments(do.args, engine)
+	if WeavlyExpressionEvaluator.is_error(values):
+		return null
+	var filled: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new(do.id, do.args)
 	filled.values = values
-	filled.line = command.line
+	filled.line = do.line
 	return filled
 
 

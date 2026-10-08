@@ -1,7 +1,7 @@
 @env
 var gold: number = 0
 var count: number = 0
-extern var mood: flag
+extern var mood: bool
 pool when_test
 pool priority_test
 pool weight_test

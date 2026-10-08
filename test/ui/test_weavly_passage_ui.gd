@@ -34,8 +34,8 @@ func before_test() -> void:
 	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
-	_engine.register_command(
-		"header", func(title: String) -> void: _events.append("command:header %s" % str([title]))
+	_engine.register_function(
+		"header", func(title: String) -> void: _events.append("do:header %s" % str([title]))
 	)
 	_ui.finished.connect(func() -> void: _events.append("finished"))
 	add_child(_ui)
@@ -106,9 +106,9 @@ func test_shows_lines_and_option_blocks_in_order() -> void:
 	)
 
 
-func test_commands_are_emitted_in_order() -> void:
+func test_do_statements_are_emitted_in_order() -> void:
 	_ui.show_passage("tavern")
-	assert_array(_events).is_equal(['command:header ["Tavern"]'])
+	assert_array(_events).is_equal(['do:header ["Tavern"]'])
 
 
 func test_following_a_link_into_the_next_node() -> void:

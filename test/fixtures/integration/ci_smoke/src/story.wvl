@@ -1,13 +1,13 @@
 @node start
 Welcome to the smoke test.
-@fade_in
-@play_sound "chime.ogg"
+@do fade_in()
+@do play_sound("chime_{$score}.ogg")
 >Guide: Let the test begin.
 @set $score = 10
 @increase $score 5
-@decrease $score 2
-@setflag $has_key
-@clearflag $has_key
+@decrease $score 1 + 1
+@set $has_key = true
+@set $has_key = false
 
 @if $score > 10
     @jump choices
@@ -22,8 +22,8 @@ Welcome to the smoke test.
 $player_name: Which path?
 
 @options
-@option "Roll the dice" -> random_node
-@option [ $has_key ] "Use key" -> end
+@option "Roll the dice": @jump random_node
+@option [ $has_key ] "Use key": @jump end
 @endoptions
 @endnode
 
@@ -52,7 +52,7 @@ $player_name: Which path?
 @set $last_scene = end
 @set $region = night
 @set $names_match = $region == night and $last_scene != start and $partner == bob
-@log $reputation, visit_count(choices) + 1
+@do log($reputation, visit_count(choices) + 1)
 @finish
 @endnode
 
@@ -75,7 +75,7 @@ priority: 2
 weight: 1 + skip_count()
 once: true
 @endmeta
->Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times and charges {meta(night_market, toll)}.
+>Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times and charges {night_market.toll}.
 @endnode
 
 @node night_market
@@ -134,4 +134,11 @@ label_teaser: "A closed tent"
 when: $has_key
 @endmeta
 You sleep.
+@endnode
+
+@node calls
+@meta
+toll: 3
+@endmeta
+@do bonus(.toll)
 @endnode

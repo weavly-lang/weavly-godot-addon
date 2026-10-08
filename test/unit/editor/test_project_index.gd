@@ -7,7 +7,7 @@ pool city
 slot bob
 meta toll: number = 1
 func bonus(points: number): number
-command fade_in()
+func fade_in()
 @endenv
 
 @node market # stalls
@@ -72,13 +72,15 @@ func test_env_declarations_are_found_by_kind() -> void:
 		WeavlyProjectIndex.Kind.SLOT: ["bob", 4],
 		WeavlyProjectIndex.Kind.META_KEY: ["toll", 5],
 		WeavlyProjectIndex.Kind.FUNCTION: ["bonus", 6],
-		WeavlyProjectIndex.Kind.COMMAND: ["fade_in", 7],
 	}
 	for kind: WeavlyProjectIndex.Kind in expected:
 		var name: String = expected[kind][0]
 		assert_array(_names(index.find(kind, name))).is_equal(
 			["%s:%d" % [name, expected[kind][1]]]
 		)
+	assert_array(_names(index.find(WeavlyProjectIndex.Kind.FUNCTION, "fade_in"))).is_equal(
+		["fade_in:7"]
+	)
 
 
 func test_an_extern_variable_is_a_variable() -> void:

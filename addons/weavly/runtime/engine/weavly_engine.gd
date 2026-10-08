@@ -25,7 +25,6 @@ enum Locked { SHOW, EXTRA, HIDE }
 
 const DRAW_IN_PROGRESS = "Dialogue is already in progress, can't draw from %s."
 const UNREGISTERED_FUNCTION = "Function '%s' is declared, but no callable is registered for it."
-const UNREGISTERED_COMMAND = "Command '%s' is declared, but no handler is registered for it."
 const DIALOGUE_IN_PROGRESS = "Dialogue is already in progress, can't start for node with ID '%s'."
 const MISSING_NODE = "Can't enter node '%s' because it doesn't exist, finishing the dialogue."
 const JUMP_CYCLE = "Entered %d nodes without pausing (likely a jump cycle); finishing the dialogue."
@@ -58,7 +57,6 @@ const KEY_RNG = "rng"
 
 static var _default_services: Dictionary[Script, Script] = {
 	WeavlyCharacterService: WeavlyDefaultCharacterService,
-	WeavlyCommandService: WeavlyDefaultCommandService,
 	WeavlyCountService: WeavlyDefaultCountService,
 	WeavlyFunctionService: WeavlyDefaultFunctionService,
 	WeavlyLineService: WeavlyDefaultLineService,
@@ -87,7 +85,6 @@ static var _default_services: Dictionary[Script, Script] = {
 var story: WeavlyStory = WeavlyStory.new()
 
 var character_service: WeavlyCharacterService
-var command_service: WeavlyCommandService
 var count_service: WeavlyCountService
 var function_service: WeavlyFunctionService
 var line_service: WeavlyLineService
@@ -160,8 +157,8 @@ func start(node_id: String) -> void:
 		enter_node(node_id)
 
 
-# Runs the whole node without pausing and returns filled copies of its lines, commands and
-# option blocks. State changes, visits and entered_node happen as in normal play.
+# Runs the whole node without pausing and returns filled copies of its lines, do statements
+# and option blocks. State changes, visits and entered_node happen as in normal play.
 func render(node_id: String) -> Array[WeavlyModel.Statement]:
 	if not _finished:
 		push_warning(RENDER_IN_PROGRESS % node_id)
@@ -436,7 +433,6 @@ func reset_state() -> void:
 func _services() -> Dictionary[String, WeavlyService]:
 	return {
 		"character": character_service,
-		"command": command_service,
 		"count": count_service,
 		"function": function_service,
 		"line": line_service,
@@ -477,7 +473,7 @@ func is_rendering() -> bool:
 	return _rendering
 
 
-# While rendering, the executor collects filled lines, commands and option blocks here.
+# While rendering, the executor collects filled lines, do statements and option blocks here.
 func add_rendered(statement: WeavlyModel.Statement) -> void:
 	_render_output.append(statement)
 	if statement is WeavlyModel.OptionBlock:
@@ -558,22 +554,17 @@ func set_variable(id: String, value: Variant) -> void:
 		refresh_options()
 
 
-# The callable gets the arguments in declaration order, and must not change state:
-# conditions are evaluated often and in no fixed order.
+# The callable gets the arguments in declaration order. In an expression it may run any number
+# of times and in no fixed order; a do statement runs it exactly once, and only then may it
+# change state or wait with hold() and release().
 func register_function(name: String, callable: Callable) -> void:
-	if WeavlyModel.Signature.can_register("function", name, callable, story.get_function(name)):
+	if WeavlyModel.Signature.can_register(name, callable, story.get_function(name)):
 		function_service.register_function(name, callable)
 
 
-# The handler gets the arguments in declaration order; to wait, it calls hold() and release().
-func register_command(name: String, callable: Callable) -> void:
-	if WeavlyModel.Signature.can_register("command", name, callable, story.get_command(name)):
-		command_service.register_command(name, callable)
-
-
-# Runs a rendered command through its handler.
-func run_command(command: WeavlyModel.CommandStatement) -> void:
-	command_service.execute_command(command)
+# Calls the function with the statement's values; a rendered one is run by the UI.
+func run_do(statement: WeavlyModel.DoStatement) -> void:
+	WeavlyExpressionEvaluator.call_function(statement.id, statement.values, self)
 
 
 # Up to limit storylet ids in selection order, each taken while its slots are free; -1 takes all.
@@ -662,8 +653,6 @@ func _check_registrations() -> void:
 	_registrations_checked = true
 	for name: String in function_service.get_unregistered():
 		report_error(UNREGISTERED_FUNCTION % name)
-	for name: String in command_service.get_unregistered():
-		report_error(UNREGISTERED_COMMAND % name)
 
 
 func report_error(message: String) -> void:
@@ -751,7 +740,6 @@ func _create_services() -> void:
 		else:
 			scripts[service] = script
 	character_service = _new_service(scripts, WeavlyCharacterService)
-	command_service = _new_service(scripts, WeavlyCommandService)
 	count_service = _new_service(scripts, WeavlyCountService)
 	function_service = _new_service(scripts, WeavlyFunctionService)
 	line_service = _new_service(scripts, WeavlyLineService)

@@ -1,1 +1,1 @@
-{"source":"hold.wvl","nodes":[{"id":"start","line":5,"body":[{"type":"command","line":6,"id":"shake","args":[]},{"type":"narration","line":7,"text":["After"]},{"type":"finish","line":8}]}]}
+{"source":"hold.wvl","nodes":[{"id":"start","line":5,"body":[{"type":"do","line":6,"id":"shake","args":[]},{"type":"narration","line":7,"text":["After"]},{"type":"finish","line":8}]}]}

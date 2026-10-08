@@ -96,5 +96,3 @@ static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> v
 		engine.story.add_meta_key(key, meta_keys[key])
 	for function: WeavlyModel.Signature in WeavlyDeserializer.read_functions(data, path):
 		engine.story.add_function(function)
-	for command: WeavlyModel.Signature in WeavlyDeserializer.read_commands(data, path):
-		engine.story.add_command(command)

@@ -107,11 +107,13 @@ static func _inline_holds(option: WeavlyModel.Option, engine: WeavlyEngine) -> b
 
 
 static func _inline_text(option: WeavlyModel.Option, engine: WeavlyEngine) -> String:
-	return engine.evaluate_at(
+	var label: Variant = engine.evaluate_at(
 		option.source,
 		option.line,
-		func() -> String: return WeavlyTextUtils.fill_text(option.item.segments, engine)
+		func() -> Variant:
+			return WeavlyExpressionEvaluator.evaluate_expression(option.item.label, engine)
 	)
+	return "" if WeavlyExpressionEvaluator.is_error(label) else str(label)
 
 
 # A failing limit or shuffle is reported and the pool offers nothing.

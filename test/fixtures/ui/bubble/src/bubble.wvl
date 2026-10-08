@@ -4,7 +4,7 @@ The gate creaks.
 >merchant: Fresh bread!
 >stranger: Psst.
 @options
-@option "Answer" -> answered
+@option "Answer": @jump answered
 @endoptions
 @endnode
 
@@ -20,17 +20,17 @@ The gate creaks.
 @node formatted
 >guard: Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]" -> answered
+@option "[i]Wave[/i]": @jump answered
 @endoptions
 @endnode
 
 @env
-func open(): flag
+func open(): bool
 @endenv
 
 @node door
 @options
-@option [ open() ] "Open" -> answered
-@option "Stay" -> answered
+@option [ open() ] "Open": @jump answered
+@option "Stay": @jump answered
 @endoptions
 @endnode

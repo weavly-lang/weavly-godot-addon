@@ -2,7 +2,7 @@
 @meta
 pool: market
 tag: "fresh"
-priority: meta(shop, cost)
+priority: shop.cost
 weight: 2
 @endmeta
 Stall.
@@ -18,13 +18,13 @@ Moody.
 
 @node chain
 @meta
-cost: meta(moody, cost) + 1
+cost: moody.cost + 1
 @endmeta
 Chain.
 @endnode
 
 @node moody_check
-@if meta(moody, urgent)
+@if moody.urgent
 Urgent.
 @endif
 After.

@@ -5,8 +5,8 @@ pool night
 pool empty
 pool styled
 pool doors
-command header(title: string)
-func open(): flag
+func header(title: string)
+func open(): bool
 @endenv
 
 @node inn
@@ -16,7 +16,7 @@ priority: 3
 @endmeta
 >guide: A stranger waves you over.
 @options
-@option "Join them" -> inn_effect
+@option "Join them": @jump inn_effect
 @endoptions
 @endnode
 
@@ -26,10 +26,10 @@ pool: city
 priority: 2
 @endmeta
 Someone grabs your purse.
-@header "Market"
+@do header("Market")
 @options
-@option "Chase" -> chase
-@option "Let go" -> let_go
+@option "Chase": @jump chase
+@option "Let go": @jump let_go
 @endoptions
 @endnode
 
@@ -54,7 +54,7 @@ pool: night
 @endmeta
 An owl watches you.
 @options
-@option "Watch back" -> let_go
+@option "Watch back": @jump let_go
 @endoptions
 @endnode
 
@@ -66,7 +66,7 @@ You win 5 gold at cards.
 @node chase
 You catch the thief.
 @options
-@option "Keep running" -> keep_running
+@option "Keep running": @jump keep_running
 @endoptions
 @endnode
 
@@ -84,7 +84,7 @@ pool: styled
 @endmeta
 >guide: Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]" -> let_go
+@option "[i]Wave[/i]": @jump let_go
 @endoptions
 @endnode
 
@@ -114,7 +114,7 @@ An open square.
 pool: doors
 @endmeta
 @options
-@option [ open() ] "Open" -> let_go
-@option "Stay" -> let_go
+@option [ open() ] "Open": @jump let_go
+@option "Stay": @jump let_go
 @endoptions
 @endnode

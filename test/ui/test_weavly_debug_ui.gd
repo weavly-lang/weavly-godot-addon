@@ -151,7 +151,7 @@ func test_variables_show_sorted_with_their_types_and_values() -> void:
 		. is_equal(
 			[
 				["area", "pool", "city"],
-				["brave", "flag", false],
+				["brave", "bool", false],
 				["gold", "number", "3"],
 				["name", "string", "Robin"],
 				["partner", "slot", "pair"],

@@ -13,7 +13,6 @@ const KEY_POOLS = "pools"
 const KEY_SLOTS = "slots"
 const KEY_META_KEYS = "meta_keys"
 const KEY_FUNCTIONS = "functions"
-const KEY_COMMANDS = "commands"
 
 # Common keys
 const KEY_ID = "id"
@@ -47,7 +46,6 @@ const KEY_AVAILABLE = "available"
 const KEY_LABEL = "label"
 const KEY_LABEL_UNAVAILABLE = "label_unavailable"
 const KEY_LABEL_TEASER = "label_teaser"
-const TEXT_META_KEYS = [KEY_LABEL, KEY_LABEL_UNAVAILABLE, KEY_LABEL_TEASER]
 
 # Block keys
 const KEY_CASES = "cases"
@@ -74,10 +72,10 @@ const TYPE_SET = "set"
 const TYPE_JUMP = "jump"
 const TYPE_DETOUR = "detour"
 const TYPE_FINISH = "finish"
-const TYPE_COMMAND = "command"
+const TYPE_DO = "do"
 const TYPE_NUMBER = "number"
 const TYPE_STRING = "string"
-const TYPE_FLAG = "flag"
+const TYPE_BOOL = "bool"
 const TYPE_NODE = "node"
 const TYPE_POOL = "pool"
 const TYPE_SLOT = "slot"
@@ -95,7 +93,7 @@ const LOCKED_MODES: Dictionary[String, WeavlyEngine.Locked] = {
 const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
 	TYPE_NUMBER: 0.0,
 	TYPE_STRING: "",
-	TYPE_FLAG: false,
+	TYPE_BOOL: false,
 	TYPE_NODE: "",
 	TYPE_POOL: "",
 	TYPE_SLOT: "",
@@ -245,12 +243,6 @@ static func _read_meta_entry(
 		var value_path: String = _path_join(path, KEY_VALUE)
 		return names_data != null and _read_list(names_data, value_path, _read_name, names)
 	var line: Variant = _get_required_line(entry, path)
-	if key in TEXT_META_KEYS:
-		var segments: Variant = read_text(entry, path, KEY_VALUE)
-		if line == null or segments == null:
-			return false
-		meta.texts[key] = WeavlyModel.MetaText.new(segments, line)
-		return true
 	var expression: WeavlyModel.WeavlyExpression = read_required_expression(entry, KEY_VALUE, path)
 	if line == null or expression == null:
 		return false
@@ -307,8 +299,8 @@ static func read_statement(data: Dictionary, path: String) -> WeavlyModel.Statem
 			return read_detour_statement(data, path)
 		TYPE_FINISH:
 			return read_finish_statement(data, path)
-		TYPE_COMMAND:
-			return read_command_statement(data, path)
+		TYPE_DO:
+			return read_do_statement(data, path)
 		TYPE_RANDOM:
 			return read_random_block(data, path)
 		TYPE_DRAW:
@@ -374,21 +366,21 @@ static func read_finish_statement(_data: Dictionary, _path: String) -> WeavlyMod
 	return WeavlyModel.FinishStatement.new()
 
 
-static func read_command_statement(data: Dictionary, path: String) -> WeavlyModel.CommandStatement:
+static func read_do_statement(data: Dictionary, path: String) -> WeavlyModel.DoStatement:
 	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
 	var args: Variant = read_arguments(data, path)
 	if id == null or args == null:
 		return null
-	return WeavlyModel.CommandStatement.new(id, args)
+	return WeavlyModel.DoStatement.new(id, args)
 
 
 # Strings are plain text, anything else is an interpolated expression.
-static func read_text(data: Dictionary, path: String, key: String = KEY_TEXT) -> Variant:
-	var text_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, path)
+static func read_text(data: Dictionary, path: String) -> Variant:
+	var text_data: Variant = get_required(data, KEY_TEXT, Variant.Type.TYPE_ARRAY, path)
 	if text_data == null:
 		return null
 	var segments: Array = []
-	if not _read_list(text_data, _path_join(path, key), _read_segment, segments):
+	if not _read_list(text_data, _path_join(path, KEY_TEXT), _read_segment, segments):
 		return null
 	return segments
 
@@ -481,19 +473,23 @@ static func _read_inline_option(data: Dictionary, path: String) -> WeavlyModel.O
 		if key != KEY_LABEL and key != KEY_WHEN:
 			push_error("Unknown option meta key '%s' at %s" % [key, meta_path])
 			return null
-	var label: Variant = get_required(meta, KEY_LABEL, Variant.Type.TYPE_DICTIONARY, meta_path)
-	if label == null:
+	var label_entry: Variant = get_required(
+		meta, KEY_LABEL, Variant.Type.TYPE_DICTIONARY, meta_path
+	)
+	if label_entry == null:
 		return null
-	var segments: Variant = read_text(label, _path_join(meta_path, KEY_LABEL), KEY_VALUE)
+	var label: WeavlyModel.WeavlyExpression = read_required_expression(
+		label_entry, KEY_VALUE, _path_join(meta_path, KEY_LABEL)
+	)
 	var condition: WeavlyModel.WeavlyExpression = WeavlyModel.TrueExpression.new()
 	if meta.has(KEY_WHEN):
 		var entry: Variant = get_required(meta, KEY_WHEN, Variant.Type.TYPE_DICTIONARY, meta_path)
 		if entry == null:
 			return null
 		condition = read_required_expression(entry, KEY_VALUE, _path_join(meta_path, KEY_WHEN))
-	if segments == null or condition == null:
+	if label == null or condition == null:
 		return null
-	return WeavlyModel.InlineOptionItem.new(condition, segments, body)
+	return WeavlyModel.InlineOptionItem.new(condition, label, body)
 
 
 static func _read_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
@@ -584,6 +580,10 @@ static func read_expression(data: Variant, path: String) -> WeavlyModel.WeavlyEx
 
 	if data is Dictionary and data.has(KEY_CALL):
 		return read_call(data, path)
+
+	if data is Dictionary and data.has(KEY_TEXT):
+		var segments: Variant = read_text(data, path)
+		return null if segments == null else WeavlyModel.TextExpression.new(segments)
 
 	if data is Dictionary and data.has(KEY_VARIABLE):
 		var variable: Variant = get_required(data, KEY_VARIABLE, Variant.Type.TYPE_STRING, path)
@@ -714,30 +714,23 @@ static func _read_meta_key(data: Variant, path: String) -> Variant:
 
 # The declared functions in env.json.
 static func read_functions(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
-	return _read_signatures(data, KEY_FUNCTIONS, source)
-
-
-# The declared commands in env.json.
-static func read_commands(data: Dictionary, source: String = "") -> Array[WeavlyModel.Signature]:
-	return _read_signatures(data, KEY_COMMANDS, source)
-
-
-static func _read_signatures(
-	data: Dictionary, key: String, source: String
-) -> Array[WeavlyModel.Signature]:
 	var signatures: Array[WeavlyModel.Signature] = []
-	var signatures_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, source)
+	var signatures_data: Variant = get_required(
+		data, KEY_FUNCTIONS, Variant.Type.TYPE_ARRAY, source
+	)
 	if signatures_data != null:
-		var read: Callable = _read_signature.bind(key == KEY_FUNCTIONS)
-		_read_list(signatures_data, _path_root(source, key), read, signatures, false)
+		var path: String = _path_root(source, KEY_FUNCTIONS)
+		_read_list(signatures_data, path, _read_signature, signatures, false)
 	return signatures
 
 
-static func _read_signature(data: Variant, path: String, returns: bool) -> WeavlyModel.Signature:
+# A function without returns has an empty return type.
+static func _read_signature(data: Variant, path: String) -> WeavlyModel.Signature:
 	if not _is_dictionary(data, path):
 		return null
 	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
 	var params: Variant = get_required(data, KEY_PARAMS, Variant.Type.TYPE_ARRAY, path)
+	var returns: bool = data.has(KEY_RETURNS)
 	var return_type: Variant = (
 		get_required(data, KEY_RETURNS, Variant.Type.TYPE_STRING, path) if returns else ""
 	)
@@ -805,8 +798,8 @@ static func read_variable(data: Variant, path: String = "") -> WeavlyModel.Varia
 			)
 		TYPE_STRING:
 			variable = WeavlyModel.StringVariable.new(id, value)
-		TYPE_FLAG:
-			variable = WeavlyModel.FlagVariable.new(id, value)
+		TYPE_BOOL:
+			variable = WeavlyModel.BoolVariable.new(id, value)
 		TYPE_NODE, TYPE_POOL, TYPE_SLOT:
 			variable = WeavlyModel.NameVariable.new(id, type, value)
 	variable.extern = extern

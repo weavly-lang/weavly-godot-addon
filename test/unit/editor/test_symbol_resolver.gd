@@ -6,7 +6,6 @@ const SLOT = WeavlyProjectIndex.Kind.SLOT
 const VARIABLE = WeavlyProjectIndex.Kind.VARIABLE
 const META_KEY = WeavlyProjectIndex.Kind.META_KEY
 const FUNCTION = WeavlyProjectIndex.Kind.FUNCTION
-const COMMAND = WeavlyProjectIndex.Kind.COMMAND
 const NAMES: Array = [NODE, POOL, SLOT]
 
 
@@ -33,8 +32,7 @@ func test_the_end_of_a_word_still_resolves() -> void:
 	assert_str(_resolve("@jump market|").name).is_equal("market")
 
 
-func test_an_arrow_and_a_node_option_name_a_node() -> void:
-	assert_array(_kinds('@option "Go" -> |market')).is_equal([NODE])
+func test_a_node_option_names_a_node() -> void:
 	assert_array(_kinds("@option node(|market)")).is_equal([NODE])
 	assert_array(_kinds("@option |node(market)")).is_empty()
 
@@ -49,14 +47,30 @@ func test_a_pool_option_names_pools_but_not_its_parameters() -> void:
 	assert_array(_kinds("@option pool(city, limit: |cap)")).is_equal(NAMES)
 
 
-func test_variables_and_commands_go_by_their_marker() -> void:
+func test_variables_go_by_their_marker_and_keywords_name_nothing() -> void:
 	assert_array(_kinds("@set $|energy = 1")).is_equal([VARIABLE])
 	assert_array(_kinds("$|guide: Hello.")).is_equal([VARIABLE])
-	assert_array(_kinds("@|fade_in")).is_equal([COMMAND])
+	assert_array(_kinds("@|do fade_in()")).is_empty()
+	assert_array(_kinds("@|fade_in")).is_empty()
 
 
 func test_a_call_names_a_function() -> void:
 	assert_array(_kinds("@if |bonus(2) > 1: @jump x")).is_equal([FUNCTION])
+	assert_array(_kinds("@do |fade_in()")).is_equal([FUNCTION])
+
+
+func test_a_meta_read_names_a_meta_key_and_its_node() -> void:
+	assert_array(_kinds("@set $x = .|cost")).is_equal([META_KEY])
+	assert_array(_kinds("@set $x = |shop.cost")).is_equal([NODE])
+	assert_array(_kinds("@set $x = shop.|cost")).is_equal([META_KEY])
+	assert_str(_resolve("@set $x = sh|op.cost").name).is_equal("shop")
+	assert_str(_resolve("@set $x = shop.co|st").name).is_equal("cost")
+
+
+func test_a_meta_read_resolves_in_interpolations_and_meta_values() -> void:
+	assert_array(_kinds("You pay {shop.|cost}.")).is_equal([META_KEY])
+	assert_array(_kinds('@option "Pay {.|cost}": @jump x')).is_equal([META_KEY])
+	assert_array(_kinds("toll: |shop.cost + 1", "@node here\n@meta")).is_equal([NODE])
 
 
 func test_a_bare_name_in_an_expression_can_be_any_name() -> void:
@@ -67,13 +81,13 @@ func test_dialogue_text_isnt_code() -> void:
 	assert_array(_kinds("Go to |market now.")).is_empty()
 	assert_array(_kinds("$guide: Go to |market.")).is_empty()
 	assert_array(_kinds("> Guide: Go to |market.")).is_empty()
-	assert_array(_kinds('@option "Visit |market" -> x')).is_empty()
+	assert_array(_kinds('@option "Visit |market": @jump x')).is_empty()
 	assert_array(_kinds("@if $x > 1: Go to |market.")).is_empty()
 
 
 func test_an_interpolation_is_code() -> void:
 	assert_array(_kinds("Seen {visited(|market)} times.")).is_equal(NAMES)
-	assert_array(_kinds('@option "Seen {visited(|market)}" -> x')).is_equal(NAMES)
+	assert_array(_kinds('@option "Seen {visited(|market)}": @jump x')).is_equal(NAMES)
 	assert_array(_kinds("Escaped \\{visited(|market)} text.")).is_empty()
 
 

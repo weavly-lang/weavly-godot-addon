@@ -34,19 +34,19 @@ func _make_engine() -> WeavlyEngine:
 	engine.options_offered.connect(
 		func(_options: Array[WeavlyModel.Option]) -> void: _events.append("options_offered")
 	)
-	engine.register_command(
-		"header", func(_title: String, _gold: float) -> void: _events.append("command:header")
+	engine.register_function(
+		"header", func(_title: String, _gold: float) -> void: _events.append("do:header")
 	)
 	return engine
 
 
-# Lines as their text, commands as id and values, option blocks as their option texts.
+# Lines as their text, do statements as id and values, option blocks as their option texts.
 func _describe(entries: Array[WeavlyModel.Statement]) -> Array:
 	var described: Array = []
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.LineStatement:
 			described.append(entry.text)
-		elif entry is WeavlyModel.CommandStatement:
+		elif entry is WeavlyModel.DoStatement:
 			described.append([entry.id, entry.values])
 		elif entry is WeavlyModel.OptionBlock:
 			described.append(
@@ -77,7 +77,7 @@ func _render_and_drop(engine: WeavlyEngine, node_id: String) -> void:
 # =====================
 
 
-func test_render_returns_filled_lines_commands_and_option_blocks_in_order() -> void:
+func test_render_returns_filled_lines_do_statements_and_option_blocks_in_order() -> void:
 	var entries: Array[WeavlyModel.Statement] = _make_engine().render("tavern")
 	(
 		assert_array(_describe(entries))

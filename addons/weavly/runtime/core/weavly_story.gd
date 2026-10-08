@@ -9,7 +9,6 @@ const DUPLICATE_NODE = "Node with id '%s' already exists."
 
 var _variables: Dictionary[String, WeavlyModel.Variable] = {}
 var _functions: Dictionary[String, WeavlyModel.Signature] = {}
-var _commands: Dictionary[String, WeavlyModel.Signature] = {}
 var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 var _pools: Dictionary[String, bool] = {}
 var _pool_members: Dictionary[String, Array] = {}
@@ -43,20 +42,6 @@ func get_function(name: String) -> WeavlyModel.Signature:
 func get_function_names() -> Array[String]:
 	var names: Array[String] = []
 	names.assign(_functions.keys())
-	return names
-
-
-func add_command(signature: WeavlyModel.Signature) -> void:
-	_commands[signature.name] = signature
-
-
-func get_command(name: String) -> WeavlyModel.Signature:
-	return _commands.get(name)
-
-
-func get_command_names() -> Array[String]:
-	var names: Array[String] = []
-	names.assign(_commands.keys())
 	return names
 
 
