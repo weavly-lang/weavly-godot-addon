@@ -465,14 +465,12 @@ func test_bounded_jump_loop_completes_without_tripping_guard() -> void:
 
 
 # =====================
-# Media and character folders
+# Character folder
 # =====================
 
 
-func test_media_and_character_folders_are_unused_by_default() -> void:
+func test_the_character_folder_is_unused_by_default() -> void:
 	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
-	assert_str(engine.image_path).is_empty()
-	assert_str(engine.video_path).is_empty()
 	assert_str(engine.character_path).is_empty()
 
 
@@ -481,48 +479,6 @@ func test_a_set_folder_that_doesnt_exist_is_an_error() -> void:
 	engine.character_path = "res://does_not_exist"
 	add_child(auto_free(engine))
 	assert_logged(["Failed to open directory: res://does_not_exist"])
-
-
-# =====================
-# Media outside res:// (issue #57)
-# =====================
-
-
-func test_engine_indexes_and_loads_images_from_an_external_directory() -> void:
-	var media_dir: String = create_temp_dir("engine_external_media")
-	Image.create(2, 2, false, Image.FORMAT_RGB8).save_png(media_dir.path_join("splash.png"))
-	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
-	engine.image_path = media_dir
-	add_child(auto_free(engine))
-	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
-
-
-func test_engine_applies_its_group_patterns_and_extensions() -> void:
-	var media_dir: String = create_temp_dir("engine_media_settings")
-	var image: Image = Image.create(2, 2, false, Image.FORMAT_RGB8)
-	image.save_jpg(media_dir.path_join("splash_1.jpg"))
-	image.save_jpg(media_dir.path_join("splash_2.jpg"))
-	image.save_png(media_dir.path_join("logo.png"))
-	for file_name: String in ["intro_1.webm", "intro_2.webm", "outro.ogv"]:
-		FileAccess.open(media_dir.path_join(file_name), FileAccess.WRITE).store_string("x")
-	var engine: WeavlyEngine = _new_engine(LINEAR_FIXTURE)
-	engine.image_path = media_dir
-	engine.video_path = media_dir
-	engine.image_group_pattern = "_\\d+$"
-	engine.video_group_pattern = "_\\d+$"
-	engine.image_extensions = [".jpg"]
-	engine.video_extensions = [".webm"]
-	add_child(auto_free(engine))
-	assert_object(engine.image_service.get_image("splash")).is_instanceof(Texture2D)
-	assert_object(engine.video_service.get_video("intro")).is_instanceof(VideoStream)
-	assert_object(engine.image_service.get_image("logo")).is_null()
-	assert_object(engine.video_service.get_video("outro")).is_null()
-	assert_logged(
-		[
-			"Image with id 'logo' doesn't exist",
-			"Video with id 'outro' doesn't exist",
-		]
-	)
 
 
 # =====================

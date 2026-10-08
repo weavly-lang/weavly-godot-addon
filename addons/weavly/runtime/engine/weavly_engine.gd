@@ -61,10 +61,8 @@ static var _default_services: Dictionary[Script, Script] = {
 	WeavlyCommandService: WeavlyDefaultCommandService,
 	WeavlyCountService: WeavlyDefaultCountService,
 	WeavlyFunctionService: WeavlyDefaultFunctionService,
-	WeavlyImageService: WeavlyDefaultImageService,
 	WeavlyLineService: WeavlyDefaultLineService,
 	WeavlyVariableService: WeavlyDefaultVariableService,
-	WeavlyVideoService: WeavlyDefaultVideoService,
 }
 
 ## Scripts that replace default services, each extending a service or a default implementation.
@@ -76,17 +74,9 @@ static var _default_services: Dictionary[Script, Script] = {
 ## 0 picks a new seed on every run.
 @export var random_seed: int = 0
 
-@export_group("Media")
+@export_group("Characters")
 ## Empty means the game has no character resources.
 @export var character_path: String = ""
-## Empty means the game has no images.
-@export var image_path: String = ""
-@export var image_group_pattern: String = ""
-@export var image_extensions: PackedStringArray = [".png", ".jpg"]
-## Empty means the game has no videos.
-@export var video_path: String = ""
-@export var video_group_pattern: String = ""
-@export var video_extensions: PackedStringArray = [".ogv"]
 
 @export_group("Limits")
 @export var max_node_entries_per_step: int = 10000
@@ -100,10 +90,8 @@ var character_service: WeavlyCharacterService
 var command_service: WeavlyCommandService
 var count_service: WeavlyCountService
 var function_service: WeavlyFunctionService
-var image_service: WeavlyImageService
 var line_service: WeavlyLineService
 var variable_service: WeavlyVariableService
-var video_service: WeavlyVideoService
 
 # @random and random() roll with this, so a seed and a saved state reproduce them.
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -451,10 +439,8 @@ func _services() -> Dictionary[String, WeavlyService]:
 		"command": command_service,
 		"count": count_service,
 		"function": function_service,
-		"image": image_service,
 		"line": line_service,
 		"variable": variable_service,
-		"video": video_service,
 	}
 
 
@@ -768,10 +754,8 @@ func _create_services() -> void:
 	command_service = _new_service(scripts, WeavlyCommandService)
 	count_service = _new_service(scripts, WeavlyCountService)
 	function_service = _new_service(scripts, WeavlyFunctionService)
-	image_service = _new_service(scripts, WeavlyImageService)
 	line_service = _new_service(scripts, WeavlyLineService)
 	variable_service = _new_service(scripts, WeavlyVariableService)
-	video_service = _new_service(scripts, WeavlyVideoService)
 
 
 func _new_service(scripts: Dictionary[Script, Script], service: Script) -> WeavlyService:

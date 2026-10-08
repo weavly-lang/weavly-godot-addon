@@ -8,12 +8,6 @@ const MISSING_ENV = "Can't load '%s' without env.json; check dialogue_path or bu
 static func find_all_files_with_extension(
 	dir_path: String, extension: String
 ) -> PackedStringArray:
-	return find_all_files_with_extensions(dir_path, [extension])
-
-
-static func find_all_files_with_extensions(
-	dir_path: String, extensions: PackedStringArray
-) -> PackedStringArray:
 	var results: PackedStringArray = []
 
 	if not DirAccess.dir_exists_absolute(dir_path):
@@ -26,13 +20,11 @@ static func find_all_files_with_extensions(
 
 		if entry.ends_with("/"):
 			var sub_path: String = dir_path.path_join(entry.trim_suffix("/"))
-			results.append_array(find_all_files_with_extensions(sub_path, extensions))
+			results.append_array(find_all_files_with_extension(sub_path, extension))
 			continue
 
-		for extension: String in extensions:
-			if entry.to_lower().ends_with(extension.to_lower()):
-				results.append(dir_path.path_join(entry))
-				break
+		if entry.to_lower().ends_with(extension.to_lower()):
+			results.append(dir_path.path_join(entry))
 
 	return results
 
@@ -106,16 +98,3 @@ static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> v
 		engine.story.add_function(function)
 	for command: WeavlyModel.Signature in WeavlyDeserializer.read_commands(data, path):
 		engine.story.add_command(command)
-
-
-static func index_media(
-	index: WeavlyMediaIndex, dir: String, extensions: PackedStringArray
-) -> void:
-	for file_path: String in find_all_files_with_extensions(dir, extensions):
-		index.add(media_id(dir, file_path), file_path)
-
-
-# The path relative to dir without extension, so dir/alice/icon.png is alice/icon.
-static func media_id(dir: String, file_path: String) -> String:
-	var relative: String = file_path.trim_prefix(dir).replace("\\", "/").trim_prefix("/")
-	return relative.get_basename()
