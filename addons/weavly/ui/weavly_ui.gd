@@ -135,21 +135,12 @@ func _on_engine_attached() -> void:
 	pass
 
 
-# Offered options changed in place; every choice list in the UI shows them again.
-func _on_options_refreshed() -> void:
-	for child: Node in find_children("*", "", true, false):
-		if child is WeavlyChoiceList:
-			child.refresh()
-
-
 func _on_engine_detached() -> void:
 	pass
 
 
-# Chooses an option the dialogue offered; a refused one shows the options as they are now.
 func _choose(option: WeavlyModel.Option) -> void:
-	if not engine.choose(option):
-		_on_options_refreshed()
+	engine.choose(option)
 
 
 # False while detached or while a dialogue runs, which a render can't interrupt.
@@ -162,14 +153,9 @@ func _can_render(warning: String) -> bool:
 	return true
 
 
-# Like _can_render, and false for a refused option, which shows the options as they are now.
+# Like _can_render, and false for an option the engine refuses.
 func _can_render_choice(option: WeavlyModel.Option, warning: String) -> bool:
-	if not _can_render(warning):
-		return false
-	if engine.can_choose(option):
-		return true
-	_on_options_refreshed()
-	return false
+	return _can_render(warning) and engine.can_choose(option)
 
 
 # Options open with nothing selected: the first key press selects one, else action advances.
@@ -205,7 +191,7 @@ func _attach() -> void:
 			engine.ready.connect(_attach, CONNECT_ONE_SHOT)
 		return
 	_attached = true
-	for pair: Array in _all_engine_signals():
+	for pair: Array in _engine_signals():
 		(pair[0] as Signal).connect(pair[1])
 	_on_engine_attached()
 
@@ -217,12 +203,6 @@ func _detach() -> void:
 		engine.ready.disconnect(_attach)
 	if _attached:
 		_attached = false
-		for pair: Array in _all_engine_signals():
+		for pair: Array in _engine_signals():
 			(pair[0] as Signal).disconnect(pair[1])
 		_on_engine_detached()
-
-
-func _all_engine_signals() -> Array[Array]:
-	var pairs: Array[Array] = _engine_signals()
-	pairs.append([engine.options_refreshed, _on_options_refreshed])
-	return pairs

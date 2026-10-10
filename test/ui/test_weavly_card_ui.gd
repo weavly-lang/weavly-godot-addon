@@ -255,11 +255,9 @@ func test_a_teased_storylet_isnt_dealt() -> void:
 	assert_array(_hand()).is_equal([["An open square."]])
 
 
-func test_a_refused_option_keeps_the_card_and_shows_the_change() -> void:
+func test_an_option_runs_as_rendered_after_the_game_changed() -> void:
 	_ui.deal(["doors"])
 	_door_open = false
 	_button(_cards()[0], "Open").pressed.emit()
-	assert_int(_cards().size()).is_equal(1)
-	assert_bool(_button(_cards()[0], "Open").visible).is_false()
-	assert_bool(_ui.get_node("%Outcome").visible).is_false()
-	assert_int(_engine.count_service.get_visit_count("let_go")).is_equal(0)
+	assert_bool(_ui.get_node("%Outcome").visible).is_true()
+	assert_int(_engine.count_service.get_visit_count("let_go")).is_equal(1)

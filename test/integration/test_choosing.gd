@@ -123,28 +123,21 @@ func test_a_refused_choice_returns_false_and_changes_nothing() -> void:
 	engine.option_chosen.connect(func(option: WeavlyModel.Option) -> void: chosen.append(option))
 	engine.start("door")
 	var option: WeavlyModel.Option = _door_option(engine, "Open")
-	_door_open = false
+	engine.choose(option)
 	assert_bool(engine.choose(option)).is_false()
-	assert_logged([], ["Can't choose option 'Open' because it's locked."])
-	assert_array(chosen).is_empty()
-	assert_array(engine.get_pending_options()).is_not_empty()
-	assert_bool(engine.is_running()).is_true()
-	assert_bool(option.is_choosable()).is_false()
+	assert_logged([], ["Can't choose option 'Open' because it isn't offered right now."])
+	assert_array(chosen).is_equal([option])
 
 
-func test_can_choose_checks_again_without_a_warning() -> void:
+func test_an_offered_option_is_chosen_as_it_was_offered() -> void:
 	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
+	var lines: Array[String] = []
+	engine.line_reached.connect(
+		func(line: WeavlyModel.LineStatement) -> void: lines.append(line.text)
+	)
 	engine.start("door")
 	var option: WeavlyModel.Option = _door_option(engine, "Open")
-	assert_bool(engine.can_choose(option)).is_true()
 	_door_open = false
-	assert_bool(engine.can_choose(option)).is_false()
-	assert_array(engine.get_pending_options()).is_not_empty()
-
-
-func test_checking_a_choice_leaves_the_random_number_generator_as_it_was() -> void:
-	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
-	engine.start("door")
-	var state: int = engine.rng.state
-	engine.can_choose(_door_option(engine, "Roll"))
-	assert_int(engine.rng.state).is_equal(state)
+	assert_bool(engine.can_choose(option)).is_true()
+	assert_bool(engine.choose(option)).is_true()
+	assert_array(lines).is_equal(["The door opens."])

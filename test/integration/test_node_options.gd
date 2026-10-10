@@ -147,14 +147,13 @@ func test_choosing_a_locked_option_is_refused() -> void:
 	assert_array(_engine.get_pending_options()).is_not_empty()
 
 
-func test_the_choice_is_checked_again() -> void:
+func test_the_choice_isnt_checked_again() -> void:
 	_lucky = true
 	_run_to_options("journey")
 	var gamble: WeavlyModel.Option = _option("Gamble")
 	_lucky = false
-	_engine.choose(gamble)
-	assert_logged([], ["because it's locked."])
-	assert_str(gamble.text).is_equal("No luck")
+	assert_bool(_engine.choose(gamble)).is_true()
+	assert_bool(_events.has("You win.")).is_true()
 
 
 func test_a_block_where_nothing_can_be_chosen_waits_for_next() -> void:
@@ -194,50 +193,24 @@ func test_locked_nodes_dont_take_slots_and_teasers_keep_their_skip_count() -> vo
 
 
 # =====================
-# Refresh
-# =====================
-
-
-func test_a_variable_change_refreshes_offered_options_in_place() -> void:
-	_run_to_options("camp")
-	var refreshed: Array[int] = [0]
-	_engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
-	var hack: WeavlyModel.Option = _option("Something blinks")
-	var search: WeavlyModel.Option = _option("Search")
-	_set_variable("found", true)
-	assert_int(refreshed[0]).is_equal(1)
-	assert_str(hack.text).is_equal("Hack (-3 energy)")
-	assert_int(hack.state).is_equal(AVAILABLE)
-	assert_bool(search.hidden).is_true()
-	_set_variable("energy", 1.0)
-	assert_str(hack.text).is_equal("Hack (needs 3 energy)")
-	assert_int(hack.state).is_equal(UNAVAILABLE)
-
-
-func test_a_refresh_keeps_the_offered_selection() -> void:
-	_run_to_options("camp")
-	_set_variable("found", true)
-	assert_array(_texts(_offered())).is_equal(["Search", "Hack (-3 energy)", "Cook", "Scout"])
-
-
-func test_refresh_options_covers_game_owned_state() -> void:
-	_run_to_options("journey")
-	var gamble: WeavlyModel.Option = _option("No luck")
-	_lucky = true
-	assert_str(gamble.text).is_equal("No luck")
-	_engine.refresh_options()
-	assert_str(gamble.text).is_equal("Gamble")
-	assert_bool(gamble.is_choosable()).is_true()
-
-
-# =====================
 # Snapshot
 # =====================
 
 
-func test_the_chosen_node_reads_its_meta_values_as_they_were_at_the_choice() -> void:
+func test_offered_options_stay_as_offered() -> void:
+	_run_to_options("camp")
+	var hack: WeavlyModel.Option = _option("Something blinks")
+	_set_variable("found", true)
+	assert_array(_texts(_offered())).is_equal(["Search", "Something blinks", "Cook", "Scout"])
+	assert_int(hack.state).is_equal(TEASER)
+	assert_bool(_engine.choose(hack)).is_false()
+	assert_logged([], ["Can't choose option 'Something blinks' because it's locked."])
+
+
+func test_the_chosen_node_reads_its_meta_values_as_they_were_offered() -> void:
 	_set_variable("found", true)
 	_run_to_options("camp")
+	_set_variable("price", 7.0)
 	_engine.choose(_option("Hack (-3 energy)"))
 	assert_str(_events.back()).is_equal("Hacked.")
 	assert_that(_engine.get_variable("energy")).is_equal(2.0)
@@ -252,10 +225,11 @@ func test_the_chosen_node_reads_its_meta_values_as_they_were_at_the_choice() -> 
 # =====================
 
 
-func test_get_option_is_live_and_choose_runs_it_as_a_dialogue() -> void:
-	var hack: WeavlyModel.Option = _engine.get_option("hack")
-	assert_int(hack.state).is_equal(TEASER)
+func test_get_option_stays_as_offered_and_choose_runs_it_as_a_dialogue() -> void:
+	var teaser: WeavlyModel.Option = _engine.get_option("hack")
 	_set_variable("found", true)
+	assert_int(teaser.state).is_equal(TEASER)
+	var hack: WeavlyModel.Option = _engine.get_option("hack")
 	assert_int(hack.state).is_equal(AVAILABLE)
 	_engine.choose(hack)
 	assert_bool(_engine.is_running()).is_true()
@@ -268,14 +242,15 @@ func test_choose_refuses_a_locked_option_from_get_option() -> void:
 	assert_bool(_engine.is_running()).is_false()
 
 
-func test_render_option_checks_the_choice_again() -> void:
+func test_render_option_runs_the_option_as_rendered() -> void:
 	_lucky = true
 	var entries: Array[WeavlyModel.Statement] = _engine.render("journey")
 	var block: WeavlyModel.OptionBlock = entries[0]
 	var gamble: WeavlyModel.Option = block.options[2]
 	_lucky = false
-	assert_array(_engine.render_option(gamble)).is_empty()
-	assert_logged([], ["because it's locked."])
+	assert_str((_engine.render_option(gamble)[0] as WeavlyModel.LineStatement).text).is_equal(
+		"You win."
+	)
 	var again: Array[WeavlyModel.Statement] = _engine.render("journey")
 	var go_on: WeavlyModel.Option = (again[0] as WeavlyModel.OptionBlock).options[0]
 	(

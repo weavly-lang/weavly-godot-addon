@@ -87,13 +87,6 @@ func _choose(option: WeavlyModel.Option) -> void:
 	_outcome.visible = true
 
 
-func _on_options_refreshed() -> void:
-	super()
-	for child: Node in _outcome.get_children():
-		if child is WeavlyCard:
-			_continue.visible = not child.has_choosable()
-
-
 func _on_continue_pressed() -> void:
 	deal(_pools)
 

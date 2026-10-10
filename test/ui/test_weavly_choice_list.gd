@@ -144,23 +144,6 @@ func test_a_locked_link_has_no_underline() -> void:
 	)
 
 
-func test_refresh_shows_the_current_text_and_state() -> void:
-	var teased: WeavlyModel.Option = _locked("Teased", WeavlyModel.Option.State.TEASER)
-	var open: WeavlyModel.Option = _option("Open")
-	var options: Array[WeavlyModel.Option] = [teased, open]
-	_show_options(options)
-	(_list.get_child(1) as Button).grab_focus()
-	teased.state = WeavlyModel.Option.State.AVAILABLE
-	teased.text = "Hack"
-	open.hidden = true
-	_list.refresh()
-	var first: Button = _list.get_child(0)
-	assert_str(first.text).is_equal("Hack")
-	assert_bool(first.disabled).is_false()
-	assert_bool((_list.get_child(1) as Button).visible).is_false()
-	assert_bool((_list.get_child(1) as Button).has_focus()).is_false()
-
-
 func test_hovering_a_locked_option_doesnt_select_it() -> void:
 	var options: Array[WeavlyModel.Option] = [
 		_locked("Poor", WeavlyModel.Option.State.UNAVAILABLE)
