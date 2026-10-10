@@ -213,24 +213,24 @@ class PoolOptionItem:
 		self.locked = locked
 
 
-# An option as offered; a refresh updates it in place.
+# An option as offered; it doesn't change afterwards.
 class Option:
 	extends RefCounted
 	enum State { AVAILABLE, UNAVAILABLE, TEASER }
 
 	var text: String = ""
 	var state: State = State.AVAILABLE
-	# Set once a refresh finds the display rule hides it.
-	var hidden: bool = false
 	# Empty for an inline option.
 	var node_id: String = ""
+	# A node option's meta values when offered; the node reads them once chosen.
+	var meta: Dictionary = {}
 	var line: int = 0
 	# The inline option's item and the source of its node; unset for node options.
 	var item: InlineOptionItem = null
 	var source: String = ""
 
 	func is_choosable() -> bool:
-		return not hidden and state == State.AVAILABLE
+		return state == State.AVAILABLE
 
 
 # =====================

@@ -335,7 +335,7 @@ func test_ci_smoke_fixture_draws_lists_and_peeks_storylets() -> void:
 	assert_int(engine.count_service.get_skip_count("night_market")).is_equal(0)
 
 
-# camp_menu: a node option and a pool option whose only node shows as a teaser.
+# camp_menu: a node option and a pool option whose only node shows as a teaser without the key.
 func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 	var engine: WeavlyEngine = _make_engine(CI_SMOKE_FIXTURE)
 	_connect_content_log(engine)
@@ -346,9 +346,14 @@ func test_ci_smoke_fixture_offers_node_and_pool_options() -> void:
 		. is_equal(["Sit by the fire", "A closed tent"])
 	)
 	assert_int(options[1].state).is_equal(WeavlyModel.Option.State.TEASER)
+	engine.finish()
 	engine.set_variable("has_key", true)
-	assert_str(options[0].text).is_equal("The fire is out")
-	assert_str(options[1].text).is_equal("Sleep in the tent")
+	engine.start("camp_menu")
+	options = engine.get_pending_options()
+	(
+		assert_that(options.map(func(option: WeavlyModel.Option) -> String: return option.text))
+		. is_equal(["The fire is out", "Sleep in the tent"])
+	)
 	engine.choose(options[1])
 	assert_that(_narration_log.back()).is_equal("You sleep.")
 	assert_int(engine.count_service.get_visit_count("tent")).is_equal(0)

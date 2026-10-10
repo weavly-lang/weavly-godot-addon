@@ -68,8 +68,8 @@ func _saved(engine: WeavlyEngine) -> Dictionary:
 	return JSON.parse_string(JSON.stringify(engine.get_state()))
 
 
-func _render_and_drop(engine: WeavlyEngine, node_id: String) -> void:
-	engine.render(node_id)
+func _render_and_drop(engine: WeavlyEngine, node_id: String, text: String) -> WeakRef:
+	return weakref(_option(engine.render(node_id), text))
 
 
 # =====================
@@ -239,23 +239,16 @@ func test_options_of_several_renders_can_be_chosen() -> void:
 	assert_bool(engine.get_variable("left")).is_true()
 
 
-func test_options_the_game_holds_are_refreshed() -> void:
+func test_rendered_options_stay_as_rendered() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var held: Array[WeavlyModel.Statement] = engine.render("tavern")
-	var refreshed: Array[int] = [0]
-	engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
-	engine.set_variable("drinks", 3.0)
-	assert_int(refreshed[0]).is_equal(1)
-	assert_array(held).is_not_empty()
+	engine.set_variable("gold", 200.0)
+	assert_array(_describe(held)[2]).is_equal(["Buy a drink"])
 
 
 func test_options_the_game_dropped_are_let_go() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	_render_and_drop(engine, "tavern")
-	var refreshed: Array[int] = [0]
-	engine.options_refreshed.connect(func() -> void: refreshed[0] += 1)
-	engine.set_variable("drinks", 3.0)
-	assert_int(refreshed[0]).is_equal(0)
+	assert_object(_render_and_drop(engine, "tavern", "Leave").get_ref()).is_null()
 
 
 # =====================

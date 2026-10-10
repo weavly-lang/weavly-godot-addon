@@ -112,12 +112,6 @@ func _on_options_offered(options: Array[WeavlyModel.Option]) -> void:
 	_continue.visible = not _replies.has_choosable()
 
 
-func _on_options_refreshed() -> void:
-	super()
-	if _replies.get_child_count() > 0:
-		_continue.visible = not _replies.has_choosable()
-
-
 func _on_option_chosen(option: WeavlyModel.Option) -> void:
 	_replies.clear()
 	_continue.visible = false

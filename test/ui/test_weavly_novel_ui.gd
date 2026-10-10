@@ -273,15 +273,13 @@ func test_disconnecting_the_engine_hides_and_stops_listening() -> void:
 # =====================
 
 
-func test_a_locked_option_shows_disabled_and_unlocks_when_its_state_changes() -> void:
+func test_a_locked_option_shows_disabled_and_stays_as_offered() -> void:
 	_engine.start("gated")
 	assert_str(_choices()[0].text).is_equal("The vault is sealed")
 	assert_bool(_choices()[0].disabled).is_true()
 	_engine.set_variable("has_code", true)
-	assert_str(_choices()[0].text).is_equal("Open the vault")
-	assert_bool(_choices()[0].disabled).is_false()
-	_choices()[0].pressed.emit()
-	assert_str(_text().text).is_equal("Opened.")
+	assert_str(_choices()[0].text).is_equal("The vault is sealed")
+	assert_bool(_choices()[0].disabled).is_true()
 
 
 func test_advancing_continues_past_a_block_where_nothing_can_be_chosen() -> void:
@@ -292,12 +290,8 @@ func test_advancing_continues_past_a_block_where_nothing_can_be_chosen() -> void
 	assert_array(_choices()).is_empty()
 
 
-func test_a_refused_choice_keeps_the_choices_and_shows_the_change() -> void:
+func test_a_choice_runs_as_offered_after_the_game_changed() -> void:
 	_engine.start("door")
 	_door_open = false
 	_choices()[0].pressed.emit()
-	assert_logged([], ["Can't choose option 'Open' because it's locked."])
-	assert_bool(_choices()[0].visible).is_false()
-	assert_bool(_choices()[1].visible).is_true()
-	_choices()[1].pressed.emit()
 	assert_str(_engine.current_node_id).is_equal("waved")
