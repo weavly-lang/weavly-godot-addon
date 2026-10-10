@@ -189,7 +189,7 @@ func choose(option: WeavlyModel.Option) -> bool:
 		push_warning(refusal)
 		return false
 	if _pending_options.has(option):
-		_pending_options.clear()
+		_pending_options = []
 		option_chosen.emit(option)
 		if option.item != null:
 			add_statements(option.item.body)
@@ -276,7 +276,7 @@ func next() -> void:
 	if not _pending_options.any(
 		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
 	):
-		_pending_options.clear()
+		_pending_options = []
 	_paused = false
 	if _in_next:
 		return
@@ -367,7 +367,7 @@ func _stop() -> void:
 	_meta_snapshots.clear()
 	clear_location()
 	_frames.clear()
-	_pending_options.clear()
+	_pending_options = []
 
 
 func is_running() -> bool:

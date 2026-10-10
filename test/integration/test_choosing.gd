@@ -79,6 +79,22 @@ func test_choosing_inside_options_offered_runs_the_option_once() -> void:
 	assert_array(events).is_equal(["offered", "line:Stayed"])
 
 
+func test_the_offered_options_stay_with_the_game_after_choosing() -> void:
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
+	var offered: Array[Array] = []
+	var sizes: Array[int] = []
+	engine.options_offered.connect(
+		func(options: Array[WeavlyModel.Option]) -> void: offered.append(options)
+	)
+	engine.option_chosen.connect(
+		func(_option: WeavlyModel.Option) -> void: sizes.append(offered[0].size())
+	)
+	engine.start("door")
+	engine.choose(_door_option(engine, "Open"))
+	assert_array(sizes).is_equal([3])
+	assert_int(offered[0].size()).is_equal(3)
+
+
 func test_line_reached_carries_narration_and_character_lines() -> void:
 	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	var lines: Array[WeavlyModel.LineStatement] = []
