@@ -8,7 +8,7 @@ signal left_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
-# A statement is about to run, in play and in renders; hold() pauses the dialogue after it.
+# A statement is about to run, in play and in renders; in play, hold() pauses after it.
 signal statement_reached(statement: WeavlyModel.Statement)
 # A line in play, its text filled in; it waits for next() unless the line service says not to.
 signal line_reached(line: WeavlyModel.LineStatement)
@@ -278,7 +278,7 @@ func detour(node_id: String) -> void:
 
 # Called from a handler while a step runs, it lets that step continue.
 func next() -> void:
-	if _holds > 0:
+	if _is_holding():
 		return
 	if not _pending_options.any(
 		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
@@ -289,7 +289,7 @@ func next() -> void:
 		return
 	_in_next = true
 	var node_entries: int = 0
-	while not _paused and _holds == 0 and _pending_options.is_empty() and not _finished:
+	while not _paused and not _is_holding() and _pending_options.is_empty() and not _finished:
 		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
@@ -467,6 +467,11 @@ func release() -> void:
 	_hold_interrupted_step = false
 	if not _in_next and not _paused:
 		next()
+
+
+# A render runs the whole node, so a hold only pauses play.
+func _is_holding() -> bool:
+	return _holds > 0 and not _rendering
 
 
 func is_rendering() -> bool:
