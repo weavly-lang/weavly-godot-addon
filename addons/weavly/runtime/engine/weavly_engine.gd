@@ -8,14 +8,12 @@ signal left_node(node_id: String)
 signal finished_dialogue
 signal runtime_error(message: String, source: String, line: int)
 signal state_loaded
-# A statement is about to run, in play and in renders; hold() pauses the dialogue after it.
+# A statement is about to run, in play and in renders; in play, hold() pauses after it.
 signal statement_reached(statement: WeavlyModel.Statement)
 # A line in play, its text filled in; it waits for next() unless the line service says not to.
 signal line_reached(line: WeavlyModel.LineStatement)
 signal options_offered(options: Array[WeavlyModel.Option])
 signal option_chosen(option: WeavlyModel.Option)
-# Offered options were updated in place: their text, state or hidden flag may have changed.
-signal options_refreshed
 # Fires only when the stored value differs; old_value is null on an extern's first set.
 signal variable_changed(id: String, value: Variant, old_value: Variant)
 
@@ -107,10 +105,11 @@ var _render_output: Array[WeavlyModel.Statement] = []
 # The options of the last renders, which choose() and render_option() accept while the game
 # holds them.
 var _rendered_options: Array[WeakRef] = []
-# get_option's results, refreshed while the game holds them.
+# get_option's results, which choose() accepts while the game holds them.
 var _listed_options: Array[WeakRef] = []
 var _registrations_checked: bool = false
-# Node id -> meta values taken when it was chosen; meta reads use them while it runs.
+# Node id -> the chosen option's meta values from when it was offered; meta reads use them
+# while the node runs.
 var _meta_snapshots: Dictionary[String, Dictionary] = {}
 # The running statement lists, bottom to top: node bodies and the blocks inside them.
 var _frames: Array[Frame] = []
@@ -128,8 +127,6 @@ var _holds: int = 0
 var _hold_interrupted_step: bool = false
 
 var _checkpoint: Dictionary = {}
-# A variable changed during a step or render; offered options refresh once it ends.
-var _options_stale: bool = false
 var _initial_state: Dictionary = {}
 
 
@@ -192,13 +189,13 @@ func choose(option: WeavlyModel.Option) -> bool:
 		push_warning(refusal)
 		return false
 	if _pending_options.has(option):
-		_pending_options.clear()
+		_pending_options = []
 		option_chosen.emit(option)
 		if option.item != null:
 			add_statements(option.item.body)
 			next()
 		else:
-			snapshot_meta(option.node_id)
+			_meta_snapshots[option.node_id] = option.meta
 			detour(option.node_id)
 		return true
 	_rendered_options.clear()
@@ -214,15 +211,12 @@ func can_choose(option: WeavlyModel.Option) -> bool:
 
 
 # Empty when the option can be chosen now: it's offered, pending or rendered or from get_option,
-# and still choosable when checked again.
+# and was choosable when offered.
 func _refusal(option: WeavlyModel.Option) -> String:
 	if not _offered_options().has(option):
 		return NOT_OFFERED % option.text
 	if not _finished and not _pending_options.has(option):
 		return CHOOSE_IN_PROGRESS % option.text
-	var rng_state: int = rng.state
-	WeavlyOptionBuilder.refresh(option, self)
-	rng.state = rng_state
 	if not option.is_choosable():
 		return LOCKED_OPTION % option.text
 	return ""
@@ -230,7 +224,7 @@ func _refusal(option: WeavlyModel.Option) -> String:
 
 func _run_choice(option: WeavlyModel.Option) -> void:
 	if option.item == null:
-		snapshot_meta(option.node_id)
+		_meta_snapshots[option.node_id] = option.meta
 		enter_node(option.node_id)
 		return
 	current_source = option.source
@@ -258,7 +252,6 @@ func _end_render() -> Array[WeavlyModel.Statement]:
 	_meta_snapshots.clear()
 	clear_location()
 	_frames.clear()
-	_refresh_stale_options()
 	return output
 
 
@@ -278,18 +271,18 @@ func detour(node_id: String) -> void:
 
 # Called from a handler while a step runs, it lets that step continue.
 func next() -> void:
-	if _holds > 0:
+	if _is_holding():
 		return
 	if not _pending_options.any(
 		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
 	):
-		_pending_options.clear()
+		_pending_options = []
 	_paused = false
 	if _in_next:
 		return
 	_in_next = true
 	var node_entries: int = 0
-	while not _paused and _holds == 0 and _pending_options.is_empty() and not _finished:
+	while not _paused and not _is_holding() and _pending_options.is_empty() and not _finished:
 		if _pending_node_id != null:
 			node_entries += 1
 			if node_entries > max_node_entries_per_step:
@@ -300,7 +293,6 @@ func next() -> void:
 		else:
 			_advance()
 	_in_next = false
-	_refresh_stale_options()
 
 
 # Runs the top frame's next statement, or leaves the frame once it ran out.
@@ -316,12 +308,6 @@ func _advance() -> void:
 		return
 	WeavlyStatementExecutor.execute_statement(frame.get_current_statement(), self)
 	frame.increase_counter()
-
-
-func _refresh_stale_options() -> void:
-	if _options_stale:
-		_options_stale = false
-		refresh_options()
 
 
 func _enter_pending_node() -> void:
@@ -381,7 +367,7 @@ func _stop() -> void:
 	_meta_snapshots.clear()
 	clear_location()
 	_frames.clear()
-	_pending_options.clear()
+	_pending_options = []
 
 
 func is_running() -> bool:
@@ -469,6 +455,11 @@ func release() -> void:
 		next()
 
 
+# A render runs the whole node, so a hold only pauses play.
+func _is_holding() -> bool:
+	return _holds > 0 and not _rendering
+
+
 func is_rendering() -> bool:
 	return _rendering
 
@@ -545,13 +536,8 @@ func set_variable(id: String, value: Variant) -> void:
 		value = variable.clamp_value(value)
 	var old_value: Variant = variable_service.get_value(id) if variable_service.has(id) else null
 	variable_service.set_value(id, value)
-	if _same(value, old_value):
-		return
-	variable_changed.emit(id, value, old_value)
-	if _in_next or _rendering:
-		_options_stale = true
-	else:
-		refresh_options()
+	if not _same(value, old_value):
+		variable_changed.emit(id, value, old_value)
 
 
 # The callable gets the arguments in declaration order. In an expression it may run any number
@@ -584,8 +570,8 @@ func peek_pool(
 	return WeavlyStoryletSelector.peek_pool(self, pools, limit, shuffle, locked)
 
 
-# The node as a block would offer it, or null when the display rule hides it. It stays live
-# like an offered option, and choose() accepts it.
+# The node as a block would offer it, or null when the display rule hides it. choose() accepts
+# it while the game holds it.
 func get_option(node_id: String) -> WeavlyModel.Option:
 	_check_registrations()
 	var rng_state: int = rng.state
@@ -595,19 +581,6 @@ func get_option(node_id: String) -> WeavlyModel.Option:
 		_listed_options = _listed_options.filter(_is_held)
 		_listed_options.append(weakref(option))
 	return option
-
-
-# Evaluates every offered option again, pending, rendered or from get_option; the engine's
-# own variable changes do this on their own. The selection and its order stay as offered.
-func refresh_options() -> void:
-	var options: Array[WeavlyModel.Option] = _offered_options()
-	if options.is_empty():
-		return
-	var rng_state: int = rng.state
-	for option: WeavlyModel.Option in options:
-		WeavlyOptionBuilder.refresh(option, self)
-	rng.state = rng_state
-	options_refreshed.emit()
 
 
 func _offered_options() -> Array[WeavlyModel.Option]:
@@ -690,11 +663,6 @@ func _locate(message: String) -> String:
 
 func get_meta_snapshot(node_id: String) -> Dictionary:
 	return _meta_snapshots.get(node_id, {})
-
-
-# Freezes the chosen node's meta values for as long as it runs.
-func snapshot_meta(node_id: String) -> void:
-	_meta_snapshots[node_id] = WeavlyMetaReader.snapshot(self, story.get_node(node_id))
 
 
 func get_location_stack() -> Array[String]:

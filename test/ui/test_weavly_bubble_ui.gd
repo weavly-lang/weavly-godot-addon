@@ -345,12 +345,8 @@ func test_disconnecting_the_engine_hides_and_stops_listening() -> void:
 	assert_bool(_ui.visible).is_false()
 
 
-func test_a_refused_choice_keeps_the_choices_and_shows_the_change() -> void:
+func test_a_choice_runs_as_offered_after_the_game_changed() -> void:
 	_engine.start("door")
 	_door_open = false
 	_choices()[0].pressed.emit()
-	assert_logged([], ["Can't choose option 'Open' because it's locked."])
-	assert_bool(_choices()[0].visible).is_false()
-	assert_bool(_choices()[1].visible).is_true()
-	_choices()[1].pressed.emit()
 	assert_str(_engine.current_node_id).is_equal("answered")

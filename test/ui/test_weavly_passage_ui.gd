@@ -217,11 +217,8 @@ func test_disconnecting_the_engine_clears_and_stops_rendering() -> void:
 	assert_array(_describe()).is_empty()
 
 
-func test_a_refused_link_keeps_the_passage_and_shows_the_change() -> void:
+func test_a_link_runs_as_rendered_after_the_game_changed() -> void:
 	_ui.show_passage("door")
 	_door_open = false
 	_link("Open").pressed.emit()
-	assert_bool(_link("Open").visible).is_false()
-	assert_bool(_link("Stay").visible).is_true()
-	assert_array(_events).is_empty()
-	assert_int(_engine.count_service.get_visit_count("street")).is_equal(0)
+	assert_int(_engine.count_service.get_visit_count("street")).is_equal(1)

@@ -46,41 +46,17 @@ static func offer_node(engine: WeavlyEngine, node_id: String) -> WeavlyModel.Opt
 	return _node_option(engine, node, display)
 
 
-# Evaluates the option again and applies the display rule; a hidden option keeps its text.
-static func refresh(option: WeavlyModel.Option, engine: WeavlyEngine) -> void:
-	if option.item != null:
-		option.hidden = not _inline_holds(option, engine)
-		if not option.hidden:
-			option.text = _inline_text(option, engine)
-		return
-	if not engine.story.has_node(option.node_id):
-		option.hidden = true
-		return
-	var node: WeavlyModel.WeavlyNode = engine.story.get_node(option.node_id)
-	var display: WeavlyStoryletSelector.Display = WeavlyStoryletSelector.display_of(engine, node)
-	option.hidden = not STATES.has(display)
-	if not option.hidden:
-		_show(option, engine, node, display)
-
-
+# The label comes from the meta snapshot, so it matches what the node reads once chosen.
 static func _node_option(
 	engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, display: WeavlyStoryletSelector.Display
 ) -> WeavlyModel.Option:
 	var option: WeavlyModel.Option = WeavlyModel.Option.new()
 	option.node_id = node.id
 	option.line = node.line
-	_show(option, engine, node, display)
-	return option
-
-
-static func _show(
-	option: WeavlyModel.Option,
-	engine: WeavlyEngine,
-	node: WeavlyModel.WeavlyNode,
-	display: WeavlyStoryletSelector.Display
-) -> void:
 	option.state = STATES[display]
-	option.text = WeavlyMetaReader.read_node(engine, node, LABELS[display])
+	option.meta = WeavlyMetaReader.snapshot(engine, node)
+	option.text = option.meta.get(LABELS[display], "")
+	return option
 
 
 static func _offer_inline(

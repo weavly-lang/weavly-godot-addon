@@ -13,7 +13,7 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-# Locked options show disabled and can't take focus; hidden ones don't show.
+# Locked options show disabled and can't take focus.
 func show_options(options: Array[WeavlyModel.Option]) -> void:
 	clear()
 	_options = options.duplicate()
@@ -23,12 +23,6 @@ func show_options(options: Array[WeavlyModel.Option]) -> void:
 		button.pressed.connect(func() -> void: chosen.emit(option))
 		add_child(button)
 		_apply(button, option)
-
-
-## Shows the options' current text and state, after the engine refreshed them.
-func refresh() -> void:
-	for i: int in _options.size():
-		_apply(get_child(i), _options[i])
 
 
 func clear() -> void:
@@ -49,7 +43,7 @@ func focus_first() -> bool:
 	if has_focus_inside():
 		return false
 	for button: BaseButton in get_children():
-		if button.visible and button.focus_mode != Control.FOCUS_NONE:
+		if button.focus_mode != Control.FOCUS_NONE:
 			button.grab_focus()
 			return true
 	return false
@@ -81,11 +75,8 @@ func _create_button() -> BaseButton:
 
 func _apply(button: BaseButton, option: WeavlyModel.Option) -> void:
 	var choosable: bool = option.is_choosable()
-	button.visible = not option.hidden
 	button.disabled = not choosable
 	button.focus_mode = Control.FOCUS_ALL if choosable else Control.FOCUS_NONE
-	if not choosable and button.has_focus():
-		button.release_focus()
 	if button is LinkButton:
 		(button as LinkButton).text = option.text
 		(button as LinkButton).underline = (

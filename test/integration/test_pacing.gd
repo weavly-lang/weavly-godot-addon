@@ -86,3 +86,30 @@ func test_a_line_held_on_line_reached_waits_for_next_after_release() -> void:
 	assert_array(_lines).is_equal(["Welcome"])
 	engine.next()
 	assert_array(_lines).is_equal(["Welcome", "Hello"])
+
+
+func test_a_hold_on_statement_reached_doesnt_stop_a_render() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.statement_reached.connect(
+		func(_statement: WeavlyModel.Statement) -> void: engine.hold()
+	)
+	var texts: Array[String] = []
+	for entry: WeavlyModel.Statement in engine.render("start"):
+		texts.append((entry as WeavlyModel.LineStatement).text)
+	assert_array(texts).is_equal(["Welcome", "Hello", "Goodbye"])
+
+
+func test_a_hold_from_a_render_pauses_play_until_released() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var held: Array[bool] = [false]
+	engine.statement_reached.connect(
+		func(_statement: WeavlyModel.Statement) -> void:
+			if not held[0]:
+				held[0] = true
+				engine.hold()
+	)
+	engine.render("start")
+	engine.start("start")
+	assert_array(_lines).is_empty()
+	engine.release()
+	assert_array(_lines).is_equal(["Welcome"])
