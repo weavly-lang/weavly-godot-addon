@@ -4,7 +4,7 @@ extends RefCounted
 
 enum Kind { NODE, POOL, SLOT, CHARACTER, VARIABLE, META_KEY, FUNCTION }
 
-const _DECLARATION_KINDS: Dictionary[String, Kind] = {
+const DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"var": Kind.VARIABLE,
 	"pool": Kind.POOL,
 	"slot": Kind.SLOT,
@@ -13,7 +13,7 @@ const _DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"func": Kind.FUNCTION,
 }
 
-static var _declaration_regex: RegEx = RegEx.create_from_string(
+static var declaration_regex: RegEx = RegEx.create_from_string(
 	"^\\s*(?:extern\\s+)?(var|pool|slot|character|meta|func)\\s+([A-Za-z_]\\w*)"
 )
 static var _group_entry_regex: RegEx = RegEx.create_from_string("^\\s*(pool|slot)\\s*:([^#]*)")
@@ -34,8 +34,23 @@ class Definition:
 	var text: String
 
 
+# A line that uses a name; a line using it twice is one use.
+class Use:
+	extends RefCounted
+	var kinds: Array[Kind] = []
+	var path: String
+	# 0-based.
+	var line: int
+	var column: int
+	var text: String
+
+
 # Path -> its definitions.
 var _files: Dictionary[String, Array] = {}
+# Path -> its text, for finding uses later.
+var _texts: Dictionary[String, String] = {}
+# Path -> name -> its uses; filled when first asked.
+var _uses: Dictionary[String, Dictionary] = {}
 var _modified_times: Dictionary[String, int] = {}
 var _open_path: String = ""
 # Name -> the kind of its first definition; rebuilt after a change.
@@ -52,8 +67,7 @@ func scan(dir: String) -> bool:
 	var changed: bool = false
 	for path: String in _files.keys():
 		if path != _open_path and not found.has(path):
-			_files.erase(path)
-			_modified_times.erase(path)
+			_forget(path)
 			changed = true
 	for path: String in found:
 		if path == _open_path:
@@ -62,7 +76,7 @@ func scan(dir: String) -> bool:
 		if _modified_times.get(path, -1) == modified:
 			continue
 		_modified_times[path] = modified
-		_files[path] = parse(path, FileAccess.get_file_as_string(path))
+		_read(path, FileAccess.get_file_as_string(path))
 		changed = true
 	_kinds_stale = _kinds_stale or changed
 	return changed
@@ -72,12 +86,24 @@ func scan(dir: String) -> bool:
 func set_open_file(path: String, text: String) -> void:
 	path = path.simplify_path()
 	if _open_path != "" and _open_path != path:
-		_files.erase(_open_path)
-		_modified_times.erase(_open_path)
+		_forget(_open_path)
 	_open_path = path
 	if path != "":
-		_files[path] = parse(path, text)
+		_read(path, text)
 	_kinds_stale = true
+
+
+func _read(path: String, text: String) -> void:
+	_files[path] = parse(path, text)
+	_texts[path] = text
+	_uses.erase(path)
+
+
+func _forget(path: String) -> void:
+	_files.erase(path)
+	_texts.erase(path)
+	_uses.erase(path)
+	_modified_times.erase(path)
 
 
 # The kind of the definition with the name, or -1 when nothing has it.
@@ -116,6 +142,47 @@ func members(kind: Kind, name: String) -> Array[Definition]:
 	return found
 
 
+# Where the name is used as one of kind, by file and line.
+func uses(kind: Kind, name: String) -> Array[Use]:
+	var found: Array[Use] = []
+	for path: String in _sorted_paths():
+		if not _uses.has(path):
+			_uses[path] = find_uses(path, _texts[path])
+		for use: Use in _uses[path].get(name, []):
+			if kind in use.kinds:
+				found.append(use)
+	return found
+
+
+# Name -> the lines that use it, leaving out declarations and pool or slot entries.
+static func find_uses(path: String, text: String) -> Dictionary[String, Array]:
+	var found: Dictionary[String, Array] = {}
+	var lines: PackedStringArray = text.split("\n")
+	var blocks: PackedInt32Array = WeavlyLineScanner.blocks(lines)
+	for line: int in lines.size():
+		var on_line: Dictionary[String, Use] = {}
+		for symbol: WeavlySymbolResolver.Symbol in WeavlySymbolResolver.symbols(
+			lines[line], blocks[line]
+		):
+			if symbol.role != WeavlySymbolResolver.Role.USE:
+				continue
+			var use: Use = on_line.get(symbol.name)
+			if use == null:
+				use = Use.new()
+				use.path = path
+				use.line = line
+				use.column = symbol.column
+				use.text = lines[line].strip_edges()
+				on_line[symbol.name] = use
+				if not found.has(symbol.name):
+					found[symbol.name] = []
+				found[symbol.name].append(use)
+			for kind: Kind in symbol.kinds:
+				if kind not in use.kinds:
+					use.kinds.append(kind)
+	return found
+
+
 static func parse(path: String, text: String) -> Array[Definition]:
 	var definitions: Array[Definition] = []
 	var node: Definition = null
@@ -125,10 +192,10 @@ static func parse(path: String, text: String) -> Array[Definition]:
 		var content: String = lines[line]
 		match blocks[line]:
 			WeavlyLineScanner.Block.ENV:
-				var declaration: RegExMatch = _declaration_regex.search(content)
+				var declaration: RegExMatch = declaration_regex.search(content)
 				if declaration != null:
 					var definition: Definition = _definition(
-						_DECLARATION_KINDS[declaration.get_string(1)],
+						DECLARATION_KINDS[declaration.get_string(1)],
 						declaration.get_string(2),
 						path,
 						line

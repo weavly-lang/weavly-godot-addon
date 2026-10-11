@@ -108,15 +108,24 @@ func test_a_built_in_function_has_no_target() -> void:
 func test_a_pool_lists_its_nodes() -> void:
 	_look_up(2, "city")
 	assert_bool(_panel._navigator.visible).is_true()
-	assert_array(_listed()).is_equal(
-		["-- pool city", "market  src/city.wvl:1", "harbor  src/city.wvl:7"]
+	(
+		assert_array(_listed())
+		. is_equal(
+			[
+				"-- pool city",
+				"city  src/env.wvl:3",
+				"-- nodes in city",
+				"market  src/city.wvl:1",
+				"harbor  src/city.wvl:7",
+			]
+		)
 	)
 	assert_str(_where()).is_equal("story.wvl:0")
 
 
 func test_choosing_a_listed_node_goes_there() -> void:
 	_look_up(2, "city")
-	_panel._navigator.id_pressed.emit(1)
+	_panel._navigator.id_pressed.emit(2)
 	assert_str(_where()).is_equal("city.wvl:6")
 
 
@@ -130,6 +139,8 @@ func test_a_bare_name_lists_every_kind_it_matches() -> void:
 				"-- node city",
 				"city  src/city.wvl:13",
 				"-- pool city",
+				"city  src/env.wvl:3",
+				"-- nodes in city",
 				"market  src/city.wvl:1",
 				"harbor  src/city.wvl:7",
 			]
@@ -214,28 +225,35 @@ func _tooltip(line: int, word: String) -> String:
 
 func test_a_node_tooltip_shows_its_meta_block() -> void:
 	assert_str(_tooltip(1, "market")).is_equal(
-		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta"
+		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta\n1 use in 1 file"
 	)
 
 
 func test_a_variable_tooltip_shows_its_declaration() -> void:
-	assert_str(_tooltip(4, "energy")).is_equal("src/env.wvl:2\nvar energy: number = 3")
+	assert_str(_tooltip(4, "energy")).is_equal(
+		"src/env.wvl:2\nvar energy: number = 3\n1 use in 1 file"
+	)
 
 
-func test_a_pool_tooltip_counts_its_nodes() -> void:
-	assert_str(_tooltip(2, "city")).is_equal("src/env.wvl:3\npool city\n2 nodes")
+func test_a_pool_tooltip_names_its_nodes() -> void:
+	assert_str(_tooltip(2, "city")).is_equal(
+		"src/env.wvl:3\npool city\nnodes: market, harbor\n1 use in 1 file"
+	)
 
 
-func test_an_undeclared_slot_tooltip_still_counts_its_nodes() -> void:
+func test_an_undeclared_slot_tooltip_still_names_its_nodes() -> void:
 	_write_file("src/dock.wvl", "@node dock\n@meta\nslot: crew\n@endmeta\n@endnode\n")
 	_panel._code_edit.set_line(3, "@if visited(crew): @jump hub")
-	assert_str(_tooltip(3, "crew")).is_equal("slot crew\n1 node")
+	assert_str(_tooltip(3, "crew")).is_equal("slot crew\nnodes: dock\n1 use in 1 file")
 
 
 func test_a_bare_name_tooltip_shows_every_match() -> void:
 	_panel._code_edit.set_line(3, "@if visited(city): @jump hub")
 	assert_str(_tooltip(3, "city")).is_equal(
-		"src/city.wvl:13\n@node city\n\nsrc/env.wvl:3\npool city\n2 nodes"
+		(
+			"src/city.wvl:13\n@node city\n1 use in 1 file\n\n"
+			+ "src/env.wvl:3\npool city\nnodes: market, harbor\n2 uses in 1 file"
+		)
 	)
 
 
@@ -260,7 +278,7 @@ func _tooltip_at_position(line: int, column: int, offset: Vector2 = Vector2.ZERO
 
 func test_resting_the_mouse_on_a_name_shows_its_tooltip() -> void:
 	assert_str(await _tooltip_at_position(1, 8)).is_equal(
-		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta"
+		"src/city.wvl:1\n@node market\n@meta\npool: city\n@endmeta\n1 use in 1 file"
 	)
 
 
@@ -281,4 +299,74 @@ func test_another_project_beside_it_isnt_indexed() -> void:
 	file.store_string("@node hub\n@endnode\n")
 	file.close()
 	var column: int = _panel._code_edit.get_line(3).find("hub")
-	assert_array(_panel._navigator.sections_at(3, column)[0].definitions).has_size(1)
+	assert_array(_panel._navigator.sections_at(3, column)[0].entries).has_size(1)
+
+
+func test_a_declaration_lists_its_uses() -> void:
+	_panel.open_file(_dir.path_join("src/env.wvl"))
+	_look_up(1, "energy")
+	assert_array(_listed()).is_equal(
+		["-- uses of energy", "src/story.wvl:5  You have {energy} left."]
+	)
+	_panel._navigator.id_pressed.emit(0)
+	assert_str(_where()).is_equal("story.wvl:4")
+	assert_int(_panel._code_edit.get_caret_column()).is_equal(10)
+
+
+func test_a_node_header_lists_its_uses() -> void:
+	_look_up(0, "hub")
+	assert_array(_listed()).is_equal(
+		["-- uses of hub", "src/story.wvl:4  @if visited(harbor): @jump hub"]
+	)
+
+
+func test_a_declaration_without_uses_says_so() -> void:
+	_panel.open_file(_city)
+	_look_up(12, "city")
+	assert_array(_listed()).is_equal(["-- uses of city", "none"])
+	assert_bool(_panel._navigator.is_item_disabled(1)).is_true()
+
+
+func test_a_pool_declaration_lists_its_nodes_and_uses() -> void:
+	_panel.open_file(_dir.path_join("src/env.wvl"))
+	_look_up(2, "city")
+	(
+		assert_array(_listed())
+		. is_equal(
+			[
+				"-- nodes in city",
+				"market  src/city.wvl:1",
+				"harbor  src/city.wvl:7",
+				"-- uses of city",
+				"src/story.wvl:3  @draw city",
+			]
+		)
+	)
+
+
+func test_a_long_use_is_shortened() -> void:
+	var text: String = "You have {energy} left, " + "and more ".repeat(10)
+	_write_file("src/story.wvl", _STORY.replace("You have {energy} left.", text))
+	_panel.open_file(_dir.path_join("src/env.wvl"))
+	_look_up(1, "energy")
+	assert_str(_listed()[1]).is_equal(
+		"src/story.wvl:5  " + text.left(WeavlyCodeNavigator.USE_TEXT_LENGTH - 3) + "..."
+	)
+
+
+func test_a_declaration_tooltip_matches_its_uses() -> void:
+	_panel.open_file(_dir.path_join("src/env.wvl"))
+	assert_str(_tooltip(1, "energy")).is_equal(
+		"src/env.wvl:2\nvar energy: number = 3\n1 use in 1 file"
+	)
+
+
+func test_a_pool_tooltip_names_only_the_first_nodes() -> void:
+	var crowd: String = ""
+	for i: int in 12:
+		crowd += "@node n%d\n@meta\npool: crowd\n@endmeta\n@endnode\n" % i
+	_write_file("src/crowd.wvl", crowd)
+	_panel._code_edit.set_line(2, "@draw crowd")
+	assert_str(_tooltip(2, "crowd")).is_equal(
+		"pool crowd\nnodes: n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 and 2 more\n1 use in 1 file"
+	)

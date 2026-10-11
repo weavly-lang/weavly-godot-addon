@@ -7,6 +7,10 @@ signal index_changed
 
 # Other files are read from disk again at most this often while hovering.
 const RESCAN_INTERVAL_MS = 1000
+# A pool's or slot's tooltip names this many of its nodes.
+const TOOLTIP_NODES = 10
+# A listed use shows this much of its line.
+const USE_TEXT_LENGTH = 60
 const KIND_NAMES: Dictionary[WeavlyProjectIndex.Kind, String] = {
 	WeavlyProjectIndex.Kind.NODE: "node",
 	WeavlyProjectIndex.Kind.POOL: "pool",
@@ -21,9 +25,14 @@ const KIND_NAMES: Dictionary[WeavlyProjectIndex.Kind, String] = {
 class Section:
 	extends RefCounted
 	var heading: String
-	# A pool's or slot's nodes rather than the name's own definition.
-	var members: bool
-	var definitions: Array[WeavlyProjectIndex.Definition]
+	# The name's own definitions rather than nodes or uses to choose from.
+	var definitions: bool
+	var entries: Array[Location] = []
+	var labels: PackedStringArray = []
+
+	func _init(section_heading: String, are_definitions: bool) -> void:
+		heading = section_heading
+		definitions = are_definitions
 
 
 class Location:
@@ -46,8 +55,8 @@ var _buffer_stale: bool = true
 var _lines: PackedStringArray = []
 var _lines_stale: bool = true
 var _scanned_at: int = -RESCAN_INTERVAL_MS
-# Popup item id -> its definition.
-var _listed: Array[WeavlyProjectIndex.Definition] = []
+# Popup item id -> where it goes.
+var _listed: Array[Location] = []
 var _back: Array[Location] = []
 var _forward: Array[Location] = []
 
@@ -65,27 +74,55 @@ func _init(panel: WeavlyEditorPanel, code_edit: WeavlyCodeEdit) -> void:
 	id_pressed.connect(_on_listed_pressed)
 
 
+# A use lists its definitions, a declaration its uses; a pool or slot adds its nodes.
 func sections_at(line: int, column: int) -> Array[Section]:
 	var sections: Array[Section] = []
 	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
 	if symbol == null:
 		return sections
+	if symbol.role == WeavlySymbolResolver.Role.DECLARATION:
+		var kind: WeavlyProjectIndex.Kind = symbol.kinds[0]
+		if _is_group(kind):
+			_add_definitions(sections, "nodes in " + symbol.name, index.members(kind, symbol.name))
+		var uses: Section = Section.new("uses of " + symbol.name, false)
+		for use: WeavlyProjectIndex.Use in index.uses(kind, symbol.name):
+			var text: String = use.text
+			if text.length() > USE_TEXT_LENGTH:
+				text = text.left(USE_TEXT_LENGTH - 3) + "..."
+			uses.entries.append(Location.new(use.path, use.line, use.column))
+			uses.labels.append("%s:%d  %s" % [_display_path(use.path), use.line + 1, text])
+		sections.append(uses)
+		return sections
 	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
-		var section: Section = Section.new()
-		section.heading = "%s %s" % [KIND_NAMES[kind], symbol.name]
-		section.members = (
-			kind == WeavlyProjectIndex.Kind.POOL or kind == WeavlyProjectIndex.Kind.SLOT
+		_add_definitions(
+			sections,
+			"%s %s" % [KIND_NAMES[kind], symbol.name],
+			index.find(kind, symbol.name),
+			true
 		)
-		if section.members:
-			section.definitions = index.members(kind, symbol.name)
-		else:
-			section.definitions = index.find(kind, symbol.name)
-		if not section.definitions.is_empty():
-			sections.append(section)
+		if _is_group(kind):
+			_add_definitions(sections, "nodes in " + symbol.name, index.members(kind, symbol.name))
 	return sections
 
 
-# Each definition's file and source; a pool or slot also counts its nodes.
+func _add_definitions(
+	sections: Array[Section],
+	heading: String,
+	definitions: Array[WeavlyProjectIndex.Definition],
+	own: bool = false
+) -> void:
+	if definitions.is_empty():
+		return
+	var section: Section = Section.new(heading, own)
+	for definition: WeavlyProjectIndex.Definition in definitions:
+		section.entries.append(Location.new(definition.path, definition.line, 0))
+		section.labels.append(
+			"%s  %s:%d" % [definition.name, _display_path(definition.path), definition.line + 1]
+		)
+	sections.append(section)
+
+
+# Each definition's file and source, a pool's or slot's nodes, and how often the name is used.
 func tooltip_at(line: int, column: int) -> String:
 	var symbol: WeavlySymbolResolver.Symbol = _symbol_at(line, column)
 	if symbol == null:
@@ -93,6 +130,11 @@ func tooltip_at(line: int, column: int) -> String:
 	var parts: PackedStringArray = []
 	for kind: WeavlyProjectIndex.Kind in symbol.kinds:
 		var definitions: Array[WeavlyProjectIndex.Definition] = index.find(kind, symbol.name)
+		var nodes: Array[WeavlyProjectIndex.Definition] = []
+		if _is_group(kind):
+			nodes = index.members(kind, symbol.name)
+		if definitions.is_empty() and nodes.is_empty():
+			continue
 		for definition: WeavlyProjectIndex.Definition in definitions:
 			parts.append(
 				(
@@ -100,47 +142,68 @@ func tooltip_at(line: int, column: int) -> String:
 					% [_display_path(definition.path), definition.line + 1, definition.text]
 				)
 			)
-		if kind != WeavlyProjectIndex.Kind.POOL and kind != WeavlyProjectIndex.Kind.SLOT:
-			continue
-		var count: int = index.members(kind, symbol.name).size()
 		if definitions.is_empty():
-			if count == 0:
-				continue
 			parts.append("%s %s" % [KIND_NAMES[kind], symbol.name])
-		parts[-1] += "\n1 node" if count == 1 else "\n%d nodes" % count
+		if _is_group(kind):
+			parts[-1] += "\n" + _node_names(nodes)
+		parts[-1] += "\n" + _use_count(index.uses(kind, symbol.name))
 	return "\n\n".join(parts)
 
 
-# Goes to the only definition, or lists them; a pool's or slot's nodes are always listed.
+func _node_names(nodes: Array[WeavlyProjectIndex.Definition]) -> String:
+	if nodes.is_empty():
+		return "no nodes"
+	var names: PackedStringArray = []
+	for node: WeavlyProjectIndex.Definition in nodes.slice(0, TOOLTIP_NODES):
+		names.append(node.name)
+	var more: int = nodes.size() - names.size()
+	return "nodes: " + ", ".join(names) + ("" if more == 0 else " and %d more" % more)
+
+
+func _use_count(uses: Array[WeavlyProjectIndex.Use]) -> String:
+	if uses.is_empty():
+		return "no uses"
+	var files: Dictionary[String, bool] = {}
+	for use: WeavlyProjectIndex.Use in uses:
+		files[use.path] = true
+	return (
+		"%d %s in %d %s"
+		% [
+			uses.size(),
+			"use" if uses.size() == 1 else "uses",
+			files.size(),
+			"file" if files.size() == 1 else "files",
+		]
+	)
+
+
+# Goes to the only definition, or lists what there is to choose from.
 func look_up(line: int, column: int) -> void:
 	var sections: Array[Section] = sections_at(line, column)
 	if sections.is_empty():
 		return
-	if sections.size() == 1 and not sections[0].members and sections[0].definitions.size() == 1:
-		var definition: WeavlyProjectIndex.Definition = sections[0].definitions[0]
-		go_to(definition.path, definition.line)
+	if sections.size() == 1 and sections[0].definitions and sections[0].entries.size() == 1:
+		go_to(sections[0].entries[0])
 		return
 	clear()
 	_listed.clear()
 	for section: Section in sections:
 		add_separator(section.heading)
-		for definition: WeavlyProjectIndex.Definition in section.definitions:
-			add_item(
-				(
-					"%s  %s:%d"
-					% [definition.name, _display_path(definition.path), definition.line + 1]
-				),
-				_listed.size()
-			)
-			_listed.append(definition)
+		if section.entries.is_empty():
+			add_item("none", _listed.size())
+			set_item_disabled(item_count - 1, true)
+			_listed.append(null)
+		for i: int in section.entries.size():
+			add_item(section.labels[i], _listed.size())
+			_listed.append(section.entries[i])
 	position = Vector2i(_code_edit.get_screen_position() + _code_edit.get_local_mouse_position())
 	reset_size()
 	popup()
 
 
-func go_to(path: String, line: int) -> void:
+func go_to(location: Location) -> void:
 	var here: Location = _here()
-	if _move_to(Location.new(path, line, 0)):
+	if _move_to(location):
 		_back.append(here)
 		_forward.clear()
 
@@ -211,6 +274,10 @@ func _update_index() -> void:
 			index_changed.emit()
 
 
+static func _is_group(kind: WeavlyProjectIndex.Kind) -> bool:
+	return kind == WeavlyProjectIndex.Kind.POOL or kind == WeavlyProjectIndex.Kind.SLOT
+
+
 func _display_path(path: String) -> String:
 	var project_dir: String = _panel.get_project_dir()
 	if project_dir == "" or not path.begins_with(project_dir.simplify_path() + "/"):
@@ -246,4 +313,4 @@ func _on_code_edit_input(event: InputEvent) -> void:
 
 
 func _on_listed_pressed(id: int) -> void:
-	go_to(_listed[id].path, _listed[id].line)
+	go_to(_listed[id])
