@@ -200,7 +200,24 @@ static func read_nodes(data: Dictionary, source: String = "") -> Array[WeavlyMod
 	_read_list(nodes_data, _path_root(source, KEY_NODES), read, nodes, false)
 	for node: WeavlyModel.WeavlyNode in nodes:
 		node.source = source_name
+		_set_source(node.body, source_name)
 	return nodes
+
+
+# Sets source on the statements and every statement nested in them.
+static func _set_source(statements: Array[WeavlyModel.Statement], source: String) -> void:
+	for statement: WeavlyModel.Statement in statements:
+		statement.source = source
+		if statement is WeavlyModel.MatchBlock:
+			for case: WeavlyModel.WhenCase in statement.cases:
+				_set_source(case.body, source)
+		elif statement is WeavlyModel.RandomBlock:
+			for case: WeavlyModel.RandomCase in statement.cases:
+				_set_source(case.body, source)
+		elif statement is WeavlyModel.OptionBlock:
+			for item: WeavlyModel.OptionItem in statement.items:
+				if item is WeavlyModel.InlineOptionItem:
+					_set_source(item.body, source)
 
 
 static func read_node(data: Dictionary, path: String) -> WeavlyModel.WeavlyNode:

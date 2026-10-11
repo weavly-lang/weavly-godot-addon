@@ -136,6 +136,22 @@ func test_a_rendered_option_block_keeps_its_line() -> void:
 	assert_int(entries[0].line).is_equal(58)
 
 
+func test_rendered_statements_keep_their_source_for_errors_after_the_render() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entries: Array[WeavlyModel.Statement] = engine.render("Tavern")
+	for entry: WeavlyModel.Statement in entries:
+		assert_str(entry.source).is_equal("render.wvl")
+	var errors: Array[String] = []
+	engine.runtime_error.connect(
+		func(message: String, source: String, line: int) -> void:
+			errors.append("%s:%d: %s" % [source, line, message])
+	)
+	var do: WeavlyModel.Statement = entries[1]
+	engine.evaluate_at(do.source, do.line, func() -> void: engine.report_error("Unknown stat."))
+	assert_array(errors).is_equal(["render.wvl:%d: Unknown stat." % do.line])
+	assert_logged(["render.wvl:%d: error: Unknown stat." % do.line])
+
+
 func test_render_of_a_missing_node_is_reported() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	assert_array(engine.render("nowhere")).is_empty()

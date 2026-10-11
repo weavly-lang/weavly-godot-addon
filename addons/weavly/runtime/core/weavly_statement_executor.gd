@@ -163,6 +163,7 @@ static func execute_option_block(
 		return
 	if engine.is_rendering():
 		var rendered: WeavlyModel.OptionBlock = WeavlyModel.OptionBlock.new(option_block.items)
+		rendered.source = option_block.source
 		rendered.line = option_block.line
 		rendered.options = options
 		engine.add_rendered(rendered)
