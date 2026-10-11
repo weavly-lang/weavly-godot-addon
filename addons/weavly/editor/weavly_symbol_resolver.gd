@@ -13,6 +13,13 @@ const NAME_KINDS: Array[WeavlyProjectIndex.Kind] = [
 const SPEAKER_KINDS: Array[WeavlyProjectIndex.Kind] = [
 	WeavlyProjectIndex.Kind.CHARACTER, WeavlyProjectIndex.Kind.VARIABLE
 ]
+# Targets also take a variable of their type.
+const NODE_TARGET_KINDS: Array[WeavlyProjectIndex.Kind] = [
+	WeavlyProjectIndex.Kind.NODE, WeavlyProjectIndex.Kind.VARIABLE
+]
+const POOL_TARGET_KINDS: Array[WeavlyProjectIndex.Kind] = [
+	WeavlyProjectIndex.Kind.POOL, WeavlyProjectIndex.Kind.VARIABLE
+]
 
 static var _meta_entry_regex: RegEx = RegEx.create_from_string("^\\s*([A-Za-z_]\\w*)\\s*:")
 static var _name_value_regex: RegEx = RegEx.create_from_string(
@@ -79,7 +86,7 @@ static func _kinds(
 	if before.ends_with("."):
 		return [WeavlyProjectIndex.Kind.META_KEY]
 	if after.begins_with("."):
-		return [WeavlyProjectIndex.Kind.NODE]
+		return NODE_TARGET_KINDS.duplicate()
 	if block == WeavlyLineScanner.Block.ENV:
 		var value: RegExMatch = _name_value_regex.search(before)
 		if value == null:
@@ -96,9 +103,9 @@ static func _kinds(
 			return [_group_kind(key)]
 		return _expression_kinds(before, after)
 	if _node_target_regex.search(before) != null:
-		return [WeavlyProjectIndex.Kind.NODE]
+		return NODE_TARGET_KINDS.duplicate()
 	if _draw_regex.search(before) != null:
-		return [WeavlyProjectIndex.Kind.POOL]
+		return POOL_TARGET_KINDS.duplicate()
 	if _pool_option_regex.search(before) != null:
 		if after.begins_with(":"):
 			return []
@@ -106,7 +113,7 @@ static func _kinds(
 			_pool_argument_regex.search(before) != null
 			and (after.begins_with(",") or after.begins_with(")"))
 		):
-			return [WeavlyProjectIndex.Kind.POOL]
+			return POOL_TARGET_KINDS.duplicate()
 	return _expression_kinds(before, after)
 
 

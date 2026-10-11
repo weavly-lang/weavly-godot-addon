@@ -120,10 +120,41 @@ func test_character_line_without_a_speaker_is_dropped() -> void:
 	assert_logged(["Missing required field 'speaker' at body[0]"])
 
 
+# A literal target as its name, a variable target as {name}.
+func _target(target: WeavlyModel.WeavlyExpression) -> String:
+	if target is WeavlyModel.Identifier:
+		return "{%s}" % target.value
+	return (target as WeavlyModel.StringLiteral).value
+
+
+func _targets(targets: Array[WeavlyModel.WeavlyExpression]) -> Array[String]:
+	var names: Array[String] = []
+	for target: WeavlyModel.WeavlyExpression in targets:
+		names.append(_target(target))
+	return names
+
+
 func test_jump_statement() -> void:
 	var stmt: WeavlyModel.Statement = _read_single({"type": "jump", "id": "end"})
 	assert_object(stmt).is_instanceof(WeavlyModel.JumpStatement)
-	assert_that((stmt as WeavlyModel.JumpStatement).id).is_equal("end")
+	assert_str(_target((stmt as WeavlyModel.JumpStatement).target)).is_equal("end")
+
+
+func test_jump_and_detour_take_a_variable_target() -> void:
+	var jump: WeavlyModel.Statement = _read_single(
+		{"type": "jump", "id": {"variable": "next_room"}}
+	)
+	assert_str(_target((jump as WeavlyModel.JumpStatement).target)).is_equal("{next_room}")
+	var detour: WeavlyModel.Statement = _read_single(
+		{"type": "detour", "id": {"variable": "aside"}}
+	)
+	assert_str(_target((detour as WeavlyModel.DetourStatement).target)).is_equal("{aside}")
+
+
+func test_a_target_that_is_no_name_or_variable_is_dropped() -> void:
+	var data: Array = [{"type": "jump", "line": 1.0, "id": 3.0}]
+	assert_array(WeavlyDeserializer.read_statements(data, "body")).is_empty()
+	assert_logged(["body[0].id must be a name or a variable, got 3"])
 
 
 func test_inline_options_read_label_condition_and_body() -> void:
@@ -176,9 +207,9 @@ func test_node_and_pool_options_are_read() -> void:
 	var items: Array = [{"type": "node", "line": 3.0, "id": "hack"}, pool, open]
 	var stmt: WeavlyModel.Statement = _read_single({"type": "option", "items": items})
 	var read: Array[WeavlyModel.OptionItem] = (stmt as WeavlyModel.OptionBlock).items
-	assert_str((read[0] as WeavlyModel.NodeOptionItem).node_id).is_equal("hack")
+	assert_str(_target((read[0] as WeavlyModel.NodeOptionItem).node)).is_equal("hack")
 	var limited: WeavlyModel.PoolOptionItem = read[1]
-	assert_array(limited.pools).is_equal(["camp"])
+	assert_array(_targets(limited.pools)).is_equal(["camp"])
 	assert_that((limited.limit as WeavlyModel.Number).value).is_equal(3.0)
 	assert_object(limited.shuffle).is_instanceof(WeavlyModel.FalseExpression)
 	assert_int(limited.locked).is_equal(WeavlyEngine.Locked.EXTRA)
@@ -356,7 +387,18 @@ func test_expression_call() -> void:
 	assert_object(expr).is_instanceof(WeavlyModel.Call)
 	var visited: WeavlyModel.Call = expr as WeavlyModel.Call
 	assert_that(visited.name).is_equal("visited")
-	assert_that(visited.node_id).is_equal("shop")
+	assert_str(_target(visited.node)).is_equal("shop")
+
+
+func test_node_functions_and_meta_reads_take_a_variable_node() -> void:
+	var visited: Variant = WeavlyDeserializer.read_expression(
+		{"call": "visited", "node": {"variable": "quest"}}, "test"
+	)
+	assert_str(_target((visited as WeavlyModel.Call).node)).is_equal("{quest}")
+	var meta: Variant = WeavlyDeserializer.read_expression(
+		{"call": "meta", "node": {"variable": "next_room"}, "key": "cost"}, "test"
+	)
+	assert_str(_target((meta as WeavlyModel.MetaCall).node)).is_equal("{next_room}")
 
 
 func test_any_other_call_is_read_as_a_declared_function_with_its_arguments() -> void:
@@ -617,7 +659,7 @@ func test_a_meta_call_is_read_with_its_node_and_key() -> void:
 		{"call": "meta", "node": "shop", "key": "cost"}, ""
 	)
 	assert_object(call).is_instanceof(WeavlyModel.MetaCall)
-	assert_str((call as WeavlyModel.MetaCall).node_id).is_equal("shop")
+	assert_str(_target((call as WeavlyModel.MetaCall).node)).is_equal("shop")
 	assert_str((call as WeavlyModel.MetaCall).key).is_equal("cost")
 
 
@@ -639,4 +681,28 @@ func test_character_names_are_read_from_env() -> void:
 func test_draw_statement() -> void:
 	var stmt: WeavlyModel.Statement = _read_single({"type": "draw", "pools": ["city", "night"]})
 	assert_object(stmt).is_instanceof(WeavlyModel.DrawStatement)
-	assert_array((stmt as WeavlyModel.DrawStatement).pools).is_equal(["city", "night"])
+	assert_array(_targets((stmt as WeavlyModel.DrawStatement).pools)).is_equal(["city", "night"])
+
+
+func test_draw_and_pool_options_mix_names_and_variables() -> void:
+	var draw: WeavlyModel.Statement = _read_single(
+		{"type": "draw", "pools": ["cave", {"variable": "region"}]}
+	)
+	assert_array(_targets((draw as WeavlyModel.DrawStatement).pools)).is_equal(
+		["cave", "{region}"]
+	)
+	var pool: Dictionary = {
+		"type": "pool",
+		"line": 2.0,
+		"pools": [{"variable": "region"}, "town"],
+		"limit": null,
+		"shuffle": true,
+		"locked": "show"
+	}
+	var items: Array = [{"type": "node", "line": 1.0, "id": {"variable": "next_room"}}, pool]
+	var block: WeavlyModel.Statement = _read_single({"type": "option", "items": items})
+	var read: Array[WeavlyModel.OptionItem] = (block as WeavlyModel.OptionBlock).items
+	assert_str(_target((read[0] as WeavlyModel.NodeOptionItem).node)).is_equal("{next_room}")
+	assert_array(_targets((read[1] as WeavlyModel.PoolOptionItem).pools)).is_equal(
+		["{region}", "town"]
+	)

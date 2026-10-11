@@ -6,6 +6,7 @@ var choice_visits: number = 0
 var been_to_start: bool = false
 var names_match: bool = false
 var last_scene: node = Start
+var dice_scene: node = RandomNode
 var region: pool = city
 var partner: slot = bob
 extern var reputation: number

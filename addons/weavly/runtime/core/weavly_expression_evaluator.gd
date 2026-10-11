@@ -115,7 +115,10 @@ static func evaluate_expression(
 	if expression is WeavlyModel.Call:
 		return evaluate_call(expression, engine)
 	if expression is WeavlyModel.MetaCall:
-		return WeavlyMetaReader.read(engine, expression.node_id, expression.key)
+		var node_id: Variant = evaluate_expression(expression.node, engine)
+		if is_error(node_id):
+			return ERROR
+		return WeavlyMetaReader.read(engine, node_id, expression.key)
 	if expression is WeavlyModel.UnaryExpression:
 		return evaluate_unary_expression(expression, engine)
 	if expression is WeavlyModel.BinaryExpression:
@@ -179,12 +182,15 @@ static func evaluate_call(call: WeavlyModel.Call, engine: WeavlyEngine) -> Varia
 		return _evaluate_number_call(call, engine)
 	if call.name not in NODE_FUNCTIONS:
 		return _evaluate_declared_call(call, engine)
-	if not engine.story.has_node(call.node_id):
-		engine.report_error(UNKNOWN_NODE % [call.node_id, call.name])
+	var node_id: Variant = evaluate_expression(call.node, engine)
+	if is_error(node_id):
+		return ERROR
+	if not engine.story.has_node(node_id):
+		engine.report_error(UNKNOWN_NODE % [node_id, call.name])
 		return ERROR
 	if call.name == SKIP_COUNT:
-		return float(engine.count_service.get_skip_count(call.node_id))
-	var count: int = engine.count_service.get_visit_count(call.node_id)
+		return float(engine.count_service.get_skip_count(node_id))
+	var count: int = engine.count_service.get_visit_count(node_id)
 	if call.name == VISITED:
 		return count > 0
 	return float(count)
@@ -195,6 +201,18 @@ static func _evaluate_declared_call(call: WeavlyModel.Call, engine: WeavlyEngine
 	if is_error(values):
 		return ERROR
 	return call_function(call.name, values, engine)
+
+
+# The names the targets hold, in order; a failing one is reported and left out.
+static func evaluate_targets(
+	targets: Array[WeavlyModel.WeavlyExpression], engine: WeavlyEngine
+) -> Array[String]:
+	var names: Array[String] = []
+	for target: WeavlyModel.WeavlyExpression in targets:
+		var name: Variant = evaluate_expression(target, engine)
+		if not is_error(name):
+			names.append(name)
+	return names
 
 
 # The values in order, or ERROR once one fails.

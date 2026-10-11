@@ -129,7 +129,7 @@ func test_do_arguments_are_evaluated_when_the_statement_runs() -> void:
 			"*", WeavlyModel.Identifier.new("volume"), WeavlyModel.Number.new(0.5)
 		),
 		WeavlyModel.Call.new(
-			"max", "", [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
+			"max", null, [WeavlyModel.Number.new(1.0), WeavlyModel.Number.new(2.0)]
 		),
 	]
 	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("play_sound", args)
@@ -154,14 +154,18 @@ func test_do_with_a_failing_argument_is_skipped() -> void:
 # =====================
 
 
+func _name(name: String) -> WeavlyModel.StringLiteral:
+	return WeavlyModel.StringLiteral.new(name)
+
+
 func test_jump_statement_delegates_to_engine_enter_node() -> void:
-	var jump: WeavlyModel.JumpStatement = WeavlyModel.JumpStatement.new("target_node")
+	var jump: WeavlyModel.JumpStatement = WeavlyModel.JumpStatement.new(_name("target_node"))
 	WeavlyStatementExecutor.execute_statement(jump, _engine)
 	assert_that(_engine.last_entered_node).is_equal("target_node")
 
 
 func test_detour_statement_delegates_to_engine_detour() -> void:
-	var detour: WeavlyModel.DetourStatement = WeavlyModel.DetourStatement.new("aside")
+	var detour: WeavlyModel.DetourStatement = WeavlyModel.DetourStatement.new(_name("aside"))
 	WeavlyStatementExecutor.execute_statement(detour, _engine)
 	assert_that(_engine.last_detoured_node).is_equal("aside")
 	assert_that(_engine.last_entered_node).is_empty()
@@ -546,7 +550,7 @@ func _run_in_a_detour(statement: WeavlyModel.Statement) -> void:
 
 
 func test_jump_records_a_visit_to_every_running_node() -> void:
-	_run_in_a_detour(WeavlyModel.JumpStatement.new("there"))
+	_run_in_a_detour(WeavlyModel.JumpStatement.new(_name("there")))
 	assert_int(_engine.count_service.get_visit_count("here")).is_equal(1)
 	assert_int(_engine.count_service.get_visit_count("below")).is_equal(1)
 	assert_that(_engine.get_location_stack()).is_empty()

@@ -62,24 +62,40 @@ static func execute_set_statement(
 		engine.set_variable(set_statement.id, value)
 
 
+# A target that fails finishes the dialogue, like a node that doesn't exist.
 static func execute_jump_statement(
 	jump_statement: WeavlyModel.JumpStatement, engine: WeavlyEngine
 ) -> void:
+	var node_id: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		jump_statement.target, engine
+	)
+	if WeavlyExpressionEvaluator.is_error(node_id):
+		engine.finish()
+		return
 	engine.leave_all_nodes()
-	engine.enter_node(jump_statement.id)
+	engine.enter_node(node_id)
 
 
 static func execute_detour_statement(
 	detour_statement: WeavlyModel.DetourStatement, engine: WeavlyEngine
 ) -> void:
-	engine.detour(detour_statement.id)
+	var node_id: Variant = WeavlyExpressionEvaluator.evaluate_expression(
+		detour_statement.target, engine
+	)
+	if WeavlyExpressionEvaluator.is_error(node_id):
+		engine.finish()
+		return
+	engine.detour(node_id)
 
 
 # The drawn node runs like a detour; without an eligible node, execution continues right away.
 static func execute_draw_statement(
 	draw_statement: WeavlyModel.DrawStatement, engine: WeavlyEngine
 ) -> void:
-	var node_id: String = WeavlyStoryletSelector.draw(engine, draw_statement.pools)
+	var pools: Array[String] = WeavlyExpressionEvaluator.evaluate_targets(
+		draw_statement.pools, engine
+	)
+	var node_id: String = WeavlyStoryletSelector.draw(engine, pools)
 	if node_id == "":
 		return
 	engine.detour(node_id)

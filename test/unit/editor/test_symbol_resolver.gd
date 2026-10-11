@@ -10,6 +10,8 @@ const META_KEY = WeavlyProjectIndex.Kind.META_KEY
 const FUNCTION = WeavlyProjectIndex.Kind.FUNCTION
 const NAMES: Array = [NODE, POOL, SLOT, CHARACTER, VARIABLE]
 const SPEAKERS: Array = [CHARACTER, VARIABLE]
+const NODE_TARGETS: Array = [NODE, VARIABLE]
+const POOL_TARGETS: Array = [POOL, VARIABLE]
 
 
 # Resolves at the | in a line of a node body, or of the block the lines above open.
@@ -25,9 +27,9 @@ func _kinds(line: String, above: String = "@node here") -> Array:
 	return [] if symbol == null else Array(symbol.kinds)
 
 
-func test_jump_and_detour_name_a_node() -> void:
-	assert_array(_kinds("@jump |market")).is_equal([NODE])
-	assert_array(_kinds("@detour mar|ket")).is_equal([NODE])
+func test_jump_and_detour_name_a_node_or_a_node_variable() -> void:
+	assert_array(_kinds("@jump |market")).is_equal(NODE_TARGETS)
+	assert_array(_kinds("@detour mar|ket")).is_equal(NODE_TARGETS)
 	assert_str(_resolve("@jump mar|ket").name).is_equal("market")
 
 
@@ -35,17 +37,17 @@ func test_the_end_of_a_word_still_resolves() -> void:
 	assert_str(_resolve("@jump market|").name).is_equal("market")
 
 
-func test_a_node_option_names_a_node() -> void:
-	assert_array(_kinds("@option node(|market)")).is_equal([NODE])
+func test_a_node_option_names_a_node_or_a_node_variable() -> void:
+	assert_array(_kinds("@option node(|market)")).is_equal(NODE_TARGETS)
 	assert_array(_kinds("@option |node(market)")).is_empty()
 
 
-func test_draw_names_pools() -> void:
-	assert_array(_kinds("@draw city, |night")).is_equal([POOL])
+func test_draw_names_pools_or_pool_variables() -> void:
+	assert_array(_kinds("@draw city, |night")).is_equal(POOL_TARGETS)
 
 
 func test_a_pool_option_names_pools_but_not_its_parameters() -> void:
-	assert_array(_kinds("@option pool(|city, limit: 3)")).is_equal([POOL])
+	assert_array(_kinds("@option pool(|city, limit: 3)")).is_equal(POOL_TARGETS)
 	assert_array(_kinds("@option pool(city, |limit: 3)")).is_empty()
 	assert_array(_kinds("@option pool(city, limit: |cap)")).is_equal(NAMES)
 
@@ -63,7 +65,7 @@ func test_a_call_names_a_function() -> void:
 
 func test_a_meta_read_names_a_meta_key_and_its_node() -> void:
 	assert_array(_kinds("@set x = .|cost")).is_equal([META_KEY])
-	assert_array(_kinds("@set x = |shop.cost")).is_equal([NODE])
+	assert_array(_kinds("@set x = |shop.cost")).is_equal(NODE_TARGETS)
 	assert_array(_kinds("@set x = shop.|cost")).is_equal([META_KEY])
 	assert_str(_resolve("@set x = sh|op.cost").name).is_equal("shop")
 	assert_str(_resolve("@set x = shop.co|st").name).is_equal("cost")
@@ -72,7 +74,7 @@ func test_a_meta_read_names_a_meta_key_and_its_node() -> void:
 func test_a_meta_read_resolves_in_interpolations_and_meta_values() -> void:
 	assert_array(_kinds("You pay {shop.|cost}.")).is_equal([META_KEY])
 	assert_array(_kinds('@option "Pay {.|cost}": @jump x')).is_equal([META_KEY])
-	assert_array(_kinds("toll: |shop.cost + 1", "@node here\n@meta")).is_equal([NODE])
+	assert_array(_kinds("toll: |shop.cost + 1", "@node here\n@meta")).is_equal(NODE_TARGETS)
 
 
 func test_a_bare_name_in_an_expression_can_be_any_name() -> void:
@@ -94,7 +96,7 @@ func test_an_interpolation_is_code() -> void:
 
 
 func test_an_inline_action_after_a_colon_is_a_line_of_its_own() -> void:
-	assert_array(_kinds('@option "Go": @jump |market')).is_equal([NODE])
+	assert_array(_kinds('@option "Go": @jump |market')).is_equal(NODE_TARGETS)
 	assert_array(_kinds("@when x: |Guide: Hi.")).is_equal(SPEAKERS)
 
 

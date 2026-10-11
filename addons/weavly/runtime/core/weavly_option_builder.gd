@@ -1,6 +1,7 @@
 class_name WeavlyOptionBuilder
 
 const UNKNOWN_NODE = "Can't offer node '%s' because it doesn't exist."
+const UNLABELLED_NODE = "Can't offer node '%s' because it has no label."
 
 const STATES: Dictionary[WeavlyStoryletSelector.Display, WeavlyModel.Option.State] = {
 	WeavlyStoryletSelector.Display.AVAILABLE: WeavlyModel.Option.State.AVAILABLE,
@@ -25,7 +26,7 @@ static func offer(
 			if option != null:
 				options.append(option)
 		elif item is WeavlyModel.NodeOptionItem:
-			var option: WeavlyModel.Option = offer_node(engine, item.node_id)
+			var option: WeavlyModel.Option = _offer_node_item(item, engine)
 			if option != null:
 				option.line = item.line
 				options.append(option)
@@ -44,6 +45,26 @@ static func offer_node(engine: WeavlyEngine, node_id: String) -> WeavlyModel.Opt
 	if not STATES.has(display):
 		return null
 	return _node_option(engine, node, display)
+
+
+# The compiler checks labels of literal targets only, so a variable's node may have none.
+static func _offer_node_item(
+	item: WeavlyModel.NodeOptionItem, engine: WeavlyEngine
+) -> WeavlyModel.Option:
+	engine.current_line = item.line
+	var node_id: Variant = WeavlyExpressionEvaluator.evaluate_expression(item.node, engine)
+	if WeavlyExpressionEvaluator.is_error(node_id):
+		return null
+	if engine.story.has_node(node_id) and not _is_labelled(engine.story.get_node(node_id), engine):
+		return null
+	return offer_node(engine, node_id)
+
+
+static func _is_labelled(node: WeavlyModel.WeavlyNode, engine: WeavlyEngine) -> bool:
+	if node.meta != null and node.meta.entries.has(WeavlyDeserializer.KEY_LABEL):
+		return true
+	engine.report_error(UNLABELLED_NODE % node.id)
+	return false
 
 
 # The label comes from the meta snapshot, so it matches what the node reads once chosen.
@@ -107,11 +128,14 @@ static func _offer_pool(
 	var shuffle: Variant = WeavlyExpressionEvaluator.evaluate_expression(item.shuffle, engine)
 	if WeavlyExpressionEvaluator.is_error(shuffle):
 		return options
+	var pools: Array[String] = WeavlyExpressionEvaluator.evaluate_targets(item.pools, engine)
 	var candidates: Array[WeavlyStoryletSelector.Candidate] = WeavlyStoryletSelector.select(
-		engine, item.pools, limit, shuffle == true, item.locked
+		engine, pools, limit, shuffle == true, item.locked
 	)
 	for candidate: WeavlyStoryletSelector.Candidate in candidates:
 		var node: WeavlyModel.WeavlyNode = engine.story.get_node(candidate.id)
+		if not _is_labelled(node, engine):
+			continue
 		var option: WeavlyModel.Option = _node_option(engine, node, candidate.display)
 		option.line = item.line
 		options.append(option)
