@@ -395,6 +395,7 @@ func set_state(state: Dictionary) -> void:
 		return
 	_stop()
 	_rendered_options.clear()
+	_listed_options.clear()
 	var saved: Variant = state.get(KEY_SERVICES, {})
 	var service_states: Dictionary = saved if saved is Dictionary else {}
 	var services: Dictionary[String, WeavlyService] = _services()
@@ -568,16 +569,14 @@ func peek_pool(
 	pools: Array, limit: int = -1, shuffle: bool = true, locked: Locked = Locked.SHOW
 ) -> Array[String]:
 	_check_registrations()
-	return WeavlyStoryletSelector.peek_pool(self, pools, limit, shuffle, locked)
+	return _keep_rng(WeavlyStoryletSelector.peek_pool.bind(self, pools, limit, shuffle, locked))
 
 
 # The node as a block would offer it, or null when the display rule hides it. choose() accepts
 # it while the game holds it.
 func get_option(node_id: String) -> WeavlyModel.Option:
 	_check_registrations()
-	var rng_state: int = rng.state
-	var option: WeavlyModel.Option = WeavlyOptionBuilder.offer_node(self, node_id)
-	rng.state = rng_state
+	var option: WeavlyModel.Option = _keep_rng(WeavlyOptionBuilder.offer_node.bind(self, node_id))
 	if option != null:
 		_listed_options = _listed_options.filter(_is_held)
 		_listed_options.append(weakref(option))
@@ -601,10 +600,16 @@ static func _is_held(held: WeakRef) -> bool:
 # Leaves the generator as it was, like peek_pool.
 func get_node_meta(node_id: String, key: String) -> Variant:
 	_check_registrations()
-	var rng_state: int = rng.state
-	var value: Variant = WeavlyMetaReader.read(self, node_id, key)
-	rng.state = rng_state
+	var value: Variant = _keep_rng(WeavlyMetaReader.read.bind(self, node_id, key))
 	return null if WeavlyExpressionEvaluator.is_error(value) else value
+
+
+# Calls read and puts the generator back as it was.
+func _keep_rng(read: Callable) -> Variant:
+	var rng_state: int = rng.state
+	var value: Variant = read.call()
+	rng.state = rng_state
+	return value
 
 
 # Starts a dialogue with the first node in selection order; false when none is eligible.

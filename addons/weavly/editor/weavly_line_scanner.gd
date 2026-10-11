@@ -27,13 +27,6 @@ static func blocks(lines: PackedStringArray) -> PackedInt32Array:
 	return result
 
 
-static func block_at(lines: PackedStringArray, line: int) -> Block:
-	var block: Block = Block.NONE
-	for i: int in line:
-		block = next_block(block, lines[i])
-	return block
-
-
 # The block the lines after text are in. A missing @endnode doesn't hide a later @node or @env.
 static func next_block(block: Block, text: String) -> Block:
 	var found: String = directive(text)

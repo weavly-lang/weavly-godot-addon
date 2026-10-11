@@ -54,7 +54,7 @@ static func draw(engine: WeavlyEngine, pools: Array) -> String:
 	return "" if drawn.is_empty() else drawn[0].id
 
 
-# What list_pool would return now, without changing skip counts or the generator.
+# What list_pool would return now, without changing skip counts; it rolls the generator.
 static func peek_pool(
 	engine: WeavlyEngine,
 	pools: Array,
@@ -62,10 +62,7 @@ static func peek_pool(
 	shuffle: bool = true,
 	locked: WeavlyEngine.Locked = WeavlyEngine.Locked.SHOW,
 ) -> Array[String]:
-	var rng_state: int = engine.rng.state
-	var taken: Array[Candidate] = _take(_rank(engine, pools, shuffle, true), limit, locked)
-	engine.rng.state = rng_state
-	return _ids(taken)
+	return _ids(_take(_rank(engine, pools, shuffle, true), limit, locked))
 
 
 # How the node shows as an option: a false when shows label_teaser, a false available

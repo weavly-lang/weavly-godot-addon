@@ -45,11 +45,8 @@ class Symbol:
 	var column: int
 
 
-# The name at the position and what it can refer to, or null outside code.
-static func resolve(lines: PackedStringArray, line: int, column: int) -> Symbol:
-	if line < 0 or line >= lines.size():
-		return null
-	var text: String = lines[line]
+# The name at the column of a line in block and what it can refer to, or null outside code.
+static func resolve(text: String, block: WeavlyLineScanner.Block, column: int) -> Symbol:
 	var start: int = column
 	if not _is_word_char(text, start) and _is_word_char(text, start - 1):
 		start -= 1
@@ -57,7 +54,6 @@ static func resolve(lines: PackedStringArray, line: int, column: int) -> Symbol:
 		return null
 	while _is_word_char(text, start - 1):
 		start -= 1
-	var block: WeavlyLineScanner.Block = WeavlyLineScanner.block_at(lines, line)
 	return _symbol(text, block, WeavlyLineScanner.parts(text, block), start)
 
 
