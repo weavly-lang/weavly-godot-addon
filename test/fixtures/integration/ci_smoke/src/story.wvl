@@ -6,6 +6,7 @@ Guide: Let the test begin.
 @set score = 10
 @increase score 5
 @decrease score 1 + 1
+@do add_bonus(var score, 1)
 @set has_key = true
 @set has_key = false
 

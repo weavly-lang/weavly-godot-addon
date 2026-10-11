@@ -67,6 +67,12 @@ func _connect_signal_log(engine: WeavlyEngine) -> void:
 		engine.register_function("bonus", func(points: float) -> float: return points * 2.0)
 	if "open" in engine.function_service.get_unregistered():
 		engine.register_function("open", func() -> bool: return true)
+	if "add_bonus" in engine.function_service.get_unregistered():
+		engine.register_function(
+			"add_bonus",
+			func(target: String, amount: float) -> void:
+				engine.set_variable(target, engine.get_variable(target) + amount)
+		)
 
 
 func _do_logger(id: String, count: int) -> Callable:

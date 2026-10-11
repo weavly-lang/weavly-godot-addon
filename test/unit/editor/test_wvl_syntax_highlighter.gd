@@ -390,3 +390,12 @@ func test_a_speaker_and_its_colon_are_a_character() -> void:
 	assert_array(_spans('"Old Man" : hi', color)).contains_exactly(['"Old Man" :'])
 	assert_array(_spans("@if x: Guide: hi", color)).contains_exactly(["Guide:"])
 	assert_array(_spans("Day 3\\: quiet", color)).is_empty()
+
+
+func test_var_before_an_argument_is_a_keyword() -> void:
+	assert_array(_spans("@do add_to(var gold, 2)", KEYWORD)).contains_exactly(["var"])
+
+
+func test_a_var_parameter_type_is_a_keyword() -> void:
+	var text: String = "@env\nfunc add_to(target: var number, amount: number)\n@endenv"
+	assert_array(_spans_at(text, 1, KEYWORD)).contains_exactly(["func", "var", "number", "number"])

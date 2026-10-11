@@ -762,19 +762,32 @@ static func _read_signature(data: Variant, path: String) -> WeavlyModel.Signatur
 	)
 	if name == null or params == null or return_type == null:
 		return null
-	var param_types: Array[String] = []
-	if not _read_list(params, _path_join(path, KEY_PARAMS), _read_param_type, param_types):
+	var read_params: Array = []
+	if not _read_list(params, _path_join(path, KEY_PARAMS), _read_param, read_params):
 		return null
 	if returns and not _is_value_type(return_type, _path_join(path, KEY_RETURNS)):
 		return null
-	return WeavlyModel.Signature.new(name, param_types, return_type)
+	var param_types: Array[String] = []
+	var variable_params: Array[bool] = []
+	for param: Array in read_params:
+		param_types.append(param[0])
+		variable_params.append(param[1])
+	return WeavlyModel.Signature.new(name, param_types, return_type, variable_params)
 
 
-static func _read_param_type(data: Variant, path: String) -> Variant:
+# [type, whether it's a var parameter], or null.
+static func _read_param(data: Variant, path: String) -> Variant:
 	if not _is_dictionary(data, path):
 		return null
 	var type: Variant = get_required(data, KEY_TYPE, Variant.Type.TYPE_STRING, path)
-	return type if type != null and _is_value_type(type, path) else null
+	var variable: Variant = (
+		get_required(data, KEY_VARIABLE, Variant.Type.TYPE_BOOL, path)
+		if data.has(KEY_VARIABLE)
+		else false
+	)
+	if type == null or variable == null or not _is_value_type(type, path):
+		return null
+	return [type, variable]
 
 
 static func _is_value_type(type: String, path: String) -> bool:

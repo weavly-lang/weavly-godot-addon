@@ -438,6 +438,33 @@ func test_functions_are_read_from_env_with_or_without_a_return_type() -> void:
 	assert_str(functions[1].name).is_equal("shake")
 	assert_array(functions[1].param_types).is_empty()
 	assert_str(functions[1].return_type).is_empty()
+	assert_array(functions[0].variable_params).is_equal([false, false])
+
+
+func test_a_var_parameter_is_read_with_its_flag() -> void:
+	var data: Dictionary = {
+		"functions":
+		[
+			{
+				"name": "add_to",
+				"params":
+				[
+					{"name": "target", "type": "number", "variable": true},
+					{"name": "amount", "type": "number"},
+				],
+			},
+		],
+	}
+	var add_to: WeavlyModel.Signature = WeavlyDeserializer.read_functions(data)[0]
+	assert_array(add_to.param_types).is_equal(["number", "number"])
+	assert_array(add_to.variable_params).is_equal([true, false])
+
+
+func test_a_var_flag_that_isnt_a_bool_drops_the_function() -> void:
+	var params: Array = [{"name": "target", "type": "number", "variable": "yes"}]
+	var data: Dictionary = {"functions": [{"name": "add_to", "params": params}]}
+	assert_array(WeavlyDeserializer.read_functions(data)).is_empty()
+	assert_logged(["Required field 'variable' has wrong type at functions[0].params[0]"])
 
 
 func test_expression_call_without_node_is_rejected() -> void:

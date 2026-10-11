@@ -43,6 +43,11 @@ func _register_all() -> void:
 		func(text: String, volume: float) -> void: _events.append("shout(%s, %s)" % [text, volume])
 	)
 	_engine.register_function("wave", func() -> void: _events.append("wave"))
+	_engine.register_function(
+		"add_to",
+		func(target: String, amount: float) -> void:
+			_engine.set_variable(target, _engine.get_variable(target) + amount)
+	)
 
 
 func _run(node_id: String) -> void:
@@ -92,10 +97,26 @@ func test_the_first_use_reports_everything_not_registered_once() -> void:
 				"0: Function 'partner' is declared, but no callable is registered for it.",
 				"0: Function 'shout' is declared, but no callable is registered for it.",
 				"0: Function 'wave' is declared, but no callable is registered for it.",
+				"0: Function 'add_to' is declared, but no callable is registered for it.",
 			]
 		)
 	)
-	assert_logged(["mood", "greeting", "next_scene", "region", "partner", "shout", "wave"])
+	assert_logged(
+		["mood", "greeting", "next_scene", "region", "partner", "shout", "wave", "add_to"]
+	)
+
+
+func test_a_var_parameter_gets_the_variable_to_change_it() -> void:
+	_register_all()
+	var changes: Array[String] = []
+	_engine.variable_changed.connect(
+		func(id: String, value: Variant, old_value: Variant) -> void:
+			changes.append("%s: %s -> %s" % [id, old_value, value])
+	)
+	_run("Bonus")
+	assert_that(_variable("score")).is_equal(2.0)
+	assert_array(changes).is_equal(["score: 0.0 -> 2.0"])
+	assert_array(_engine.story.get_function("add_to").variable_params).is_equal([true, false])
 
 
 func test_a_missing_function_fails_its_expression_at_the_call() -> void:
@@ -107,8 +128,8 @@ func test_a_missing_function_fails_its_expression_at_the_call() -> void:
 		assert_array(_errors)
 		. contains(
 			[
-				"26: Can't call function 'mood' because no callable is registered for it.",
-				"35: Can't call function 'mood' because no callable is registered for it.",
+				"27: Can't call function 'mood' because no callable is registered for it.",
+				"36: Can't call function 'mood' because no callable is registered for it.",
 			]
 		)
 	)
@@ -124,8 +145,8 @@ func test_a_result_of_the_wrong_type_is_reported_in_an_expression_and_a_do_state
 		assert_array(_errors)
 		. is_equal(
 			[
-				"26: Function 'mood' returned a value of type 'int' instead of a bool.",
-				"35: Function 'mood' returned a value of type 'int' instead of a bool.",
+				"27: Function 'mood' returned a value of type 'int' instead of a bool.",
+				"36: Function 'mood' returned a value of type 'int' instead of a bool.",
 			]
 		)
 	)
@@ -151,7 +172,7 @@ func test_a_result_naming_no_declared_node_is_rejected() -> void:
 	_run("Start")
 	assert_that(_variable("scene")).is_equal("Start")
 	assert_array(_errors).is_equal(
-		["32: Function 'next_scene' returned 'nowhere', but no node has that name."]
+		["33: Function 'next_scene' returned 'nowhere', but no node has that name."]
 	)
 	assert_logged(["nowhere"])
 
@@ -163,7 +184,7 @@ func test_a_do_statement_without_a_callable_is_reported_and_skipped() -> void:
 	assert_bool(_events.has("wave")).is_false()
 	assert_str(_events.back()).is_equal("Done.")
 	assert_array(_errors).contains(
-		["31: Can't call function 'wave' because no callable is registered for it."]
+		["32: Can't call function 'wave' because no callable is registered for it."]
 	)
 	assert_logged(["wave", "wave"])
 

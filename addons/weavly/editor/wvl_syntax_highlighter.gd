@@ -30,15 +30,18 @@ var name_kind: Callable
 var _number_regex: RegEx = RegEx.create_from_string("\\b\\d+(?:\\.\\d+)?\\b")
 var _name_regex: RegEx = RegEx.create_from_string("(?<![@.\\w])[A-Za-z_]\\w*(?![\\w(])")
 var _directive_regex: RegEx = RegEx.create_from_string("@[A-Za-z_]+")
-var _keyword_regex: RegEx = RegEx.create_from_string("(?<![@\\w])(?:and|or|not|true|false)(?!\\w)")
+var _keyword_regex: RegEx = RegEx.create_from_string(
+	"(?<![@\\w])(?:and|or|not|true|false|var)(?!\\w)"
+)
 var _function_regex: RegEx = RegEx.create_from_string("(?<![@\\w])[A-Za-z_]\\w*(?=\\()")
 var _meta_read_regex: RegEx = RegEx.create_from_string("\\.[A-Za-z_]\\w*")
 var _kind_regex: RegEx = RegEx.create_from_string(
 	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|character|meta|func)(?!\\w)"
 )
 var _type_regex: RegEx = RegEx.create_from_string(
-	":[ \\t]*(number|string|bool|node|pool|slot|character)(?!\\w)"
+	":[ \\t]*(?:var[ \\t]+)?(number|string|bool|node|pool|slot|character)(?!\\w)"
 )
+var _var_param_regex: RegEx = RegEx.create_from_string(":[ \\t]*(var)[ \\t]")
 var _bool_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _meta_key_regex: RegEx = RegEx.create_from_string("^[ \\t]*([A-Za-z_]\\w*)[ \\t]*:")
 var _option_call_regex: RegEx = RegEx.create_from_string("^[ \\t]*@option[ \\t]+(node|pool)\\(")
@@ -85,6 +88,7 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 		WeavlyLineScanner.Block.ENV:
 			_paint(colors, text, _kind_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _type_regex, KEYWORD_COLOR, 1)
+			_paint(colors, text, _var_param_regex, KEYWORD_COLOR, 1)
 			_paint(colors, text, _bool_value_regex, KEYWORD_COLOR, 1)
 		WeavlyLineScanner.Block.META:
 			_paint(colors, text, _meta_key_regex, META_COLOR, 1)
