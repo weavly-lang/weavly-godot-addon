@@ -2,6 +2,7 @@ class_name WeavlyChoiceList
 extends VBoxContainer
 
 signal chosen(option: WeavlyModel.Option)
+signal button_created(button: BaseButton, option: WeavlyModel.Option)
 
 ## Shows options as LinkButtons instead of Buttons.
 @export var links: bool = false
@@ -23,6 +24,7 @@ func show_options(options: Array[WeavlyModel.Option]) -> void:
 		button.pressed.connect(func() -> void: chosen.emit(option))
 		add_child(button)
 		_apply(button, option)
+		button_created.emit(button, option)
 
 
 func clear() -> void:
