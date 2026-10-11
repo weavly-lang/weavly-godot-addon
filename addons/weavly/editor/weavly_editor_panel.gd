@@ -2,6 +2,8 @@
 class_name WeavlyEditorPanel
 extends Control
 
+signal file_opened
+
 const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
 const SETTING_LINE_WRAP = "weavly/line_wrap"
@@ -11,6 +13,7 @@ const SETTINGS_CARET = "text_editor/appearance/caret/"
 const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit it."
 const _NOT_IN_PROJECT = "%s isn't in a Weavly project: there's no src folder above it."
 const _LOG_PREFIX = "[Weavly]"
+const _LAYOUT_SECTION = "Weavly"
 const _VERSION_UNKNOWN = (
 	"%s Could not read the version of '%s'. Install the Weavly compiler %s.x with "
 	+ "'uv tool install \"weavly==%s.*\"', then restart Godot so it picks up your PATH, or "
@@ -72,6 +75,7 @@ func open_file(path: String) -> bool:
 		_find_bar.update_count()
 	_set_status("", _COLOR_INFO)
 	_refresh_controls()
+	file_opened.emit()
 	return true
 
 
@@ -186,6 +190,31 @@ func _shortcut_input(event: InputEvent) -> void:
 		else:
 			_find_bar.find_next()
 		accept_event()
+
+
+# Keeps the open file, its caret and its scroll in the project's editor layout.
+func save_layout(layout: ConfigFile) -> void:
+	if layout.has_section(_LAYOUT_SECTION):
+		layout.erase_section(_LAYOUT_SECTION)
+	if _current_path == "":
+		return
+	layout.set_value(_LAYOUT_SECTION, "path", ProjectSettings.localize_path(_current_path))
+	layout.set_value(_LAYOUT_SECTION, "caret_line", _code_edit.get_caret_line())
+	layout.set_value(_LAYOUT_SECTION, "caret_column", _code_edit.get_caret_column())
+	layout.set_value(_LAYOUT_SECTION, "scroll", _code_edit.scroll_vertical)
+
+
+# A file that's gone since opens nothing.
+func restore_layout(layout: ConfigFile) -> void:
+	var path: String = layout.get_value(_LAYOUT_SECTION, "path", "")
+	if path == "" or not FileAccess.file_exists(path) or not open_file(path):
+		return
+	_code_edit.set_caret_line(layout.get_value(_LAYOUT_SECTION, "caret_line", 0))
+	_code_edit.set_caret_column(layout.get_value(_LAYOUT_SECTION, "caret_column", 0))
+	var scroll: float = layout.get_value(_LAYOUT_SECTION, "scroll", 0.0)
+	# The scroll range is only known once the editor is laid out and drawn.
+	_code_edit.draw.connect(func() -> void: _code_edit.scroll_vertical = scroll, CONNECT_ONE_SHOT)
+	_code_edit.queue_redraw()
 
 
 # The open file while it has unsaved edits, else empty.

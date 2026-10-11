@@ -17,6 +17,7 @@ func _enter_tree() -> void:
 	add_import_plugin(_import_plugin)
 
 	_panel = WeavlyEditorPanel.new()
+	_panel.file_opened.connect(queue_save_layout)
 	EditorInterface.get_editor_main_screen().add_child(_panel)
 	_make_visible(false)
 
@@ -75,6 +76,16 @@ func _get_unsaved_status(for_scene: String) -> String:
 func _save_external_data() -> void:
 	if _panel != null:
 		_panel.save_unsaved()
+
+
+func _get_window_layout(configuration: ConfigFile) -> void:
+	if _panel != null:
+		_panel.save_layout(configuration)
+
+
+func _set_window_layout(configuration: ConfigFile) -> void:
+	if _panel != null:
+		_panel.restore_layout(configuration)
 
 
 func _make_visible(visible: bool) -> void:
