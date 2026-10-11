@@ -124,7 +124,8 @@ var _in_next: bool = false
 var _finished: bool = true
 
 var _holds: int = 0
-var _hold_interrupted_step: bool = false
+# Whether the last release continues the dialogue: a hold interrupted a step or blocked a next().
+var _resume_on_release: bool = false
 
 var _checkpoint: Dictionary = {}
 var _initial_state: Dictionary = {}
@@ -270,15 +271,17 @@ func detour(node_id: String) -> void:
 		next()
 
 
-# Called from a handler while a step runs, it lets that step continue.
+# Called from a handler while a step runs, it lets that step continue. While held, the last
+# release continues.
 func next() -> void:
-	if _is_holding():
-		return
 	if not _pending_options.any(
 		func(option: WeavlyModel.Option) -> bool: return option.is_choosable()
 	):
 		_pending_options = []
 	_paused = false
+	if _is_holding():
+		_resume_on_release = true
+		return
 	if _in_next:
 		return
 	_in_next = true
@@ -360,7 +363,7 @@ func finish() -> void:
 func _stop() -> void:
 	_finished = true
 	_holds = 0
-	_hold_interrupted_step = false
+	_resume_on_release = false
 	_pending_node_id = null
 	_pending_detour = false
 	_checkpoint = {}
@@ -439,19 +442,20 @@ func _collect_service_states() -> Dictionary:
 
 func hold() -> void:
 	if _holds == 0:
-		_hold_interrupted_step = _in_next
+		_resume_on_release = _in_next
 	_holds += 1
 
 
-# The last release continues only a step the hold interrupted; a line on screen keeps waiting.
+# The last release continues a step the hold interrupted or a next() it blocked; a line on screen
+# keeps waiting.
 func release() -> void:
 	if _holds == 0:
 		push_warning(NOT_HELD)
 		return
 	_holds -= 1
-	if _holds > 0 or not _hold_interrupted_step:
+	if _holds > 0 or not _resume_on_release:
 		return
-	_hold_interrupted_step = false
+	_resume_on_release = false
 	if not _in_next and not _paused:
 		next()
 

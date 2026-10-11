@@ -3,6 +3,7 @@ extends WeavlyTestSuite
 # Tracing statements, stepping with hold() and lines that don't wait.
 
 const LINEAR_FIXTURE = "res://test/fixtures/integration/linear/build"
+const OPTIONS_FIXTURE = "res://test/fixtures/integration/options/build"
 const NEVER_WAITING_LINE_SERVICE = "res://test/helpers/never_waiting_line_service.gd"
 
 var _lines: Array[String]
@@ -14,9 +15,11 @@ func before_test() -> void:
 	_entered = []
 
 
-func _make_engine(custom_services: Array[Script] = []) -> WeavlyEngine:
+func _make_engine(
+	custom_services: Array[Script] = [], fixture: String = LINEAR_FIXTURE
+) -> WeavlyEngine:
 	var engine: WeavlyEngine = WeavlyEngine.new()
-	engine.dialogue_path = LINEAR_FIXTURE
+	engine.dialogue_path = fixture
 	engine.custom_services = custom_services
 	add_child(auto_free(engine))
 	engine.line_reached.connect(
@@ -85,6 +88,36 @@ func test_a_line_held_on_line_reached_waits_for_next_after_release() -> void:
 	engine.release()
 	assert_array(_lines).is_equal(["Welcome"])
 	engine.next()
+	assert_array(_lines).is_equal(["Welcome", "Hello"])
+
+
+func test_a_start_while_held_runs_on_release() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.hold()
+	engine.start("Start")
+	assert_array(_lines).is_empty()
+	engine.release()
+	assert_array(_lines).is_equal(["Welcome"])
+
+
+func test_a_choice_while_held_runs_on_release() -> void:
+	var engine: WeavlyEngine = _make_engine([], OPTIONS_FIXTURE)
+	engine.register_function("open", func() -> bool: return true)
+	engine.start("Menu")
+	engine.hold()
+	engine.choose(engine.get_pending_options()[0])
+	assert_array(_entered).is_equal(["Menu"])
+	engine.release()
+	assert_array(_entered).is_equal(["Menu", "After"])
+
+
+func test_a_next_while_a_line_is_held_advances_on_release() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	engine.start("Start")
+	engine.hold()
+	engine.next()
+	assert_array(_lines).is_equal(["Welcome"])
+	engine.release()
 	assert_array(_lines).is_equal(["Welcome", "Hello"])
 
 
