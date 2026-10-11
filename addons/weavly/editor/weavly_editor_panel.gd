@@ -6,6 +6,7 @@ const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
 const SETTING_LINE_WRAP = "weavly/line_wrap"
 const DEFAULT_EXECUTABLE = "weavly"
+const SETTINGS_CARET = "text_editor/appearance/caret/"
 
 const _NO_FILE_TEXT = "Double-click a .wvl file in the FileSystem dock to edit it."
 const _NOT_IN_PROJECT = "%s isn't in a Weavly project: there's no src folder above it."
@@ -48,6 +49,8 @@ func _ready() -> void:
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_build_ui()
 	_refresh_controls()
+	if Engine.is_editor_hint():
+		EditorInterface.get_editor_settings().settings_changed.connect(_apply_caret_settings)
 
 
 func open_file(path: String) -> bool:
@@ -99,6 +102,7 @@ func _build_ui() -> void:
 	_code_edit.gutters_draw_line_numbers = true
 	_code_edit.syntax_highlighter = WvlSyntaxHighlighter.new()
 	_code_edit.text_changed.connect(_on_text_changed)
+	_apply_caret_settings()
 
 	var toolbar: HBoxContainer = HBoxContainer.new()
 	root.add_child(toolbar)
@@ -353,6 +357,21 @@ func _get_editor_setting(setting: String, default: Variant) -> Variant:
 		return default
 	var settings: EditorSettings = EditorInterface.get_editor_settings()
 	return settings.get_setting(setting) if settings.has_setting(setting) else default
+
+
+# Defaults match the script editor's.
+func _apply_caret_settings() -> void:
+	_code_edit.caret_type = _get_editor_setting(SETTINGS_CARET + "type", TextEdit.CARET_TYPE_LINE)
+	_code_edit.caret_blink = _get_editor_setting(SETTINGS_CARET + "caret_blink", true)
+	_code_edit.caret_blink_interval = _get_editor_setting(
+		SETTINGS_CARET + "caret_blink_interval", 0.5
+	)
+	_code_edit.highlight_current_line = _get_editor_setting(
+		SETTINGS_CARET + "highlight_current_line", true
+	)
+	_code_edit.highlight_all_occurrences = _get_editor_setting(
+		SETTINGS_CARET + "highlight_all_occurrences", true
+	)
 
 
 func _set_editor_setting(setting: String, value: Variant) -> void:
