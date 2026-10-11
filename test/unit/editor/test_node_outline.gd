@@ -84,17 +84,19 @@ func test_nodes_update_while_typing() -> void:
 	assert_array(_picker_items()).contains_exactly(["start", "second_one", "third"])
 
 
-func _background(line: int) -> Color:
-	return _panel._code_edit.get_line_background_color(line)
+func _open_wrapped() -> CodeEdit:
+	_open_with_text("@node start\n" + "word ".repeat(60) + "\nshort\n@endnode\n")
+	_panel._line_wrap.button_pressed = true
+	# The headless viewport is tiny, so the panel gets a usual size instead of filling it.
+	_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_panel.size = Vector2(400, 700)
+	await await_idle_frame()
+	return _panel._code_edit
 
 
 func test_node_lines_are_tinted() -> void:
 	_open_with_text(_NODES_TEXT)
-	var font: Color = _panel._code_edit.get_theme_color(&"font_color")
-	var tinted: Color = Color(font, WeavlyNodeOutline.TINT_ALPHA)
-	assert_that(_background(1)).is_equal(tinted)
-	assert_that(_background(5)).is_equal(tinted)
-	assert_that(_background(2)).is_equal(Color.TRANSPARENT)
+	assert_array(Array(_panel._node_outline.tinted_lines())).is_equal([1, 5])
 
 
 func test_the_tint_moves_with_its_node_while_typing() -> void:
@@ -103,16 +105,38 @@ func test_the_tint_moves_with_its_node_while_typing() -> void:
 	_panel._code_edit.set_caret_column(0)
 	_panel._code_edit.insert_text_at_caret("\n")
 	await await_idle_frame()
-	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
-	assert_float(_background(2).a).is_equal_approx(WeavlyNodeOutline.TINT_ALPHA, 0.001)
+	assert_array(Array(_panel._node_outline.tinted_lines())).is_equal([2, 6])
 
 
-func test_turning_the_tint_off_clears_it() -> void:
+func test_turning_the_tint_off_tints_none() -> void:
 	_open_with_text(_NODES_TEXT)
 	_panel._node_outline.tint = false
-	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
-	_open_with_text(_NODES_TEXT)
-	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
+	assert_array(Array(_panel._node_outline.tinted_lines())).is_empty()
+
+
+func test_a_node_line_starts_a_bit_before_its_text_and_ends_at_the_scroll_bar() -> void:
+	var edit: CodeEdit = await _open_wrapped()
+	var style: StyleBox = edit.get_theme_stylebox(&"normal")
+	var text_start: float = style.get_margin(SIDE_LEFT) + edit.get_total_gutter_width()
+	var rect: Rect2 = _panel._node_outline.line_rect(0)
+	assert_float(rect.position.x).is_less(text_start)
+	assert_float(rect.position.x).is_greater(text_start - edit.get_total_gutter_width())
+	var scroll_bar: VScrollBar = edit.get_v_scroll_bar()
+	var right: float = (
+		scroll_bar.position.x if scroll_bar.visible else edit.size.x - style.get_margin(SIDE_RIGHT)
+	)
+	assert_float(rect.end.x).is_equal(right)
+
+
+func test_a_wrapped_node_line_covers_every_row() -> void:
+	var edit: CodeEdit = await _open_wrapped()
+	edit.set_line(0, "@node start " + "word ".repeat(60))
+	await await_idle_frame()
+	var rows: int = edit.get_line_wrap_count(0) + 1
+	assert_int(rows).is_greater(1)
+	assert_float(_panel._node_outline.line_rect(0).size.y).is_equal(
+		float(edit.get_line_height() * rows)
+	)
 
 
 func test_every_node_but_one_on_the_first_line_gets_a_separator() -> void:
