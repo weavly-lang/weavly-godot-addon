@@ -214,14 +214,14 @@ func test_registering_again_replaces_the_callable() -> void:
 	assert_bool(_events.has("Bye Ann is here.")).is_true()
 
 
-func test_render_returns_do_statements_and_run_do_calls_their_function() -> void:
+func test_render_calls_functions_in_place_and_returns_do_statements() -> void:
 	_register_all()
 	var entries: Array[WeavlyModel.Statement] = _engine.render("Start")
-	assert_bool(_events.has("wave")).is_false()
-	for entry: WeavlyModel.Statement in entries:
-		if entry is WeavlyModel.DoStatement:
-			_engine.run_do(entry)
+	assert_array(_events).is_equal(["trust(ann, Start)", "shout(hey, 3.0)", "wave"])
+	var done: Array = entries.filter(
+		func(entry: WeavlyModel.Statement) -> bool: return entry is WeavlyModel.DoStatement
+	)
 	(
-		assert_array(_events.filter(func(event: String) -> bool: return not event.ends_with(".")))
-		. is_equal(["trust(ann, Start)", "shout(hey, 3.0)", "wave"])
+		assert_array(done.map(func(entry: WeavlyModel.DoStatement) -> String: return entry.id))
+		. is_equal(["shout", "wave", "mood"])
 	)

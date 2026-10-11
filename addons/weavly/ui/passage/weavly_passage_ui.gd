@@ -76,7 +76,7 @@ func _show(entries: Array[WeavlyModel.Statement], chosen_text: String) -> void:
 	_current = VBoxContainer.new()
 	_current.theme_type_variation = &"WeavlyPassage"
 	_passages.add_child(_current)
-	var lists: Array[WeavlyChoiceList] = add_entries(_current, entries, engine, true)
+	var lists: Array[WeavlyChoiceList] = add_entries(_current, entries, true)
 	var choosable: bool = false
 	for choices: WeavlyChoiceList in lists:
 		choices.chosen.connect(_choose)

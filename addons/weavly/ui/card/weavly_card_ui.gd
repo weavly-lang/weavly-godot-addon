@@ -93,7 +93,7 @@ func _on_continue_pressed() -> void:
 
 func _make_card(entries: Array[WeavlyModel.Statement]) -> WeavlyCard:
 	var card: WeavlyCard = WeavlyCard.new()
-	card.show_entries(entries, engine)
+	card.show_entries(entries)
 	card.chosen.connect(_choose)
 	return card
 
