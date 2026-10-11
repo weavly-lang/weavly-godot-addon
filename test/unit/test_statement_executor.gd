@@ -13,7 +13,6 @@ class _RecordingEngine:
 	var added_groups: Array[Array] = []
 	var offered: Array[Array] = []
 	var reached_lines: Array[WeavlyModel.LineStatement] = []
-	var done: Array[WeavlyModel.DoStatement] = []
 
 	func add_statements(statements: Array[WeavlyModel.Statement]) -> void:
 		added_statements.append(statements)
@@ -27,20 +26,19 @@ class _RecordingEngine:
 	func reach_line(line: WeavlyModel.LineStatement) -> void:
 		reached_lines.append(line)
 
-	func run_do(statement: WeavlyModel.DoStatement) -> void:
-		done.append(statement)
-
 
 # =====================
 # Setup
 # =====================
 
 var _engine: _RecordingEngine
+var _calls: Array[Array]
 
 
 func before_test() -> void:
 	_engine = auto_free(_RecordingEngine.new())
 	add_child(_engine)
+	_calls = []
 
 
 # =====================
@@ -110,18 +108,25 @@ func test_a_character_line_is_passed_on_filled() -> void:
 # =====================
 
 
-func test_do_statement_runs_a_filled_copy() -> void:
-	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("wave")
-	do.line = 4
-	WeavlyStatementExecutor.execute_statement(do, _engine)
-	assert_that(_engine.done.size()).is_equal(1)
-	assert_that(_engine.done[0]).is_not_same(do)
-	assert_that(_engine.done[0].id).is_equal("wave")
-	assert_int(_engine.done[0].line).is_equal(4)
-	assert_that(_engine.done[0].values).is_empty()
+func _record_play_sound() -> void:
+	var parameters: Array[String] = ["string", "number", "number"]
+	_engine.story.add_function(WeavlyModel.Signature.new("play_sound", parameters))
+	_engine.register_function(
+		"play_sound",
+		func(sound: String, volume: float, pitch: float) -> void:
+			_calls.append([sound, volume, pitch])
+	)
+
+
+func test_do_statement_calls_its_function() -> void:
+	_engine.story.add_function(WeavlyModel.Signature.new("wave", []))
+	_engine.register_function("wave", func() -> void: _calls.append(["wave"]))
+	WeavlyStatementExecutor.execute_statement(WeavlyModel.DoStatement.new("wave"), _engine)
+	assert_array(_calls).is_equal([["wave"]])
 
 
 func test_do_arguments_are_evaluated_when_the_statement_runs() -> void:
+	_record_play_sound()
 	declare(_engine, WeavlyModel.NumberVariable.new("volume", 0.8, null, null))
 	var args: Array[WeavlyModel.WeavlyExpression] = [
 		WeavlyModel.StringLiteral.new("door"),
@@ -136,17 +141,17 @@ func test_do_arguments_are_evaluated_when_the_statement_runs() -> void:
 	WeavlyStatementExecutor.execute_statement(do, _engine)
 	_engine.set_variable("volume", 0.2)
 	WeavlyStatementExecutor.execute_statement(do, _engine)
-	assert_that(_engine.done[0].values).is_equal(["door", 0.4, 2.0])
-	assert_that(_engine.done[1].values).is_equal(["door", 0.1, 2.0])
+	assert_array(_calls).is_equal([["door", 0.4, 2.0], ["door", 0.1, 2.0]])
 	assert_that(do.values).is_empty()
 
 
 func test_do_with_a_failing_argument_is_skipped() -> void:
+	_record_play_sound()
 	var args: Array[WeavlyModel.WeavlyExpression] = [WeavlyModel.Identifier.new("missing")]
 	var do: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new("play_sound", args)
 	WeavlyStatementExecutor.execute_statement(do, _engine)
 	assert_logged(["Variable 'missing' isn't defined."])
-	assert_that(_engine.done).is_empty()
+	assert_array(_calls).is_empty()
 
 
 # =====================

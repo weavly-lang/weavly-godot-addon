@@ -5,6 +5,7 @@ character Barkeep
 var drinks: number = 0
 var left: bool = false
 func header(title: string, gold: number)
+func spend(amount: number)
 @endenv
 
 @node Tavern
@@ -57,5 +58,22 @@ After.
 @node Faulty
 @options
 @option "Divide": @set gold = gold / drinks
+@endoptions
+@endnode
+
+@node Pay
+@do spend(3)
+@if gold < 0
+In debt.
+@endif
+@endnode
+
+@node Shop
+@options
+@option "Pay"
+    @do spend(3)
+    @if gold < 0
+    In debt.
+    @endif
 @endoptions
 @endnode

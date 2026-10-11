@@ -37,6 +37,11 @@ func _make_engine() -> WeavlyEngine:
 	engine.register_function(
 		"header", func(_title: String, _gold: float) -> void: _events.append("do:header")
 	)
+	engine.register_function(
+		"spend",
+		func(amount: float) -> void:
+			engine.set_variable("gold", engine.get_variable("gold") - amount)
+	)
 	return engine
 
 
@@ -104,18 +109,25 @@ func test_render_changes_state_and_visits_like_normal_play() -> void:
 	assert_bool(engine.is_running()).is_false()
 
 
-func test_render_runs_no_option_action_and_hands_nothing_to_the_services() -> void:
+func test_render_runs_no_option_action_and_reaches_no_line() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.render("Tavern")
 	assert_that(engine.get_variable("drinks")).is_equal(0.0)
 	assert_bool(engine.get_variable("left")).is_false()
-	assert_array(_events).is_equal(["entered:Tavern"])
+	assert_array(_events).is_equal(["entered:Tavern", "do:header"])
+
+
+func test_a_rendered_do_statement_runs_before_the_next_statement() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var entries: Array[WeavlyModel.Statement] = engine.render("Pay")
+	assert_array(_describe(entries)).is_equal([["spend", [3.0]], "In debt."])
+	assert_that(engine.get_variable("gold")).is_equal(-3.0)
 
 
 func test_render_follows_a_jump() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entries: Array[WeavlyModel.Statement] = engine.render("Lobby")
-	assert_array(_events).is_equal(["entered:Lobby", "entered:Tavern"])
+	assert_array(_events).is_equal(["entered:Lobby", "entered:Tavern", "do:header"])
 	assert_that(_describe(entries)[0]).is_equal("Welcome, you have 0 gold.")
 
 
@@ -133,7 +145,7 @@ func test_render_leaves_the_engine_idle() -> void:
 
 func test_a_rendered_option_block_keeps_its_line() -> void:
 	var entries: Array[WeavlyModel.Statement] = _make_engine().render("Faulty")
-	assert_int(entries[0].line).is_equal(58)
+	assert_int(entries[0].line).is_equal(59)
 
 
 func test_rendered_statements_keep_their_source_for_errors_after_the_render() -> void:
@@ -216,8 +228,8 @@ func test_an_error_in_a_chosen_option_names_its_file_and_line() -> void:
 		func(_message: String, source: String, line: int) -> void: reports.append([source, line])
 	)
 	engine.choose(_option(engine.render("Faulty"), "Divide"))
-	assert_that(reports).is_equal([["render.wvl", 59]])
-	assert_logged(["render.wvl:59: error: Division by zero detected"])
+	assert_that(reports).is_equal([["render.wvl", 60]])
+	assert_logged(["render.wvl:60: error: Division by zero detected"])
 
 
 func test_render_option_follows_a_jump_into_the_next_node() -> void:
@@ -231,6 +243,12 @@ func test_render_option_follows_a_jump_into_the_next_node() -> void:
 	)
 	assert_bool(engine.is_running()).is_false()
 	assert_int(engine.count_service.get_visit_count("Bar")).is_equal(1)
+
+
+func test_render_option_runs_a_do_statement_before_the_next_statement() -> void:
+	var engine: WeavlyEngine = _make_engine()
+	var option: WeavlyModel.Option = _option(engine.render("Shop"), "Pay")
+	assert_array(_describe(engine.render_option(option))).is_equal([["spend", [3.0]], "In debt."])
 
 
 func test_render_option_replaces_the_options_that_can_be_chosen() -> void:

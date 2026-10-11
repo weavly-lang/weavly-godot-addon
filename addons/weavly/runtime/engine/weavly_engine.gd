@@ -155,7 +155,8 @@ func start(node_id: String) -> void:
 
 
 # Runs the whole node without pausing and returns filled copies of its lines, do statements
-# and option blocks. State changes, visits and entered_node happen as in normal play.
+# and option blocks. Rendering is playing: do statements call their function in place, and
+# state changes, visits and entered_node happen as in normal play.
 func render(node_id: String) -> Array[WeavlyModel.Statement]:
 	if not _finished:
 		push_warning(RENDER_IN_PROGRESS % node_id)
@@ -547,11 +548,6 @@ func set_variable(id: String, value: Variant) -> void:
 func register_function(name: String, callable: Callable) -> void:
 	if WeavlyModel.Signature.can_register(name, callable, story.get_function(name)):
 		function_service.register_function(name, callable)
-
-
-# Calls the function with the statement's values; a rendered one is run by the UI.
-func run_do(statement: WeavlyModel.DoStatement) -> void:
-	WeavlyExpressionEvaluator.call_function(statement.id, statement.values, self)
 
 
 # Up to limit storylet ids in selection order, each taken while its slots are free; -1 takes all.

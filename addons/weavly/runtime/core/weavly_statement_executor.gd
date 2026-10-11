@@ -113,10 +113,9 @@ static func execute_do_statement(
 	var filled: WeavlyModel.DoStatement = WeavlyTextUtils.fill_do(do_statement, engine)
 	if filled == null:
 		return
+	WeavlyExpressionEvaluator.call_function(filled.id, filled.values, engine)
 	if engine.is_rendering():
 		engine.add_rendered(filled)
-	else:
-		engine.run_do(filled)
 
 
 static func execute_match_block(match_block: WeavlyModel.MatchBlock, engine: WeavlyEngine) -> void:
