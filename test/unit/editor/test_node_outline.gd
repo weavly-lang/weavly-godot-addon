@@ -2,6 +2,16 @@ extends GdUnitTestSuite
 
 const _NODES_TEXT = "# intro\n@node start\nHello.\n@endnode\n\n  @node second_one\nBye.\n@endnode\n"
 
+
+class _PanelWithSettings:
+	extends WeavlyEditorPanel
+
+	var settings: Dictionary = {}
+
+	func _get_editor_setting(setting: String, default: Variant) -> Variant:
+		return settings.get(setting, default)
+
+
 var _panel: WeavlyEditorPanel
 
 
@@ -74,56 +84,66 @@ func test_nodes_update_while_typing() -> void:
 	assert_array(_picker_items()).contains_exactly(["start", "second_one", "third"])
 
 
-func test_node_gutter_is_a_custom_strip() -> void:
-	var gutter: int = _panel._code_edit.get_gutter_count() - 1
-	assert_int(_panel._code_edit.get_gutter_type(gutter)).is_equal(TextEdit.GUTTER_TYPE_CUSTOM)
-	assert_int(_panel._code_edit.get_gutter_width(gutter)).is_equal(
-		WeavlyNodeOutline.STRIP_WIDTH + WeavlyNodeOutline.STRIP_GAP
-	)
+func _background(line: int) -> Color:
+	return _panel._code_edit.get_line_background_color(line)
 
 
-func _open_wrapped() -> CodeEdit:
-	_open_with_text("@node start\n" + "word ".repeat(60) + "\nshort\n@endnode\n")
-	var edit: CodeEdit = _panel._code_edit
-	_panel._line_wrap.button_pressed = true
-	# The headless viewport is tiny, so the panel gets a usual size instead of filling it.
-	_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_panel.size = Vector2(400, 700)
+func test_node_lines_are_tinted() -> void:
+	_open_with_text(_NODES_TEXT)
+	var font: Color = _panel._code_edit.get_theme_color(&"font_color")
+	var tinted: Color = Color(font, WeavlyNodeOutline.TINT_ALPHA)
+	assert_that(_background(1)).is_equal(tinted)
+	assert_that(_background(5)).is_equal(tinted)
+	assert_that(_background(2)).is_equal(Color.TRANSPARENT)
+
+
+func test_the_tint_moves_with_its_node_while_typing() -> void:
+	_open_with_text(_NODES_TEXT)
+	_panel._code_edit.set_caret_line(0)
+	_panel._code_edit.set_caret_column(0)
+	_panel._code_edit.insert_text_at_caret("\n")
 	await await_idle_frame()
-	return edit
+	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
+	assert_float(_background(2).a).is_equal_approx(WeavlyNodeOutline.TINT_ALPHA, 0.001)
 
 
-func _text_area(edit: CodeEdit) -> Rect2:
-	var style: StyleBox = edit.get_theme_stylebox(&"normal")
-	var top: float = style.get_margin(SIDE_TOP)
-	return Rect2(0.0, top, edit.size.x, edit.size.y - top - style.get_margin(SIDE_BOTTOM))
+func test_turning_the_tint_off_clears_it() -> void:
+	_open_with_text(_NODES_TEXT)
+	_panel._node_outline.tint = false
+	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
+	_open_with_text(_NODES_TEXT)
+	assert_that(_background(1)).is_equal(Color.TRANSPARENT)
 
 
-func test_node_strip_spans_every_row_of_a_wrapped_line() -> void:
-	var edit: CodeEdit = await _open_wrapped()
-	var rows: int = edit.get_line_wrap_count(1) + 1
-	assert_int(rows).is_greater(1)
-	var height: float = edit.get_line_height()
-	var strip: Rect2 = _panel._node_outline._strip_rect(1, Rect2(4, 40, 10, height))
-	assert_that(strip).is_equal(Rect2(4, 40, WeavlyNodeOutline.STRIP_WIDTH, height * rows))
+func test_every_node_but_one_on_the_first_line_gets_a_separator() -> void:
+	_open_with_text(_NODES_TEXT)
+	assert_array(Array(_panel._node_outline.separated_lines())).is_equal([1, 5])
+	_open_with_text("@node start\n@endnode\n@node next\n@endnode\n")
+	assert_array(Array(_panel._node_outline.separated_lines())).is_equal([2])
 
 
-func test_node_strip_covers_one_row_without_wrap() -> void:
-	var edit: CodeEdit = await _open_wrapped()
-	_panel._line_wrap.button_pressed = false
-	await await_idle_frame()
-	var height: float = edit.get_line_height()
-	var strip: Rect2 = _panel._node_outline._strip_rect(1, Rect2(4, 40, 10, height))
-	assert_that(strip).is_equal(Rect2(4, 40, WeavlyNodeOutline.STRIP_WIDTH, height))
+func test_turning_the_separator_off_draws_none() -> void:
+	_open_with_text(_NODES_TEXT)
+	_panel._node_outline.separator = false
+	assert_array(Array(_panel._node_outline.separated_lines())).is_empty()
 
 
-func test_node_strip_stays_inside_the_text_area() -> void:
-	var edit: CodeEdit = await _open_wrapped()
-	var height: float = edit.get_line_height()
-	var text_area: Rect2 = _text_area(edit)
-	var above: Rect2 = _panel._node_outline._strip_rect(1, Rect2(4, -height * 2, 10, height))
-	assert_float(above.position.y).is_equal(text_area.position.y)
-	var below: Rect2 = _panel._node_outline._strip_rect(
-		1, Rect2(4, edit.size.y - height, 10, height)
-	)
-	assert_float(below.end.y).is_equal(text_area.end.y)
+func test_the_gutter_has_no_node_strip() -> void:
+	var plain: CodeEdit = auto_free(CodeEdit.new())
+	assert_int(_panel._code_edit.get_gutter_count()).is_equal(plain.get_gutter_count())
+
+
+func test_both_styles_are_on_by_default() -> void:
+	assert_bool(_panel._node_outline.separator).is_true()
+	assert_bool(_panel._node_outline.tint).is_true()
+
+
+func test_the_styles_follow_the_editor_settings() -> void:
+	var panel: _PanelWithSettings = auto_free(_PanelWithSettings.new())
+	add_child(panel)
+	panel.settings = {
+		WeavlyEditorPanel.SETTING_NODE_SEPARATOR: false, WeavlyEditorPanel.SETTING_NODE_TINT: false
+	}
+	panel._apply_node_settings()
+	assert_bool(panel._node_outline.separator).is_false()
+	assert_bool(panel._node_outline.tint).is_false()

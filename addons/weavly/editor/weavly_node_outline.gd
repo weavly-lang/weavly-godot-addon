@@ -2,9 +2,20 @@
 class_name WeavlyNodeOutline
 extends OptionButton
 
-const STRIP_COLORS: Array[Color] = [Color(0.35, 0.56, 0.88), Color(0.88, 0.67, 0.35)]
-const STRIP_WIDTH = 4
-const STRIP_GAP = 6
+# Alphas of the theme's font color.
+const SEPARATOR_ALPHA = 0.18
+const TINT_ALPHA = 0.05
+
+# A line above each @node.
+var separator: bool = true:
+	set(value):
+		separator = value
+		_code_edit.queue_redraw()
+# A faint background on each @node line.
+var tint: bool = true:
+	set(value):
+		tint = value
+		_tint_lines()
 
 var _code_edit: WeavlyCodeEdit
 var _node_lines: PackedInt32Array = []
@@ -18,12 +29,8 @@ func _init(code_edit: WeavlyCodeEdit) -> void:
 	item_selected.connect(_on_node_selected)
 	_code_edit.text_changed.connect(refresh)
 	_code_edit.caret_changed.connect(_sync_selection)
-
-	var gutter: int = _code_edit.get_gutter_count()
-	_code_edit.add_gutter(gutter)
-	_code_edit.set_gutter_type(gutter, TextEdit.GUTTER_TYPE_CUSTOM)
-	_code_edit.set_gutter_width(gutter, STRIP_WIDTH + STRIP_GAP)
-	_code_edit.set_gutter_custom_draw(gutter, _draw_gutter)
+	_code_edit.theme_changed.connect(_tint_lines)
+	_code_edit.draw.connect(_draw_separators)
 
 
 func refresh() -> void:
@@ -44,6 +51,7 @@ func refresh() -> void:
 		_line_nodes[line] = node
 	disabled = _node_lines.is_empty()
 	_sync_selection()
+	_tint_lines()
 	_code_edit.queue_redraw()
 
 
@@ -60,23 +68,36 @@ func _on_node_selected(index: int) -> void:
 	_code_edit.grab_focus()
 
 
-func _draw_gutter(line: int, _gutter: int, area: Rect2) -> void:
-	if line >= _line_nodes.size() or _line_nodes[line] == -1:
-		return
-	var strip: Rect2 = _strip_rect(line, area)
-	if strip.has_area():
-		var color: Color = STRIP_COLORS[_line_nodes[line] % STRIP_COLORS.size()]
-		_code_edit.draw_rect(strip, color)
+func _tint_lines() -> void:
+	var color: Color = Color(_code_edit.get_theme_color(&"font_color"), TINT_ALPHA)
+	for line: int in _code_edit.get_line_count():
+		_code_edit.set_line_background_color(line, Color.TRANSPARENT)
+	if tint:
+		for line: int in _node_lines:
+			_code_edit.set_line_background_color(line, color)
 
 
-# The gutter is drawn once per line on its first row, so the strip spans the wrapped rows too.
-# CodeEdit doesn't clip, so the strip is cut to the text area.
-func _strip_rect(line: int, area: Rect2) -> Rect2:
-	var rows: int = _code_edit.get_line_wrap_count(line) + 1
-	var strip: Rect2 = Rect2(area.position, Vector2(STRIP_WIDTH, area.size.y * rows))
+# The @node lines that get a separator; there is none above the first line.
+func separated_lines() -> PackedInt32Array:
+	var lines: PackedInt32Array = []
+	if separator:
+		for line: int in _node_lines:
+			if line > 0:
+				lines.append(line)
+	return lines
+
+
+func _draw_separators() -> void:
+	var color: Color = Color(_code_edit.get_theme_color(&"font_color"), SEPARATOR_ALPHA)
 	var style: StyleBox = _code_edit.get_theme_stylebox(&"normal")
-	var top: float = style.get_margin(SIDE_TOP)
-	var text_area: Rect2 = Rect2(
-		0.0, top, _code_edit.size.x, _code_edit.size.y - top - style.get_margin(SIDE_BOTTOM)
-	)
-	return strip.intersection(text_area)
+	var left: float = style.get_margin(SIDE_LEFT) + _code_edit.get_total_gutter_width()
+	var right: float = _code_edit.size.x - style.get_margin(SIDE_RIGHT)
+	var scroll_bar: VScrollBar = _code_edit.get_v_scroll_bar()
+	if scroll_bar.visible:
+		right = scroll_bar.position.x
+	for line: int in separated_lines():
+		var row: Rect2i = _code_edit.get_rect_at_line_column(line, 0)
+		if row.position.y >= 0:
+			_code_edit.draw_line(
+				Vector2(left, row.position.y), Vector2(right, row.position.y), color
+			)
