@@ -7,6 +7,8 @@ signal file_opened
 const SETTING_EXECUTABLE = "weavly/executable_path"
 const SETTING_COMPILE_ON_SAVE = "weavly/compile_on_save"
 const SETTING_LINE_WRAP = "weavly/line_wrap"
+const SETTING_NODE_SEPARATOR = "weavly/node_separator"
+const SETTING_NODE_TINT = "weavly/node_tint"
 const DEFAULT_EXECUTABLE = "weavly"
 const SETTINGS_CARET = "text_editor/appearance/caret/"
 
@@ -54,6 +56,7 @@ func _ready() -> void:
 	_refresh_controls()
 	if Engine.is_editor_hint():
 		EditorInterface.get_editor_settings().settings_changed.connect(_apply_caret_settings)
+		EditorInterface.get_editor_settings().settings_changed.connect(_apply_node_settings)
 
 
 func open_file(path: String) -> bool:
@@ -118,6 +121,7 @@ func _build_ui() -> void:
 
 	_node_outline = WeavlyNodeOutline.new(_code_edit)
 	toolbar.add_child(_node_outline)
+	_apply_node_settings()
 
 	_status_label = Label.new()
 	toolbar.add_child(_status_label)
@@ -401,6 +405,11 @@ func _apply_caret_settings() -> void:
 	_code_edit.highlight_all_occurrences = _get_editor_setting(
 		SETTINGS_CARET + "highlight_all_occurrences", true
 	)
+
+
+func _apply_node_settings() -> void:
+	_node_outline.separator = _get_editor_setting(SETTING_NODE_SEPARATOR, true)
+	_node_outline.tint = _get_editor_setting(SETTING_NODE_TINT, true)
 
 
 func _set_editor_setting(setting: String, value: Variant) -> void:

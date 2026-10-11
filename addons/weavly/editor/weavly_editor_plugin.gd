@@ -94,12 +94,24 @@ func _make_visible(visible: bool) -> void:
 
 
 func _register_editor_settings() -> void:
+	_register_setting(
+		WeavlyEditorPanel.SETTING_EXECUTABLE,
+		WeavlyEditorPanel.DEFAULT_EXECUTABLE,
+		TYPE_STRING,
+		PROPERTY_HINT_GLOBAL_FILE
+	)
+	_register_setting(WeavlyEditorPanel.SETTING_NODE_SEPARATOR, true, TYPE_BOOL)
+	_register_setting(WeavlyEditorPanel.SETTING_NODE_TINT, true, TYPE_BOOL)
+
+
+func _register_setting(
+	key: String,
+	default_value: Variant,
+	type: Variant.Type,
+	hint: PropertyHint = PROPERTY_HINT_NONE
+) -> void:
 	var settings: EditorSettings = EditorInterface.get_editor_settings()
-	var key: String = WeavlyEditorPanel.SETTING_EXECUTABLE
-	var default_value: String = WeavlyEditorPanel.DEFAULT_EXECUTABLE
 	if not settings.has_setting(key):
 		settings.set_setting(key, default_value)
 	settings.set_initial_value(key, default_value, false)
-	settings.add_property_info(
-		{"name": key, "type": TYPE_STRING, "hint": PROPERTY_HINT_GLOBAL_FILE, "hint_string": ""}
-	)
+	settings.add_property_info({"name": key, "type": type, "hint": hint, "hint_string": ""})
