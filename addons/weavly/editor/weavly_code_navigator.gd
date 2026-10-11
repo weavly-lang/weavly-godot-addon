@@ -52,8 +52,6 @@ var _panel: WeavlyEditorPanel
 var _code_edit: WeavlyCodeEdit
 var _indexed_path: String = ""
 var _buffer_stale: bool = true
-var _lines: PackedStringArray = []
-var _lines_stale: bool = true
 var _scanned_at: int = -RESCAN_INTERVAL_MS
 # Popup item id -> where it goes.
 var _listed: Array[Location] = []
@@ -250,10 +248,12 @@ func kind_of(name: String) -> int:
 
 
 func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
-	if _lines_stale:
-		_lines = _code_edit.text.split("\n")
-		_lines_stale = false
-	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(_lines, line, column)
+	var lines: PackedStringArray = _code_edit.get_lines()
+	if line < 0 or line >= lines.size():
+		return null
+	var symbol: WeavlySymbolResolver.Symbol = WeavlySymbolResolver.resolve(
+		lines[line], _code_edit.get_blocks()[line], column
+	)
 	if symbol != null:
 		_update_index()
 	return symbol
@@ -298,7 +298,6 @@ func _on_symbol_lookup(_symbol: String, line: int, column: int) -> void:
 
 func _on_text_changed() -> void:
 	_buffer_stale = true
-	_lines_stale = true
 
 
 func _on_code_edit_input(event: InputEvent) -> void:

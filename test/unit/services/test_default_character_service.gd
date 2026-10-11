@@ -67,6 +67,13 @@ func test_display_name_comes_from_the_resource() -> void:
 	assert_str(_service.get_display_name("Hero")).is_equal("Robin")
 
 
+func test_a_resource_without_a_display_name_shows_the_id() -> void:
+	var character: WeavlyCharacter = WeavlyCharacter.new()
+	character.id = "Hero"
+	_service.add_character(character)
+	assert_str(_service.get_display_name("Hero")).is_equal("Hero")
+
+
 func test_a_character_without_a_resource_shows_its_id() -> void:
 	assert_str(_service.get_display_name("Hero")).is_equal("Hero")
 	assert_int(_warnings_about("Hero")).is_equal(0)

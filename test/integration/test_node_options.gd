@@ -243,6 +243,12 @@ func test_get_option_stays_as_offered_and_choose_runs_it_as_a_dialogue() -> void
 	assert_that(_engine.get_variable("paid")).is_equal(3.0)
 
 
+func test_options_from_get_option_cant_be_chosen_after_a_load() -> void:
+	var option: WeavlyModel.Option = _engine.get_option("LtOpen")
+	_engine.reset_state()
+	assert_bool(_engine.can_choose(option)).is_false()
+
+
 func test_choose_refuses_a_locked_option_from_get_option() -> void:
 	_engine.choose(_engine.get_option("Hack"))
 	assert_logged([], ["Can't choose option 'Something blinks' because it's locked."])

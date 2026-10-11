@@ -4,7 +4,7 @@ extends EditorContextMenuPlugin
 const _MENU_LABEL = "WeavlyFile..."
 const _DEFAULT_NAME = "new_dialogue"
 const _EXTENSION = ".wvl"
-const _TEMPLATE = "@node FirstNode\nHello World!\n@endnode\n"
+const _TEMPLATE = "@node %s\nHello World!\n@endnode\n"
 
 var _panel: WeavlyEditorPanel
 var _main_screen_name: String = ""
@@ -32,7 +32,7 @@ func _on_create(paths: Variant) -> void:
 	if file == null:
 		push_error("[Weavly] Could not create %s" % path)
 		return
-	file.store_string(_TEMPLATE)
+	file.store_string(_TEMPLATE % node_name(path))
 	file.close()
 
 	EditorInterface.get_resource_filesystem().scan()
@@ -53,6 +53,11 @@ func _resolve_folder(paths: Variant) -> String:
 	if not DirAccess.dir_exists_absolute(candidate):
 		candidate = candidate.get_base_dir()
 	return candidate
+
+
+# Node ids are shared across the project, so the node is named after its file.
+static func node_name(path: String) -> String:
+	return path.get_file().get_basename().to_pascal_case()
 
 
 # Empty when every candidate name is taken.

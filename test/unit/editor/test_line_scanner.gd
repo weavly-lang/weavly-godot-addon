@@ -41,13 +41,6 @@ func test_a_missing_endnode_doesnt_hide_the_next_node_or_env() -> void:
 	)
 
 
-func test_block_at_matches_blocks() -> void:
-	var lines: PackedStringArray = "@node a\n@meta\nwhen: true\n@endmeta\n@endnode".split("\n")
-	var blocks: PackedInt32Array = WeavlyLineScanner.blocks(lines)
-	for line: int in lines.size():
-		assert_int(WeavlyLineScanner.block_at(lines, line)).is_equal(blocks[line])
-
-
 func test_node_name_reads_the_declared_name() -> void:
 	assert_str(WeavlyLineScanner.node_name("  @node market_2")).is_equal("market_2")
 	assert_str(WeavlyLineScanner.node_name("@nodes market")).is_empty()

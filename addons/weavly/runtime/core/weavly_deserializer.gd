@@ -91,7 +91,7 @@ const LOCKED_MODES: Dictionary[String, WeavlyEngine.Locked] = {
 	"hide": WeavlyEngine.Locked.HIDE,
 }
 
-# Variable type -> value an extern starts with; its type is the declared value's type.
+# Variable type -> its zero value, which also gives the Variant type of its values.
 const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
 	TYPE_NUMBER: 0.0,
 	TYPE_STRING: "",

@@ -350,7 +350,7 @@ func _filter_nodes() -> void:
 			control.visible = shown
 
 
-# Ends the running dialogue and starts the node in step mode.
+# Ends the running dialogue and starts the node.
 func _jump(node_id: String) -> void:
 	if engine.is_running():
 		engine.finish()

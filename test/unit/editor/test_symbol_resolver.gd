@@ -19,7 +19,7 @@ func _resolve(line: String, above: String = "@node here") -> WeavlySymbolResolve
 	var lines: PackedStringArray = above.split("\n")
 	var column: int = line.find("|")
 	lines.append(line.replace("|", ""))
-	return WeavlySymbolResolver.resolve(lines, lines.size() - 1, column)
+	return WeavlySymbolResolver.resolve(lines[-1], WeavlyLineScanner.blocks(lines)[-1], column)
 
 
 func _kinds(line: String, above: String = "@node here") -> Array:
