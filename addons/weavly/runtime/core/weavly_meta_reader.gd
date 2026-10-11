@@ -3,6 +3,7 @@ class_name WeavlyMetaReader
 const UNKNOWN_NODE = "Can't read meta key '%s' of node '%s' because the node doesn't exist."
 const UNDECLARED_KEY = "Can't read meta key '%s' of node '%s' because the key isn't declared."
 const WRONG_TYPE = "Meta key '%s' of node '%s' can't be of type '%s'."
+const READS_ITSELF = "Meta key '%s' of node '%s' reads itself."
 
 const BUILT_IN_DEFAULTS: Dictionary[String, Variant] = {
 	WeavlyDeserializer.KEY_WHEN: true,
@@ -13,6 +14,9 @@ const BUILT_IN_DEFAULTS: Dictionary[String, Variant] = {
 	WeavlyDeserializer.KEY_LABEL_UNAVAILABLE: "",
 	WeavlyDeserializer.KEY_LABEL_TEASER: "",
 }
+
+# "node.key" of the entries being evaluated; the compiler only finds cycles through literal names.
+static var _reading: Dictionary[String, bool] = {}
 
 
 # The node's value for the key, else the key's default; ERROR once a failure is reported.
@@ -54,11 +58,18 @@ static func read_node(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode, key: S
 	var entry: WeavlyModel.MetaExpression = meta.entries.get(key)
 	if entry == null:
 		return default
-	return engine.evaluate_at(
+	var reading: String = "%s.%s" % [node.id, key]
+	if _reading.has(reading):
+		engine.report_error(READS_ITSELF % [key, node.id])
+		return WeavlyExpressionEvaluator.ERROR
+	_reading[reading] = true
+	var value: Variant = engine.evaluate_at(
 		node.source,
 		entry.line,
 		func() -> Variant: return _evaluate(engine, node.id, key, entry, default)
 	)
+	_reading.erase(reading)
+	return value
 
 
 static func _evaluate(

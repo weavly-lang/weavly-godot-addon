@@ -342,27 +342,44 @@ static func read_set_statement(data: Dictionary, path: String) -> WeavlyModel.Se
 
 
 static func read_jump_statement(data: Dictionary, path: String) -> WeavlyModel.JumpStatement:
-	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-	if id == null:
-		return null
-	return WeavlyModel.JumpStatement.new(id)
+	var target: WeavlyModel.WeavlyExpression = _read_required_target(data, KEY_ID, path)
+	return null if target == null else WeavlyModel.JumpStatement.new(target)
 
 
 static func read_detour_statement(data: Dictionary, path: String) -> WeavlyModel.DetourStatement:
-	var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-	if id == null:
-		return null
-	return WeavlyModel.DetourStatement.new(id)
+	var target: WeavlyModel.WeavlyExpression = _read_required_target(data, KEY_ID, path)
+	return null if target == null else WeavlyModel.DetourStatement.new(target)
 
 
 static func read_draw_statement(data: Dictionary, path: String) -> WeavlyModel.DrawStatement:
-	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
-	if pools_data == null:
+	var pools: Variant = _read_targets(data, KEY_POOLS, path)
+	return null if pools == null else WeavlyModel.DrawStatement.new(pools)
+
+
+# A name as a StringLiteral, or {"variable": ...} as an Identifier.
+static func _read_target(data: Variant, path: String) -> WeavlyModel.WeavlyExpression:
+	if data is String or (data is Dictionary and data.has(KEY_VARIABLE)):
+		return read_expression(data, path)
+	push_error("%s must be a name or a variable, got %s" % [path, str(data)])
+	return null
+
+
+static func _read_required_target(
+	data: Dictionary, key: String, path: String
+) -> WeavlyModel.WeavlyExpression:
+	var target: Variant = get_required(data, key, Variant.Type.TYPE_NIL, path)
+	return null if target == null else _read_target(target, _path_join(path, key))
+
+
+# Null when the list is missing or any target fails.
+static func _read_targets(data: Dictionary, key: String, path: String) -> Variant:
+	var targets_data: Variant = get_required(data, key, Variant.Type.TYPE_ARRAY, path)
+	if targets_data == null:
 		return null
-	var pools: Array[String] = []
-	if not _read_list(pools_data, _path_join(path, KEY_POOLS), _read_name, pools):
+	var targets: Array[WeavlyModel.WeavlyExpression] = []
+	if not _read_list(targets_data, _path_join(path, key), _read_target, targets):
 		return null
-	return WeavlyModel.DrawStatement.new(pools)
+	return targets
 
 
 static func read_finish_statement(_data: Dictionary, _path: String) -> WeavlyModel.FinishStatement:
@@ -458,8 +475,8 @@ static func read_option_item(data: Dictionary, path: String) -> WeavlyModel.Opti
 		TYPE_INLINE:
 			return _read_inline_option(data, path)
 		TYPE_NODE:
-			var id: Variant = get_required(data, KEY_ID, Variant.Type.TYPE_STRING, path)
-			return null if id == null else WeavlyModel.NodeOptionItem.new(id)
+			var node: WeavlyModel.WeavlyExpression = _read_required_target(data, KEY_ID, path)
+			return null if node == null else WeavlyModel.NodeOptionItem.new(node)
 		TYPE_POOL:
 			return _read_pool_option(data, path)
 	push_error("Unknown option type '%s' at %s" % [type, path])
@@ -496,10 +513,10 @@ static func _read_inline_option(data: Dictionary, path: String) -> WeavlyModel.O
 
 
 static func _read_pool_option(data: Dictionary, path: String) -> WeavlyModel.OptionItem:
-	var pools_data: Variant = get_required(data, KEY_POOLS, Variant.Type.TYPE_ARRAY, path)
+	var pools: Variant = _read_targets(data, KEY_POOLS, path)
 	var locked_name: Variant = get_required(data, KEY_LOCKED, Variant.Type.TYPE_STRING, path)
 	var shuffle: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_SHUFFLE, path)
-	if pools_data == null or locked_name == null or shuffle == null:
+	if pools == null or locked_name == null or shuffle == null:
 		return null
 	if not data.has(KEY_LIMIT):
 		push_error("Missing required field '%s' at %s" % [KEY_LIMIT, path])
@@ -511,9 +528,6 @@ static func _read_pool_option(data: Dictionary, path: String) -> WeavlyModel.Opt
 			return null
 	if locked_name not in LOCKED_MODES:
 		push_error("Unknown locked mode '%s' at %s" % [locked_name, path])
-		return null
-	var pools: Array[String] = []
-	if not _read_list(pools_data, _path_join(path, KEY_POOLS), _read_name, pools):
 		return null
 	return WeavlyModel.PoolOptionItem.new(pools, limit, shuffle, LOCKED_MODES[locked_name])
 
@@ -635,19 +649,17 @@ static func read_call(data: Dictionary, path: String) -> WeavlyModel.WeavlyExpre
 		return _read_meta_call(data, path)
 	if name not in WeavlyExpressionEvaluator.NODE_FUNCTIONS:
 		var args: Variant = read_arguments(data, path)
-		return null if args == null else WeavlyModel.Call.new(name, "", args)
-	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
-	if node_id == null:
-		return null
-	return WeavlyModel.Call.new(name, node_id)
+		return null if args == null else WeavlyModel.Call.new(name, null, args)
+	var node: WeavlyModel.WeavlyExpression = _read_required_target(data, KEY_NODE, path)
+	return null if node == null else WeavlyModel.Call.new(name, node)
 
 
 static func _read_meta_call(data: Dictionary, path: String) -> WeavlyModel.MetaCall:
-	var node_id: Variant = get_required(data, KEY_NODE, Variant.Type.TYPE_STRING, path)
+	var node: WeavlyModel.WeavlyExpression = _read_required_target(data, KEY_NODE, path)
 	var key: Variant = get_required(data, KEY_KEY, Variant.Type.TYPE_STRING, path)
-	if node_id == null or key == null:
+	if node == null or key == null:
 		return null
-	return WeavlyModel.MetaCall.new(node_id, key)
+	return WeavlyModel.MetaCall.new(node, key)
 
 
 static func _read_number_call(name: String, data: Dictionary, path: String) -> WeavlyModel.Call:
@@ -658,7 +670,7 @@ static func _read_number_call(name: String, data: Dictionary, path: String) -> W
 	if count_error != "":
 		push_error("%s at %s" % [count_error, path])
 		return null
-	return WeavlyModel.Call.new(name, "", args)
+	return WeavlyModel.Call.new(name, null, args)
 
 
 # =====================

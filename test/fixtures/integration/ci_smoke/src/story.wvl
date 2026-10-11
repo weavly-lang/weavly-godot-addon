@@ -22,7 +22,7 @@ Guide: Let the test begin.
 companion: Which path?
 
 @options
-@option "Roll the dice": @jump RandomNode
+@option "Roll the dice": @jump dice_scene
 @option [ has_key ] "Use key": @jump End
 @endoptions
 @endnode

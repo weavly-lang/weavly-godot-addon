@@ -342,6 +342,10 @@ func test_null_expression_returns_error() -> void:
 # =====================
 
 
+func _name(name: String) -> WeavlyModel.StringLiteral:
+	return WeavlyModel.StringLiteral.new(name)
+
+
 func _engine_with_node(id: String) -> WeavlyEngine:
 	var engine: WeavlyEngine = _make_engine()
 	engine.story.add_node(WeavlyModel.WeavlyNode.new(id, []))
@@ -350,37 +354,37 @@ func _engine_with_node(id: String) -> WeavlyEngine:
 
 func test_visited_is_false_before_a_visit() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
-	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(false)
+	assert_that(_eval(WeavlyModel.Call.new("visited", _name("shop")), engine)).is_equal(false)
 
 
 func test_visited_is_true_after_a_visit() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
 	engine.count_service.record_visit("shop")
-	assert_that(_eval(WeavlyModel.Call.new("visited", "shop"), engine)).is_equal(true)
+	assert_that(_eval(WeavlyModel.Call.new("visited", _name("shop")), engine)).is_equal(true)
 
 
 func test_skip_count_is_a_number() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
 	engine.count_service.set_skip_count("shop", 2)
-	assert_that(_eval(WeavlyModel.Call.new("skip_count", "shop"), engine)).is_equal(2.0)
+	assert_that(_eval(WeavlyModel.Call.new("skip_count", _name("shop")), engine)).is_equal(2.0)
 
 
 func test_visit_count_is_a_number() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
 	engine.count_service.record_visit("shop")
 	engine.count_service.record_visit("shop")
-	assert_that(_eval(WeavlyModel.Call.new("visit_count", "shop"), engine)).is_equal(2.0)
+	assert_that(_eval(WeavlyModel.Call.new("visit_count", _name("shop")), engine)).is_equal(2.0)
 
 
 func test_call_on_an_unknown_node_returns_error() -> void:
-	var result: Variant = _eval(WeavlyModel.Call.new("visited", "shpo"))
+	var result: Variant = _eval(WeavlyModel.Call.new("visited", _name("shpo")))
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Node 'shpo' in visited() doesn't exist."])
 
 
 func test_call_of_an_unknown_function_returns_error() -> void:
 	var engine: WeavlyEngine = _engine_with_node("shop")
-	var result: Variant = _eval(WeavlyModel.Call.new("bogus", "shop"), engine)
+	var result: Variant = _eval(WeavlyModel.Call.new("bogus", _name("shop")), engine)
 	assert_bool(WeavlyExpressionEvaluator.is_error(result)).is_true()
 	assert_logged(["Unknown function 'bogus'."])
 
@@ -394,7 +398,7 @@ func _call(function_name: String, values: Array) -> Variant:
 	var args: Array[WeavlyModel.WeavlyExpression] = []
 	for value: Variant in values:
 		args.append(_num(value) if value is float else value)
-	return _eval(WeavlyModel.Call.new(function_name, "", args))
+	return _eval(WeavlyModel.Call.new(function_name, null, args))
 
 
 func test_min_and_max_take_two_or_more_numbers() -> void:

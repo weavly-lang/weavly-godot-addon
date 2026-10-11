@@ -86,20 +86,21 @@ class SetStatement:
 		self.expression = expression
 
 
+# Targets are names or variables holding one, as a StringLiteral or an Identifier.
 class JumpStatement:
 	extends Statement
-	var id: String
+	var target: WeavlyExpression
 
-	func _init(id: String):
-		self.id = id
+	func _init(target: WeavlyExpression):
+		self.target = target
 
 
 class DetourStatement:
 	extends Statement
-	var id: String
+	var target: WeavlyExpression
 
-	func _init(id: String):
-		self.id = id
+	func _init(target: WeavlyExpression):
+		self.target = target
 
 
 class FinishStatement:
@@ -108,9 +109,9 @@ class FinishStatement:
 
 class DrawStatement:
 	extends Statement
-	var pools: Array[String]
+	var pools: Array[WeavlyExpression]
 
-	func _init(pools: Array[String]):
+	func _init(pools: Array[WeavlyExpression]):
 		self.pools = pools
 
 
@@ -189,22 +190,22 @@ class InlineOptionItem:
 
 class NodeOptionItem:
 	extends OptionItem
-	var node_id: String
+	var node: WeavlyExpression
 
-	func _init(node_id: String):
-		self.node_id = node_id
+	func _init(node: WeavlyExpression):
+		self.node = node
 
 
 # limit is null for no limit.
 class PoolOptionItem:
 	extends OptionItem
-	var pools: Array[String]
+	var pools: Array[WeavlyExpression]
 	var limit: WeavlyExpression
 	var shuffle: WeavlyExpression
 	var locked: WeavlyEngine.Locked
 
 	func _init(
-		pools: Array[String],
+		pools: Array[WeavlyExpression],
 		limit: WeavlyExpression,
 		shuffle: WeavlyExpression,
 		locked: WeavlyEngine.Locked
@@ -329,15 +330,16 @@ class TextExpression:
 		self.segments = segments
 
 
+# node is the target of visited, visit_count and skip_count, null for other calls.
 class Call:
 	extends WeavlyExpression
 	var name: String
-	var node_id: String
+	var node: WeavlyExpression
 	var args: Array[WeavlyExpression]
 
-	func _init(name: String, node_id: String, args: Array[WeavlyExpression] = []):
+	func _init(name: String, node: WeavlyExpression, args: Array[WeavlyExpression] = []):
 		self.name = name
-		self.node_id = node_id
+		self.node = node
 		self.args = args
 
 
@@ -360,11 +362,11 @@ class CharacterName:
 
 class MetaCall:
 	extends WeavlyExpression
-	var node_id: String
+	var node: WeavlyExpression
 	var key: String
 
-	func _init(node_id: String, key: String):
-		self.node_id = node_id
+	func _init(node: WeavlyExpression, key: String):
+		self.node = node
 		self.key = key
 
 

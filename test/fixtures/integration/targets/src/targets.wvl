@@ -1,0 +1,110 @@
+@env
+var next_room: node = Cellar
+var aside: node = Note
+var region: pool = cave
+var loose_region: pool = loose
+var offer: node = Attic
+var bare: node = Unlabelled
+var quest: node = Cellar
+var mirror: node = Mirror
+extern var lost: node
+var seen: bool = false
+var visits: number = 0
+var skips: number = 0
+var price: number = 0
+pool cave
+pool town
+pool loose
+meta cost: number = 1
+@endenv
+
+@node Hall
+@jump next_room
+@endnode
+
+@node Rooms
+@set next_room = Attic
+@jump next_room
+@endnode
+
+@node Cellar
+@meta
+pool: cave
+label: "Cellar"
+cost: 4
+@endmeta
+In the cellar.
+@endnode
+
+@node Attic
+@meta
+label: "Attic"
+@endmeta
+In the attic.
+@endnode
+
+@node Note
+A note.
+@endnode
+
+@node Aside
+@detour aside
+Back.
+@endnode
+
+@node Market
+@meta
+pool: town
+label: "Market"
+@endmeta
+In the market.
+@endnode
+
+@node Wander
+@set region = town
+@draw region
+@endnode
+
+@node Choose
+@options
+@option node(offer)
+@option pool(region, limit: 1)
+@option node(bare)
+@endoptions
+@endnode
+
+@node Unlabelled
+No label.
+@endnode
+
+@node Loose
+@meta
+pool: loose
+@endmeta
+Loose.
+@endnode
+
+@node ChooseLoose
+@options
+@option pool(loose_region)
+@option "Leave": @finish
+@endoptions
+@endnode
+
+@node Count
+@set seen = visited(quest)
+@set visits = visit_count(quest)
+@set skips = skip_count(quest)
+@set price = quest.cost
+@endnode
+
+@node Mirror
+@meta
+cost: mirror.cost
+@endmeta
+@endnode
+
+@node Lost
+@jump lost
+After.
+@endnode
