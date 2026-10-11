@@ -540,8 +540,9 @@ func set_variable(id: String, value: Variant) -> void:
 		variable_changed.emit(id, value, old_value)
 
 
-# The callable gets the arguments in declaration order. In an expression it may run any number
-# of times and in no fixed order; a do statement runs it exactly once, and only then may it
+# The callable gets the arguments in declaration order; a var parameter gets the variable's name,
+# to read and change with get_variable() and set_variable(). In an expression it may run any
+# number of times and in no fixed order; a do statement runs it exactly once, and only then may it
 # change state or wait with hold() and release().
 func register_function(name: String, callable: Callable) -> void:
 	if WeavlyModel.Signature.can_register(name, callable, story.get_function(name)):

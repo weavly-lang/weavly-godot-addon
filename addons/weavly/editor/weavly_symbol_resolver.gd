@@ -32,6 +32,7 @@ static var _draw_regex: RegEx = RegEx.create_from_string("@draw\\s+[\\w\\s,]*$")
 static var _pool_option_regex: RegEx = RegEx.create_from_string("@option\\s+pool\\s*\\([^()]*$")
 static var _pool_argument_regex: RegEx = RegEx.create_from_string("[(,]\\s*$")
 static var _option_keyword_regex: RegEx = RegEx.create_from_string("@option\\s+$")
+static var _var_argument_regex: RegEx = RegEx.create_from_string("[(,]\\s*var\\s+$")
 
 
 class Symbol:
@@ -85,6 +86,8 @@ static func _kinds(
 		return []
 	if before.ends_with("."):
 		return [WeavlyProjectIndex.Kind.META_KEY]
+	if _var_argument_regex.search(before) != null:
+		return [WeavlyProjectIndex.Kind.VARIABLE]
 	if after.begins_with("."):
 		return NODE_TARGET_KINDS.duplicate()
 	if block == WeavlyLineScanner.Block.ENV:

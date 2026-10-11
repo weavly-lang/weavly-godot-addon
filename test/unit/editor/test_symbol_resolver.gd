@@ -58,6 +58,11 @@ func test_a_set_target_can_be_any_name_and_keywords_name_nothing() -> void:
 	assert_array(_kinds("@|fade_in")).is_empty()
 
 
+func test_the_name_after_var_in_a_call_is_a_variable() -> void:
+	assert_array(_kinds("@do add_to(var |gold, 2)")).is_equal([VARIABLE])
+	assert_array(_kinds("@do add_to(2, var |gold)")).is_equal([VARIABLE])
+
+
 func test_a_call_names_a_function() -> void:
 	assert_array(_kinds("@if |bonus(2) > 1: @jump x")).is_equal([FUNCTION])
 	assert_array(_kinds("@do |fade_in()")).is_equal([FUNCTION])

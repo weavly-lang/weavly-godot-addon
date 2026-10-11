@@ -385,12 +385,22 @@ class Signature:
 
 	var name: String
 	var param_types: Array[String]
+	# Per parameter, whether it's declared var and gets a variable's name.
+	var variable_params: Array[bool]
 	var return_type: String
 
-	func _init(name: String, param_types: Array[String], return_type: String = ""):
+	func _init(
+		name: String,
+		param_types: Array[String],
+		return_type: String = "",
+		variable_params: Array[bool] = []
+	):
 		self.name = name
 		self.param_types = param_types
 		self.return_type = return_type
+		self.variable_params = variable_params
+		if variable_params.is_empty():
+			self.variable_params.resize(param_types.size())
 
 	# Pushes an error and returns false when the callable doesn't fit the name's declaration.
 	static func can_register(name: String, callable: Callable, signature: Signature) -> bool:

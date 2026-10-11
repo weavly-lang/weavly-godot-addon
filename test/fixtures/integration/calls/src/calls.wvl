@@ -7,6 +7,7 @@ func region(): pool
 func partner(): slot
 func shout(text: string, volume: number)
 func wave()
+func add_to(target: var number, amount: number)
 meta cost: number = 1
 var score: number = 0
 var scene: node = Start
@@ -38,4 +39,8 @@ Done.
 
 @node Other
 Other.
+@endnode
+
+@node Bonus
+@do add_to(var score, 2)
 @endnode

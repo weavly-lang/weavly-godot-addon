@@ -23,4 +23,5 @@ func bonus(points: number): number
 func fade_in()
 func play_sound(file: string)
 func log(value: number, count: number)
+func add_bonus(target: var number, amount: number)
 @endenv
