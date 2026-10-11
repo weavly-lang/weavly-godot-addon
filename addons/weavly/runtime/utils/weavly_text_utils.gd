@@ -20,6 +20,7 @@ static func fill_narration_line(
 ) -> WeavlyModel.NarrationLine:
 	var filled: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(narration_line.segments)
 	filled.text = fill_text(narration_line.segments, engine)
+	filled.source = narration_line.source
 	filled.line = narration_line.line
 	return filled
 
@@ -42,6 +43,7 @@ static func fill_character_line(
 		if not WeavlyExpressionEvaluator.is_error(name):
 			filled.name = str(name)
 	filled.text = fill_text(character_line.segments, engine)
+	filled.source = character_line.source
 	filled.line = character_line.line
 	return filled
 
@@ -53,6 +55,7 @@ static func fill_do(do: WeavlyModel.DoStatement, engine: WeavlyEngine) -> Weavly
 		return null
 	var filled: WeavlyModel.DoStatement = WeavlyModel.DoStatement.new(do.id, do.args)
 	filled.values = values
+	filled.source = do.source
 	filled.line = do.line
 	return filled
 

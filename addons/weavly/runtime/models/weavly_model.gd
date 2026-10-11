@@ -46,6 +46,8 @@ class MetaExpression:
 
 class Statement:
 	extends RefCounted
+	# The file it's written in, relative to src/.
+	var source: String = ""
 	var line: int = 0
 
 

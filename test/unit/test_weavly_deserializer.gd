@@ -597,6 +597,42 @@ func test_source_and_lines_are_read() -> void:
 	assert_int(node.body[1].cases[0].line).is_equal(4)
 
 
+func test_every_statement_carries_its_source_down_to_nested_bodies() -> void:
+	var line: Dictionary = {"type": "narration", "line": 3.0, "text": ["Hi"]}
+	var inline: Dictionary = {
+		"type": "inline",
+		"line": 4.0,
+		"meta": {"label": {"line": 4.0, "value": "Go"}},
+		"body": [line],
+	}
+	var body: Array = [
+		{
+			"type": "match",
+			"line": 2.0,
+			"modifier": "first",
+			"cases": [{"line": 2.0, "condition": true, "body": [line]}],
+		},
+		{"type": "option", "line": 4.0, "items": [inline]},
+		{
+			"type": "random",
+			"line": 5.0,
+			"cases": [{"line": 5.0, "condition": true, "weight": 1.0, "body": [line]}],
+		},
+	]
+	var data: Dictionary = {"source": "chapter/story.wvl", "nodes": [_node("start", body)]}
+	var read: Array[WeavlyModel.Statement] = WeavlyDeserializer.read_nodes(data)[0].body
+	var nested: Array[WeavlyModel.Statement] = [
+		read[0],
+		read[0].cases[0].body[0],
+		read[1],
+		(read[1].items[0] as WeavlyModel.InlineOptionItem).body[0],
+		read[2],
+		read[2].cases[0].body[0],
+	]
+	for statement: WeavlyModel.Statement in nested:
+		assert_str(statement.source).is_equal("chapter/story.wvl")
+
+
 func test_option_and_random_case_lines_are_read() -> void:
 	var option_block: Dictionary = {
 		"type": "option",
