@@ -5,11 +5,15 @@ extends RefCounted
 # A block's opening line is still outside it, its closing line inside.
 enum Block { NONE, ENV, BODY, META }
 
-# {} interpolations in text and strings are code; their braces are text.
-enum Part { TEXT, CODE, STRING, COMMENT }
+# {} interpolations in text and strings are code; their braces are text. SPEAKER is a dialogue
+# line's speaker and its colon.
+enum Part { TEXT, CODE, STRING, COMMENT, SPEAKER }
 
 static var _directive_regex: RegEx = RegEx.create_from_string("^[ \\t]*(@[A-Za-z_]\\w*)")
 static var _node_regex: RegEx = RegEx.create_from_string("^[ \\t]*@node[ \\t]+([A-Za-z_]\\w*)")
+static var _speaker_regex: RegEx = RegEx.create_from_string(
+	'(?:[A-Za-z_]\\w*|"(?:\\\\.|[^"\\\\])*")[ \\t]*:(?=[ \\t])'
+)
 
 
 # Each line's block.
@@ -62,7 +66,7 @@ static func node_name(text: String) -> String:
 
 
 # Each character's Part. Env and meta lines are code; other lines are text unless they start
-# with a directive or a variable.
+# with a directive or a speaker.
 static func parts(text: String, block: Block) -> PackedByteArray:
 	var result: PackedByteArray = []
 	result.resize(text.length())
@@ -86,16 +90,21 @@ static func _scan_line(text: String, from: int, result: PackedByteArray) -> void
 		var colon: int = _scan_code(text, i, result, true)
 		if colon >= 0:
 			_scan_line(text, colon + 1, result)
-	elif text[i] == "$":
-		var colon: int = _scan_code(text, i, result, true)
-		if colon >= 0:
-			_scan_text(text, colon + 1, result)
-	elif text[i] == ">":
-		var colon: int = text.find(":", i)
-		if colon >= 0:
-			_scan_text(text, colon + 1, result)
 	else:
+		var speaker: RegExMatch = _speaker_regex.search(text, i)
+		if speaker != null and speaker.get_start() == i:
+			_scan_speaker(text, i, speaker.get_end(), result)
+			i = speaker.get_end()
 		_scan_text(text, i, result)
+
+
+# A quoted speaker's interpolations stay code.
+static func _scan_speaker(text: String, from: int, to: int, result: PackedByteArray) -> void:
+	if text[from] == '"':
+		_scan_string(text, from, result)
+	for i: int in range(from, to):
+		if result[i] != Part.CODE:
+			result[i] = Part.SPEAKER
 
 
 # Returns the first colon outside brackets when stopping there, else -1.

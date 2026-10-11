@@ -6,7 +6,7 @@ const _STORY = """@node hub
 @jump market
 @draw city
 @if visited(harbor): @jump hub
-$energy: Tired.
+You have {energy} left.
 @jump nowhere
 @endnode
 """

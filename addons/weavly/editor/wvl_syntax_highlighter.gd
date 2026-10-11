@@ -12,27 +12,38 @@ const COMMENT_COLOR = Color(0.50, 0.50, 0.50)
 const KEYWORD_COLOR = Color(0.66, 0.60, 0.98)
 const FUNCTION_COLOR = Color(0.96, 0.86, 0.50)
 const META_COLOR = Color(0.74, 0.88, 1.0)
+const NODE_COLOR = Color(1.0, 0.55, 0.50)
+const KIND_COLORS: Dictionary[WeavlyProjectIndex.Kind, Color] = {
+	WeavlyProjectIndex.Kind.NODE: NODE_COLOR,
+	WeavlyProjectIndex.Kind.POOL: NODE_COLOR,
+	WeavlyProjectIndex.Kind.SLOT: NODE_COLOR,
+	WeavlyProjectIndex.Kind.CHARACTER: CHARACTER_COLOR,
+	WeavlyProjectIndex.Kind.VARIABLE: VARIABLE_COLOR,
+	WeavlyProjectIndex.Kind.META_KEY: META_COLOR,
+	WeavlyProjectIndex.Kind.FUNCTION: FUNCTION_COLOR,
+}
+
+# Takes a name and returns the WeavlyProjectIndex.Kind it's defined as, or -1. Names stay plain
+# while it's unset.
+var name_kind: Callable
 
 var _number_regex: RegEx = RegEx.create_from_string("\\b\\d+(?:\\.\\d+)?\\b")
-var _variable_regex: RegEx = RegEx.create_from_string("\\$[A-Za-z_][A-Za-z0-9_]*")
+var _name_regex: RegEx = RegEx.create_from_string("(?<![@.\\w])[A-Za-z_]\\w*(?![\\w(])")
 var _directive_regex: RegEx = RegEx.create_from_string("@[A-Za-z_]+")
-var _character_regex: RegEx = RegEx.create_from_string("^[ \\t]*>[^:\\n]*:")
-var _keyword_regex: RegEx = RegEx.create_from_string(
-	"(?<![@$\\w])(?:and|or|not|true|false)(?!\\w)"
-)
-var _function_regex: RegEx = RegEx.create_from_string("(?<![@$\\w])[A-Za-z_]\\w*(?=\\()")
+var _keyword_regex: RegEx = RegEx.create_from_string("(?<![@\\w])(?:and|or|not|true|false)(?!\\w)")
+var _function_regex: RegEx = RegEx.create_from_string("(?<![@\\w])[A-Za-z_]\\w*(?=\\()")
 var _meta_read_regex: RegEx = RegEx.create_from_string("\\.[A-Za-z_]\\w*")
 var _kind_regex: RegEx = RegEx.create_from_string(
-	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|meta|func)(?!\\w)"
+	"^[ \\t]*((?:extern[ \\t]+)?var|pool|slot|character|meta|func)(?!\\w)"
 )
 var _type_regex: RegEx = RegEx.create_from_string(
-	":[ \\t]*(number|string|bool|node|pool|slot)(?!\\w)"
+	":[ \\t]*(number|string|bool|node|pool|slot|character)(?!\\w)"
 )
 var _bool_value_regex: RegEx = RegEx.create_from_string("=[ \\t]*(true|false)(?!\\w)")
 var _meta_key_regex: RegEx = RegEx.create_from_string("^[ \\t]*([A-Za-z_]\\w*)[ \\t]*:")
 var _option_call_regex: RegEx = RegEx.create_from_string("^[ \\t]*@option[ \\t]+(node|pool)\\(")
 var _pool_parameter_regex: RegEx = RegEx.create_from_string(
-	"(?<![\\w$])(limit|shuffle|locked)(?=[ \\t]*:)"
+	"(?<!\\w)(limit|shuffle|locked)(?=[ \\t]*:)"
 )
 var _locked_value_regex: RegEx = RegEx.create_from_string(
 	"locked[ \\t]*:[ \\t]*(show|extra|hide)(?!\\w)"
@@ -69,7 +80,7 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 		blocks[line] if line < blocks.size() else WeavlyLineScanner.Block.NONE
 	)
 	_paint_numbers(colors, text)
-	_paint(colors, text, _variable_regex, VARIABLE_COLOR)
+	_paint_names(colors, text)
 	match block:
 		WeavlyLineScanner.Block.ENV:
 			_paint(colors, text, _kind_regex, KEYWORD_COLOR, 1)
@@ -85,7 +96,6 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 				_paint(colors, text, _locked_value_regex, KEYWORD_COLOR, 1)
 	_paint(colors, text, _directive_regex, DIRECTIVE_COLOR)
 	_paint_parts(colors, WeavlyLineScanner.parts(text, block))
-	_paint(colors, text, _character_regex, CHARACTER_COLOR)
 
 	var result: Dictionary = {}
 	for i: int in length:
@@ -102,13 +112,25 @@ func _paint(
 			colors[i] = color
 
 
+# Each name in the color of what it's defined as.
+func _paint_names(colors: PackedColorArray, text: String) -> void:
+	if not name_kind.is_valid():
+		return
+	for regex_match: RegExMatch in _name_regex.search_all(text):
+		var kind: int = name_kind.call(regex_match.get_string())
+		if kind == -1:
+			continue
+		for i: int in range(regex_match.get_start(), regex_match.get_end()):
+			colors[i] = KIND_COLORS[kind]
+
+
 func _paint_expression_words(colors: PackedColorArray, text: String) -> void:
 	_paint(colors, text, _keyword_regex, KEYWORD_COLOR)
 	_paint(colors, text, _function_regex, FUNCTION_COLOR)
 	_paint(colors, text, _meta_read_regex, META_COLOR)
 
 
-# Only code keeps the colors painted above; text, strings and comments get their own.
+# Only code keeps the colors painted above; text, strings, comments and speakers get their own.
 func _paint_parts(colors: PackedColorArray, parts: PackedByteArray) -> void:
 	for i: int in parts.size():
 		match parts[i]:
@@ -118,6 +140,8 @@ func _paint_parts(colors: PackedColorArray, parts: PackedByteArray) -> void:
 				colors[i] = STRING_COLOR
 			WeavlyLineScanner.Part.COMMENT:
 				colors[i] = COMMENT_COLOR
+			WeavlyLineScanner.Part.SPEAKER:
+				colors[i] = CHARACTER_COLOR
 
 
 func _paint_numbers(colors: PackedColorArray, text: String) -> void:

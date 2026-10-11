@@ -242,6 +242,8 @@ func _declared_names(type: String) -> Array[String]:
 			names = engine.story.get_pools()
 		WeavlyDeserializer.TYPE_SLOT:
 			names = engine.story.get_slots()
+		WeavlyDeserializer.TYPE_CHARACTER:
+			names = engine.story.get_characters()
 	names.sort()
 	return names
 

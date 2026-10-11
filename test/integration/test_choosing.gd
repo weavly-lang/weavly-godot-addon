@@ -42,7 +42,7 @@ func test_the_engine_signals_lines_offered_options_and_the_chosen_option() -> vo
 	engine.option_chosen.connect(
 		func(option: WeavlyModel.Option) -> void: events.append("chosen:" + option.text)
 	)
-	engine.start("door")
+	engine.start("Door")
 	assert_bool(engine.choose(_door_option(engine, "Open"))).is_true()
 	assert_array(events).is_equal(["offered:3", "chosen:Open", "line:The door opens."])
 
@@ -56,7 +56,7 @@ func test_next_inside_line_reached_continues_to_the_next_line() -> void:
 			if line is WeavlyModel.NarrationLine:
 				engine.next()
 	)
-	engine.start("start")
+	engine.start("Start")
 	assert_array(lines).is_equal(["Welcome", "Hello"])
 	engine.next()
 	assert_array(lines).is_equal(["Welcome", "Hello", "Goodbye"])
@@ -75,7 +75,7 @@ func test_choosing_inside_options_offered_runs_the_option_once() -> void:
 			if events.size() == 1:
 				engine.choose(options[0])
 	)
-	engine.start("stay")
+	engine.start("Stay")
 	assert_array(events).is_equal(["offered", "line:Stayed"])
 
 
@@ -89,7 +89,7 @@ func test_the_offered_options_stay_with_the_game_after_choosing() -> void:
 	engine.option_chosen.connect(
 		func(_option: WeavlyModel.Option) -> void: sizes.append(offered[0].size())
 	)
-	engine.start("door")
+	engine.start("Door")
 	engine.choose(_door_option(engine, "Open"))
 	assert_array(sizes).is_equal([3])
 	assert_int(offered[0].size()).is_equal(3)
@@ -99,7 +99,7 @@ func test_line_reached_carries_narration_and_character_lines() -> void:
 	var engine: WeavlyEngine = _make_engine(LINEAR_FIXTURE)
 	var lines: Array[WeavlyModel.LineStatement] = []
 	engine.line_reached.connect(func(line: WeavlyModel.LineStatement) -> void: lines.append(line))
-	engine.start("start")
+	engine.start("Start")
 	engine.next()
 	assert_object(lines[0]).is_instanceof(WeavlyModel.NarrationLine)
 	assert_object(lines[1]).is_instanceof(WeavlyModel.CharacterLine)
@@ -121,7 +121,7 @@ func test_a_refused_choice_returns_false_and_changes_nothing() -> void:
 	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
 	var chosen: Array[WeavlyModel.Option] = []
 	engine.option_chosen.connect(func(option: WeavlyModel.Option) -> void: chosen.append(option))
-	engine.start("door")
+	engine.start("Door")
 	var option: WeavlyModel.Option = _door_option(engine, "Open")
 	engine.choose(option)
 	assert_bool(engine.choose(option)).is_false()
@@ -135,7 +135,7 @@ func test_an_offered_option_is_chosen_as_it_was_offered() -> void:
 	engine.line_reached.connect(
 		func(line: WeavlyModel.LineStatement) -> void: lines.append(line.text)
 	)
-	engine.start("door")
+	engine.start("Door")
 	var option: WeavlyModel.Option = _door_option(engine, "Open")
 	_door_open = false
 	assert_bool(engine.can_choose(option)).is_true()

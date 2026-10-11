@@ -2,12 +2,22 @@
 class_name WeavlySymbolResolver
 extends RefCounted
 
+# Names share one namespace, so a bare name can be any of these.
 const NAME_KINDS: Array[WeavlyProjectIndex.Kind] = [
-	WeavlyProjectIndex.Kind.NODE, WeavlyProjectIndex.Kind.POOL, WeavlyProjectIndex.Kind.SLOT
+	WeavlyProjectIndex.Kind.NODE,
+	WeavlyProjectIndex.Kind.POOL,
+	WeavlyProjectIndex.Kind.SLOT,
+	WeavlyProjectIndex.Kind.CHARACTER,
+	WeavlyProjectIndex.Kind.VARIABLE,
+]
+const SPEAKER_KINDS: Array[WeavlyProjectIndex.Kind] = [
+	WeavlyProjectIndex.Kind.CHARACTER, WeavlyProjectIndex.Kind.VARIABLE
 ]
 
 static var _meta_entry_regex: RegEx = RegEx.create_from_string("^\\s*([A-Za-z_]\\w*)\\s*:")
-static var _name_value_regex: RegEx = RegEx.create_from_string("\\b(node|pool|slot)\\s*=\\s*$")
+static var _name_value_regex: RegEx = RegEx.create_from_string(
+	"\\b(node|pool|slot|character)\\s*=\\s*$"
+)
 static var _node_target_regex: RegEx = RegEx.create_from_string(
 	"(@jump\\s+|@detour\\s+|@option\\s+node\\s*\\(\\s*)$"
 )
@@ -44,9 +54,13 @@ static func resolve(lines: PackedStringArray, line: int, column: int) -> Symbol:
 	var block: WeavlyLineScanner.Block = WeavlyLineScanner.block_at(lines, line)
 	if block == WeavlyLineScanner.Block.NONE:
 		return null
-	if WeavlyLineScanner.parts(text, block)[start] != WeavlyLineScanner.Part.CODE:
-		return null
-	var kinds: Array[WeavlyProjectIndex.Kind] = _kinds(text, start, end, block)
+	var kinds: Array[WeavlyProjectIndex.Kind] = []
+	match WeavlyLineScanner.parts(text, block)[start]:
+		WeavlyLineScanner.Part.CODE:
+			kinds = _kinds(text, start, end, block)
+		WeavlyLineScanner.Part.SPEAKER:
+			if text.substr(end).strip_edges(true, false).begins_with(":"):
+				kinds = SPEAKER_KINDS.duplicate()
 	if kinds.is_empty():
 		return null
 	var symbol: Symbol = Symbol.new()
@@ -60,8 +74,6 @@ static func _kinds(
 ) -> Array[WeavlyProjectIndex.Kind]:
 	var before: String = text.substr(0, start)
 	var after: String = text.substr(end).strip_edges(true, false)
-	if before.ends_with("$"):
-		return [WeavlyProjectIndex.Kind.VARIABLE]
 	if before.ends_with("@"):
 		return []
 	if before.ends_with("."):
@@ -112,6 +124,8 @@ static func _group_kind(word: String) -> WeavlyProjectIndex.Kind:
 			return WeavlyProjectIndex.Kind.POOL
 		"slot":
 			return WeavlyProjectIndex.Kind.SLOT
+		"character":
+			return WeavlyProjectIndex.Kind.CHARACTER
 	return WeavlyProjectIndex.Kind.NODE
 
 

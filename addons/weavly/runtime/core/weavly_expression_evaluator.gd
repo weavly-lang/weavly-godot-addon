@@ -5,6 +5,7 @@ const UNKNOWN_FUNCTION = "Unknown function '%s'."
 const WRONG_RESULT_TYPE = "Function '%s' returned a value of type '%s' instead of a %s."
 const UNKNOWN_RESULT_NAME = "Function '%s' returned '%s', but no %s has that name."
 const UNKNOWN_NODE = "Node '%s' in %s() doesn't exist."
+const UNKNOWN_CHARACTER = "Character '%s' doesn't exist."
 const WRONG_ARGUMENT_TYPE = "%s() takes numbers, got a value of type '%s'."
 const UNKNOWN_OPERATOR = "Unknown expression with operator '%s'."
 const WRONG_CONDITION_TYPE = "Condition can't be of type '%s', returning '%s' instead."
@@ -109,6 +110,8 @@ static func evaluate_expression(
 		return WeavlyTextUtils.fill_text(expression.segments, engine)
 	if expression is WeavlyModel.Identifier:
 		return evaluate_identifier(expression, engine)
+	if expression is WeavlyModel.CharacterName:
+		return evaluate_character_name(expression, engine)
 	if expression is WeavlyModel.Call:
 		return evaluate_call(expression, engine)
 	if expression is WeavlyModel.MetaCall:
@@ -127,6 +130,26 @@ static func evaluate_identifier(
 ) -> Variant:
 	var value: Variant = engine.get_variable(identifier.value)
 	return ERROR if value == null else value
+
+
+static func evaluate_character_name(
+	character_name: WeavlyModel.CharacterName, engine: WeavlyEngine
+) -> Variant:
+	var id: Variant = evaluate_character(character_name, engine)
+	return ERROR if is_error(id) else engine.character_service.get_display_name(id)
+
+
+# The id of the character the expression names, or ERROR after reporting why it names none.
+static func evaluate_character(
+	character_name: WeavlyModel.CharacterName, engine: WeavlyEngine
+) -> Variant:
+	var id: Variant = evaluate_expression(character_name.expression, engine)
+	if is_error(id):
+		return ERROR
+	if id is not String or not engine.story.has_character(id):
+		engine.report_error(UNKNOWN_CHARACTER % str(id))
+		return ERROR
+	return id
 
 
 # The value, an int as a number, or ERROR after reporting why it doesn't fit the type. The messages

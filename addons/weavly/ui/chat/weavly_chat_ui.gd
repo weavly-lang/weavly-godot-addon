@@ -165,13 +165,13 @@ func _typing_wait(text: String) -> float:
 
 
 func _is_player(line: WeavlyModel.CharacterLine) -> bool:
-	return player_character != "" and line.name == player_character
+	return player_character != "" and line.character == player_character
 
 
 func _add_line(line: WeavlyModel.LineStatement) -> void:
 	if line is WeavlyModel.CharacterLine:
 		var character: WeavlyCharacter = find_character(line, engine)
-		_add_bubble(line.text, character, _is_player(line), speaker_name(line, engine))
+		_add_bubble(line.text, character, _is_player(line), line.name)
 		return
 	_last_speaker = ""
 	var row: HBoxContainer = _add_row(BoxContainer.ALIGNMENT_CENTER)

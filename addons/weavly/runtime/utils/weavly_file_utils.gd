@@ -91,6 +91,8 @@ static func _load_env(engine: WeavlyEngine, data: Dictionary, path: String) -> v
 		engine.story.add_pool(pool)
 	for slot: String in WeavlyDeserializer.read_slot_names(data, path):
 		engine.story.add_slot(slot)
+	for character: String in WeavlyDeserializer.read_character_names(data, path):
+		engine.story.add_character(character)
 	var meta_keys: Dictionary[String, Variant] = WeavlyDeserializer.read_meta_keys(data, path)
 	for key: String in meta_keys:
 		engine.story.add_meta_key(key, meta_keys[key])

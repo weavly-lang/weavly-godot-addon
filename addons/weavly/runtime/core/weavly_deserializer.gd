@@ -11,12 +11,13 @@ const KEY_DECLARATIONS = "declarations"
 const KEY_SOURCE = "source"
 const KEY_POOLS = "pools"
 const KEY_SLOTS = "slots"
+const KEY_CHARACTERS = "characters"
 const KEY_META_KEYS = "meta_keys"
 const KEY_FUNCTIONS = "functions"
 
 # Common keys
 const KEY_ID = "id"
-const KEY_NAME_IS_ID = "name_is_id"
+const KEY_SPEAKER = "speaker"
 const KEY_BODY = "body"
 const KEY_TYPE = "type"
 const KEY_TEXT = "text"
@@ -35,6 +36,7 @@ const KEY_CALL = "call"
 const KEY_NODE = "node"
 const KEY_ARGS = "args"
 const KEY_KEY = "key"
+const KEY_CHARACTER = "character"
 
 # Meta keys
 const KEY_META = "meta"
@@ -97,6 +99,7 @@ const VARIABLE_DEFAULTS: Dictionary[String, Variant] = {
 	TYPE_NODE: "",
 	TYPE_POOL: "",
 	TYPE_SLOT: "",
+	TYPE_CHARACTER: "",
 }
 
 # =====================
@@ -317,13 +320,13 @@ static func read_narration_line(data: Dictionary, path: String) -> WeavlyModel.N
 	return WeavlyModel.NarrationLine.new(segments)
 
 
+# A one-off speaker is a string or a text; a character arrives as {"character": ...}.
 static func read_character_line(data: Dictionary, path: String) -> WeavlyModel.CharacterLine:
-	var name: Variant = get_required(data, KEY_NAME, Variant.Type.TYPE_STRING, path)
-	var name_is_id: Variant = get_required(data, KEY_NAME_IS_ID, Variant.Type.TYPE_BOOL, path)
+	var speaker: WeavlyModel.WeavlyExpression = read_required_expression(data, KEY_SPEAKER, path)
 	var segments: Variant = read_text(data, path)
-	if name == null or name_is_id == null or segments == null:
+	if speaker == null or segments == null:
 		return null
-	return WeavlyModel.CharacterLine.new(name, name_is_id, segments)
+	return WeavlyModel.CharacterLine.new(speaker, segments)
 
 
 static func read_set_statement(data: Dictionary, path: String) -> WeavlyModel.SetStatement:
@@ -585,6 +588,12 @@ static func read_expression(data: Variant, path: String) -> WeavlyModel.WeavlyEx
 		var segments: Variant = read_text(data, path)
 		return null if segments == null else WeavlyModel.TextExpression.new(segments)
 
+	if data is Dictionary and data.has(KEY_CHARACTER):
+		var character: WeavlyModel.WeavlyExpression = read_required_expression(
+			data, KEY_CHARACTER, path
+		)
+		return null if character == null else WeavlyModel.CharacterName.new(character)
+
 	if data is Dictionary and data.has(KEY_VARIABLE):
 		var variable: Variant = get_required(data, KEY_VARIABLE, Variant.Type.TYPE_STRING, path)
 		if variable == null:
@@ -679,6 +688,11 @@ static func read_pool_names(data: Dictionary, source: String = "") -> Array[Stri
 # The slot names declared in env.json.
 static func read_slot_names(data: Dictionary, source: String = "") -> Array[String]:
 	return _read_names(data, KEY_SLOTS, source)
+
+
+# The character names declared in env.json.
+static func read_character_names(data: Dictionary, source: String = "") -> Array[String]:
+	return _read_names(data, KEY_CHARACTERS, source)
 
 
 # The declared custom meta keys in env.json, each with its default.
@@ -800,7 +814,7 @@ static func read_variable(data: Variant, path: String = "") -> WeavlyModel.Varia
 			variable = WeavlyModel.StringVariable.new(id, value)
 		TYPE_BOOL:
 			variable = WeavlyModel.BoolVariable.new(id, value)
-		TYPE_NODE, TYPE_POOL, TYPE_SLOT:
+		TYPE_NODE, TYPE_POOL, TYPE_SLOT, TYPE_CHARACTER:
 			variable = WeavlyModel.NameVariable.new(id, type, value)
 	variable.extern = extern
 	return variable

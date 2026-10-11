@@ -87,6 +87,22 @@ func _engine_with_name() -> WeavlyEngine:
 	return engine
 
 
+# Declares Anna with a resource and the name variable.
+func _engine_with_anna() -> WeavlyEngine:
+	var engine: WeavlyEngine = _engine_with_name()
+	engine.story.add_character("Anna")
+	var anna: WeavlyCharacter = WeavlyCharacter.new()
+	anna.id = "Anna"
+	anna.display_name = "Anna Lind"
+	(engine.character_service as WeavlyDefaultCharacterService).add_character(anna)
+	return engine
+
+
+func _character_line(speaker: Variant, text: Array = ["Hi"]) -> WeavlyModel.CharacterLine:
+	var data: Dictionary = {"type": "character", "speaker": speaker, "text": text}
+	return WeavlyDeserializer.read_character_line(data, "test")
+
+
 func _segments(text: Array) -> Array:
 	return WeavlyDeserializer.read_text({"text": text}, "test")
 
@@ -105,34 +121,69 @@ func test_fill_narration_line_copies_with_filled_text() -> void:
 	assert_that(line.text).is_equal("")
 
 
-func test_fill_character_line_resolves_a_name_that_is_an_id() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
-		"name", true, _segments([{"variable": "name"}, "!"])
+func test_fill_character_line_resolves_the_character_to_its_display_name() -> void:
+	var line: WeavlyModel.CharacterLine = _character_line(
+		{"character": "Anna"}, [{"variable": "name"}, "!"]
 	)
 	line.line = 5
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
-		line, _engine_with_name()
+		line, _engine_with_anna()
 	)
-	assert_that(filled.name).is_equal("Ada")
+	assert_that(filled.character).is_equal("Anna")
+	assert_that(filled.name).is_equal("Anna Lind")
 	assert_that(filled.text).is_equal("Ada!")
 	assert_int(filled.line).is_equal(5)
+	assert_that(line.name).is_equal("")
 
 
-func test_fill_character_line_keeps_a_literal_name() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("name", false, ["Hi"])
+func test_fill_character_line_resolves_a_character_variable() -> void:
+	var engine: WeavlyEngine = _engine_with_anna()
+	declare(engine, WeavlyModel.NameVariable.new("companion", "character", "Anna"))
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
-		line, _engine_with_name()
+		_character_line({"character": {"variable": "companion"}}), engine
 	)
-	assert_that(filled.name).is_equal("name")
+	assert_that(filled.character).is_equal("Anna")
+	assert_that(filled.name).is_equal("Anna Lind")
 
 
-func test_fill_character_line_with_an_undefined_name_variable_reports_it() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("speaker", true, ["Hi"])
+func test_fill_character_line_keeps_a_one_off_name_without_a_character() -> void:
 	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
-		line, _make_engine()
+		_character_line("Old Man"), _engine_with_anna()
 	)
-	assert_that(filled.name).is_equal("speaker")
-	assert_logged(["Variable 'speaker' isn't defined."])
+	assert_that(filled.character).is_equal("")
+	assert_that(filled.name).is_equal("Old Man")
+
+
+func test_fill_character_line_fills_a_one_off_name_with_display_names() -> void:
+	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
+		_character_line({"text": [{"character": "Anna"}, " and ", {"variable": "name"}]}),
+		_engine_with_anna()
+	)
+	assert_that(filled.character).is_equal("")
+	assert_that(filled.name).is_equal("Anna Lind and Ada")
+
+
+func test_fill_character_line_with_an_unknown_character_reports_it() -> void:
+	var filled: WeavlyModel.CharacterLine = WeavlyTextUtils.fill_character_line(
+		_character_line({"character": "Ben"}), _engine_with_anna()
+	)
+	assert_that(filled.character).is_equal("")
+	assert_that(filled.name).is_equal("")
+	assert_logged(["Character 'Ben' doesn't exist."])
+
+
+func test_a_character_in_text_shows_its_display_name() -> void:
+	var text: String = WeavlyTextUtils.fill_text(
+		_segments(["Ask ", {"character": "Anna"}, "."]), _engine_with_anna()
+	)
+	assert_that(text).is_equal("Ask Anna Lind.")
+
+
+func test_a_character_without_a_resource_shows_its_id() -> void:
+	var engine: WeavlyEngine = _engine_with_name()
+	engine.story.add_character("Ben")
+	var text: String = WeavlyTextUtils.fill_text(_segments([{"character": "Ben"}]), engine)
+	assert_that(text).is_equal("Ben")
 
 
 func test_fill_do_copies_with_evaluated_values() -> void:

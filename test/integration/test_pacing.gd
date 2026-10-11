@@ -32,10 +32,10 @@ func test_statement_reached_traces_every_statement_at_its_line() -> void:
 	engine.statement_reached.connect(
 		func(_statement: WeavlyModel.Statement) -> void: lines.append(engine.current_line)
 	)
-	engine.start("start")
+	engine.start("Start")
 	while engine.is_running():
 		engine.next()
-	assert_array(lines).is_equal([6, 7, 8, 9, 13, 14])
+	assert_array(lines).is_equal([7, 8, 9, 10, 14, 15])
 
 
 func test_a_hold_on_statement_reached_pauses_after_that_statement() -> void:
@@ -45,19 +45,19 @@ func test_a_hold_on_statement_reached_pauses_after_that_statement() -> void:
 			if statement is WeavlyModel.SetStatement:
 				engine.hold()
 	)
-	engine.start("start")
+	engine.start("Start")
 	engine.next()
 	engine.next()
 	assert_that(engine.get_variable("counter")).is_equal(7.0)
-	assert_array(_entered).is_equal(["start"])
+	assert_array(_entered).is_equal(["Start"])
 	engine.release()
-	assert_array(_entered).is_equal(["start", "end"])
+	assert_array(_entered).is_equal(["Start", "End"])
 	assert_that(_lines.back()).is_equal("Goodbye")
 
 
 func test_lines_a_line_service_doesnt_wait_on_are_passed_on_without_pausing() -> void:
 	var engine: WeavlyEngine = _make_engine([load(NEVER_WAITING_LINE_SERVICE)])
-	engine.start("start")
+	engine.start("Start")
 	assert_array(_lines).is_equal(["Welcome", "Hello", "Goodbye"])
 	assert_bool(engine.is_running()).is_false()
 
@@ -69,7 +69,7 @@ func test_a_hold_released_inside_line_reached_keeps_the_line_waiting() -> void:
 			engine.hold()
 			engine.release()
 	)
-	engine.start("start")
+	engine.start("Start")
 	assert_array(_lines).is_equal(["Welcome"])
 	assert_bool(engine.is_running()).is_true()
 
@@ -81,7 +81,7 @@ func test_a_line_held_on_line_reached_waits_for_next_after_release() -> void:
 			if line.text == "Welcome":
 				engine.hold()
 	)
-	engine.start("start")
+	engine.start("Start")
 	engine.release()
 	assert_array(_lines).is_equal(["Welcome"])
 	engine.next()
@@ -94,7 +94,7 @@ func test_a_hold_on_statement_reached_doesnt_stop_a_render() -> void:
 		func(_statement: WeavlyModel.Statement) -> void: engine.hold()
 	)
 	var texts: Array[String] = []
-	for entry: WeavlyModel.Statement in engine.render("start"):
+	for entry: WeavlyModel.Statement in engine.render("Start"):
 		texts.append((entry as WeavlyModel.LineStatement).text)
 	assert_array(texts).is_equal(["Welcome", "Hello", "Goodbye"])
 
@@ -108,8 +108,8 @@ func test_a_hold_from_a_render_pauses_play_until_released() -> void:
 				held[0] = true
 				engine.hold()
 	)
-	engine.render("start")
-	engine.start("start")
+	engine.render("Start")
+	engine.start("Start")
 	assert_array(_lines).is_empty()
 	engine.release()
 	assert_array(_lines).is_equal(["Welcome"])

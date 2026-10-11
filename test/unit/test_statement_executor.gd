@@ -96,7 +96,9 @@ func test_a_narration_line_is_passed_on_filled() -> void:
 
 
 func test_a_character_line_is_passed_on_filled() -> void:
-	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new("Alice", false, ["hi"])
+	var line: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
+		WeavlyModel.StringLiteral.new("Alice"), ["hi"]
+	)
 	WeavlyStatementExecutor.execute_statement(line, _engine)
 	assert_that(_engine.reached_lines.size()).is_equal(1)
 	assert_str(_engine.reached_lines[0].name).is_equal("Alice")

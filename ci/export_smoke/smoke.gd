@@ -35,17 +35,17 @@ func _expect(condition: bool, message: String) -> void:
 
 
 func _check_discovery(engine: WeavlyEngine) -> void:
-	_expect(engine.story.has_node("start"), "node 'start' not found in the packed dialogue JSON")
-	_expect(engine.story.has_node("end"), "node 'end' not found in the packed dialogue JSON")
+	_expect(engine.story.has_node("Start"), "node 'Start' not found in the packed dialogue JSON")
+	_expect(engine.story.has_node("End"), "node 'End' not found in the packed dialogue JSON")
 	_expect(engine.story.get_variable("score") != null, "variable 'score' not found in env.json")
 	_expect(
-		engine.character_service.get_character("guide") != null,
-		"character 'guide' not found in characters/*.tres"
+		engine.character_service.get_character("Guide") != null,
+		"character 'Guide' not found in characters/*.tres"
 	)
 
 
 func _run_dialogue(engine: WeavlyEngine) -> void:
-	engine.start("start")
+	engine.start("Start")
 	var steps: int = 0
 	while not _finished and steps < MAX_STEPS:
 		engine.next()

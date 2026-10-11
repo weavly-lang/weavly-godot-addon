@@ -3,10 +3,10 @@ var name: string = "Ada"
 var coins: number = 3
 @endenv
 
-@node start
-Hi {$name}, you have {$coins} coins.
-$name: I am {$name}.
+@node Start
+Hi {name}, you have {coins} coins.
+"{name}": I am {name}.
 @options
-@option "Pay {$coins}": @finish
+@option "Pay {coins}": @finish
 @endoptions
 @endnode

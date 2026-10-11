@@ -78,7 +78,7 @@ func _on_line(line: WeavlyModel.LineStatement) -> void:
 
 func _show_speaker(line: WeavlyModel.CharacterLine) -> void:
 	var character: WeavlyCharacter = find_character(line, engine)
-	_nameplate.text = speaker_name(line, engine)
+	_nameplate.text = line.name
 	if character is WeavlyNovelCharacter:
 		_nameplate.add_theme_color_override(&"font_color", character.name_color)
 	else:

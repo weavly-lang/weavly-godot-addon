@@ -115,7 +115,7 @@ func test_deals_the_first_cards_in_selection_order() -> void:
 
 func test_cards_past_the_hand_size_count_as_skipped() -> void:
 	_ui.deal(["city"])
-	assert_int(_engine.count_service.get_skip_count("well")).is_equal(1)
+	assert_int(_engine.count_service.get_skip_count("Well")).is_equal(1)
 
 
 func test_fewer_eligible_storylets_than_the_hand_size() -> void:
@@ -229,7 +229,7 @@ func test_keys_move_from_a_card_to_the_next_cards_options() -> void:
 
 
 func test_refuses_while_a_dialogue_runs() -> void:
-	_engine.start("inn")
+	_engine.start("Inn")
 	_ui.deal(["city"])
 	assert_bool(_ui.visible).is_false()
 	assert_logged([], ["Can't deal cards while a dialogue runs."])
@@ -260,4 +260,4 @@ func test_an_option_runs_as_rendered_after_the_game_changed() -> void:
 	_door_open = false
 	_button(_cards()[0], "Open").pressed.emit()
 	assert_bool(_ui.get_node("%Outcome").visible).is_true()
-	assert_int(_engine.count_service.get_visit_count("let_go")).is_equal(1)
+	assert_int(_engine.count_service.get_visit_count("LetGo")).is_equal(1)

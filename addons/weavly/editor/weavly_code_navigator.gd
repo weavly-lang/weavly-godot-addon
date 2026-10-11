@@ -2,12 +2,16 @@
 class_name WeavlyCodeNavigator
 extends PopupMenu
 
+# Other files changed on disk; the open file's own edits don't emit it.
+signal index_changed
+
 # Other files are read from disk again at most this often while hovering.
 const RESCAN_INTERVAL_MS = 1000
 const KIND_NAMES: Dictionary[WeavlyProjectIndex.Kind, String] = {
 	WeavlyProjectIndex.Kind.NODE: "node",
 	WeavlyProjectIndex.Kind.POOL: "pool",
 	WeavlyProjectIndex.Kind.SLOT: "slot",
+	WeavlyProjectIndex.Kind.CHARACTER: "character",
 	WeavlyProjectIndex.Kind.VARIABLE: "variable",
 	WeavlyProjectIndex.Kind.META_KEY: "meta key",
 	WeavlyProjectIndex.Kind.FUNCTION: "function",
@@ -176,6 +180,12 @@ func _move_to(location: Location) -> bool:
 	return true
 
 
+# The kind of what the name is defined as in the project, or -1.
+func kind_of(name: String) -> int:
+	_update_index()
+	return index.kind_of(name)
+
+
 func _symbol_at(line: int, column: int) -> WeavlySymbolResolver.Symbol:
 	if _lines_stale:
 		_lines = _code_edit.text.split("\n")
@@ -196,8 +206,9 @@ func _update_index() -> void:
 		_buffer_stale = false
 	var now: int = Time.get_ticks_msec()
 	if switched or now - _scanned_at >= RESCAN_INTERVAL_MS:
-		index.scan(_panel.get_project_dir())
 		_scanned_at = now
+		if index.scan(_panel.get_project_dir()) and not switched:
+			index_changed.emit()
 
 
 func _display_path(path: String) -> String:

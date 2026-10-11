@@ -4,28 +4,28 @@ pool fire_test
 slot fire
 @endenv
 
-@node journey
+@node Journey
 @options
-@option node(go_on)
-@option node(deep)
-@option node(gamble)
+@option node(GoOn)
+@option node(Deep)
+@option node(Gamble)
 @endoptions
 Back on the journey.
 @endnode
 
-@node go_on
+@node GoOn
 @meta
 label: "Go on"
 @endmeta
 You go.
-@jump road
+@jump Road
 @endnode
 
-@node road
+@node Road
 Road.
 @endnode
 
-@node deep
+@node Deep
 @meta
 label: "Go deep"
 @endmeta
@@ -36,27 +36,27 @@ label: "Go deep"
 Deep end.
 @endnode
 
-@node stuck
+@node Stuck
 @options
-@option node(hack)
+@option node(Hack)
 @endoptions
 After stuck.
 @endnode
 
-@node locked_menu
+@node LockedMenu
 @options
 @option pool(locked_test, limit: 2, shuffle: false, locked: extra)
 @endoptions
 @endnode
 
-@node lt_open
+@node LtOpen
 @meta
 pool: locked_test
 label: "Open"
 @endmeta
 @endnode
 
-@node lt_tease
+@node LtTease
 @meta
 pool: locked_test
 label: "x"
@@ -65,7 +65,7 @@ when: false
 @endmeta
 @endnode
 
-@node lt_poor
+@node LtPoor
 @meta
 pool: locked_test
 label: "y"
@@ -74,7 +74,7 @@ available: false
 @endmeta
 @endnode
 
-@node lt_hidden
+@node LtHidden
 @meta
 pool: locked_test
 label: "z"
@@ -82,7 +82,7 @@ when: false
 @endmeta
 @endnode
 
-@node lt_gone
+@node LtGone
 @meta
 pool: locked_test
 label: "w"
@@ -90,14 +90,14 @@ available: false
 @endmeta
 @endnode
 
-@node lt_last
+@node LtLast
 @meta
 pool: locked_test
 label: "Last"
 @endmeta
 @endnode
 
-@node fire_tease
+@node FireTease
 @meta
 pool: fire_test
 slot: fire
@@ -108,7 +108,7 @@ priority: 2
 @endmeta
 @endnode
 
-@node fire_cook
+@node FireCook
 @meta
 pool: fire_test
 slot: fire
@@ -117,7 +117,7 @@ priority: 1
 @endmeta
 @endnode
 
-@node fire_dance
+@node FireDance
 @meta
 pool: fire_test
 slot: fire

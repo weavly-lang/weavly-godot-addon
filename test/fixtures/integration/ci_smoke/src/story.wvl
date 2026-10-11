@@ -1,84 +1,84 @@
-@node start
+@node Start
 Welcome to the smoke test.
 @do fade_in()
-@do play_sound("chime_{$score}.ogg")
->Guide: Let the test begin.
-@set $score = 10
-@increase $score 5
-@decrease $score 1 + 1
-@set $has_key = true
-@set $has_key = false
+@do play_sound("chime_{score}.ogg")
+Guide: Let the test begin.
+@set score = 10
+@increase score 5
+@decrease score 1 + 1
+@set has_key = true
+@set has_key = false
 
-@if $score > 10
-    @jump choices
-@elif $score == 10
-    @jump choices
+@if score > 10
+    @jump Choices
+@elif score == 10
+    @jump Choices
 @else
-    @jump choices
+    @jump Choices
 @endif
 @endnode
 
-@node choices
-$player_name: Which path?
+@node Choices
+companion: Which path?
 
 @options
-@option "Roll the dice": @jump random_node
-@option [ $has_key ] "Use key": @jump end
+@option "Roll the dice": @jump RandomNode
+@option [ has_key ] "Use key": @jump End
 @endoptions
 @endnode
 
-@node random_node
+@node RandomNode
 @random
-@case 1: @jump match_node
-@case 1: @jump match_node
+@case 1: @jump MatchNode
+@case 1: @jump MatchNode
 @endrandom
 @endnode
 
-@node match_node
+@node MatchNode
 @match
-    @when $has_key
+    @when has_key
         You have the key.
-        @jump end
-    @when not $has_key
+        @jump End
+    @when not has_key
         No key needed.
-        @jump end
+        @jump End
 @endmatch
 @endnode
 
-@node end
-@detour tally
-@set $been_to_start = visited(start)
-@set $score = max($score, bonus(10))
-@set $last_scene = end
-@set $region = night
-@set $names_match = $region == night and $last_scene != start and $partner == bob
-@do log($reputation, visit_count(choices) + 1)
+@node End
+@detour Tally
+@set been_to_start = visited(Start)
+@set score = max(score, bonus(10))
+@set last_scene = End
+@set region = night
+@set names_match = region == night and last_scene != Start and partner == bob
+@do log(reputation, visit_count(Choices) + 1)
 @finish
 @endnode
 
-@node tally
-@set $choice_visits = visit_count(choices)
+@node Tally
+@set choice_visits = visit_count(Choices)
 @endnode
 
-@node arrival
-You arrive with {max($score, 0) + 1} points, written as \{score}.
+@node Arrival
+You arrive with {max(score, 0) + 1} points, written as \{score}.
 @draw empty
 @draw city, night
 @endnode
 
-@node bob_greets
+@node BobGreets
 @meta
 pool: city
 slot: bob
-when: $score >= 0
+when: score >= 0
 priority: 2
 weight: 1 + skip_count()
 once: true
 @endmeta
->Bob: Welcome back, {$player_name}. The market waited {skip_count(night_market)} times and charges {night_market.toll}.
+"{Bob} the merchant": Welcome back, {player_name}. The market waited {skip_count(NightMarket)} times and charges {NightMarket.toll}.
 @endnode
 
-@node night_market
+@node NightMarket
 @meta
 pool: city, night
 slot: bob
@@ -88,55 +88,55 @@ toll: 2 + 1
 The night market is open.
 @endnode
 
-@node plaza
+@node Plaza
 @meta
 pool: night
 @endmeta
 The plaza is quiet.
 @endnode
 
-@node modifiers
+@node Modifiers
 @match last
     @when true
         First match.
-    @when $score >= 0
+    @when score >= 0
         Last match.
 @endmatch
 @match all
     @when true
         One of all.
-    @when not $has_key
+    @when not has_key
         Two of all.
 @endmatch
 @endnode
 
-@node camp_menu
+@node CampMenu
 @options
-@option node(campfire)
+@option node(Campfire)
 @option pool(camp, limit: 1, shuffle: false, locked: show)
 @endoptions
 @endnode
 
-@node campfire
+@node Campfire
 @meta
 label: "Sit by the fire"
-available: not $has_key
+available: not has_key
 label_unavailable: "The fire is out"
 @endmeta
 The fire crackles.
 @endnode
 
-@node tent
+@node Tent
 @meta
 pool: camp
 label: "Sleep in the tent"
 label_teaser: "A closed tent"
-when: $has_key
+when: has_key
 @endmeta
 You sleep.
 @endnode
 
-@node calls
+@node Calls
 @meta
 toll: 3
 @endmeta

@@ -209,3 +209,23 @@ func test_a_node_shows_its_header_and_meta_block() -> void:
 		index.find(WeavlyProjectIndex.Kind.NODE, "harbor")[0]
 	)
 	assert_str(harbor.text).is_equal("@node harbor")
+
+
+func test_a_character_declaration_is_a_character() -> void:
+	var definitions: Array[WeavlyProjectIndex.Definition] = WeavlyProjectIndex.parse(
+		"a.wvl", "@env\ncharacter Guide\nvar friend: character = Guide\n@endenv"
+	)
+	assert_int(definitions[0].kind).is_equal(WeavlyProjectIndex.Kind.CHARACTER)
+	assert_str(definitions[0].name).is_equal("Guide")
+	assert_int(definitions[1].kind).is_equal(WeavlyProjectIndex.Kind.VARIABLE)
+
+
+func test_kind_of_a_name_follows_the_open_file() -> void:
+	var index: WeavlyProjectIndex = WeavlyProjectIndex.new()
+	index.set_open_file("a.wvl", "@env\ncharacter Guide\n@endenv\n@node Start\n@endnode")
+	assert_int(index.kind_of("Guide")).is_equal(WeavlyProjectIndex.Kind.CHARACTER)
+	assert_int(index.kind_of("Start")).is_equal(WeavlyProjectIndex.Kind.NODE)
+	assert_int(index.kind_of("nowhere")).is_equal(-1)
+	index.set_open_file("a.wvl", "@env\nvar Guide: number = 1\n@endenv")
+	assert_int(index.kind_of("Guide")).is_equal(WeavlyProjectIndex.Kind.VARIABLE)
+	assert_int(index.kind_of("Start")).is_equal(-1)

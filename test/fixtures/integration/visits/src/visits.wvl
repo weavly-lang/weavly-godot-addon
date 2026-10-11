@@ -2,22 +2,22 @@
 var count: number = 0
 @endenv
 
-@node hub
+@node Hub
 @match first
-    @when visited(hub)
+    @when visited(Hub)
         Back again
     @when true
         First time
 @endmatch
-@set $count = visit_count(hub)
+@set count = visit_count(Hub)
 @match first
-    @when visit_count(hub) < 2
-        @jump hub
+    @when visit_count(Hub) < 2
+        @jump Hub
 @endmatch
 Done
 @endnode
 
-@node finisher
+@node Finisher
 Bye
 @finish
 @endnode

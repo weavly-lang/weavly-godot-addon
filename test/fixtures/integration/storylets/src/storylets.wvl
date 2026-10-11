@@ -20,63 +20,63 @@ slot x
 slot k
 @endenv
 
-@node when_yes
+@node WhenYes
 @meta
 pool: when_test
-when: $gold >= 0
+when: gold >= 0
 @endmeta
 @endnode
 
-@node when_no
+@node WhenNo
 @meta
 pool: when_test
-when: $gold > 100
+when: gold > 100
 @endmeta
 @endnode
 
-@node low
+@node Low
 @meta
 pool: priority_test
 priority: 1
 @endmeta
 @endnode
 
-@node high
+@node High
 @meta
 pool: priority_test
 priority: 5
 @endmeta
 @endnode
 
-@node mid
+@node Mid
 @meta
 pool: priority_test
 priority: 3
 @endmeta
 @endnode
 
-@node heavy
+@node Heavy
 @meta
 pool: weight_test
 weight: 1000
 @endmeta
 @endnode
 
-@node light
+@node Light
 @meta
 pool: weight_test
 weight: 1
 @endmeta
 @endnode
 
-@node weightless
+@node Weightless
 @meta
 pool: weight_test
 weight: 0
 @endmeta
 @endnode
 
-@node in_abc
+@node InAbc
 @meta
 pool: slot_test
 slot: a, b, c
@@ -84,7 +84,7 @@ priority: 3
 @endmeta
 @endnode
 
-@node in_a
+@node InA
 @meta
 pool: slot_test
 slot: a
@@ -92,7 +92,7 @@ priority: 2
 @endmeta
 @endnode
 
-@node in_c
+@node InC
 @meta
 pool: slot_test
 slot: c
@@ -100,7 +100,7 @@ priority: 2
 @endmeta
 @endnode
 
-@node in_d
+@node InD
 @meta
 pool: slot_test
 slot: d
@@ -108,20 +108,20 @@ priority: 1
 @endmeta
 @endnode
 
-@node free
+@node Free
 @meta
 pool: slot_test
 @endmeta
 @endnode
 
-@node both_sides
+@node BothSides
 @meta
 pool: left, right
 priority: 3
 @endmeta
 @endnode
 
-@node left_x
+@node LeftX
 @meta
 pool: left
 slot: x
@@ -129,7 +129,7 @@ priority: 2
 @endmeta
 @endnode
 
-@node right_x
+@node RightX
 @meta
 pool: right
 slot: x
@@ -137,7 +137,7 @@ priority: 1
 @endmeta
 @endnode
 
-@node first
+@node First
 @meta
 pool: skip_test
 slot: k
@@ -145,7 +145,7 @@ priority: 2.5
 @endmeta
 @endnode
 
-@node patient
+@node Patient
 @meta
 pool: skip_test
 slot: k
@@ -153,77 +153,77 @@ priority: skip_count()
 @endmeta
 @endnode
 
-@node never
+@node Never
 @meta
 pool: skip_test
-when: $gold > 100
+when: gold > 100
 @endmeta
 @endnode
 
-@node moody
+@node Moody
 @meta
 pool: error_test
-when: $mood
+when: mood
 @endmeta
 @endnode
 
-@node calm
+@node Calm
 @meta
 pool: error_test
 @endmeta
 @endnode
 
-@node count_skips
-@set $count = skip_count(patient)
+@node CountSkips
+@set count = skip_count(Patient)
 @endnode
 
-@node s1
+@node S1
 @meta
 pool: shuffle_test
 @endmeta
 @endnode
 
-@node s2
+@node S2
 @meta
 pool: shuffle_test
 @endmeta
 @endnode
 
-@node s3
+@node S3
 @meta
 pool: shuffle_test
 @endmeta
 @endnode
 
-@node s4
+@node S4
 @meta
 pool: shuffle_test
 @endmeta
 @endnode
 
-@node draw_one
+@node DrawOne
 @draw when_test
-@set $count = 1
+@set count = 1
 @endnode
 
-@node draw_several
+@node DrawSeveral
 @draw left, right
 @endnode
 
-@node draw_none
+@node DrawNone
 @draw unused
-@set $count = 5
+@set count = 5
 @endnode
 
-@node draw_skips
+@node DrawSkips
 @draw skip_test, skip_test
 @endnode
 
-@node talk
+@node Talk
 Hello.
 @endnode
 
-@node menu_zeta
+@node MenuZeta
 @meta
 pool: menu
 slot: m
@@ -231,21 +231,21 @@ weight: 1000
 @endmeta
 @endnode
 
-@node menu_alpha
+@node MenuAlpha
 @meta
 pool: menu
 weight: 0
 @endmeta
 @endnode
 
-@node menu_beta
+@node MenuBeta
 @meta
 pool: menu
 slot: m
 @endmeta
 @endnode
 
-@node menu_top
+@node MenuTop
 @meta
 pool: menu
 priority: 1

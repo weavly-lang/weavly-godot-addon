@@ -15,11 +15,11 @@ func _make_engine(random_seed: int = 1) -> WeavlyEngine:
 
 
 func test_when_filters_the_pool() -> void:
-	assert_array(_make_engine().list_pool(["when_test"])).is_equal(["when_yes"])
+	assert_array(_make_engine().list_pool(["when_test"])).is_equal(["WhenYes"])
 
 
 func test_higher_priorities_come_first() -> void:
-	assert_array(_make_engine().list_pool(["priority_test"])).is_equal(["high", "mid", "low"])
+	assert_array(_make_engine().list_pool(["priority_test"])).is_equal(["High", "Mid", "Low"])
 
 
 func test_weight_decides_between_equal_priorities() -> void:
@@ -27,8 +27,8 @@ func test_weight_decides_between_equal_priorities() -> void:
 	var heavy_first: int = 0
 	for i: int in 50:
 		var listed: Array[String] = engine.list_pool(["weight_test"])
-		assert_array(listed).contains_exactly_in_any_order(["heavy", "light"])
-		if listed[0] == "heavy":
+		assert_array(listed).contains_exactly_in_any_order(["Heavy", "Light"])
+		if listed[0] == "Heavy":
 			heavy_first += 1
 	assert_int(heavy_first).is_greater_equal(48)
 
@@ -53,7 +53,7 @@ func test_equal_weights_shuffle_and_the_same_seed_repeats_the_order() -> void:
 # menu_zeta has weight 1000 and menu_alpha weight 0.
 func test_without_shuffle_ties_keep_source_order_and_weight_is_ignored() -> void:
 	assert_array(_make_engine().list_pool(["menu"], -1, false)).is_equal(
-		["menu_top", "menu_other", "menu_zeta", "menu_alpha"]
+		["MenuTop", "MenuOther", "MenuZeta", "MenuAlpha"]
 	)
 
 
@@ -66,10 +66,10 @@ func test_without_shuffle_the_order_repeats_on_every_call() -> void:
 
 func test_without_shuffle_limit_and_skip_counts_follow_source_order() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["menu"], 2, false)).is_equal(["menu_top", "menu_other"])
-	for id: String in ["menu_zeta", "menu_alpha", "menu_beta"]:
+	assert_array(engine.list_pool(["menu"], 2, false)).is_equal(["MenuTop", "MenuOther"])
+	for id: String in ["MenuZeta", "MenuAlpha", "MenuBeta"]:
 		assert_int(engine.count_service.get_skip_count(id)).is_equal(1)
-	assert_int(engine.count_service.get_skip_count("menu_top")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("MenuTop")).is_equal(0)
 
 
 func test_without_shuffle_the_generator_is_untouched() -> void:
@@ -83,60 +83,60 @@ func test_without_shuffle_the_generator_is_untouched() -> void:
 func test_peek_pool_without_shuffle_matches_list_pool() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var peeked: Array[String] = engine.peek_pool(["menu"], 3, false)
-	assert_int(engine.count_service.get_skip_count("menu_alpha")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("MenuAlpha")).is_equal(0)
 	assert_array(engine.list_pool(["menu"], 3, false)).is_equal(peeked)
 
 
 func test_with_shuffle_a_weight_of_zero_leaves_the_node_out() -> void:
-	assert_bool(_make_engine().list_pool(["menu"]).has("menu_alpha")).is_false()
+	assert_bool(_make_engine().list_pool(["menu"]).has("MenuAlpha")).is_false()
 
 
 func test_a_node_is_skipped_when_any_of_its_slots_is_taken() -> void:
-	assert_array(_make_engine().list_pool(["slot_test"])).is_equal(["in_abc", "in_d", "free"])
+	assert_array(_make_engine().list_pool(["slot_test"])).is_equal(["InAbc", "InD", "Free"])
 
 
 func test_several_pools_list_a_shared_node_once_and_slots_block_across_them() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["left", "right"])).is_equal(["both_sides", "left_x"])
-	assert_array(engine.list_pool(["right"])).is_equal(["both_sides", "right_x"])
+	assert_array(engine.list_pool(["left", "right"])).is_equal(["BothSides", "LeftX"])
+	assert_array(engine.list_pool(["right"])).is_equal(["BothSides", "RightX"])
 
 
 func test_a_limit_takes_the_first_nodes_in_selection_order() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["priority_test"], 2)).is_equal(["high", "mid"])
-	assert_array(engine.list_pool(["priority_test"], 3)).is_equal(["high", "mid", "low"])
-	assert_array(engine.list_pool(["priority_test"], 5)).is_equal(["high", "mid", "low"])
+	assert_array(engine.list_pool(["priority_test"], 2)).is_equal(["High", "Mid"])
+	assert_array(engine.list_pool(["priority_test"], 3)).is_equal(["High", "Mid", "Low"])
+	assert_array(engine.list_pool(["priority_test"], 5)).is_equal(["High", "Mid", "Low"])
 	assert_array(engine.list_pool(["priority_test"], 0)).is_empty()
 
 
 func test_nodes_past_the_limit_count_as_skipped() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.list_pool(["priority_test"], 1)
-	assert_int(engine.count_service.get_skip_count("high")).is_equal(0)
-	assert_int(engine.count_service.get_skip_count("mid")).is_equal(1)
-	assert_int(engine.count_service.get_skip_count("low")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("High")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("Mid")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("Low")).is_equal(1)
 
 
 func test_nodes_blocked_by_a_slot_dont_count_toward_the_limit() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["slot_test"], 2)).is_equal(["in_abc", "in_d"])
-	assert_int(engine.count_service.get_skip_count("in_a")).is_equal(1)
-	assert_int(engine.count_service.get_skip_count("free")).is_equal(1)
+	assert_array(engine.list_pool(["slot_test"], 2)).is_equal(["InAbc", "InD"])
+	assert_int(engine.count_service.get_skip_count("InA")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("Free")).is_equal(1)
 
 
 func test_peek_pool_with_a_limit_matches_list_pool() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var peeked: Array[String] = engine.peek_pool(["shuffle_test", "skip_test"], 2)
 	assert_int(peeked.size()).is_equal(2)
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(0)
 	assert_array(engine.list_pool(["shuffle_test", "skip_test"], 2)).is_equal(peeked)
 
 
 # Literals in untyped code are untyped arrays, so the pool functions can't require Array[String].
 func test_pool_functions_accept_untyped_arrays() -> void:
 	var engine: Variant = _make_engine()
-	assert_array(engine.list_pool(["priority_test"], 1)).is_equal(["high"])
-	assert_array(engine.peek_pool(["priority_test"])).is_equal(["high", "mid", "low"])
+	assert_array(engine.list_pool(["priority_test"], 1)).is_equal(["High"])
+	assert_array(engine.peek_pool(["priority_test"])).is_equal(["High", "Mid", "Low"])
 	assert_bool(engine.draw(["priority_test"])).is_true()
 
 
@@ -146,13 +146,13 @@ func test_a_declared_pool_without_members_is_empty() -> void:
 
 func test_an_undeclared_pool_is_reported_and_counts_as_empty() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["nope", "when_test"])).is_equal(["when_yes"])
+	assert_array(engine.list_pool(["nope", "when_test"])).is_equal(["WhenYes"])
 	assert_logged(["Pool 'nope' isn't declared."])
 
 
 func test_a_failing_when_is_reported_at_its_meta_line_and_skips_the_node() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	assert_array(engine.list_pool(["error_test"])).is_equal(["calm"])
+	assert_array(engine.list_pool(["error_test"])).is_equal(["Calm"])
 	assert_logged(
 		["storylets.wvl:166: error: Variable 'mood' is declared extern but was never defined."]
 	)
@@ -163,28 +163,28 @@ func test_a_failing_when_is_reported_at_its_meta_line_and_skips_the_node() -> vo
 func test_skip_count_counts_untaken_eligible_nodes_and_resets_taken_ones() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	for i: int in 3:
-		assert_array(engine.list_pool(["skip_test"])).is_equal(["first"])
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(3)
-	assert_int(engine.count_service.get_skip_count("never")).is_equal(0)
-	assert_array(engine.list_pool(["skip_test"])).is_equal(["patient"])
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(0)
-	assert_int(engine.count_service.get_skip_count("first")).is_equal(1)
+		assert_array(engine.list_pool(["skip_test"])).is_equal(["First"])
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(3)
+	assert_int(engine.count_service.get_skip_count("Never")).is_equal(0)
+	assert_array(engine.list_pool(["skip_test"])).is_equal(["Patient"])
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("First")).is_equal(1)
 
 
 func test_skip_count_can_be_read_in_a_script() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.list_pool(["skip_test"])
 	engine.list_pool(["skip_test"])
-	engine.start("count_skips")
+	engine.start("CountSkips")
 	assert_that(engine.get_variable("count")).is_equal(2.0)
 
 
 func test_peek_pool_matches_the_next_list_pool_and_changes_nothing() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var peeked: Array[String] = engine.peek_pool(["shuffle_test", "skip_test"])
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(0)
 	assert_array(engine.list_pool(["shuffle_test", "skip_test"])).is_equal(peeked)
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(1)
 
 
 func test_skip_counts_are_saved_and_loaded() -> void:
@@ -194,21 +194,21 @@ func test_skip_counts_are_saved_and_loaded() -> void:
 	var state: Dictionary = JSON.parse_string(JSON.stringify(engine.get_state()))
 	engine.list_pool(["skip_test"])
 	engine.set_state(state)
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(2)
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(2)
 
 
 func test_node_meta_exposes_pools_and_slots() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	var meta: WeavlyModel.NodeMeta = engine.story.get_node("in_abc").meta
+	var meta: WeavlyModel.NodeMeta = engine.story.get_node("InAbc").meta
 	assert_array(meta.pools).is_equal(["slot_test"])
 	assert_array(meta.slots).is_equal(["a", "b", "c"])
-	assert_object(engine.story.get_node("count_skips").meta).is_null()
+	assert_object(engine.story.get_node("CountSkips").meta).is_null()
 
 
 func test_jump_and_start_ignore_the_metadata() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	engine.start("when_no")
-	assert_int(engine.count_service.get_visit_count("when_no")).is_equal(1)
+	engine.start("WhenNo")
+	assert_int(engine.count_service.get_visit_count("WhenNo")).is_equal(1)
 
 
 # =====================
@@ -226,14 +226,14 @@ func test_draw_starts_the_first_node_in_selection_order() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
 	assert_bool(engine.draw(["priority_test"])).is_true()
-	assert_array(entered).is_equal(["high"])
+	assert_array(entered).is_equal(["High"])
 
 
 func test_draw_selects_over_several_pools() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
 	assert_bool(engine.draw(["left", "right"])).is_true()
-	assert_array(entered).is_equal(["both_sides"])
+	assert_array(entered).is_equal(["BothSides"])
 
 
 func test_draw_without_an_eligible_node_starts_nothing() -> void:
@@ -246,13 +246,13 @@ func test_draw_without_an_eligible_node_starts_nothing() -> void:
 
 func test_draw_while_a_dialogue_runs_warns_and_does_nothing() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	engine.start("talk")
+	engine.start("Talk")
 	var entered: Array[String] = _record_entered(engine)
 	assert_bool(engine.draw(["skip_test"])).is_false()
 	assert_logged([], ["Dialogue is already in progress, can't draw from skip_test."])
 	assert_array(entered).is_empty()
-	assert_that(engine.current_node_id).is_equal("talk")
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(0)
+	assert_that(engine.current_node_id).is_equal("Talk")
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(0)
 
 
 func test_draw_with_an_undeclared_pool_is_reported() -> void:
@@ -263,9 +263,9 @@ func test_draw_with_an_undeclared_pool_is_reported() -> void:
 func test_draw_resets_the_drawn_node_and_counts_the_other_eligible_ones() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	engine.draw(["skip_test"])
-	assert_int(engine.count_service.get_skip_count("first")).is_equal(0)
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(1)
-	assert_int(engine.count_service.get_skip_count("never")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("First")).is_equal(0)
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(1)
+	assert_int(engine.count_service.get_skip_count("Never")).is_equal(0)
 
 
 func test_the_draw_statement_runs_the_drawn_node_like_a_detour() -> void:
@@ -273,29 +273,29 @@ func test_the_draw_statement_runs_the_drawn_node_like_a_detour() -> void:
 	var entered: Array[String] = _record_entered(engine)
 	var left: Array[String] = []
 	engine.left_node.connect(func(id: String) -> void: left.append(id))
-	engine.start("draw_one")
-	assert_array(entered).is_equal(["draw_one", "when_yes"])
-	assert_array(left).is_equal(["when_yes", "draw_one"])
+	engine.start("DrawOne")
+	assert_array(entered).is_equal(["DrawOne", "WhenYes"])
+	assert_array(left).is_equal(["WhenYes", "DrawOne"])
 	assert_that(engine.get_variable("count")).is_equal(1.0)
-	assert_int(engine.count_service.get_visit_count("draw_one")).is_equal(1)
+	assert_int(engine.count_service.get_visit_count("DrawOne")).is_equal(1)
 
 
 func test_the_draw_statement_selects_over_several_pools() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
-	engine.start("draw_several")
-	assert_array(entered).is_equal(["draw_several", "both_sides"])
+	engine.start("DrawSeveral")
+	assert_array(entered).is_equal(["DrawSeveral", "BothSides"])
 
 
 func test_the_draw_statement_without_an_eligible_node_continues() -> void:
 	var engine: WeavlyEngine = _make_engine()
 	var entered: Array[String] = _record_entered(engine)
-	engine.start("draw_none")
-	assert_array(entered).is_equal(["draw_none"])
+	engine.start("DrawNone")
+	assert_array(entered).is_equal(["DrawNone"])
 	assert_that(engine.get_variable("count")).is_equal(5.0)
 
 
 func test_the_draw_statement_counts_a_pool_listed_twice_once() -> void:
 	var engine: WeavlyEngine = _make_engine()
-	engine.start("draw_skips")
-	assert_int(engine.count_service.get_skip_count("patient")).is_equal(1)
+	engine.start("DrawSkips")
+	assert_int(engine.count_service.get_skip_count("Patient")).is_equal(1)

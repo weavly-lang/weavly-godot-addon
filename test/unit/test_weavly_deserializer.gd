@@ -68,24 +68,56 @@ func test_narration_line_with_empty_text() -> void:
 	assert_that((stmt as WeavlyModel.NarrationLine).segments).is_empty()
 
 
-func test_character_line() -> void:
+func test_character_line_with_a_declared_character() -> void:
 	var stmt: WeavlyModel.Statement = _read_single(
-		{"type": "character", "name": "Alice", "name_is_id": false, "text": ["Hi there"]}
+		{"type": "character", "speaker": {"character": "Alice"}, "text": ["Hi there"]}
 	)
 	assert_object(stmt).is_instanceof(WeavlyModel.CharacterLine)
 	var line: WeavlyModel.CharacterLine = stmt as WeavlyModel.CharacterLine
-	assert_that(line.name).is_equal("Alice")
-	assert_that(line.name_is_id).is_false()
+	assert_object(line.speaker).is_instanceof(WeavlyModel.CharacterName)
+	var character: WeavlyModel.CharacterName = line.speaker as WeavlyModel.CharacterName
+	assert_str((character.expression as WeavlyModel.StringLiteral).value).is_equal("Alice")
 	assert_that(line.segments).is_equal(["Hi there"])
 
 
-func test_character_line_with_a_variable_name() -> void:
+func test_character_line_with_a_character_variable() -> void:
 	var stmt: WeavlyModel.Statement = _read_single(
-		{"type": "character", "name": "speaker", "name_is_id": true, "text": ["Hi there"]}
+		{"type": "character", "speaker": {"character": {"variable": "companion"}}, "text": []}
 	)
-	var line: WeavlyModel.CharacterLine = stmt as WeavlyModel.CharacterLine
-	assert_that(line.name).is_equal("speaker")
-	assert_that(line.name_is_id).is_true()
+	var speaker: WeavlyModel.CharacterName = (
+		(stmt as WeavlyModel.CharacterLine).speaker as WeavlyModel.CharacterName
+	)
+	assert_str((speaker.expression as WeavlyModel.Identifier).value).is_equal("companion")
+
+
+func test_character_line_with_a_one_off_name() -> void:
+	var stmt: WeavlyModel.Statement = _read_single(
+		{"type": "character", "speaker": "Old Man", "text": ["Go away."]}
+	)
+	var speaker: WeavlyModel.WeavlyExpression = (stmt as WeavlyModel.CharacterLine).speaker
+	assert_str((speaker as WeavlyModel.StringLiteral).value).is_equal("Old Man")
+
+
+func test_character_line_with_an_interpolated_one_off_name() -> void:
+	var stmt: WeavlyModel.Statement = _read_single(
+		{
+			"type": "character",
+			"speaker": {"text": [{"character": "Anna"}, " and ", {"variable": "friend"}]},
+			"text": ["Surprise!"]
+		}
+	)
+	var speaker: WeavlyModel.TextExpression = (
+		(stmt as WeavlyModel.CharacterLine).speaker as WeavlyModel.TextExpression
+	)
+	assert_object(speaker.segments[0]).is_instanceof(WeavlyModel.CharacterName)
+	assert_that(speaker.segments[1]).is_equal(" and ")
+	assert_object(speaker.segments[2]).is_instanceof(WeavlyModel.Identifier)
+
+
+func test_character_line_without_a_speaker_is_dropped() -> void:
+	var data: Array = [{"type": "character", "line": 1.0, "text": ["Hi"]}]
+	assert_array(WeavlyDeserializer.read_statements(data, "body")).is_empty()
+	assert_logged(["Missing required field 'speaker' at body[0]"])
 
 
 func test_jump_statement() -> void:
@@ -274,7 +306,7 @@ func test_variable_declarations() -> void:
 	assert_object(vars[2]).is_instanceof(WeavlyModel.BoolVariable)
 
 
-func test_node_pool_and_slot_variables_hold_names() -> void:
+func test_node_pool_slot_and_character_variables_hold_names() -> void:
 	var data: Dictionary = {
 		"declarations":
 		[
@@ -282,6 +314,7 @@ func test_node_pool_and_slot_variables_hold_names() -> void:
 			{"name": "region", "type": "pool", "value": "city"},
 			{"name": "partner", "type": "slot", "value": "bob"},
 			{"name": "home", "type": "pool", "extern": true},
+			{"name": "companion", "type": "character", "value": "Anna"},
 		]
 	}
 	var vars: Array[WeavlyModel.Variable] = WeavlyDeserializer.read_variable_declarations(data)
@@ -291,8 +324,8 @@ func test_node_pool_and_slot_variables_hold_names() -> void:
 		assert_object(variable).is_instanceof(WeavlyModel.NameVariable)
 		types.append(variable.get_type_name())
 		values.append((variable as WeavlyModel.NameVariable).value)
-	assert_array(types).is_equal(["node", "pool", "slot", "pool"])
-	assert_array(values).is_equal(["start", "city", "bob", ""])
+	assert_array(types).is_equal(["node", "pool", "slot", "pool", "character"])
+	assert_array(values).is_equal(["start", "city", "bob", "", "Anna"])
 	assert_bool(vars[3].extern).is_true()
 
 
@@ -596,6 +629,11 @@ func test_pool_names_are_read_from_env() -> void:
 func test_slot_names_are_read_from_env() -> void:
 	var data: Dictionary = {"declarations": [], "pools": ["city"], "slots": ["bob", "ann"]}
 	assert_array(WeavlyDeserializer.read_slot_names(data)).is_equal(["bob", "ann"])
+
+
+func test_character_names_are_read_from_env() -> void:
+	var data: Dictionary = {"declarations": [], "characters": ["Anna", "Ben"]}
+	assert_array(WeavlyDeserializer.read_character_names(data)).is_equal(["Anna", "Ben"])
 
 
 func test_draw_statement() -> void:

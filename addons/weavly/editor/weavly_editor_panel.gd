@@ -145,6 +145,9 @@ func _build_ui() -> void:
 
 	_navigator = WeavlyCodeNavigator.new(self, _code_edit)
 	add_child(_navigator)
+	var highlighter: WvlSyntaxHighlighter = _code_edit.syntax_highlighter
+	highlighter.name_kind = _navigator.kind_of
+	_navigator.index_changed.connect(highlighter.clear_highlighting_cache, CONNECT_DEFERRED)
 
 
 func _shortcut_input(event: InputEvent) -> void:

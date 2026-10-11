@@ -1,36 +1,41 @@
-@node start
->guide: Hello there.
+@env
+character Guide
+character Innkeeper
+@endenv
+
+@node Start
+Guide: Hello there.
 The wind picks up.
->innkeeper: Welcome.
->stranger: Who are you?
+Innkeeper: Welcome.
+"Stranger": Who are you?
 @options
-@option "Wave": @jump waved
+@option "Wave": @jump Waved
 @endoptions
 @endnode
 
-@node waved
+@node Waved
 You wave.
 @endnode
 
-@node formatted
+@node Formatted
 Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]": @jump waved
+@option "[i]Wave[/i]": @jump Waved
 @endoptions
 @endnode
 
-@node crossroads
+@node Crossroads
 @options
-@option "Left": @jump left
-@option "Right": @jump right
+@option "Left": @jump Left
+@option "Right": @jump Right
 @endoptions
 @endnode
 
-@node left
+@node Left
 You go left.
 @endnode
 
-@node right
+@node Right
 You go right.
 @endnode
 
@@ -38,26 +43,26 @@ You go right.
 var has_code: bool = false
 @endenv
 
-@node gated
+@node Gated
 @options
-@option node(vault)
+@option node(Vault)
 @option "Leave"
     Bye.
 @endoptions
 @endnode
 
-@node sealed
+@node Sealed
 @options
-@option node(vault)
+@option node(Vault)
 @endoptions
 You walk on.
 @endnode
 
-@node vault
+@node Vault
 @meta
 label: "Open the vault"
 label_unavailable: "The vault is sealed"
-available: $has_code
+available: has_code
 @endmeta
 Opened.
 @endnode
@@ -66,9 +71,9 @@ Opened.
 func open(): bool
 @endenv
 
-@node door
+@node Door
 @options
-@option [ open() ] "Open": @jump waved
-@option "Stay": @jump waved
+@option [ open() ] "Open": @jump Waved
+@option "Stay": @jump Waved
 @endoptions
 @endnode

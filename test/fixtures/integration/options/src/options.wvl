@@ -1,15 +1,15 @@
-@node menu
+@node Menu
 @options
-@option "Go on": @jump after
+@option "Go on": @jump After
 @endoptions
 @endnode
 
-@node after
+@node After
 After
 @finish
 @endnode
 
-@node none
+@node None
 @options
 @option [ false ] "Open": @finish
 @endoptions
@@ -21,16 +21,16 @@ Nothing to choose
 func open(): bool
 @endenv
 
-@node door
+@node Door
 @options
 @option [ open() ] "Open"
     The door opens.
-@option "Roll {random(1, 6)}": @jump after
-@option "Leave": @jump after
+@option "Roll {random(1, 6)}": @jump After
+@option "Leave": @jump After
 @endoptions
 @endnode
 
-@node stay
+@node Stay
 @options
 @option "Stay"
 @endoptions

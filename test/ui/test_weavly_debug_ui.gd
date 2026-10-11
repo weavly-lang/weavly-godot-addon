@@ -131,18 +131,18 @@ func test_showing_the_overlay_refreshes_it() -> void:
 
 func test_status_shows_idle_and_the_current_node_and_line() -> void:
 	assert_str(_status()).is_equal("idle")
-	_engine.start("start")
+	_engine.start("Start")
 	_ui.refresh()
-	assert_str(_status()).is_equal("running, node start at debug.wvl:14")
+	assert_str(_status()).is_equal("running, node Start at debug.wvl:14")
 	_engine.next()
 	_ui.refresh()
-	assert_str(_status()).is_equal("running, node start at debug.wvl:16")
+	assert_str(_status()).is_equal("running, node Start at debug.wvl:16")
 
 
 func test_status_shows_every_running_node() -> void:
-	_engine.start("aside_start")
+	_engine.start("AsideStart")
 	_ui.refresh()
-	assert_str(_status()).is_equal("running, node aside_start > gate at debug.wvl:21")
+	assert_str(_status()).is_equal("running, node AsideStart > Gate at debug.wvl:21")
 
 
 func test_variables_show_sorted_with_their_types_and_values() -> void:
@@ -155,7 +155,7 @@ func test_variables_show_sorted_with_their_types_and_values() -> void:
 				["gold", "number", "3"],
 				["name", "string", "Robin"],
 				["partner", "slot", "pair"],
-				["target", "node", "gate"],
+				["target", "node", "Gate"],
 			]
 		)
 	)
@@ -172,7 +172,7 @@ func test_an_extern_variable_shows_once_it_has_a_value() -> void:
 
 
 func test_variables_follow_the_dialogue() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_engine.next()
 	_ui.refresh()
 	assert_str((_variable_editor("gold") as LineEdit).text).is_equal("5")
@@ -225,7 +225,7 @@ func _items(names: OptionButton) -> Array[String]:
 
 func test_name_variables_offer_the_declared_names_of_their_type() -> void:
 	assert_array(_items(_variable_editor("target"))).is_equal(
-		["ann", "aside_start", "bob", "broken", "gate", "lookout", "owl", "start", "trip"]
+		["Ann", "AsideStart", "Bob", "Broken", "Gate", "Lookout", "Owl", "Start", "Trip"]
 	)
 	assert_array(_items(_variable_editor("area"))).is_equal(["city", "night"])
 	assert_array(_items(_variable_editor("partner"))).is_equal(["pair"])
@@ -233,17 +233,17 @@ func test_name_variables_offer_the_declared_names_of_their_type() -> void:
 
 func test_choosing_a_name_sets_it() -> void:
 	var names: OptionButton = _variable_editor("target")
-	var index: int = _items(names).find("start")
+	var index: int = _items(names).find("Start")
 	names.select(index)
 	names.item_selected.emit(index)
-	assert_str(_engine.get_variable("target")).is_equal("start")
-	assert_str(names.text).is_equal("start")
+	assert_str(_engine.get_variable("target")).is_equal("Start")
+	assert_str(names.text).is_equal("Start")
 
 
 func test_name_variables_follow_the_dialogue() -> void:
-	_engine.set_variable("target", "bob")
+	_engine.set_variable("target", "Bob")
 	_ui.refresh()
-	assert_str((_variable_editor("target") as OptionButton).text).is_equal("bob")
+	assert_str((_variable_editor("target") as OptionButton).text).is_equal("Bob")
 
 
 func test_toggling_a_flag_sets_it() -> void:
@@ -255,7 +255,7 @@ func test_toggling_a_flag_sets_it() -> void:
 
 
 func test_nodes_show_their_location_and_counts() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_engine.next()
 	_engine.next()
 	_ui.refresh()
@@ -263,25 +263,25 @@ func test_nodes_show_their_location_and_counts() -> void:
 	(
 		assert_array(rows.map(func(row: Array) -> String: return row[0]))
 		. is_equal(
-			["ann", "aside_start", "bob", "broken", "gate", "lookout", "owl", "start", "trip"]
+			["Ann", "AsideStart", "Bob", "Broken", "Gate", "Lookout", "Owl", "Start", "Trip"]
 		)
 	)
-	assert_array(rows[7]).is_equal(["start", "debug.wvl:13", "1 visits", "0 skips", "", "Start"])
-	assert_array(rows[4]).is_equal(["gate", "debug.wvl:20", "0 visits", "0 skips", "", "Start"])
+	assert_array(rows[7]).is_equal(["Start", "debug.wvl:13", "1 visits", "0 skips", "", "Start"])
+	assert_array(rows[4]).is_equal(["Gate", "debug.wvl:20", "0 visits", "0 skips", "", "Start"])
 
 
 func test_the_current_node_is_marked() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_ui.refresh()
-	var current: Label = _node_cells("start")[0]
+	var current: Label = _node_cells("Start")[0]
 	assert_str(current.theme_type_variation).is_equal("WeavlyDebugCurrent")
-	assert_str((_node_cells("gate")[0] as Label).theme_type_variation).is_empty()
+	assert_str((_node_cells("Gate")[0] as Label).theme_type_variation).is_empty()
 
 
 func test_skip_counts_follow_the_pools() -> void:
 	_engine.list_pool(["city"], 1)
 	_ui.refresh()
-	assert_str((_node_cells("ann")[3] as Label).text).is_equal("1 skips")
+	assert_str((_node_cells("Ann")[3] as Label).text).is_equal("1 skips")
 
 
 func test_the_filter_hides_other_nodes() -> void:
@@ -289,16 +289,16 @@ func test_the_filter_hides_other_nodes() -> void:
 	(_ui.get_node("%NodeFilter") as LineEdit).text_changed.emit("B")
 	(
 		assert_array(_rows("%NodeGrid", 6).map(func(row: Array) -> String: return row[0]))
-		. is_equal(["bob", "broken"])
+		. is_equal(["Bob", "Broken"])
 	)
 
 
 func test_start_jumps_to_a_node() -> void:
-	_engine.start("start")
-	(_node_cells("gate")[5] as Button).pressed.emit()
+	_engine.start("Start")
+	(_node_cells("Gate")[5] as Button).pressed.emit()
 	assert_bool(_engine.is_running()).is_true()
-	assert_str(_engine.current_node_id).is_equal("gate")
-	assert_str(_status()).is_equal("running, node gate at debug.wvl:21")
+	assert_str(_engine.current_node_id).is_equal("Gate")
+	assert_str(_status()).is_equal("running, node Gate at debug.wvl:21")
 
 
 func _meta(id: String) -> String:
@@ -307,45 +307,45 @@ func _meta(id: String) -> String:
 
 func test_nodes_show_the_meta_keys_they_write() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
-	assert_str(_meta("bob")).is_equal("pool: city; when: true; priority: 1")
-	assert_str(_meta("ann")).is_equal("pool: city")
-	assert_str(_meta("start")).is_empty()
+	assert_str(_meta("Bob")).is_equal("pool: city; when: true; priority: 1")
+	assert_str(_meta("Ann")).is_equal("pool: city")
+	assert_str(_meta("Start")).is_empty()
 	assert_logged(["secret"])
 
 
 func test_meta_values_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
 	_engine.set_variable("gold", 1.0)
-	assert_str(_meta("bob")).is_equal("pool: city; when: false; priority: 1")
+	assert_str(_meta("Bob")).is_equal("pool: city; when: false; priority: 1")
 	assert_logged(["secret", "secret"])
 
 
 func test_a_failing_meta_entry_shows_error() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
-	assert_str(_meta("aside_start")).is_equal("priority: error")
+	assert_str(_meta("AsideStart")).is_equal("priority: error")
 	assert_logged(["secret"])
 
 
 func test_meta_values_arent_read_on_other_tabs() -> void:
 	_ui.refresh()
-	assert_str(_meta("bob")).is_empty()
+	assert_str(_meta("Bob")).is_empty()
 
 
 func test_pools_show_what_list_pool_would_return() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
-	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "owl"])
+	assert_array(_pools()).is_equal(["city", "Bob, Ann", "night", "Owl"])
 
 
 func test_pools_list_a_declared_pool_without_nodes() -> void:
 	_engine.story.add_pool("harbor")
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
-	assert_array(_pools()).is_equal(["city", "bob, ann", "harbor", "(none)", "night", "owl"])
+	assert_array(_pools()).is_equal(["city", "Bob, Ann", "harbor", "(none)", "night", "Owl"])
 
 
 func test_pools_follow_variable_changes() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	_engine.set_variable("gold", 1.0)
-	assert_array(_pools()).is_equal(["city", "ann", "night", "owl"])
+	assert_array(_pools()).is_equal(["city", "Ann", "night", "Owl"])
 
 
 # Skips and visits change without a signal; the overlay notices on its next refresh.
@@ -353,30 +353,30 @@ func test_meta_values_follow_skips_from_list_pool() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
 	_engine.list_pool(["night"], 0)
 	_ui.refresh()
-	assert_str(_meta("owl")).is_equal("pool: night; when: true; weight: 2")
+	assert_str(_meta("Owl")).is_equal("pool: night; when: true; weight: 2")
 	assert_logged(["secret", "secret"])
 
 
 func test_meta_values_follow_a_visit_when_a_detour_returns() -> void:
 	_show_tab(WeavlyDebugUI.NODES_TAB)
-	_engine.start("trip")
+	_engine.start("Trip")
 	_engine.next()
 	_ui.refresh()
-	assert_str(_meta("lookout")).is_equal("when: true")
+	assert_str(_meta("Lookout")).is_equal("when: true")
 	assert_logged(["secret", "secret", "secret", "secret", "secret"])
 
 
 func test_pools_follow_a_visit_in_a_render() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
-	_engine.render("gate")
+	_engine.render("Gate")
 	_ui.refresh()
-	assert_array(_pools()).is_equal(["city", "bob, ann", "night", "(none)"])
+	assert_array(_pools()).is_equal(["city", "Bob, Ann", "night", "(none)"])
 
 
 func test_peeking_doesnt_change_skip_counts() -> void:
 	_show_tab(WeavlyDebugUI.POOLS_TAB)
 	_ui.refresh()
-	assert_int(_engine.count_service.get_skip_count("ann")).is_equal(0)
+	assert_int(_engine.count_service.get_skip_count("Ann")).is_equal(0)
 
 
 func test_pools_arent_peeked_on_other_tabs() -> void:
@@ -385,7 +385,7 @@ func test_pools_arent_peeked_on_other_tabs() -> void:
 
 
 func test_runtime_errors_are_listed_with_their_location() -> void:
-	_engine.start("broken")
+	_engine.start("Broken")
 	assert_logged(["secret"])
 	assert_int(_errors().size()).is_equal(1)
 	assert_str(_errors()[0]).starts_with("debug.wvl:25: ")

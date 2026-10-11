@@ -1,66 +1,66 @@
-@node travel
+@node Travel
 You set off.
-@detour ambush
+@detour Ambush
 You arrive.
 @endnode
 
-@node ambush
+@node Ambush
 Bandits!
 @endnode
 
-@node nested
-@detour middle
+@node Nested
+@detour Middle
 Back in nested.
 @endnode
 
-@node middle
-@detour inner
+@node Middle
+@detour Inner
 Back in middle.
 @endnode
 
-@node inner
+@node Inner
 In inner.
 @endnode
 
-@node escape
-@detour runaway
+@node Escape
+@detour Runaway
 Never shown.
 @endnode
 
-@node runaway
-@jump safe
+@node Runaway
+@jump Safe
 @endnode
 
-@node safe
+@node Safe
 Safe.
 @endnode
 
-@node quit
-@detour stop
+@node Quit
+@detour Stop
 Never shown.
 @endnode
 
-@node stop
+@node Stop
 @finish
 @endnode
 
-@node loop
-@detour loop
+@node Loop
+@detour Loop
 @endnode
 
-@node split_a
+@node SplitA
 First half.
-@detour split_b
+@detour SplitB
 @endnode
 
-@node split_b
+@node SplitB
 Second half.
 @endnode
 
-@node lookout
+@node Lookout
 @options
 @option "Look"
-    @detour ambush
+    @detour Ambush
 @endoptions
 After looking.
 @endnode

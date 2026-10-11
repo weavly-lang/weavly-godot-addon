@@ -8,45 +8,45 @@ func lucky(): bool
 pool camp
 @endenv
 
-@node camp
+@node Camp
 Night falls.
 @options
-@option [not $found] "Search"
+@option [not found] "Search"
     You search.
 @option [visited()] "Again"
     Again.
-@option node(hack)
+@option node(Hack)
 @option pool(camp, limit: 2, shuffle: false)
 @endoptions
 Morning.
 @endnode
 
-@node hack
+@node Hack
 @meta
 label: "Hack (-{.cost} energy)"
 label_unavailable: "Hack (needs {.cost} energy)"
 label_teaser: "Something blinks"
-when: $found
-available: $energy >= .cost
-cost: $price
+when: found
+available: energy >= .cost
+cost: price
 @endmeta
-@set $price = 10
-@set $energy = $energy - .cost
-@set $paid = .cost
+@set price = 10
+@set energy = energy - .cost
+@set paid = .cost
 Hacked.
 @endnode
 
-@node stargaze
+@node Stargaze
 @meta
 pool: camp
 label: "Stargaze"
-when: $found
+when: found
 priority: 5
 @endmeta
 Stars.
 @endnode
 
-@node cook
+@node Cook
 @meta
 pool: camp
 label: "Cook"
@@ -54,7 +54,7 @@ label: "Cook"
 You cook.
 @endnode
 
-@node scout
+@node Scout
 @meta
 pool: camp
 label: "Scout"
@@ -63,7 +63,7 @@ once: true
 You scout.
 @endnode
 
-@node sing
+@node Sing
 @meta
 pool: camp
 label: "Sing"
@@ -71,7 +71,7 @@ label: "Sing"
 You sing.
 @endnode
 
-@node gamble
+@node Gamble
 @meta
 label: "Gamble"
 label_unavailable: "No luck"

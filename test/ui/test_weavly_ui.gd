@@ -114,7 +114,7 @@ func test_replacing_an_engine_that_isnt_ready_stops_waiting_for_it() -> void:
 func test_a_line_label_grows_with_its_text_and_lets_clicks_through() -> void:
 	var line: WeavlyModel.NarrationLine = WeavlyModel.NarrationLine.new(["Hi"])
 	line.text = "Hi"
-	var label: RichTextLabel = auto_free(WeavlyUI.create_line_label(line, null))
+	var label: RichTextLabel = auto_free(WeavlyUI.create_line_label(line))
 	assert_bool(label.fit_content).is_true()
 	assert_bool(label.scroll_active).is_false()
 	assert_int(label.mouse_filter).is_equal(Control.MOUSE_FILTER_IGNORE)

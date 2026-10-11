@@ -4,7 +4,7 @@ extends EditorContextMenuPlugin
 const _MENU_LABEL = "WeavlyFile..."
 const _DEFAULT_NAME = "new_dialogue"
 const _EXTENSION = ".wvl"
-const _TEMPLATE = "@node first_node\nHello World!\n@endnode\n"
+const _TEMPLATE = "@node FirstNode\nHello World!\n@endnode\n"
 
 var _panel: WeavlyEditorPanel
 var _main_screen_name: String = ""
