@@ -48,6 +48,27 @@ func test_pressing_emits_the_option() -> void:
 	assert_array(_chosen).is_equal(["Option 1"])
 
 
+func test_signals_each_created_button_with_its_option() -> void:
+	var created: Array[Array] = []
+	_list.button_created.connect(
+		func(button: BaseButton, option: WeavlyModel.Option) -> void:
+			created.append([button, option.text, (button as Button).text, button.disabled])
+	)
+	var options: Array[WeavlyModel.Option] = [
+		_option("Open"), _locked("Teased", WeavlyModel.Option.State.TEASER)
+	]
+	_show_options(options)
+	(
+		assert_array(created)
+		. is_equal(
+			[
+				[_list.get_child(0), "Open", "Open", false],
+				[_list.get_child(1), "Teased", "Teased", true],
+			]
+		)
+	)
+
+
 func test_showing_again_replaces_the_options() -> void:
 	_show(2)
 	_show(1)
