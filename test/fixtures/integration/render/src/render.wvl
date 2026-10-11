@@ -1,59 +1,61 @@
 @env
 var gold: number = 0
+character Innkeeper
+character Barkeep
 var drinks: number = 0
 var left: bool = false
 func header(title: string, gold: number)
 @endenv
 
-@node tavern
->Innkeeper: Welcome, you have {$gold} gold.
-@do header("Tavern", $gold + 1)
-@increase $gold 5
+@node Tavern
+Innkeeper: Welcome, you have {gold} gold.
+@do header("Tavern", gold + 1)
+@increase gold 5
 @options
 @option "Buy a drink"
-    @increase $drinks
+    @increase drinks
     The drink is cold.
-    @jump bar
-@option [ $gold > 100 ] "Rent a room": @jump room
+    @jump Bar
+@option [ gold > 100 ] "Rent a room": @jump Room
 @endoptions
 The fire crackles.
 @options
-@option "Leave": @set $left = true
+@option "Leave": @set left = true
 @endoptions
 @continue "Look around"
 @endnode
 
-@node bar
->Barkeep: {$drinks} drinks so far.
+@node Bar
+Barkeep: {drinks} drinks so far.
 @options
-@option "Another": @jump bar
+@option "Another": @jump Bar
 @endoptions
 @endnode
 
-@node room
+@node Room
 Unreachable.
 @endnode
 
-@node lobby
-@jump tavern
+@node Lobby
+@jump Tavern
 @endnode
 
-@node lucky
+@node Lucky
 @random
 @case 1: Heads.
 @case 1: Tails.
 @endrandom
-@set $gold = random(1, 1000000)
+@set gold = random(1, 1000000)
 @endnode
 
-@node stop
+@node Stop
 Before.
 @finish
 After.
 @endnode
 
-@node faulty
+@node Faulty
 @options
-@option "Divide": @set $gold = $gold / $drinks
+@option "Divide": @set gold = gold / drinks
 @endoptions
 @endnode

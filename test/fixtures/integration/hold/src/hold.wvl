@@ -2,7 +2,7 @@
 func shake()
 @endenv
 
-@node start
+@node Start
 @do shake()
 After
 @finish

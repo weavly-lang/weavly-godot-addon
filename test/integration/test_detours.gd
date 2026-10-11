@@ -38,132 +38,132 @@ func _visits(ids: Array[String]) -> Array[int]:
 
 
 func test_a_detour_runs_the_node_and_continues_after_it() -> void:
-	_run("travel")
+	_run("Travel")
 	(
 		assert_array(_events)
 		. is_equal(
 			[
-				"enter:travel",
+				"enter:Travel",
 				"You set off.",
-				"enter:ambush",
+				"enter:Ambush",
 				"Bandits!",
-				"leave:ambush",
+				"leave:Ambush",
 				"You arrive.",
-				"leave:travel",
+				"leave:Travel",
 				"finished",
 			]
 		)
 	)
-	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+	assert_array(_visits(["Travel", "Ambush"])).is_equal([1, 1])
 
 
 func test_the_detoured_node_is_on_top_of_the_location_stack() -> void:
-	_engine.start("travel")
+	_engine.start("Travel")
 	_engine.next()
-	assert_array(_engine.get_location_stack()).is_equal(["travel", "ambush"])
-	assert_str(_engine.current_node_id).is_equal("ambush")
+	assert_array(_engine.get_location_stack()).is_equal(["Travel", "Ambush"])
+	assert_str(_engine.current_node_id).is_equal("Ambush")
 	assert_int(_engine.current_line).is_equal(8)
 	_engine.next()
-	assert_array(_engine.get_location_stack()).is_equal(["travel"])
+	assert_array(_engine.get_location_stack()).is_equal(["Travel"])
 	assert_int(_engine.current_line).is_equal(4)
 
 
 func test_nested_detours_return_in_order() -> void:
-	_run("nested")
+	_run("Nested")
 	(
 		assert_array(_events.filter(func(event: String) -> bool: return ":" not in event))
 		. is_equal(["In inner.", "Back in middle.", "Back in nested.", "finished"])
 	)
 	(
 		assert_array(_events.filter(func(event: String) -> bool: return "leave:" in event))
-		. is_equal(["leave:inner", "leave:middle", "leave:nested"])
+		. is_equal(["leave:Inner", "leave:Middle", "leave:Nested"])
 	)
 
 
 func test_a_jump_inside_a_detour_leaves_every_running_node() -> void:
-	_run("escape")
+	_run("Escape")
 	(
 		assert_array(_events)
 		. is_equal(
 			[
-				"enter:escape",
-				"enter:runaway",
-				"leave:runaway",
-				"leave:escape",
-				"enter:safe",
+				"enter:Escape",
+				"enter:Runaway",
+				"leave:Runaway",
+				"leave:Escape",
+				"enter:Safe",
 				"Safe.",
-				"leave:safe",
+				"leave:Safe",
 				"finished",
 			]
 		)
 	)
-	assert_array(_visits(["escape", "runaway", "safe"])).is_equal([1, 1, 1])
+	assert_array(_visits(["Escape", "Runaway", "Safe"])).is_equal([1, 1, 1])
 
 
 func test_finish_inside_a_detour_ends_the_dialogue() -> void:
-	_run("quit")
+	_run("Quit")
 	assert_array(_events).is_equal(
-		["enter:quit", "enter:stop", "leave:stop", "leave:quit", "finished"]
+		["enter:Quit", "enter:Stop", "leave:Stop", "leave:Quit", "finished"]
 	)
-	assert_array(_visits(["quit", "stop"])).is_equal([1, 1])
+	assert_array(_visits(["Quit", "Stop"])).is_equal([1, 1])
 
 
 func test_finishing_from_the_game_leaves_every_running_node() -> void:
-	_engine.start("travel")
+	_engine.start("Travel")
 	_engine.next()
 	_engine.finish()
 	(
 		assert_array(_events)
 		. is_equal(
 			[
-				"enter:travel",
+				"enter:Travel",
 				"You set off.",
-				"enter:ambush",
+				"enter:Ambush",
 				"Bandits!",
-				"leave:ambush",
-				"leave:travel",
+				"leave:Ambush",
+				"leave:Travel",
 				"finished",
 			]
 		)
 	)
-	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+	assert_array(_visits(["Travel", "Ambush"])).is_equal([1, 1])
 	assert_array(_engine.get_location_stack()).is_empty()
 
 
 func test_finishing_from_a_left_node_handler_finishes_once() -> void:
 	_engine.left_node.connect(func(_id: String) -> void: _engine.finish())
-	_engine.start("travel")
+	_engine.start("Travel")
 	_engine.next()
 	_engine.finish()
 	(
 		assert_array(_events.filter(func(event: String) -> bool: return event == "finished"))
 		. has_size(1)
 	)
-	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+	assert_array(_visits(["Travel", "Ambush"])).is_equal([1, 1])
 
 
 func test_loading_a_state_while_a_detour_runs_leaves_no_nodes() -> void:
-	_engine.start("nested")
+	_engine.start("Nested")
 	var state: Dictionary = _engine.get_state()
 	_engine.next()
 	_events.clear()
 	_engine.set_state(state)
 	assert_array(_events.filter(func(event: String) -> bool: return "leave:" in event)).is_empty()
-	assert_array(_visits(["nested", "middle", "inner"])).is_equal([0, 0, 0])
+	assert_array(_visits(["Nested", "Middle", "Inner"])).is_equal([0, 0, 0])
 
 
 func test_a_node_split_by_a_detour_at_its_end() -> void:
-	_run("split_a")
+	_run("SplitA")
 	(
 		assert_array(_events)
 		. is_equal(
 			[
-				"enter:split_a",
+				"enter:SplitA",
 				"First half.",
-				"enter:split_b",
+				"enter:SplitB",
 				"Second half.",
-				"leave:split_b",
-				"leave:split_a",
+				"leave:SplitB",
+				"leave:SplitA",
 				"finished",
 			]
 		)
@@ -172,35 +172,35 @@ func test_a_node_split_by_a_detour_at_its_end() -> void:
 
 func test_detouring_past_the_depth_limit_finishes_with_an_error() -> void:
 	_engine.max_detour_depth = 3
-	_run("loop")
-	assert_logged(["Can't detour to node 'loop' past 3 running nodes; finishing the dialogue."])
+	_run("Loop")
+	assert_logged(["Can't detour to node 'Loop' past 3 running nodes; finishing the dialogue."])
 	assert_str(_events.back()).is_equal("finished")
 	assert_array(_engine.get_location_stack()).is_empty()
 
 
 func test_saving_inside_a_detour_replays_the_outermost_node() -> void:
-	_engine.start("travel")
+	_engine.start("Travel")
 	_engine.next()
 	var state: Dictionary = _engine.get_state()
-	assert_str(state["node"]).is_equal("travel")
+	assert_str(state["node"]).is_equal("Travel")
 	_engine.finish()
 	_events.clear()
 	_engine.set_state(state)
-	assert_array(_events).is_equal(["enter:travel", "You set off."])
-	assert_array(_engine.get_location_stack()).is_equal(["travel"])
+	assert_array(_events).is_equal(["enter:Travel", "You set off."])
+	assert_array(_engine.get_location_stack()).is_equal(["Travel"])
 
 
 func test_render_runs_detours_in_place() -> void:
-	var entries: Array[WeavlyModel.Statement] = _engine.render("travel")
+	var entries: Array[WeavlyModel.Statement] = _engine.render("Travel")
 	(
 		assert_array(entries.map(func(line: WeavlyModel.Statement) -> String: return line.text))
 		. is_equal(["You set off.", "Bandits!", "You arrive."])
 	)
-	assert_array(_visits(["travel", "ambush"])).is_equal([1, 1])
+	assert_array(_visits(["Travel", "Ambush"])).is_equal([1, 1])
 
 
 func test_render_option_returns_from_a_detour() -> void:
-	var entries: Array[WeavlyModel.Statement] = _engine.render("lookout")
+	var entries: Array[WeavlyModel.Statement] = _engine.render("Lookout")
 	var look: WeavlyModel.Option = (entries[0] as WeavlyModel.OptionBlock).options[0]
 	var outcome: Array[WeavlyModel.Statement] = _engine.render_option(look)
 	(

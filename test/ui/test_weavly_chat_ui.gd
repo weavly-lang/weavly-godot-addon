@@ -21,7 +21,7 @@ func before_test() -> void:
 	_engine.register_function("open", func() -> bool: return _door_open)
 	_ui = auto_free(SCENE.instantiate())
 	_ui.engine = _engine
-	_ui.player_character = "me"
+	_ui.player_character = "Me"
 	add_child(_ui)
 
 
@@ -86,12 +86,12 @@ func _click(event: InputEventMouseButton = mouse_button(MOUSE_BUTTON_LEFT)) -> v
 
 func test_hidden_until_the_first_message() -> void:
 	assert_bool(_ui.visible).is_false()
-	_engine.start("start")
+	_engine.start("Start")
 	assert_bool(_ui.visible).is_true()
 
 
 func test_another_characters_message_waits_behind_the_typing_indicator() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	assert_bool(_typing()).is_true()
 	assert_array(_describe()).is_empty()
 	_wait_out()
@@ -102,7 +102,7 @@ func test_the_typing_wait_follows_the_text_length_within_limits() -> void:
 	_ui.typing_speed = 10.0
 	_ui.min_wait = 0.5
 	_ui.max_wait = 5.0
-	_engine.start("start")
+	_engine.start("Start")
 	_ui._process(1.6)
 	assert_array(_describe()).is_empty()
 	_ui._process(0.2)
@@ -112,13 +112,13 @@ func test_the_typing_wait_follows_the_text_length_within_limits() -> void:
 
 
 func test_a_click_skips_the_wait() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_click()
 	assert_array(_describe()).is_equal(["left Mara: are you still up?"])
 
 
 func test_the_advance_action_skips_the_wait() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	var event: InputEventAction = InputEventAction.new()
 	event.action = &"ui_accept"
 	event.pressed = true
@@ -127,14 +127,14 @@ func test_the_advance_action_skips_the_wait() -> void:
 
 
 func test_only_pressing_the_left_button_skips_the_wait() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_click(mouse_button(MOUSE_BUTTON_RIGHT))
 	_click(mouse_button(MOUSE_BUTTON_LEFT, false))
 	assert_bool(_ui.is_waiting()).is_true()
 
 
 func test_keys_the_ui_uses_dont_reach_the_game() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_accept"))).is_true()
 	for i: int in 3:
 		_wait_out()
@@ -142,7 +142,7 @@ func test_keys_the_ui_uses_dont_reach_the_game() -> void:
 
 
 func test_player_lines_and_narration_wait_briefly_without_the_indicator() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_wait_out()
 	assert_bool(_ui.is_waiting()).is_true()
 	assert_bool(_typing()).is_false()
@@ -155,7 +155,7 @@ func test_player_lines_and_narration_wait_briefly_without_the_indicator() -> voi
 
 
 func test_a_run_of_messages_shows_the_name_and_avatar_once() -> void:
-	_engine.start("burst")
+	_engine.start("Burst")
 	for i: int in 4:
 		_wait_out()
 	assert_array(_describe()).is_equal(
@@ -171,15 +171,15 @@ func test_a_run_of_messages_shows_the_name_and_avatar_once() -> void:
 	assert_array(avatars).is_equal([true, false, null, true])
 
 
-func test_a_speaker_without_a_character_shows_the_name_as_written() -> void:
-	_engine.start("start")
+func test_a_one_off_speaker_shows_the_name_as_written() -> void:
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
-	assert_str(_describe()[-1]).is_equal("left stranger: hello?")
+	assert_str(_describe()[-1]).is_equal("left Stranger: hello?")
 
 
 func test_a_chat_character_gets_its_avatar_and_bubble_color() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_wait_out()
 	var row: HBoxContainer = _rows()[0]
 	assert_object(_find(row, "TextureRect")).is_not_null()
@@ -189,7 +189,7 @@ func test_a_chat_character_gets_its_avatar_and_bubble_color() -> void:
 
 
 func test_a_plain_character_uses_the_theme_bubble() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
 	var row: HBoxContainer = _rows()[-1]
@@ -199,7 +199,7 @@ func test_a_plain_character_uses_the_theme_bubble() -> void:
 
 
 func test_replies_show_as_buttons() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
 	var replies: Array[Button] = _replies()
@@ -211,7 +211,7 @@ func test_replies_show_as_buttons() -> void:
 
 
 func test_the_chosen_reply_becomes_a_player_bubble() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
 	_replies()[0].pressed.emit()
@@ -222,18 +222,18 @@ func test_the_chosen_reply_becomes_a_player_bubble() -> void:
 
 
 func test_bubbles_fit_short_text_and_wrap_long_text() -> void:
-	_engine.start("long")
+	_engine.start("Long")
 	_wait_out()
 	var long_text: RichTextLabel = _find(_rows()[0], "RichTextLabel")
 	assert_float(long_text.custom_minimum_size.x).is_equal(_ui.max_bubble_width)
-	_engine.start("start")
+	_engine.start("Start")
 	_wait_out()
 	var short_text: RichTextLabel = _find(_rows()[-1], "RichTextLabel")
 	assert_float(short_text.custom_minimum_size.x).is_less(_ui.max_bubble_width)
 
 
 func test_the_conversation_stays_after_the_dialogue_finishes() -> void:
-	_engine.start("sleep")
+	_engine.start("Sleep")
 	_wait_out()
 	assert_bool(_engine.is_running()).is_false()
 	assert_bool(_ui.visible).is_true()
@@ -241,7 +241,7 @@ func test_the_conversation_stays_after_the_dialogue_finishes() -> void:
 
 
 func test_keys_select_a_reply() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
 	var event: InputEventAction = InputEventAction.new()
@@ -252,7 +252,7 @@ func test_keys_select_a_reply() -> void:
 
 
 func test_clear_hides_and_empties_the_conversation() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_wait_out()
 	_ui.clear()
 	assert_bool(_ui.visible).is_false()
@@ -260,7 +260,7 @@ func test_clear_hides_and_empties_the_conversation() -> void:
 
 
 func test_loading_a_state_clears_the_ui() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_wait_out()
 	_engine.reset_state()
 	assert_bool(_ui.visible).is_false()
@@ -268,7 +268,7 @@ func test_loading_a_state_clears_the_ui() -> void:
 
 
 func test_disconnecting_the_engine_clears_and_stops_listening() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	_ui.engine = null
 	assert_bool(_ui.visible).is_false()
 	assert_bool(_ui.is_waiting()).is_false()
@@ -277,14 +277,14 @@ func test_disconnecting_the_engine_clears_and_stops_listening() -> void:
 
 
 func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
-	_engine.start("formatted")
+	_engine.start("Formatted")
 	_wait_out()
 	assert_array(_describe()).is_equal(["left Mara: Hello [b]world[/b]."])
 	assert_str(_replies()[0].text).is_equal("[i]Wave[/i]")
 
 
 func test_a_reply_bar_where_nothing_can_be_chosen_waits_for_continue() -> void:
-	_engine.start("locked")
+	_engine.start("Locked")
 	var continue_button: Button = _ui.get_node("%Continue")
 	assert_str(_replies()[0].text).is_equal("the door is locked")
 	assert_bool(_replies()[0].disabled).is_true()
@@ -297,7 +297,7 @@ func test_a_reply_bar_where_nothing_can_be_chosen_waits_for_continue() -> void:
 
 
 func test_continue_stays_hidden_while_a_reply_can_be_chosen() -> void:
-	_engine.start("start")
+	_engine.start("Start")
 	for i: int in 4:
 		_wait_out()
 	assert_int(_replies().size()).is_equal(2)
@@ -305,7 +305,7 @@ func test_continue_stays_hidden_while_a_reply_can_be_chosen() -> void:
 
 
 func test_a_reply_runs_as_offered_after_the_game_changed() -> void:
-	_engine.start("door")
+	_engine.start("Door")
 	_door_open = false
 	_replies()[0].pressed.emit()
-	assert_str(_engine.current_node_id).is_equal("sleep")
+	assert_str(_engine.current_node_id).is_equal("Sleep")

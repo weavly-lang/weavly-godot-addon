@@ -85,12 +85,12 @@ func _press_key(key: Key) -> void:
 
 func test_hidden_until_a_passage_shows() -> void:
 	assert_bool(_ui.visible).is_false()
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	assert_bool(_ui.visible).is_true()
 
 
 func test_shows_lines_and_option_blocks_in_order() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	(
 		assert_array(_describe())
 		. is_equal(
@@ -107,26 +107,26 @@ func test_shows_lines_and_option_blocks_in_order() -> void:
 
 
 func test_do_statements_are_emitted_in_order() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	assert_array(_events).is_equal(['do:header ["Tavern"]'])
 
 
 func test_following_a_link_into_the_next_node() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_link("Buy a drink").pressed.emit()
 	assert_array(_describe()).is_equal([["The drink is cold.", "The barkeep nods.", ["Back"]]])
 	assert_float(_engine.get_variable("gold")).is_equal(1.0)
 
 
 func test_a_link_from_a_later_option_block() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_link("Warm up").pressed.emit()
 	assert_array(_describe()).is_equal([["You warm up."]])
 
 
 func test_append_keeps_earlier_passages() -> void:
 	_ui.append = true
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_link("Buy a drink").pressed.emit()
 	(
 		assert_array(_describe())
@@ -140,32 +140,32 @@ func test_append_keeps_earlier_passages() -> void:
 
 
 func test_a_passage_without_options_finishes() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_link("Leave").pressed.emit()
 	assert_array(_describe()).is_equal([["The street is empty."]])
 	assert_array(_events).contains(["finished"])
 
 
 func test_a_passage_with_options_doesnt_finish() -> void:
-	_ui.show_passage("bar")
+	_ui.show_passage("Bar")
 	assert_array(_events).is_empty()
 
 
 func test_refuses_while_a_dialogue_runs() -> void:
-	_engine.start("street")
-	_ui.show_passage("tavern")
+	_engine.start("Street")
+	_ui.show_passage("Tavern")
 	assert_bool(_ui.visible).is_false()
 	assert_logged([], ["Can't show a passage while a dialogue runs."])
 
 
 func test_hovering_selects_a_link() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_link("Leave").mouse_entered.emit()
 	assert_bool(_link("Leave").has_focus()).is_true()
 
 
 func test_keys_select_and_choose_a_link() -> void:
-	_ui.show_passage("bar")
+	_ui.show_passage("Bar")
 	await get_tree().process_frame
 	_press_key(KEY_DOWN)
 	assert_bool(_link("Back").has_focus()).is_true()
@@ -174,13 +174,13 @@ func test_keys_select_and_choose_a_link() -> void:
 
 
 func test_the_key_that_selects_a_link_doesnt_reach_the_game() -> void:
-	_ui.show_passage("bar")
+	_ui.show_passage("Bar")
 	await get_tree().process_frame
 	assert_bool(handles_input(_ui._unhandled_input, action_pressed(&"ui_down"))).is_true()
 
 
 func test_keys_move_between_option_blocks_and_choose_the_focused_link() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	await get_tree().process_frame
 	_press_key(KEY_DOWN)
 	_press_key(KEY_DOWN)
@@ -191,34 +191,34 @@ func test_keys_move_between_option_blocks_and_choose_the_focused_link() -> void:
 
 
 func test_bbcode_is_shown_as_written_in_lines_and_options() -> void:
-	_ui.show_passage("formatted")
+	_ui.show_passage("Formatted")
 	assert_array(_describe()).is_equal([["Hello [b]world[/b].", ["[i]Wave[/i]"]]])
 
 
 func test_loading_a_state_clears_the_ui() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_engine.reset_state()
 	assert_bool(_ui.visible).is_false()
 	assert_array(_describe()).is_empty()
 
 
 func test_clear_hides_and_removes_passages() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_ui.clear()
 	assert_bool(_ui.visible).is_false()
 	assert_array(_describe()).is_empty()
 
 
 func test_disconnecting_the_engine_clears_and_stops_rendering() -> void:
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	_ui.engine = null
 	assert_bool(_ui.visible).is_false()
-	_ui.show_passage("tavern")
+	_ui.show_passage("Tavern")
 	assert_array(_describe()).is_empty()
 
 
 func test_a_link_runs_as_rendered_after_the_game_changed() -> void:
-	_ui.show_passage("door")
+	_ui.show_passage("Door")
 	_door_open = false
 	_link("Open").pressed.emit()
-	assert_int(_engine.count_service.get_visit_count("street")).is_equal(1)
+	assert_int(_engine.count_service.get_visit_count("Street")).is_equal(1)

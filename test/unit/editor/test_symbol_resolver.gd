@@ -1,12 +1,15 @@
+# gdlint:ignore = max-public-methods
 extends GdUnitTestSuite
 
 const NODE = WeavlyProjectIndex.Kind.NODE
 const POOL = WeavlyProjectIndex.Kind.POOL
 const SLOT = WeavlyProjectIndex.Kind.SLOT
+const CHARACTER = WeavlyProjectIndex.Kind.CHARACTER
 const VARIABLE = WeavlyProjectIndex.Kind.VARIABLE
 const META_KEY = WeavlyProjectIndex.Kind.META_KEY
 const FUNCTION = WeavlyProjectIndex.Kind.FUNCTION
-const NAMES: Array = [NODE, POOL, SLOT]
+const NAMES: Array = [NODE, POOL, SLOT, CHARACTER, VARIABLE]
+const SPEAKERS: Array = [CHARACTER, VARIABLE]
 
 
 # Resolves at the | in a line of a node body, or of the block the lines above open.
@@ -47,9 +50,8 @@ func test_a_pool_option_names_pools_but_not_its_parameters() -> void:
 	assert_array(_kinds("@option pool(city, limit: |cap)")).is_equal(NAMES)
 
 
-func test_variables_go_by_their_marker_and_keywords_name_nothing() -> void:
-	assert_array(_kinds("@set $|energy = 1")).is_equal([VARIABLE])
-	assert_array(_kinds("$|guide: Hello.")).is_equal([VARIABLE])
+func test_a_set_target_can_be_any_name_and_keywords_name_nothing() -> void:
+	assert_array(_kinds("@set |energy = 1")).is_equal(NAMES)
 	assert_array(_kinds("@|do fade_in()")).is_empty()
 	assert_array(_kinds("@|fade_in")).is_empty()
 
@@ -60,11 +62,11 @@ func test_a_call_names_a_function() -> void:
 
 
 func test_a_meta_read_names_a_meta_key_and_its_node() -> void:
-	assert_array(_kinds("@set $x = .|cost")).is_equal([META_KEY])
-	assert_array(_kinds("@set $x = |shop.cost")).is_equal([NODE])
-	assert_array(_kinds("@set $x = shop.|cost")).is_equal([META_KEY])
-	assert_str(_resolve("@set $x = sh|op.cost").name).is_equal("shop")
-	assert_str(_resolve("@set $x = shop.co|st").name).is_equal("cost")
+	assert_array(_kinds("@set x = .|cost")).is_equal([META_KEY])
+	assert_array(_kinds("@set x = |shop.cost")).is_equal([NODE])
+	assert_array(_kinds("@set x = shop.|cost")).is_equal([META_KEY])
+	assert_str(_resolve("@set x = sh|op.cost").name).is_equal("shop")
+	assert_str(_resolve("@set x = shop.co|st").name).is_equal("cost")
 
 
 func test_a_meta_read_resolves_in_interpolations_and_meta_values() -> void:
@@ -79,10 +81,10 @@ func test_a_bare_name_in_an_expression_can_be_any_name() -> void:
 
 func test_dialogue_text_isnt_code() -> void:
 	assert_array(_kinds("Go to |market now.")).is_empty()
-	assert_array(_kinds("$guide: Go to |market.")).is_empty()
-	assert_array(_kinds("> Guide: Go to |market.")).is_empty()
+	assert_array(_kinds("Guide: Go to |market.")).is_empty()
+	assert_array(_kinds('"Old Man": Go to |market.')).is_empty()
 	assert_array(_kinds('@option "Visit |market": @jump x')).is_empty()
-	assert_array(_kinds("@if $x > 1: Go to |market.")).is_empty()
+	assert_array(_kinds("@if x > 1: Go to |market.")).is_empty()
 
 
 func test_an_interpolation_is_code() -> void:
@@ -93,13 +95,29 @@ func test_an_interpolation_is_code() -> void:
 
 func test_an_inline_action_after_a_colon_is_a_line_of_its_own() -> void:
 	assert_array(_kinds('@option "Go": @jump |market')).is_equal([NODE])
-	assert_array(_kinds("@when $x: $|guide: Hi.")).is_equal([VARIABLE])
+	assert_array(_kinds("@when x: |Guide: Hi.")).is_equal(SPEAKERS)
 
 
 func test_comments_and_numbers_resolve_to_nothing() -> void:
 	assert_object(_resolve("@jump x # see |market")).is_null()
 	assert_object(_resolve("# |market")).is_null()
-	assert_object(_resolve("@increase $x |2")).is_null()
+	assert_object(_resolve("@increase x |2")).is_null()
+
+
+func test_a_speaker_is_a_character_or_a_character_variable() -> void:
+	assert_array(_kinds("|Guide: Hello.")).is_equal(SPEAKERS)
+	assert_array(_kinds("  compan|ion : Hello.")).is_equal(SPEAKERS)
+	assert_str(_resolve("Gui|de: Hello.").name).is_equal("Guide")
+
+
+func test_a_one_off_speaker_resolves_only_its_interpolations() -> void:
+	assert_array(_kinds('"Old |Man": Hello.')).is_empty()
+	assert_array(_kinds('"{|Guide} and Bo": Hello.')).is_equal(NAMES)
+
+
+func test_a_name_before_a_colon_without_a_space_is_text() -> void:
+	assert_array(_kinds("|Guide:Hello.")).is_empty()
+	assert_array(_kinds("|Day 3\\: Quiet.")).is_empty()
 
 
 func test_a_node_header_resolves_to_nothing() -> void:
@@ -123,6 +141,7 @@ func test_env_only_resolves_name_values() -> void:
 	var above: String = "@env"
 	assert_array(_kinds("var next: node = |market", above)).is_equal([NODE])
 	assert_array(_kinds("var region: pool = |city", above)).is_equal([POOL])
+	assert_array(_kinds("var friend: character = |Guide", above)).is_equal([CHARACTER])
 	assert_array(_kinds("var |next: node = market", above)).is_empty()
 	assert_array(_kinds("pool |city", above)).is_empty()
 

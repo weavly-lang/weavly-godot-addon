@@ -3,7 +3,7 @@ pool menu
 slot m
 @endenv
 
-@node menu_other
+@node MenuOther
 @meta
 pool: menu
 @endmeta

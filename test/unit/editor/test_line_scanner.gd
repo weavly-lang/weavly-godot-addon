@@ -10,11 +10,11 @@ func _blocks(text: String) -> Array:
 	return Array(WeavlyLineScanner.blocks(text.split("\n")))
 
 
-# The line as one letter per character: t text, c code, s string, # comment.
+# The line as one letter per character: t text, c code, s string, # comment, p speaker.
 func _parts(text: String, block: WeavlyLineScanner.Block = BODY) -> String:
 	var letters: String = ""
 	for part: int in WeavlyLineScanner.parts(text, block):
-		letters += "tcs#"[part]
+		letters += "tcs#p"[part]
 	return letters
 
 
@@ -66,7 +66,7 @@ func test_directive_is_the_whole_leading_word() -> void:
 
 
 func test_narration_is_text_with_code_inside_braces() -> void:
-	assert_str(_parts("a {$b} # c")).is_equal("tttccttttt")
+	assert_str(_parts("a {b} # c")).is_equal("tttcttttt")
 
 
 func test_an_escaped_brace_is_text() -> void:
@@ -94,8 +94,23 @@ func test_a_colon_inside_brackets_doesnt_end_the_code() -> void:
 	assert_str(_parts("@o p(l: 2)")).is_equal("cccccccccc")
 
 
-func test_a_character_line_is_text() -> void:
-	assert_str(_parts(">Bo: {x}")).is_equal("ttttttct")
+func test_a_speaker_and_its_colon_are_a_speaker_and_the_rest_text() -> void:
+	assert_str(_parts("Bo: {x}")).is_equal("pppttct")
+	assert_str(_parts("Bo : a")).is_equal("pppptt")
+
+
+func test_a_quoted_speaker_keeps_its_interpolations_as_code() -> void:
+	assert_str(_parts('"A{b}": c')).is_equal("pppcppptt")
+
+
+func test_a_colon_without_a_space_or_an_escaped_colon_is_narration() -> void:
+	assert_str(_parts("Bo:a")).is_equal("tttt")
+	assert_str(_parts("Bo\\: a")).is_equal("tttttt")
+	assert_str(_parts("At 10: a")).is_equal("tttttttt")
+
+
+func test_a_speaker_after_an_inline_colon_is_a_speaker() -> void:
+	assert_str(_parts("@if x: Bo: a")).is_equal("cccccttppptt")
 
 
 func test_env_and_meta_lines_are_code() -> void:

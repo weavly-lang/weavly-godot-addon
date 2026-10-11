@@ -51,14 +51,12 @@ func _spans_at(text: String, line_index: int, color: Color) -> Array[String]:
 
 
 func test_string_is_highlighted() -> void:
-	var spans: Array[String] = _spans('@set $s = "hello"', WvlSyntaxHighlighter.STRING_COLOR)
+	var spans: Array[String] = _spans('@set s = "hello"', WvlSyntaxHighlighter.STRING_COLOR)
 	assert_array(spans).contains_exactly(['"hello"'])
 
 
 func test_string_with_escaped_quotes_is_highlighted_to_its_end() -> void:
-	var spans: Array[String] = _spans(
-		'@set $s = "say \\"hi\\""', WvlSyntaxHighlighter.STRING_COLOR
-	)
+	var spans: Array[String] = _spans('@set s = "say \\"hi\\""', WvlSyntaxHighlighter.STRING_COLOR)
 	assert_array(spans).contains_exactly(['"say \\"hi\\""'])
 
 
@@ -83,7 +81,7 @@ func test_comment_after_a_directive_is_highlighted() -> void:
 
 
 func test_hash_inside_a_string_is_not_a_comment() -> void:
-	var line: String = '@set $s = "a # b"'
+	var line: String = '@set s = "a # b"'
 	assert_array(_spans(line, WvlSyntaxHighlighter.COMMENT_COLOR)).is_empty()
 	assert_array(_spans(line, WvlSyntaxHighlighter.STRING_COLOR)).contains_exactly(['"a # b"'])
 
@@ -94,7 +92,7 @@ func test_hash_in_narration_text_is_not_a_comment() -> void:
 
 
 func test_hash_in_a_character_line_is_not_a_comment() -> void:
-	var spans: Array[String] = _spans(">Bob: hi # b", WvlSyntaxHighlighter.COMMENT_COLOR)
+	var spans: Array[String] = _spans("Bob: hi # b", WvlSyntaxHighlighter.COMMENT_COLOR)
 	assert_array(spans).is_empty()
 
 
@@ -104,22 +102,22 @@ func test_hash_in_a_character_line_is_not_a_comment() -> void:
 
 
 func test_number_is_highlighted() -> void:
-	var spans: Array[String] = _spans("@inc $score 12.5", WvlSyntaxHighlighter.NUMBER_COLOR)
+	var spans: Array[String] = _spans("@inc score 12.5", WvlSyntaxHighlighter.NUMBER_COLOR)
 	assert_array(spans).contains_exactly(["12.5"])
 
 
 func test_negative_number_includes_the_minus() -> void:
-	var spans: Array[String] = _spans("@set $x = -5", WvlSyntaxHighlighter.NUMBER_COLOR)
+	var spans: Array[String] = _spans("@set x = -5", WvlSyntaxHighlighter.NUMBER_COLOR)
 	assert_array(spans).contains_exactly(["-5"])
 
 
 func test_subtraction_minus_is_not_part_of_the_number() -> void:
-	var spans: Array[String] = _spans("@set $x = $a - 5", WvlSyntaxHighlighter.NUMBER_COLOR)
+	var spans: Array[String] = _spans("@set x = a - 5", WvlSyntaxHighlighter.NUMBER_COLOR)
 	assert_array(spans).contains_exactly(["5"])
 
 
 func test_minus_after_a_number_is_not_part_of_the_number() -> void:
-	var spans: Array[String] = _spans("@set $x = 7-5", WvlSyntaxHighlighter.NUMBER_COLOR)
+	var spans: Array[String] = _spans("@set x = 7-5", WvlSyntaxHighlighter.NUMBER_COLOR)
 	assert_array(spans).contains_exactly(["7", "5"])
 
 
@@ -170,12 +168,12 @@ func test_editing_the_env_line_updates_the_lines_below() -> void:
 
 
 func test_function_calls_on_a_directive_line_are_highlighted() -> void:
-	var spans: Array[String] = _spans("@if visited(intro) and clamp($hp, 0, 10) > 2", FUNCTION)
+	var spans: Array[String] = _spans("@if visited(intro) and clamp(hp, 0, 10) > 2", FUNCTION)
 	assert_array(spans).contains_exactly(["visited", "clamp"])
 
 
 func test_expression_keywords_on_a_directive_line_are_highlighted() -> void:
-	var spans: Array[String] = _spans("@set $ok = not $a or $b and true", KEYWORD)
+	var spans: Array[String] = _spans("@set ok = not a or b and true", KEYWORD)
 	assert_array(spans).contains_exactly(["not", "or", "and", "true"])
 
 
@@ -183,7 +181,7 @@ func test_option_and_case_conditions_are_highlighted() -> void:
 	assert_array(_spans('@option [visited(shop) or false] "Back"', KEYWORD)).contains_exactly(
 		["or", "false"]
 	)
-	assert_array(_spans("@case [not $seen] 2", KEYWORD)).contains_exactly(["not"])
+	assert_array(_spans("@case [not seen] 2", KEYWORD)).contains_exactly(["not"])
 
 
 func test_keywords_in_narration_are_text() -> void:
@@ -192,22 +190,22 @@ func test_keywords_in_narration_are_text() -> void:
 
 
 func test_keywords_in_a_character_line_are_text() -> void:
-	assert_array(_spans("> Alice: you and me", KEYWORD)).is_empty()
+	assert_array(_spans("Alice: you and me", KEYWORD)).is_empty()
 
 
 func test_keywords_in_inline_text_after_a_directive_are_text() -> void:
-	assert_array(_spans("@if $a: you and me", KEYWORD)).is_empty()
-	var spans: Array[String] = _spans("@if $a: @set $b = true and $c", KEYWORD)
+	assert_array(_spans("@if a: you and me", KEYWORD)).is_empty()
+	var spans: Array[String] = _spans("@if a: @set b = true and c", KEYWORD)
 	assert_array(spans).contains_exactly(["true", "and"])
 
 
-func test_a_directive_or_variable_is_not_a_keyword_or_function() -> void:
-	assert_array(_spans("@set $true = $and", KEYWORD)).is_empty()
+func test_a_directive_is_not_a_keyword_or_function() -> void:
+	assert_array(_spans("@and x", KEYWORD)).is_empty()
 	assert_array(_spans("@if (visited(x))", FUNCTION)).contains_exactly(["visited"])
 
 
 func test_strings_and_comments_win_over_keywords_and_functions() -> void:
-	assert_array(_spans('@if "and" == $x', KEYWORD)).is_empty()
+	assert_array(_spans('@if "and" == x', KEYWORD)).is_empty()
 	assert_array(_spans("@jump x # visited(x) and", FUNCTION)).is_empty()
 	assert_array(_spans("@jump x # visited(x) and", KEYWORD)).is_empty()
 
@@ -239,7 +237,7 @@ func test_meta_and_draw_are_directives() -> void:
 
 func test_meta_keys_have_the_meta_color_and_their_values_are_expressions() -> void:
 	var text: String = (
-		"@node a\n@meta\npool: city\nwhen: $gold > 2 and visited(x)\nonce: true\n" + "@endmeta"
+		"@node a\n@meta\npool: city\nwhen: gold > 2 and visited(x)\nonce: true\n" + "@endmeta"
 	)
 	assert_array(_spans_at(text, 2, META)).contains_exactly(["pool"])
 	assert_array(_spans_at(text, 2, KEYWORD)).is_empty()
@@ -273,13 +271,13 @@ func test_a_meta_key_looks_the_same_where_it_is_written_and_read() -> void:
 
 
 func test_meta_reads_have_the_meta_color_in_expressions_and_interpolations() -> void:
-	assert_array(_spans("@set $x = .cost + shop.cost", META)).contains_exactly([".cost", ".cost"])
+	assert_array(_spans("@set x = .cost + shop.cost", META)).contains_exactly([".cost", ".cost"])
 	assert_array(_spans("You pay {shop.cost}.", META)).contains_exactly([".cost"])
 	assert_array(_spans('@option "Pay {.cost}": @jump shop', META)).contains_exactly([".cost"])
 
 
 func test_a_number_or_text_with_a_dot_is_not_a_meta_read() -> void:
-	var line: String = "@set $x = .5 + 1.5"
+	var line: String = "@set x = .5 + 1.5"
 	assert_array(_spans(line, META)).is_empty()
 	assert_array(_spans(line, WvlSyntaxHighlighter.NUMBER_COLOR)).contains_exactly(["5", "1.5"])
 	assert_array(_spans("Wait.then go", META)).is_empty()
@@ -300,7 +298,7 @@ func test_numbers_and_directives_in_narration_are_text() -> void:
 
 
 func test_skip_count_is_a_function_with_or_without_an_argument() -> void:
-	var spans: Array[String] = _spans("@set $n = skip_count() + skip_count(bob)", FUNCTION)
+	var spans: Array[String] = _spans("@set n = skip_count() + skip_count(bob)", FUNCTION)
 	assert_array(spans).contains_exactly(["skip_count", "skip_count"])
 
 
@@ -310,14 +308,14 @@ func test_skip_count_is_a_function_with_or_without_an_argument() -> void:
 
 
 func test_an_interpolation_in_narration_is_an_expression() -> void:
-	var line: String = "You pay {visit_count(shop) * 2} and {not $a} (not really)"
+	var line: String = "You pay {visit_count(shop) * 2} and {not a} (not really)"
 	assert_array(_spans(line, FUNCTION)).contains_exactly(["visit_count"])
 	assert_array(_spans(line, KEYWORD)).contains_exactly(["not"])
 	assert_array(_spans(line, WvlSyntaxHighlighter.NUMBER_COLOR)).contains_exactly(["2"])
 
 
 func test_an_interpolation_in_a_character_line_is_an_expression() -> void:
-	assert_array(_spans("> Bob: {max($gold, 1)} coins", FUNCTION)).contains_exactly(["max"])
+	assert_array(_spans("Bob: {max(gold, 1)} coins", FUNCTION)).contains_exactly(["max"])
 
 
 func test_an_escaped_brace_is_text() -> void:
@@ -334,7 +332,7 @@ func test_node_and_pool_options_are_functions_with_keyword_parameters() -> void:
 
 
 func test_an_interpolation_in_option_text_is_an_expression() -> void:
-	var line: String = '@option [not $poor] "Buy for {max($price, 1)}": @jump shop'
+	var line: String = '@option [not poor] "Buy for {max(price, 1)}": @jump shop'
 	assert_array(_spans(line, FUNCTION)).contains_exactly(["max"])
 	assert_array(_spans(line, KEYWORD)).contains_exactly(["not"])
 	var strings: Array[String] = _spans(line, WvlSyntaxHighlighter.STRING_COLOR)
@@ -345,3 +343,50 @@ func test_a_string_inside_an_interpolation_is_a_string() -> void:
 	var strings: Array[String] = _spans('Hi {"and"}', WvlSyntaxHighlighter.STRING_COLOR)
 	assert_array(strings).contains_exactly(['"and"'])
 	assert_array(_spans('Hi {"and"}', KEYWORD)).is_empty()
+
+
+# =====================
+# Names and speakers
+# =====================
+
+
+func _use_kinds(kinds: Dictionary) -> void:
+	_highlighter.name_kind = func(name: String) -> int: return kinds.get(name, -1)
+
+
+func test_names_are_colored_by_what_they_are_defined_as() -> void:
+	_use_kinds(
+		{
+			"gold": WeavlyProjectIndex.Kind.VARIABLE,
+			"Market": WeavlyProjectIndex.Kind.NODE,
+			"city": WeavlyProjectIndex.Kind.POOL,
+		}
+	)
+	var line: String = "@if gold > 2 and visited(Market): @draw city"
+	assert_array(_spans(line, WvlSyntaxHighlighter.VARIABLE_COLOR)).contains_exactly(["gold"])
+	assert_array(_spans(line, WvlSyntaxHighlighter.NODE_COLOR)).contains_exactly(
+		["Market", "city"]
+	)
+
+
+func test_an_unknown_name_or_one_in_text_stays_plain() -> void:
+	_use_kinds({"gold": WeavlyProjectIndex.Kind.VARIABLE})
+	assert_array(_spans("@set silver = 1", WvlSyntaxHighlighter.VARIABLE_COLOR)).is_empty()
+	assert_array(_spans("Your gold {gold}", WvlSyntaxHighlighter.VARIABLE_COLOR)).is_equal(
+		["gold"]
+	)
+
+
+func test_a_meta_key_after_a_dot_keeps_the_meta_color() -> void:
+	_use_kinds({"cost": WeavlyProjectIndex.Kind.VARIABLE, "Shop": WeavlyProjectIndex.Kind.NODE})
+	var line: String = "@set x = Shop.cost"
+	assert_array(_spans(line, META)).contains_exactly([".cost"])
+	assert_array(_spans(line, WvlSyntaxHighlighter.NODE_COLOR)).contains_exactly(["Shop"])
+
+
+func test_a_speaker_and_its_colon_are_a_character() -> void:
+	var color: Color = WvlSyntaxHighlighter.CHARACTER_COLOR
+	assert_array(_spans("Guide: and then", color)).contains_exactly(["Guide:"])
+	assert_array(_spans('"Old Man" : hi', color)).contains_exactly(['"Old Man" :'])
+	assert_array(_spans("@if x: Guide: hi", color)).contains_exactly(["Guide:"])
+	assert_array(_spans("Day 3\\: quiet", color)).is_empty()

@@ -9,33 +9,33 @@ func shout(text: string, volume: number)
 func wave()
 meta cost: number = 1
 var score: number = 0
-var scene: node = start
+var scene: node = Start
 var area: pool = city
 var seat: slot = bob
 pool city
 slot bob
 @endenv
 
-@node start
+@node Start
 @meta
 pool: city
 slot: bob
-cost: trust("ann", start) + 1
+cost: trust("ann", Start) + 1
 @endmeta
-@set $score = trust("ann", start)
+@set score = trust("ann", Start)
 @if mood()
 Happy.
 @endif
 {greeting("Ann")} is here.
-@do shout("hey", $score)
+@do shout("hey", score)
 @do wave()
-@set $scene = next_scene()
-@set $area = region()
-@set $seat = partner()
+@set scene = next_scene()
+@set area = region()
+@set seat = partner()
 @do mood()
 Done.
 @endnode
 
-@node other
+@node Other
 Other.
 @endnode

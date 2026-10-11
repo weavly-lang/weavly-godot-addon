@@ -24,18 +24,23 @@ static func fill_narration_line(
 	return filled
 
 
-# A name that is an id names a string variable holding the speaker's name.
+# The speaker resolves to its display name when the line runs; one that fails stays empty.
 static func fill_character_line(
 	character_line: WeavlyModel.CharacterLine, engine: WeavlyEngine
 ) -> WeavlyModel.CharacterLine:
-	var name: String = character_line.name
-	if character_line.name_is_id:
-		var value: Variant = engine.get_variable(name)
-		if value != null:
-			name = str(value)
 	var filled: WeavlyModel.CharacterLine = WeavlyModel.CharacterLine.new(
-		name, character_line.name_is_id, character_line.segments
+		character_line.speaker, character_line.segments
 	)
+	var speaker: WeavlyModel.WeavlyExpression = character_line.speaker
+	if speaker is WeavlyModel.CharacterName:
+		var id: Variant = WeavlyExpressionEvaluator.evaluate_character(speaker, engine)
+		if not WeavlyExpressionEvaluator.is_error(id):
+			filled.character = id
+			filled.name = engine.character_service.get_display_name(id)
+	else:
+		var name: Variant = WeavlyExpressionEvaluator.evaluate_expression(speaker, engine)
+		if not WeavlyExpressionEvaluator.is_error(name):
+			filled.name = str(name)
 	filled.text = fill_text(character_line.segments, engine)
 	filled.line = character_line.line
 	return filled

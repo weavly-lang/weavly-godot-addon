@@ -11,31 +11,31 @@ pool market
 slot table
 @endenv
 
-@node shop
+@node Shop
 @meta
 pool: market
 slot: table
-cost: 2 + $gold
-available: $gold >= .cost
+cost: 2 + gold
+available: gold >= .cost
 @endmeta
-@set $paid = .cost
-@if stall.tag == "fresh"
+@set paid = .cost
+@if Stall.tag == "fresh"
 Fresh.
 @endif
 @endnode
 
-@node plain
+@node Plain
 Plain.
 @endnode
 
-@node lucky
+@node Lucky
 @meta
 cost: random(1, 1000)
 @endmeta
-@set $rolled = .cost
+@set rolled = .cost
 @endnode
 
-@node once_only
+@node OnceOnly
 @meta
 once: true
 @endmeta

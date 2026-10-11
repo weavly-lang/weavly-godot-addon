@@ -92,8 +92,8 @@ func _on_line(line: WeavlyModel.LineStatement) -> void:
 	visible = true
 	_auto_left = auto_advance
 	_line = line
-	if line is WeavlyModel.CharacterLine:
-		_speaker = _find_speaker(line.name)
+	if line is WeavlyModel.CharacterLine and line.character != "":
+		_speaker = _find_speaker(line.character)
 	if _speaker == null:
 		_show_in_bar(line)
 		return
@@ -119,7 +119,7 @@ func _on_option_chosen(_option: WeavlyModel.Option) -> void:
 func _show_in_bar(line: WeavlyModel.LineStatement) -> void:
 	_nameplate.visible = line is WeavlyModel.CharacterLine
 	if line is WeavlyModel.CharacterLine:
-		_nameplate.text = speaker_name(line, engine)
+		_nameplate.text = line.name
 	_set_text(_bar_text, line.text)
 	_bar_text.visible = true
 	_bar.visible = true

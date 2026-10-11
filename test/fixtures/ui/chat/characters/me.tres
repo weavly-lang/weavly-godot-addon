@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1_chr")
-id = "me"
+id = "Me"
 display_name = "Me"

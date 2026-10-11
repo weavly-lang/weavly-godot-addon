@@ -1,50 +1,51 @@
 @env
 var gold: number = 0
+character Guide
 func header(title: string)
 func open(): bool
 @endenv
 
-@node tavern
->guide: Welcome, you have {$gold} gold.
+@node Tavern
+Guide: Welcome, you have {gold} gold.
 @do header("Tavern")
 @options
 @option "Buy a drink"
-    @increase $gold 1
+    @increase gold 1
     The drink is cold.
-    @jump bar
-@option "Leave": @jump street
+    @jump Bar
+@option "Leave": @jump Street
 @endoptions
->Stranger: Mind the fire.
+"Stranger": Mind the fire.
 @options
-@option "Warm up": @jump fire
+@option "Warm up": @jump Fire
 @endoptions
 @endnode
 
-@node bar
+@node Bar
 The barkeep nods.
 @options
-@option "Back": @jump tavern
+@option "Back": @jump Tavern
 @endoptions
 @endnode
 
-@node street
+@node Street
 The street is empty.
 @endnode
 
-@node fire
+@node Fire
 You warm up.
 @endnode
 
-@node formatted
+@node Formatted
 Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]": @jump tavern
+@option "[i]Wave[/i]": @jump Tavern
 @endoptions
 @endnode
 
-@node door
+@node Door
 @options
-@option [ open() ] "Open": @jump street
-@option "Stay": @jump street
+@option [ open() ] "Open": @jump Street
+@option "Stay": @jump Street
 @endoptions
 @endnode

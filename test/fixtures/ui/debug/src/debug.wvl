@@ -3,47 +3,47 @@ var gold: number = 3
 var name: string = "Robin"
 var brave: bool = false
 extern var secret: number
-var target: node = gate
+var target: node = Gate
 var area: pool = city
 var partner: slot = pair
 pool city
 slot pair
 @endenv
 
-@node start
-Hello {$name}.
-@increase $gold 2
+@node Start
+Hello {name}.
+@increase gold 2
 Second line.
-@jump gate
+@jump Gate
 @endnode
 
-@node gate
+@node Gate
 The gate is shut.
 @endnode
 
-@node broken
-The secret is {$secret}.
+@node Broken
+The secret is {secret}.
 @endnode
 
-@node bob
+@node Bob
 @meta
 pool: city
-when: $gold > 2
+when: gold > 2
 priority: 1
 @endmeta
 Bob waves.
 @endnode
 
-@node ann
+@node Ann
 @meta
 pool: city
 @endmeta
 Ann nods.
 @endnode
 
-@node aside_start
+@node AsideStart
 @meta
-priority: $secret
+priority: secret
 @endmeta
-@detour gate
+@detour Gate
 @endnode

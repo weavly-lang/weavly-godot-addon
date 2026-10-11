@@ -1,15 +1,16 @@
 @env
 var counter: number = 0
+character Guide
 @endenv
 
-@node start
+@node Start
 Welcome
->Guide: Hello
-@set $counter = 7
-@jump end
+Guide: Hello
+@set counter = 7
+@jump End
 @endnode
 
-@node end
+@node End
 Goodbye
 @finish
 @endnode

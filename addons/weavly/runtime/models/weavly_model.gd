@@ -63,14 +63,16 @@ class NarrationLine:
 	extends LineStatement
 
 
+# The speaker is a CharacterName or a one-off name; character and name are set on filled copies.
 class CharacterLine:
 	extends LineStatement
-	var name: String
-	var name_is_id: bool
+	var speaker: WeavlyExpression
+	# Empty for a one-off speaker.
+	var character: String = ""
+	var name: String = ""
 
-	func _init(name: String, name_is_id: bool, segments: Array):
-		self.name = name
-		self.name_is_id = name_is_id
+	func _init(speaker: WeavlyExpression, segments: Array):
+		self.speaker = speaker
 		super(segments)
 
 
@@ -347,6 +349,15 @@ class Identifier:
 		self.value = value
 
 
+# Evaluates to the display name of the character the expression names.
+class CharacterName:
+	extends WeavlyExpression
+	var expression: WeavlyExpression
+
+	func _init(expression: WeavlyExpression):
+		self.expression = expression
+
+
 class MetaCall:
 	extends WeavlyExpression
 	var node_id: String
@@ -451,7 +462,7 @@ class BoolVariable:
 		return "bool"
 
 
-# A node, pool or slot variable; its value names a declared one of that type.
+# A node, pool, slot or character variable; its value names a declared one of that type.
 class NameVariable:
 	extends Variable
 	var type: String

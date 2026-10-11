@@ -2,18 +2,19 @@
 class_name WeavlyProjectIndex
 extends RefCounted
 
-enum Kind { NODE, POOL, SLOT, VARIABLE, META_KEY, FUNCTION }
+enum Kind { NODE, POOL, SLOT, CHARACTER, VARIABLE, META_KEY, FUNCTION }
 
 const _DECLARATION_KINDS: Dictionary[String, Kind] = {
 	"var": Kind.VARIABLE,
 	"pool": Kind.POOL,
 	"slot": Kind.SLOT,
+	"character": Kind.CHARACTER,
 	"meta": Kind.META_KEY,
 	"func": Kind.FUNCTION,
 }
 
 static var _declaration_regex: RegEx = RegEx.create_from_string(
-	"^\\s*(?:extern\\s+)?(var|pool|slot|meta|func)\\s+([A-Za-z_]\\w*)"
+	"^\\s*(?:extern\\s+)?(var|pool|slot|character|meta|func)\\s+([A-Za-z_]\\w*)"
 )
 static var _group_entry_regex: RegEx = RegEx.create_from_string("^\\s*(pool|slot)\\s*:([^#]*)")
 static var _id_regex: RegEx = RegEx.create_from_string("^[A-Za-z_]\\w*$")
@@ -37,18 +38,23 @@ class Definition:
 var _files: Dictionary[String, Array] = {}
 var _modified_times: Dictionary[String, int] = {}
 var _open_path: String = ""
+# Name -> the kind of its first definition; rebuilt after a change.
+var _kinds: Dictionary[String, Kind] = {}
+var _kinds_stale: bool = true
 
 
 # Rereads the .wvl files under dir that changed since the last scan and drops the rest;
-# the open file is skipped. An empty dir keeps only the open file.
-func scan(dir: String) -> void:
+# the open file is skipped. An empty dir keeps only the open file. True when anything changed.
+func scan(dir: String) -> bool:
 	var found: Dictionary[String, bool] = {}
 	if dir != "":
 		_collect_files(dir, found)
+	var changed: bool = false
 	for path: String in _files.keys():
 		if path != _open_path and not found.has(path):
 			_files.erase(path)
 			_modified_times.erase(path)
+			changed = true
 	for path: String in found:
 		if path == _open_path:
 			continue
@@ -57,6 +63,9 @@ func scan(dir: String) -> void:
 			continue
 		_modified_times[path] = modified
 		_files[path] = parse(path, FileAccess.get_file_as_string(path))
+		changed = true
+	_kinds_stale = _kinds_stale or changed
+	return changed
 
 
 # Indexes the open file from its unsaved text instead of the disk.
@@ -68,6 +77,19 @@ func set_open_file(path: String, text: String) -> void:
 	_open_path = path
 	if path != "":
 		_files[path] = parse(path, text)
+	_kinds_stale = true
+
+
+# The kind of the definition with the name, or -1 when nothing has it.
+func kind_of(name: String) -> int:
+	if _kinds_stale:
+		_kinds.clear()
+		for path: String in _sorted_paths():
+			for definition: Definition in _files[path]:
+				if not _kinds.has(definition.name):
+					_kinds[definition.name] = definition.kind
+		_kinds_stale = false
+	return _kinds.get(name, -1)
 
 
 func find(kind: Kind, name: String) -> Array[Definition]:

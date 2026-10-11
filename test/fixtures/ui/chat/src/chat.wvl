@@ -1,48 +1,53 @@
-@node start
->mara: are you still up?
->me: yeah why
+@env
+character Mara
+character Me
+@endenv
+
+@node Start
+Mara: are you still up?
+Me: yeah why
 It's 21:04.
->stranger: hello?
+"Stranger": hello?
 @options
-@option "what happened?": @jump happened
-@option "going to sleep": @jump sleep
+@option "what happened?": @jump Happened
+@option "going to sleep": @jump Sleep
 @endoptions
 @endnode
 
-@node happened
->mara: you won't believe it
+@node Happened
+Mara: you won't believe it
 @endnode
 
-@node sleep
->mara: ok good night
+@node Sleep
+Mara: ok good night
 @endnode
 
-@node long
->mara: this message is long on purpose so that its bubble reaches the maximum width and wraps onto several lines
+@node Long
+Mara: this message is long on purpose so that its bubble reaches the maximum width and wraps onto several lines
 @endnode
 
-@node burst
->mara: one
->mara: two
+@node Burst
+Mara: one
+Mara: two
 It's late.
->mara: three
+Mara: three
 @endnode
 
-@node formatted
->mara: Hello [b]world[/b].
+@node Formatted
+Mara: Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]": @jump sleep
+@option "[i]Wave[/i]": @jump Sleep
 @endoptions
 @endnode
 
-@node locked
+@node Locked
 @options
-@option node(closed)
+@option node(Closed)
 @endoptions
->mara: moving on
+Mara: moving on
 @endnode
 
-@node closed
+@node Closed
 @meta
 label: "open the door"
 label_unavailable: "the door is locked"
@@ -54,9 +59,9 @@ available: false
 func open(): bool
 @endenv
 
-@node door
+@node Door
 @options
-@option [ open() ] "Open": @jump sleep
-@option "Stay": @jump sleep
+@option [ open() ] "Open": @jump Sleep
+@option "Stay": @jump Sleep
 @endoptions
 @endnode

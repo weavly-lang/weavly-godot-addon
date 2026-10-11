@@ -27,13 +27,11 @@ func _ready() -> void:
 
 
 # A paragraph for a line as written, with the speaker's name in bold.
-static func create_line_label(
-	line: WeavlyModel.LineStatement, engine: WeavlyEngine
-) -> RichTextLabel:
+static func create_line_label(line: WeavlyModel.LineStatement) -> RichTextLabel:
 	var text: RichTextLabel = create_text_label()
 	if line is WeavlyModel.CharacterLine:
 		text.push_bold()
-		text.add_text(speaker_name(line, engine) + ": ")
+		text.add_text(line.name + ": ")
 		text.pop()
 	text.add_text(line.text)
 	return text
@@ -48,18 +46,12 @@ static func create_text_label() -> RichTextLabel:
 	return text
 
 
-# The character's display name, or the name as written when there's no such character.
-static func speaker_name(line: WeavlyModel.CharacterLine, engine: WeavlyEngine) -> String:
-	var character: WeavlyCharacter = find_character(line, engine)
-	return character.display_name if character != null else line.name
-
-
-# Null when no character has the line's name.
+# The speaker's resource; null for a one-off speaker or a character without one.
 static func find_character(
 	line: WeavlyModel.CharacterLine, engine: WeavlyEngine
 ) -> WeavlyCharacter:
-	if engine.character_service.has(line.name):
-		return engine.character_service.get_character(line.name)
+	if line.character != "" and engine.character_service.has(line.character):
+		return engine.character_service.get_character(line.character)
 	return null
 
 
@@ -73,7 +65,7 @@ static func add_entries(
 	var lists: Array[WeavlyChoiceList] = []
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.LineStatement:
-			parent.add_child(create_line_label(entry, engine))
+			parent.add_child(create_line_label(entry))
 		elif entry is WeavlyModel.DoStatement:
 			engine.run_do(entry)
 		elif entry is WeavlyModel.OptionBlock:

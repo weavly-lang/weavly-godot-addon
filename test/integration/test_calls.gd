@@ -35,7 +35,7 @@ func _register_all() -> void:
 	)
 	_engine.register_function("mood", func() -> bool: return true)
 	_engine.register_function("greeting", func(name: String) -> String: return "Hi " + name)
-	_engine.register_function("next_scene", func() -> String: return "other")
+	_engine.register_function("next_scene", func() -> String: return "Other")
 	_engine.register_function("region", func() -> String: return "city")
 	_engine.register_function("partner", func() -> String: return "bob")
 	_engine.register_function(
@@ -57,24 +57,24 @@ func _variable(id: String) -> Variant:
 
 func test_functions_get_their_arguments_and_their_results_are_used() -> void:
 	_register_all()
-	_run("start")
+	_run("Start")
 	assert_that(_variable("score")).is_equal(3.0)
 	assert_array(_events).is_equal(
-		["trust(ann, start)", "Happy.", "Hi Ann is here.", "shout(hey, 3.0)", "wave", "Done."]
+		["trust(ann, Start)", "Happy.", "Hi Ann is here.", "shout(hey, 3.0)", "wave", "Done."]
 	)
 
 
 func test_name_results_are_stored_as_names() -> void:
 	_register_all()
-	_run("start")
-	assert_that(_variable("scene")).is_equal("other")
+	_run("Start")
+	assert_that(_variable("scene")).is_equal("Other")
 	assert_that(_variable("area")).is_equal("city")
 	assert_that(_variable("seat")).is_equal("bob")
 
 
 func test_a_meta_value_can_call_a_function() -> void:
 	_register_all()
-	assert_that(_engine.get_node_meta("start", "cost")).is_equal(4.0)
+	assert_that(_engine.get_node_meta("Start", "cost")).is_equal(4.0)
 
 
 func test_the_first_use_reports_everything_not_registered_once() -> void:
@@ -101,7 +101,7 @@ func test_the_first_use_reports_everything_not_registered_once() -> void:
 func test_a_missing_function_fails_its_expression_at_the_call() -> void:
 	_register_all()
 	_engine.function_service._callables.erase("mood")
-	_run("start")
+	_run("Start")
 	assert_bool(_events.has("Happy.")).is_false()
 	(
 		assert_array(_errors)
@@ -118,7 +118,7 @@ func test_a_missing_function_fails_its_expression_at_the_call() -> void:
 func test_a_result_of_the_wrong_type_is_reported_in_an_expression_and_a_do_statement() -> void:
 	_register_all()
 	_engine.register_function("mood", func() -> int: return 1)
-	_run("start")
+	_run("Start")
 	assert_bool(_events.has("Happy.")).is_false()
 	(
 		assert_array(_errors)
@@ -140,7 +140,7 @@ func test_a_value_returned_by_a_function_without_a_result_is_ignored() -> void:
 			_events.append("wave")
 			return 1
 	)
-	_run("start")
+	_run("Start")
 	assert_bool(_events.has("wave")).is_true()
 	assert_array(_errors).is_empty()
 
@@ -148,8 +148,8 @@ func test_a_value_returned_by_a_function_without_a_result_is_ignored() -> void:
 func test_a_result_naming_no_declared_node_is_rejected() -> void:
 	_register_all()
 	_engine.register_function("next_scene", func() -> String: return "nowhere")
-	_run("start")
-	assert_that(_variable("scene")).is_equal("start")
+	_run("Start")
+	assert_that(_variable("scene")).is_equal("Start")
 	assert_array(_errors).is_equal(
 		["32: Function 'next_scene' returned 'nowhere', but no node has that name."]
 	)
@@ -159,7 +159,7 @@ func test_a_result_naming_no_declared_node_is_rejected() -> void:
 func test_a_do_statement_without_a_callable_is_reported_and_skipped() -> void:
 	_register_all()
 	_engine.function_service._callables.erase("wave")
-	_run("start")
+	_run("Start")
 	assert_bool(_events.has("wave")).is_false()
 	assert_str(_events.back()).is_equal("Done.")
 	assert_array(_errors).contains(
@@ -189,18 +189,18 @@ func test_registering_a_callable_with_the_wrong_argument_count_is_an_error() -> 
 func test_registering_again_replaces_the_callable() -> void:
 	_register_all()
 	_engine.register_function("greeting", func(name: String) -> String: return "Bye " + name)
-	_run("start")
+	_run("Start")
 	assert_bool(_events.has("Bye Ann is here.")).is_true()
 
 
 func test_render_returns_do_statements_and_run_do_calls_their_function() -> void:
 	_register_all()
-	var entries: Array[WeavlyModel.Statement] = _engine.render("start")
+	var entries: Array[WeavlyModel.Statement] = _engine.render("Start")
 	assert_bool(_events.has("wave")).is_false()
 	for entry: WeavlyModel.Statement in entries:
 		if entry is WeavlyModel.DoStatement:
 			_engine.run_do(entry)
 	(
 		assert_array(_events.filter(func(event: String) -> bool: return not event.ends_with(".")))
-		. is_equal(["trust(ann, start)", "shout(hey, 3.0)", "wave"])
+		. is_equal(["trust(ann, Start)", "shout(hey, 3.0)", "wave"])
 	)

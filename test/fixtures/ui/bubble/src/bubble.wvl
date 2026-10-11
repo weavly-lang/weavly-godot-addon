@@ -1,26 +1,31 @@
-@node start
->guard: Halt! Who goes there?
+@env
+character Guard
+character Merchant
+@endenv
+
+@node Start
+Guard: Halt! Who goes there?
 The gate creaks.
->merchant: Fresh bread!
->stranger: Psst.
+Merchant: Fresh bread!
+"Stranger": Psst.
 @options
-@option "Answer": @jump answered
+@option "Answer": @jump Answered
 @endoptions
 @endnode
 
-@node answered
->guard: Pass, then.
+@node Answered
+Guard: Pass, then.
 @endnode
 
-@node bark
->guard: Move along.
->guard: I said move along.
+@node Bark
+Guard: Move along.
+Guard: I said move along.
 @endnode
 
-@node formatted
->guard: Hello [b]world[/b].
+@node Formatted
+Guard: Hello [b]world[/b].
 @options
-@option "[i]Wave[/i]": @jump answered
+@option "[i]Wave[/i]": @jump Answered
 @endoptions
 @endnode
 
@@ -28,9 +33,9 @@ The gate creaks.
 func open(): bool
 @endenv
 
-@node door
+@node Door
 @options
-@option [ open() ] "Open": @jump answered
-@option "Stay": @jump answered
+@option [ open() ] "Open": @jump Answered
+@option "Stay": @jump Answered
 @endoptions
 @endnode

@@ -13,6 +13,7 @@ var _nodes: Dictionary[String, WeavlyModel.WeavlyNode] = {}
 var _pools: Dictionary[String, bool] = {}
 var _pool_members: Dictionary[String, Array] = {}
 var _slots: Dictionary[String, bool] = {}
+var _characters: Dictionary[String, bool] = {}
 var _meta_defaults: Dictionary[String, Variant] = {}
 
 
@@ -104,6 +105,20 @@ func get_slots() -> Array[String]:
 	return slots
 
 
+func add_character(character: String) -> void:
+	_characters[character] = true
+
+
+func has_character(character: String) -> bool:
+	return _characters.has(character)
+
+
+func get_characters() -> Array[String]:
+	var characters: Array[String] = []
+	characters.assign(_characters.keys())
+	return characters
+
+
 func add_meta_key(key: String, default: Variant) -> void:
 	_meta_defaults[key] = default
 
@@ -116,7 +131,7 @@ func get_meta_default(key: String) -> Variant:
 	return _meta_defaults.get(key)
 
 
-# Whether a declared node, pool or slot, by the type's name, has the name.
+# Whether a declared node, pool, slot or character, by the type's name, has the name.
 func has_name(type: String, name: String) -> bool:
 	match type:
 		WeavlyDeserializer.TYPE_NODE:
@@ -125,6 +140,8 @@ func has_name(type: String, name: String) -> bool:
 			return has_pool(name)
 		WeavlyDeserializer.TYPE_SLOT:
 			return has_slot(name)
+		WeavlyDeserializer.TYPE_CHARACTER:
+			return has_character(name)
 	return false
 
 

@@ -3,15 +3,15 @@ var gold: number = 0
 var seen_shop: bool = false
 @endenv
 
-@node start
-@set $gold = $gold + 5
+@node Start
+@set gold = gold + 5
 In start
-@jump shop
+@jump Shop
 @endnode
 
-@node shop
-@set $seen_shop = visited(shop)
-@set $gold = $gold + 1
+@node Shop
+@set seen_shop = visited(Shop)
+@set gold = gold + 1
 In shop
 @finish
 @endnode

@@ -2,12 +2,12 @@
 var score: number = 0
 @endenv
 
-@node start
+@node Start
 Welcome to the smoke test.
-@set $score = 7
-@jump end
+@set score = 7
+@jump End
 @endnode
 
-@node end
+@node End
 @finish
 @endnode

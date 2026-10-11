@@ -3,8 +3,8 @@ var hp: number = 30
 var roll: number = 0
 @endenv
 
-@node start
-@set $hp = clamp($hp - 50, 0, 100)
-@set $roll = random(1, 6)
+@node Start
+@set hp = clamp(hp - 50, 0, 100)
+@set roll = random(1, 6)
 @finish
 @endnode
