@@ -127,8 +127,19 @@ func test_a_name_before_a_colon_without_a_space_is_text() -> void:
 	assert_array(_kinds("|Day 3\\: Quiet.")).is_empty()
 
 
-func test_a_node_header_resolves_to_nothing() -> void:
-	assert_object(_resolve("@node |market", "")).is_null()
+func _role(line: String, above: String = "@node here") -> WeavlySymbolResolver.Role:
+	return _resolve(line, above).role
+
+
+func test_a_node_header_declares_its_node() -> void:
+	assert_array(_kinds("@node |market # stalls", "")).is_equal([NODE])
+	assert_int(_role("@node |market", "")).is_equal(WeavlySymbolResolver.Role.DECLARATION)
+	assert_int(_role("@node node|", "")).is_equal(WeavlySymbolResolver.Role.DECLARATION)
+	assert_object(_resolve("@|node market", "")).is_null()
+
+
+func test_a_use_is_a_use() -> void:
+	assert_int(_role("@jump |market")).is_equal(WeavlySymbolResolver.Role.USE)
 
 
 func test_meta_keys_and_their_values() -> void:
@@ -140,6 +151,28 @@ func test_meta_keys_and_their_values() -> void:
 	assert_array(_kinds('label_teaser: "Visit |market"', above)).is_empty()
 
 
+func test_a_pool_or_slot_entry_is_a_membership() -> void:
+	var above: String = "@node here\n@meta"
+	assert_int(_role("pool: |city", above)).is_equal(WeavlySymbolResolver.Role.MEMBERSHIP)
+	assert_int(_role("slot: |bob", above)).is_equal(WeavlySymbolResolver.Role.MEMBERSHIP)
+	assert_int(_role("|pool: city", above)).is_equal(WeavlySymbolResolver.Role.USE)
+	assert_int(_role("when: visited(|city)", above)).is_equal(WeavlySymbolResolver.Role.USE)
+
+
+func test_symbols_finds_every_name_on_a_line() -> void:
+	var found: Array[WeavlySymbolResolver.Symbol] = WeavlySymbolResolver.symbols(
+		"@if visited(market) and gold > 2: Guide paid {gold}.", WeavlyLineScanner.Block.BODY
+	)
+	(
+		assert_array(
+			found.map(
+				func(s: WeavlySymbolResolver.Symbol) -> String: return "%s:%d" % [s.name, s.column]
+			)
+		)
+		. is_equal(["visited:4", "market:12", "and:20", "gold:24", "gold:46"])
+	)
+
+
 func test_the_meta_block_ends_at_endmeta() -> void:
 	assert_array(_kinds("pool: |city", "@node here\n@meta\n@endmeta")).is_empty()
 
@@ -149,8 +182,20 @@ func test_env_only_resolves_name_values() -> void:
 	assert_array(_kinds("var next: node = |market", above)).is_equal([NODE])
 	assert_array(_kinds("var region: pool = |city", above)).is_equal([POOL])
 	assert_array(_kinds("var friend: character = |Guide", above)).is_equal([CHARACTER])
-	assert_array(_kinds("var |next: node = market", above)).is_empty()
-	assert_array(_kinds("pool |city", above)).is_empty()
+	assert_array(_kinds("var next: |node = market", above)).is_empty()
+	assert_array(_kinds("func bonus(|points: number): number", above)).is_empty()
+
+
+func test_env_declarations_declare_their_kind() -> void:
+	var above: String = "@env"
+	assert_array(_kinds("var |next: node = market", above)).is_equal([VARIABLE])
+	assert_array(_kinds("extern var |reputation: number", above)).is_equal([VARIABLE])
+	assert_array(_kinds("pool |city", above)).is_equal([POOL])
+	assert_array(_kinds("slot |bob", above)).is_equal([SLOT])
+	assert_array(_kinds("character |Guide", above)).is_equal([CHARACTER])
+	assert_array(_kinds("meta |toll: number = 1", above)).is_equal([META_KEY])
+	assert_array(_kinds("func |bonus(points: number): number", above)).is_equal([FUNCTION])
+	assert_int(_role("pool |city", above)).is_equal(WeavlySymbolResolver.Role.DECLARATION)
 
 
 func test_outside_a_node_resolves_to_nothing() -> void:

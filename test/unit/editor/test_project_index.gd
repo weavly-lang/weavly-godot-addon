@@ -1,3 +1,4 @@
+# gdlint:ignore = max-public-methods
 extends GdUnitTestSuite
 
 const _CITY = """@env
@@ -19,6 +20,22 @@ pool: not_in_meta
 @endnode
 
 @node harbor
+@endnode
+"""
+const _USES = """@env
+var gold: number = 3
+pool city
+meta cost: number = 1
+@endenv
+
+@node market
+@meta
+pool: city
+cost: gold
+@endmeta
+Guide: You have {gold} gold.
+@set gold = gold + market.cost
+@draw city
 @endnode
 """
 
@@ -229,3 +246,46 @@ func test_kind_of_a_name_follows_the_open_file() -> void:
 	index.set_open_file("a.wvl", "@env\nvar Guide: number = 1\n@endenv")
 	assert_int(index.kind_of("Guide")).is_equal(WeavlyProjectIndex.Kind.VARIABLE)
 	assert_int(index.kind_of("Start")).is_equal(-1)
+
+
+func _uses(index: WeavlyProjectIndex, kind: WeavlyProjectIndex.Kind, name: String) -> Array:
+	return index.uses(kind, name).map(
+		func(use: WeavlyProjectIndex.Use) -> String: return "%d:%d" % [use.line, use.column]
+	)
+
+
+func test_uses_are_found_by_line_and_column() -> void:
+	var index: WeavlyProjectIndex = _scanned(_USES)
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.VARIABLE, "gold")).is_equal(
+		["9:6", "11:17", "12:5"]
+	)
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.NODE, "market")).is_equal(["12:19"])
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.META_KEY, "cost")).is_equal(["9:0", "12:26"])
+
+
+func test_declarations_and_pool_entries_arent_uses() -> void:
+	var index: WeavlyProjectIndex = _scanned(_USES)
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.POOL, "city")).is_equal(["13:6"])
+
+
+func test_a_use_only_matches_the_kinds_it_can_be() -> void:
+	var index: WeavlyProjectIndex = _scanned(_USES)
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.NODE, "cost")).is_empty()
+	assert_array(_uses(index, WeavlyProjectIndex.Kind.FUNCTION, "gold")).is_empty()
+
+
+func test_a_use_keeps_its_line() -> void:
+	var index: WeavlyProjectIndex = _scanned(_USES)
+	var use: WeavlyProjectIndex.Use = index.uses(WeavlyProjectIndex.Kind.VARIABLE, "gold")[0]
+	assert_str(use.text).is_equal("cost: gold")
+	assert_str(use.path.get_file()).is_equal("city.wvl")
+
+
+func test_uses_follow_the_open_files_edits() -> void:
+	var path: String = _write_file("a.wvl", "@node a\n@jump b\n@endnode\n")
+	var index: WeavlyProjectIndex = WeavlyProjectIndex.new()
+	index.scan(_dir)
+	assert_array(index.uses(WeavlyProjectIndex.Kind.NODE, "b")).has_size(1)
+	index.set_open_file(path, "@node a\n@jump c\n@endnode\n")
+	assert_array(index.uses(WeavlyProjectIndex.Kind.NODE, "b")).is_empty()
+	assert_array(index.uses(WeavlyProjectIndex.Kind.NODE, "c")).has_size(1)
