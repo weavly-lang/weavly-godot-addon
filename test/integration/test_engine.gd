@@ -705,6 +705,38 @@ func test_a_hold_while_a_line_waits_does_not_advance_on_release() -> void:
 	assert_that(_signal_log.back()).is_equal("finished_dialogue")
 
 
+func test_a_start_while_held_runs_on_release() -> void:
+	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
+	_connect_content_log(engine)
+	engine.register_function("shake", func() -> void: pass)
+	engine.hold()
+	engine.start("Start")
+	assert_that(_narration_log).is_empty()
+	engine.release()
+	assert_that(_narration_log).is_equal(["After"])
+
+
+func test_a_choice_while_held_runs_on_release() -> void:
+	var engine: WeavlyEngine = _make_engine(OPTIONS_FIXTURE)
+	engine.start("Menu")
+	engine.hold()
+	engine.choose(engine.get_pending_options()[0])
+	assert_int(_signal_log.count("entered_node:After")).is_equal(0)
+	engine.release()
+	assert_int(_signal_log.count("entered_node:After")).is_equal(1)
+
+
+func test_a_next_while_a_line_is_held_advances_on_release() -> void:
+	var engine: WeavlyEngine = _make_holding_engine()
+	engine.start("Start")
+	engine.release()
+	engine.hold()
+	engine.next()
+	assert_that(_signal_log.back()).is_not_equal("finished_dialogue")
+	engine.release()
+	assert_that(_signal_log.back()).is_equal("finished_dialogue")
+
+
 func test_finish_clears_holds() -> void:
 	var engine: WeavlyEngine = _make_engine(HOLD_FIXTURE)
 	_connect_content_log(engine)
