@@ -131,6 +131,13 @@ func get_meta_default(key: String) -> Variant:
 	return _meta_defaults.get(key)
 
 
+# The declared custom meta keys.
+func get_meta_keys() -> Array[String]:
+	var keys: Array[String] = []
+	keys.assign(_meta_defaults.keys())
+	return keys
+
+
 # Whether a declared node, pool, slot or character, by the type's name, has the name.
 func has_name(type: String, name: String) -> bool:
 	match type:

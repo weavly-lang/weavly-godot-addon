@@ -27,15 +27,18 @@ static func read(engine: WeavlyEngine, node_id: String, key: String) -> Variant:
 	return read_node(engine, engine.story.get_node(node_id), key)
 
 
-# Every key the node writes, evaluated once; a failing one is left out.
+# Every key the node writes, evaluated once, and every declared custom key it doesn't write with
+# its default; a failing one is left out.
 static func snapshot(engine: WeavlyEngine, node: WeavlyModel.WeavlyNode) -> Dictionary:
 	var values: Dictionary = {}
-	if node.meta == null:
-		return values
-	for key: String in node.meta.entries:
-		var value: Variant = read_node(engine, node, key)
-		if not WeavlyExpressionEvaluator.is_error(value):
-			values[key] = value
+	if node.meta != null:
+		for key: String in node.meta.entries:
+			var value: Variant = read_node(engine, node, key)
+			if not WeavlyExpressionEvaluator.is_error(value):
+				values[key] = value
+	for key: String in engine.story.get_meta_keys():
+		if node.meta == null or not node.meta.entries.has(key):
+			values[key] = engine.story.get_meta_default(key)
 	return values
 
 

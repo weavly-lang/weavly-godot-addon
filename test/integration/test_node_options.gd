@@ -220,6 +220,13 @@ func test_the_chosen_node_reads_its_meta_values_as_they_were_offered() -> void:
 	assert_that(_engine.get_node_meta("Hack", "cost")).is_equal(10.0)
 
 
+func test_an_offered_option_has_the_default_of_a_declared_key_its_node_leaves_out() -> void:
+	_set_variable("found", true)
+	_run_to_options("Camp")
+	assert_dict(_option("Cook").meta).is_equal({"label": "Cook", "cost": 1.0})
+	assert_that(_option("Hack (-3 energy)").meta["cost"]).is_equal(3.0)
+
+
 # =====================
 # Game-side menus
 # =====================
