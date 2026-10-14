@@ -79,7 +79,8 @@ Cross-cuts both repos. Update `weavly-compiler` first (grammar + `WvlTransformer
 
 ## Documentation
 
-- User docs live in the separate docs repo, published at <https://weavly-lang.github.io/weavly-docs/>. This repo has no docs folder.
+- User docs live in the separate [weavly-docs](https://github.com/weavly-lang/weavly-docs) repo, published at <https://weavly-lang.github.io/weavly-docs/>. This repo has no docs folder.
+- A change to runtime behaviour, the public API (engine, services, models, starter UIs) or the editor tooling needs a docs update. File an issue in weavly-docs (`gh issue create -R weavly-lang/weavly-docs`) that says what changed, and link it from the PR.
 - README.md and CONTRIBUTING.md stay short: what a newcomer needs, nothing more. Never add reference sections to them.
 - Working notes go in `NOTES.md` at the repo root, which is gitignored.
 
